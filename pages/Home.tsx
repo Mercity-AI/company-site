@@ -21,12 +21,14 @@ const Home: React.FC = () => {
             variants={fadeIn}
             className="max-w-4xl"
           >
-            <h1 className="text-5xl md:text-8xl font-light tracking-tighter text-slate-900 mb-8 leading-[1.1]">
+            <h1 className="text-5xl md:text-8xl font-light tracking-tighter text-slate-900 mb-7 leading-[1.1]">
               Research-grade, <span className="font-serif italic text-slate-700"><br/> reality-ready</span>.
             </h1>
             <p className="text-xl md:text-2xl text-slate-500 font-light leading-relaxed max-w-2xl mb-12">
-              AI systems with research depth, built with production in mind.
-              Research depth, production craft, architecture that endures.
+              {/* We are decoding the fundamental principles of intelligence to build systems that reason, learn, and create alongside humanity. */}
+               <i>Shipping the research to production. <br/>
+               Custom training, real optimization, genuine architecture. <br/></i>
+               {/* <i><u>We do the deep work so your AI simply works.</u></i> */}
             </p>
             <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
               <Link to="/about" className="group flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-full font-medium transition-all hover:bg-slate-800 hover:scale-105">
@@ -84,9 +86,9 @@ const Home: React.FC = () => {
               <div className="w-12 h-12 mb-8 text-slate-800 bg-slate-50 rounded-2xl flex items-center justify-center group-hover:bg-indigo-50 transition-colors duration-500">
                 <Cpu strokeWidth={1.5} />
               </div>
-              <h3 className="text-xl font-medium mb-4 text-slate-900">Embodied Agents</h3>
+              <h3 className="text-xl font-medium mb-4 text-slate-900">Scaffolding Agents</h3>
               <p className="text-slate-500 leading-relaxed font-light">
-                Grounding intelligence in the physical world to bridge the gap between digital and reality.
+                Building harnesses for the real world to bridge the gap between modeling and reality.
               </p>
             </div>
           </motion.div>
