@@ -1,37 +1,17 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Sparkles, Loader2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { posts } from '@/.velite';
-import { summarizeText } from '../services/geminiService';
 
 const BlogPostPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const post = posts.find((p) => p.slug === slug);
-  
-  const [summary, setSummary] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Handle post not found
   if (!post) {
     return <Navigate to="/blog" replace />;
   }
-
-  const handleGenerateSummary = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Use raw content for summary (strip any HTML)
-      const plainText = post.raw.replace(/<[^>]+>/g, '');
-      const result = await summarizeText(plainText);
-      setSummary(result);
-    } catch (err) {
-      setError("Unable to generate summary at this time. Please check API configuration.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const formattedDate = new Date(post.publishedAt).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -75,51 +55,6 @@ const BlogPostPage: React.FC = () => {
             </div>
           </div>
         </header>
-
-        {/* AI Summary Feature */}
-        <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-6 mb-12 backdrop-blur-sm">
-          <div className="flex justify-between items-start mb-4">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-indigo-900 flex items-center gap-2">
-              <Sparkles size={14} /> AI Research Abstract
-            </h3>
-            {!summary && !loading && (
-              <button 
-                onClick={handleGenerateSummary}
-                className="text-xs bg-white border border-indigo-200 text-indigo-900 px-3 py-1 rounded-full hover:bg-indigo-50 transition-colors"
-              >
-                Generate Summary
-              </button>
-            )}
-          </div>
-          
-          {loading && (
-            <div className="flex items-center gap-2 text-slate-500 text-sm py-4">
-              <Loader2 className="animate-spin" size={16} /> Analysis in progress...
-            </div>
-          )}
-
-          {error && (
-             <div className="text-red-400 text-sm py-2">
-               {error}
-             </div>
-          )}
-
-          {summary && (
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }}
-              className="text-slate-700 text-sm leading-relaxed font-light font-serif italic"
-            >
-              {summary}
-            </motion.div>
-          )}
-
-          {!summary && !loading && !error && (
-            <p className="text-slate-400 text-sm italic">
-              Tap the button to generate a real-time summary of this research paper using our Mercity-Lite model (Gemini).
-            </p>
-          )}
-        </div>
 
         {/* Tags */}
         {post.tags.length > 0 && (
