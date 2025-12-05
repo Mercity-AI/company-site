@@ -133,7 +133,7 @@ const BlogPostPage: React.FC = () => {
         )}
 
         <div 
-          className="prose prose-slate prose-lg max-w-none prose-headings:font-light prose-headings:text-slate-900 prose-p:text-slate-600 prose-p:font-light prose-p:leading-8 prose-blockquote:font-serif prose-blockquote:italic prose-blockquote:border-l-indigo-200 prose-a:text-indigo-600 prose-img:rounded-xl prose-code:bg-slate-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-slate-900"
+          className="prose prose-lg prose-slate max-w-none"
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
       </motion.article>
