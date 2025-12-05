@@ -57,12 +57,12 @@ const About: React.FC = () => {
         transition={{ duration: 0.8 }}
         className="mb-32 max-w-3xl"
       >
-        <span className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 block">About Aetheria</span>
+        <span className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 block">About Mercity</span>
         <h1 className="text-5xl md:text-6xl font-light tracking-tight text-slate-900 mb-8">
           We are a collective of scientists, engineers, and dreamers.
         </h1>
         <p className="text-xl text-slate-500 font-light leading-relaxed">
-          Founded in 2023, Aetheria emerged from a simple question: How do we build intelligence that is robust, transparent, and aligned with human values? We believe the answer lies in a multidisciplinary approach, blending computer science, neuroscience, and philosophy.
+          Founded in 2023, Mercity emerged from a simple question: How do we build intelligence that is robust, transparent, and aligned with human values? We believe the answer lies in a multidisciplinary approach, blending computer science, neuroscience, and philosophy.
         </p>
       </motion.div>
 

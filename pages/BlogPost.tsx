@@ -116,7 +116,7 @@ const BlogPostPage: React.FC = () => {
 
           {!summary && !loading && !error && (
             <p className="text-slate-400 text-sm italic">
-              Tap the button to generate a real-time summary of this research paper using our Aetheria-Lite model (Gemini).
+              Tap the button to generate a real-time summary of this research paper using our Mercity-Lite model (Gemini).
             </p>
           )}
         </div>

@@ -50,7 +50,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
           <Link to="/" className="text-xl font-medium tracking-tight flex items-center gap-2 group">
             <div className="w-3 h-3 bg-slate-900 rounded-sm group-hover:rotate-45 transition-transform duration-500" />
-            <span className="font-serif italic text-slate-900">Aetheria</span>
+            <span className="font-serif italic text-slate-900">Mercity</span>
           </Link>
 
           {/* Desktop Nav */}
@@ -116,7 +116,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="max-w-7xl mx-auto px-6 py-16">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
               <div className="col-span-1 md:col-span-2">
-                <h3 className="font-serif italic text-xl mb-6">Aetheria</h3>
+                <h3 className="font-serif italic text-xl mb-6">Mercity</h3>
                 <p className="text-slate-500 max-w-sm font-light leading-relaxed">
                   Building the cognitive architecture for the next century. 
                   We are a research laboratory dedicated to safe, general intelligence.
@@ -139,14 +139,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <li><a href="#" className="hover:text-slate-900 transition-colors">LinkedIn</a></li>
                   <li><a href="#" className="hover:text-slate-900 transition-colors">GitHub</a></li>
                   <li className="flex items-center gap-2 cursor-pointer group">
-                    <span className="group-hover:underline">hello@aetheria.ai</span>
+                    <span className="group-hover:underline">hello@Mercity.ai</span>
                     <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
                   </li>
                 </ul>
               </div>
             </div>
             <div className="mt-16 pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between text-xs text-slate-400 font-light">
-              <p>&copy; {new Date().getFullYear()} Aetheria Research Labs. All rights reserved.</p>
+              <p>&copy; {new Date().getFullYear()} Mercity Research Labs. All rights reserved.</p>
               <div className="flex gap-6 mt-4 md:mt-0">
                 <a href="#">Privacy Policy</a>
                 <a href="#">Terms of Service</a>

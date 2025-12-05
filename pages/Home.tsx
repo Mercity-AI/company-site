@@ -28,7 +28,7 @@ const Home: React.FC = () => {
     },
     {
       type: 'Dataset',
-      title: 'Aetheria-CoT-100k',
+      title: 'Mercity-CoT-100k',
       date: 'Nov 04, 2024',
       summary: 'A high-quality, manually verified dataset of 100,000 complex chain-of-thought reasoning traces across mathematics and logic domains.',
       link: '/datasets/cot-100k',
