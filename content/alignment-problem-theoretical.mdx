@@ -1,0 +1,51 @@
+---
+title: "The Alignment Problem: A Theoretical Perspective"
+slug: alignment-problem-theoretical
+publishedAt: "2023-08-15"
+summary: "Defining the mathematical boundaries of safe reinforcement learning from human feedback."
+authors:
+  - name: "Sarah Al-Fayed"
+    role: "Safety Researcher"
+tags: ["AI Safety", "Alignment", "RLHF"]
+category: "Safety"
+isTopPick: true
+---
+
+As AI systems become more capable, ensuring they remain aligned with human values becomes increasingly critical. This paper presents a formal framework for understanding the fundamental limits of alignment.
+
+## Defining Alignment Mathematically
+
+We formalize alignment as a constrained optimization problem:
+
+> Maximize utility U(π) subject to safety constraints S(π) ≥ threshold
+
+Where π represents the policy, U is the utility function learned from human preferences, and S encodes safety boundaries.
+
+## The Goodhart Problem
+
+A key challenge emerges: any proxy metric we optimize will eventually diverge from our true intent. We prove that this divergence is bounded under certain conditions:
+
+1. **Bounded rationality** of the reward model
+2. **Distributional shift** constraints
+3. **Corrigibility** requirements
+
+## RLHF Limitations
+
+Our analysis reveals fundamental limitations in Reinforcement Learning from Human Feedback:
+
+- Human feedback is inherently noisy and inconsistent
+- Preference models compress complex values into scalar rewards
+- Optimization pressure can exploit gaps in human oversight
+
+## Proposed Framework
+
+We introduce "Constrained Alignment Optimization" (CAO), which:
+
+1. Maintains explicit uncertainty over human values
+2. Implements conservative behavior under uncertainty
+3. Allows for value learning and updating
+
+## Conclusions
+
+Perfect alignment may be theoretically impossible, but we can establish meaningful bounds on misalignment. This work provides the mathematical foundation for building safety guarantees into AI systems.
+

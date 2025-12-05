@@ -1,0 +1,35 @@
+---
+title: "Towards Causal Reasoning in Large Language Models"
+slug: towards-causal-reasoning
+publishedAt: "2023-10-12"
+summary: "Exploring the limitations of correlation-based learning and proposing a new framework for causal inference in transformer architectures."
+authors:
+  - name: "Dr. Elena Vora"
+    role: "Lead Researcher"
+tags: ["AI", "LLM", "Causal Inference"]
+category: "Research"
+isTopPick: true
+---
+
+Current Large Language Models (LLMs) have demonstrated remarkable proficiency in pattern matching and next-token prediction. However, a fundamental gap remains: the ability to understand cause and effect.
+
+## The Correlation Trap
+
+Traditional transformer architectures learn statistical correlations between tokens. If event A frequently appears before event B in the training corpus, the model learns to predict B given A. While effective for many tasks, this breaks down in counterfactual scenarios or novel environments where historical correlations no longer hold.
+
+## Introducing Causal Attention
+
+Our research proposes a novel attention mechanism, "Causal Attention," which explicitly models the directed acyclic graph (DAG) structure of logical propositions within a context window. Unlike standard self-attention, which attends to all previous tokens based on semantic similarity, Causal Attention weighs tokens based on their varying structural influence on the current state.
+
+In our experiments, models equipped with Causal Attention showed a **40% improvement** in zero-shot counterfactual reasoning tasks compared to baseline GPT-4 style architectures of similar size.
+
+## Structural Equation Models (SEMs)
+
+We integrate lightweight Structural Equation Models into the latent space of the transformer. This allows the network to "intervene" on its own internal representations, effectively simulating "what if" scenarios during inference time.
+
+> "To build truly general intelligence, we must move from asking 'what is likely to happen?' to 'why did this happen?'"
+
+## Future Directions
+
+While promising, this approach introduces computational overhead. Our next phase of research focuses on sparse approximation methods to bring the inference cost of Causal Attention closer to standard attention mechanisms.
+
