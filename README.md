@@ -12,8 +12,38 @@ View your app in AI Studio: https://ai.studio/apps/drive/1jip51wXYGGd5zHyL5yUGgg
 
 **Prerequisites:**  Node.js
 
-
 1. Install dependencies:
-   `npm install`
+   ```bash
+   pnpm install
+   ```
 2. Run the app:
-   `npm run dev`
+   ```bash
+   pnpm run dev
+   ```
+
+## 📸 Image Management
+
+This project includes an automated image upload system for blog posts using Cloudflare R2.
+
+### Setup R2 Image Upload
+
+1. **Configure Credentials**: Copy `.env.example` to `.env` and add your Cloudflare R2 credentials:
+   ```bash
+   R2_ACCOUNT_ID=your_account_id
+   R2_ACCESS_KEY_ID=your_access_key_id
+   R2_SECRET_ACCESS_KEY=your_secret_access_key
+   R2_BUCKET_NAME=your_bucket_name
+   R2_PUBLIC_URL=https://your-cdn-url.com
+   ```
+
+2. **Add Images to Blog Posts**: Reference local images in your MDX files:
+   ```markdown
+   ![Hero Image](./hero.jpg)
+   ```
+
+3. **Upload to R2**: Run the upload script to automatically upload images and update MDX files:
+   ```bash
+   pnpm upload:images
+   ```
+
+For detailed documentation, see [`scripts/README.md`](scripts/README.md).

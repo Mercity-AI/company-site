@@ -7,11 +7,16 @@
     "dev": "vite",
     "dev:content": "velite --watch",
     "build": "velite build && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "upload:images": "node scripts/upload-images-to-r2.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.948.0",
+    "dotenv": "^17.2.3",
     "framer-motion": "^12.23.24",
+    "gray-matter": "^4.0.3",
     "lucide-react": "^0.555.0",
+    "mime-types": "^3.0.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.6",
@@ -24,6 +29,7 @@
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.1.17",
+    "@types/mime-types": "^3.0.1",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.22",
