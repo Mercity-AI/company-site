@@ -1,14 +1,21 @@
 ---
-title: "Enhancing Model Performance: The Impact of Fine-tuning with LoRA & QLoRA"
+title: 'Enhancing Model Performance: The Impact of Fine-tuning with LoRA & QLoRA'
 slug: optimize-lora-qlora
-publishedAt: "2024-06-18"
-summary: "Explore how LoRA and QLoRA enable parameter-efficient fine-tuning of large language models, reducing costs while maintaining performance."
+publishedAt: '2024-06-18'
+summary: >-
+  Explore how LoRA and QLoRA enable parameter-efficient fine-tuning of large
+  language models, reducing costs while maintaining performance.
 authors:
-  - name: "Pinak Faldu"
-    image: "https://res.cloudinary.com/dieth2xb3/image/upload/v1755804235/aaaimage_zbypst.png"
-    role: "ML Engineer"
-tags: ["AI", "Fine-tuning", "LLM", "Machine Learning"]
-image: "https://res.cloudinary.com/dieth2xb3/image/upload/v1755804235/aaaimage_zbypst.png"
+  - name: Pinak Faldu
+    image: >-
+      https://res.cloudinary.com/dieth2xb3/image/upload/v1755804235/aaaimage_zbypst.png
+    role: ML Engineer
+tags:
+  - AI
+  - Fine-tuning
+  - LLM
+  - Machine Learning
+image: 'https://blog-cdn.mercity.ai/blog/optimize-lora-qlora/aaaimage_zbypst.png'
 isTopPick: true
 ---
 
@@ -60,11 +67,11 @@ Before we can effectively utilize PEFT for fine-tuning a model for following ins
 
 Here is an example of our chosen dataset from the **Hugging Face Hub** looks as follows:
 
-![](https://cdn.prod.website-files.com/62528d398a42420e66390ef9/65fc1b58749510612dbe8cdf_Untitled.png)
+![](https://blog-cdn.mercity.ai/blog/optimize-lora-qlora/65fc1b58749510612dbe8cdf_Untitled.png)
 
 As useful as this dataset is, this is not well formatted for fine-tuning of a language model for instruction following in the manner described above.
 
-![](https://cdn.prod.website-files.com/62528d398a42420e66390ef9/65fc1b87c64c8a1acc9ab6d4_Untitled1.png)
+![](https://blog-cdn.mercity.ai/blog/optimize-lora-qlora/65fc1b87c64c8a1acc9ab6d4_Untitled1.png)
 
 The following code snippet loads the dataset from the Hugging Face hub into the memory and transforms the necessary fields into the consistently formatted string representing the instruction, input, and response.
 

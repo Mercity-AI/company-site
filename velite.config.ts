@@ -20,6 +20,9 @@ const posts = defineCollection({
       title: s.string().max(120),
       slug: s.slug("posts"),
       publishedAt: s.isodate(),
+      // Optional provenance dates (useful for migrations)
+      createdAt: s.isodate().optional(),
+      updatedAt: s.isodate().optional(),
       summary: s.string().max(500),
 
       // Authors (supports multiple)
