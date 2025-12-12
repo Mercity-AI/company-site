@@ -24,6 +24,7 @@
     "rehype-pretty-code": "^0.14.1",
     "rehype-slug": "^6.0.0",
     "remark-gfm": "^4.0.1",
+    "sharp": "^0.34.5",
     "velite": "^0.3.0"
   },
   "devDependencies": {

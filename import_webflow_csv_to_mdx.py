@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import csv
 import os
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -56,9 +57,155 @@ def yaml_double_quote(s: str) -> str:
     return f"\"{s}\""
 
 
-def normalize_html_body(html: str) -> str:
-    html = (html or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+def slugify_heading(text: str) -> str:
+    """
+    Convert heading text to a URL-friendly slug for anchor links.
+    Example: "Foundational Concepts" -> "foundational-concepts"
+    """
+    # Remove HTML tags
+    text = re.sub(r'<[^>]+>', '', text)
+    # Decode HTML entities
+    text = text.replace("&nbsp;", " ").replace("&amp;", "and")
+    # Convert to lowercase and replace spaces/special chars with hyphens
+    text = text.lower().strip()
+    text = re.sub(r'[^\w\s-]', '', text)
+    text = re.sub(r'[-\s]+', '-', text)
+    return text.strip('-')
+
+
+def add_heading_ids(html: str) -> str:
+    """
+    Add id attributes to all headings (h1-h6) for in-page navigation.
+    Example: <h2>Foundational Concepts</h2> -> <h2 id="foundational-concepts">Foundational Concepts</h2>
+    """
+    def replace_heading(match):
+        tag = match.group(1)
+        attrs = match.group(2) or ''
+        content = match.group(3)
+        
+        # Skip if heading already has an id
+        if 'id=' in attrs:
+            return match.group(0)
+        
+        # Generate slug from heading text content
+        slug = slugify_heading(content)
+        
+        # Add id attribute
+        if attrs.strip():
+            new_attrs = f'{attrs} id="{slug}"'
+        else:
+            new_attrs = f' id="{slug}"'
+        
+        return f'<{tag}{new_attrs}>{content}</{tag}>'
+    
+    # Match headings: <h1...>...</h1> through <h6...>...</h6>
+    html = re.sub(
+        r'<(h[1-6])([^>]*)>(.*?)</\1>',
+        replace_heading,
+        html,
+        flags=re.DOTALL
+    )
+    
+    return html
+
+
+def remove_anchor_wrapping_from_headings(html: str) -> str:
+    """
+    Remove anchor tags that wrap heading content.
+    Example: <h5><a href="...">Cross-Modal Transformers</a></h5> -> <h5>Cross-Modal Transformers</h5>
+    
+    This fixes the bug where some headings appear as clickable links instead of plain headings.
+    """
+    # Pattern to match headings that contain anchor tags
+    # Matches: <h1-6><a ...>text</a></h1-6>
+    def unwrap_anchor(match):
+        opening_tag = match.group(1)  # <h2 ...>
+        anchor_content = match.group(2)  # text inside <a>...</a>
+        closing_tag = match.group(3)  # </h2>
+        
+        return f'{opening_tag}{anchor_content}{closing_tag}'
+    
+    # Remove anchor tags from within headings
+    html = re.sub(
+        r'(<h[1-6][^>]*>)\s*<a[^>]*>(.*?)</a>\s*(</h[1-6]>)',
+        unwrap_anchor,
+        html,
+        flags=re.DOTALL
+    )
+    
+    return html
+
+
+def clean_html_content(html: str) -> str:
+    """
+    Clean and normalize HTML content from Webflow export.
+    
+    Removes:
+    - Empty id="" attributes
+    - Empty paragraphs with zero-width characters
+    - Unnecessary whitespace and line breaks
+    - Zero-width characters (zero-width space, zero-width non-joiner, etc.)
+    - Anchor tags wrapping headings
+    
+    Adds:
+    - Proper id attributes to all headings for in-page navigation
+    """
+    html = (html or "").strip()
+    
+    # Normalize line endings
+    html = html.replace("\r\n", "\n").replace("\r", "\n")
+    
+    # Remove zero-width characters (U+200B, U+200C, U+200D, U+FEFF, etc.)
+    # Common zero-width characters: ​ ‌ ‍  
+    html = html.replace("\u200B", "")  # Zero-width space
+    html = html.replace("\u200C", "")  # Zero-width non-joiner
+    html = html.replace("\u200D", "")  # Zero-width joiner
+    html = html.replace("\uFEFF", "")  # Zero-width no-break space
+    html = html.replace("&#8203;", "")  # HTML entity for zero-width space
+    
+    # Remove anchor tags that wrap headings (must be done before adding IDs)
+    html = remove_anchor_wrapping_from_headings(html)
+    
+    # Remove empty id="" attributes from all HTML tags
+    html = re.sub(r'\s+id=""', '', html)
+    
+    # Add proper id attributes to all headings for in-page navigation
+    html = add_heading_ids(html)
+    
+    # Standardize image alignment to center (change fullwidth to center)
+    html = re.sub(r'w-richtext-align-fullwidth', 'w-richtext-align-center', html)
+    html = re.sub(r'data-rt-align="fullwidth"', 'data-rt-align="center"', html)
+    
+    # Remove empty paragraphs (with or without attributes)
+    # First pass: Remove paragraphs that only contain empty inline elements
+    # Matches: <p><em></em></p>, <p><strong></strong></p>, etc.
+    html = re.sub(r'<p[^>]*>(\s*<(em|strong|span|i|b|u)[^>]*>\s*</\2>\s*)+</p>', '', html)
+    
+    # Second pass: Remove completely empty paragraphs
+    # Matches: <p></p>, <p id=""></p>, <p class="something"></p>, etc.
+    html = re.sub(r'<p[^>]*>\s*</p>', '', html)
+    
+    # Remove multiple consecutive blank lines (more than 2 newlines)
+    html = re.sub(r'\n{3,}', '\n\n', html)
+    
+    # Clean up whitespace around block elements
+    # Remove extra newlines before/after common block elements
+    block_elements = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'figure', 'blockquote', 'ul', 'ol', 'li']
+    for element in block_elements:
+        # Remove extra newlines before opening tags
+        html = re.sub(rf'\n{{2,}}(<{element}[^>]*>)', r'\n\1', html)
+        # Remove extra newlines after closing tags
+        html = re.sub(rf'(</{element}>)\n{{2,}}', r'\1\n', html)
+    
+    # Final cleanup: strip trailing/leading whitespace
+    html = html.strip()
+    
     return html + "\n"
+
+
+def normalize_html_body(html: str) -> str:
+    """Alias for backward compatibility."""
+    return clean_html_content(html)
 
 
 @dataclass(frozen=True)

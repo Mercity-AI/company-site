@@ -1,17 +1,33 @@
-import React from 'react';
-import { useParams, Link, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useParams, Link, Navigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { posts } from '@/.velite';
 
 const BlogPostPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
   const post = posts.find((p) => p.slug === slug);
 
   // Handle post not found
   if (!post) {
     return <Navigate to="/blog" replace />;
   }
+
+  // Handle hash navigation on mount and hash change
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.replace('#', '');
+      const element = document.getElementById(id);
+      
+      if (element) {
+        // Delay to ensure content is fully rendered
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300);
+      }
+    }
+  }, [location.hash]);
 
   const formattedDate = new Date(post.publishedAt).toLocaleDateString('en-US', {
     year: 'numeric',

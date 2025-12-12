@@ -6,6 +6,7 @@ import matter from 'gray-matter';
 import mime from 'mime-types';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
+import { maybeOptimizeJpeg } from './image-optimizer.js';
 
 // Load environment variables
 dotenv.config();
@@ -22,6 +23,15 @@ function parseArgs(argv) {
     includeRemote: args.has('--include-remote'),
     localOnly: args.has('--local-only'),
     remoteOnly: args.has('--remote-only'),
+    optimizeJpeg: args.has('--optimize-jpeg'),
+    jpegQuality: (() => {
+      const idx = argv.indexOf('--jpeg-quality');
+      if (idx !== -1 && argv[idx + 1]) {
+        const n = Number(argv[idx + 1]);
+        if (Number.isFinite(n) && n >= 1 && n <= 100) return Math.round(n);
+      }
+      return 70;
+    })(),
     contentDir: (() => {
       const idx = argv.indexOf('--content-dir');
       if (idx !== -1 && argv[idx + 1]) return argv[idx + 1];
@@ -138,6 +148,18 @@ function toPublicUrl(fileKey) {
   return `${base}/${encodedKey}`;
 }
 
+function isOurCdnUrl(url) {
+  const base = (process.env.R2_PUBLIC_URL || '').trim();
+  if (!base) return false;
+  try {
+    const u = new URL(url);
+    const b = new URL(base);
+    return u.origin === b.origin;
+  } catch {
+    return false;
+  }
+}
+
 function filenameFromUrl(url, contentType) {
   try {
     const u = new URL(url);
@@ -202,6 +224,19 @@ function resolveImagePath(imagePath, mdxFilePath) {
 }
 
 async function uploadToR2Buffer(buffer, contentType, slug, filename) {
+  const optimized = await maybeOptimizeJpeg({
+    buffer,
+    contentType,
+    filename,
+    enabled: args.optimizeJpeg,
+    quality: args.jpegQuality,
+    dryRun: args.dryRun,
+  });
+
+  buffer = optimized.buffer;
+  contentType = optimized.contentType;
+  filename = optimized.filename;
+
   const safeName = sanitizeFilename(filename);
   const fileKey = `blog/${slug}/${safeName}`;
 
@@ -235,6 +270,9 @@ async function uploadToR2Buffer(buffer, contentType, slug, filename) {
 
     const cdnUrl = toPublicUrl(fileKey);
     console.log(`   ✅ Uploaded: ${safeName} → ${cdnUrl}`);
+    if (optimized.optimized) {
+      console.log(`   🗜️  JPEG optimized: ${optimized.beforeBytes}B → ${optimized.afterBytes}B (q=${args.jpegQuality})`);
+    }
 
     return cdnUrl;
   } catch (error) {
@@ -277,7 +315,10 @@ async function processMDXFile(filePath) {
   const coverRef = typeof frontmatter.image === 'string' ? frontmatter.image : null;
 
   const localRefs = imageRefs.filter((p) => !isRemoteUrl(p));
-  const remoteRefs = imageRefs.filter((p) => isRemoteUrl(p));
+  const remoteRefs = imageRefs
+    .filter((p) => isRemoteUrl(p))
+    // Don't re-download/re-upload images that are already on our CDN.
+    .filter((p) => !isOurCdnUrl(p));
 
   const candidates = [];
   if (enableLocal) candidates.push(...localRefs.map((p) => ({ kind: 'body', ref: p, source: 'local' })));
@@ -285,7 +326,7 @@ async function processMDXFile(filePath) {
 
   if (coverRef) {
     const coverIsRemote = isRemoteUrl(coverRef);
-    if ((coverIsRemote && enableRemote) || (!coverIsRemote && enableLocal)) {
+    if ((coverIsRemote && enableRemote && !isOurCdnUrl(coverRef)) || (!coverIsRemote && enableLocal)) {
       candidates.push({ kind: 'frontmatter_image', ref: coverRef, source: coverIsRemote ? 'remote' : 'local' });
     }
   }
@@ -360,6 +401,7 @@ async function main() {
   console.log(`   Mode: ${args.dryRun ? 'dry-run' : 'live'}`);
   console.log(`   Local images: ${enableLocal ? 'enabled' : 'disabled'}`);
   console.log(`   Remote images: ${enableRemote ? 'enabled' : 'disabled'}${enableRemote && args.includeRemote ? ' (--include-remote)' : ''}`);
+  console.log(`   JPEG optimize: ${args.optimizeJpeg ? `enabled (q=${args.jpegQuality})` : 'disabled'}`);
   console.log(`   Bucket: ${process.env.R2_BUCKET_NAME || '(dry-run)'}`);
   console.log(`   CDN URL: ${process.env.R2_PUBLIC_URL || '(dry-run)'}`);
 
