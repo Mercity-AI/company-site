@@ -207,8 +207,29 @@ body {
 .prose img {
   border-radius: 0.5rem;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  margin: 1.5rem 0;
+  margin: 1.5rem auto;
   max-width: 100%;
+  display: block;
+}
+
+/* Figure elements (Webflow rich text) */
+.prose figure {
+  margin: 1.5rem auto !important; /* Center the figure itself */
+  display: flex;
+  justify-content: center;
+  /* Respect the inline max-width but center it */
+}
+
+.prose figure > div {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Ensure images within figures are also centered */
+.prose figure img {
+  display: block;
+  margin: 0 auto;
 }
 
 /* Inline code */

@@ -1,10 +1,12 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { readFileSync, readdirSync, writeFileSync, existsSync } from 'fs';
-import { join, dirname, resolve, basename } from 'path';
+import { join, dirname, resolve, basename, extname } from 'path';
 import { fileURLToPath } from 'url';
 import matter from 'gray-matter';
 import mime from 'mime-types';
 import dotenv from 'dotenv';
+import crypto from 'crypto';
+import { maybeOptimizeJpeg } from './image-optimizer.js';
 
 // Load environment variables
 dotenv.config();
@@ -14,62 +16,183 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = resolve(__dirname, '..');
 
-// Validate environment variables
-const requiredEnvVars = [
-  'R2_ACCOUNT_ID',
-  'R2_ACCESS_KEY_ID',
-  'R2_SECRET_ACCESS_KEY',
-  'R2_BUCKET_NAME',
-  'R2_PUBLIC_URL'
-];
+function parseArgs(argv) {
+  const args = new Set(argv.slice(2));
+  return {
+    dryRun: args.has('--dry-run'),
+    includeRemote: args.has('--include-remote'),
+    localOnly: args.has('--local-only'),
+    remoteOnly: args.has('--remote-only'),
+    optimizeJpeg: args.has('--optimize-jpeg'),
+    jpegQuality: (() => {
+      const idx = argv.indexOf('--jpeg-quality');
+      if (idx !== -1 && argv[idx + 1]) {
+        const n = Number(argv[idx + 1]);
+        if (Number.isFinite(n) && n >= 1 && n <= 100) return Math.round(n);
+      }
+      return 70;
+    })(),
+    contentDir: (() => {
+      const idx = argv.indexOf('--content-dir');
+      if (idx !== -1 && argv[idx + 1]) return argv[idx + 1];
+      return null;
+    })(),
+  };
+}
 
-for (const envVar of requiredEnvVars) {
-  if (!process.env[envVar]) {
-    console.error(`❌ Error: Missing required environment variable: ${envVar}`);
-    console.error('Please check your .env file and ensure all variables are set.');
-    process.exit(1);
+const args = parseArgs(process.argv);
+
+// Default behavior: process LOCAL images only (original behavior).
+// Remote mirroring is opt-in via --include-remote (or explicitly via --remote-only).
+const enableRemote = !args.localOnly && (args.includeRemote || args.remoteOnly);
+const enableLocal = !args.remoteOnly;
+
+// Validate environment variables unless dry-run
+const requiredEnvVars = ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET_NAME', 'R2_PUBLIC_URL'];
+if (!args.dryRun) {
+  for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+      console.error(`❌ Error: Missing required environment variable: ${envVar}`);
+      console.error('Please check your .env file and ensure all variables are set.');
+      process.exit(1);
+    }
   }
 }
 
-// Initialize S3 client for R2
-const s3Client = new S3Client({
-  region: 'auto',
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-  },
-});
+// Initialize S3 client for R2 (only when not dry-run)
+const s3Client = args.dryRun
+  ? null
+  : new S3Client({
+      region: 'auto',
+      endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: process.env.R2_ACCESS_KEY_ID,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+      },
+    });
 
 // Track uploaded files to avoid duplicates in single run
 const uploadedFiles = new Set();
 
 /**
- * Extract all image references from MDX content
+ * Extract all image references from MDX body content
  * Supports both markdown syntax ![alt](path) and HTML <img src="path" />
  */
-function extractImagePaths(content) {
+function extractImageRefs(content) {
   const imagePaths = new Set();
-  
+
   // Match markdown image syntax: ![alt](path)
   const markdownRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
   let match;
-  
   while ((match = markdownRegex.exec(content)) !== null) {
     imagePaths.add(match[2]);
   }
-  
+
   // Match HTML img tags: <img src="path" />
   const htmlRegex = /<img[^>]+src=["']([^"']+)["']/g;
-  
   while ((match = htmlRegex.exec(content)) !== null) {
     imagePaths.add(match[1]);
   }
-  
-  // Filter out external URLs (only keep local paths)
-  return Array.from(imagePaths).filter(path => {
-    return !path.startsWith('http://') && !path.startsWith('https://');
-  });
+
+  return Array.from(imagePaths);
+}
+
+function isRemoteUrl(u) {
+  return typeof u === 'string' && (u.startsWith('http://') || u.startsWith('https://'));
+}
+
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function guessExtensionFromContentType(contentType) {
+  const ext = mime.extension(contentType || '');
+  return ext ? `.${ext}` : '';
+}
+
+function safeDecodeURIComponent(s) {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
+
+function sanitizeFilename(filename) {
+  const raw = String(filename || '').trim();
+  if (!raw) return 'file';
+
+  const ext = extname(raw);
+  const base = ext ? raw.slice(0, -ext.length) : raw;
+
+  // Normalize whitespace to dashes (URLs) and strip other problematic chars
+  const sanitizedBase = base
+    .replace(/\s+/g, '-') // spaces/tabs/newlines -> -
+    .replace(/%/g, '-') // avoid literal % in keys/urls
+    .replace(/[\/\\]/g, '-') // path separators -> -
+    .replace(/[^A-Za-z0-9._-]+/g, '-') // keep URL-safe-ish set
+    .replace(/-+/g, '-') // collapse
+    .replace(/^-+|-+$/g, ''); // trim dashes
+
+  const out = (sanitizedBase || 'file') + ext;
+  return out;
+}
+
+function toPublicUrl(fileKey) {
+  const base = (process.env.R2_PUBLIC_URL || 'DRY_RUN_R2_PUBLIC_URL').replace(/\/+$/, '');
+  // Encode each segment so spaces become %20, etc. (prevents %2520 double-encoding issues)
+  const encodedKey = String(fileKey)
+    .split('/')
+    .map((seg) => encodeURIComponent(seg))
+    .join('/');
+  return `${base}/${encodedKey}`;
+}
+
+function isOurCdnUrl(url) {
+  const base = (process.env.R2_PUBLIC_URL || '').trim();
+  if (!base) return false;
+  try {
+    const u = new URL(url);
+    const b = new URL(base);
+    return u.origin === b.origin;
+  } catch {
+    return false;
+  }
+}
+
+function filenameFromUrl(url, contentType) {
+  try {
+    const u = new URL(url);
+    const base = basename(u.pathname || '');
+    const cleanBase = base.split('?')[0].split('#')[0];
+    // Decode %XX sequences so object keys aren't stored with literal "%20" etc.
+    // Also strip any decoded path separators to avoid surprises from %2F.
+    const decodedBase = safeDecodeURIComponent(cleanBase).replace(/[\/\\]/g, '_');
+    if (decodedBase && decodedBase !== '/' && decodedBase !== '.') {
+      const ext = extname(decodedBase);
+      if (ext) return sanitizeFilename(decodedBase);
+      const fallbackExt = guessExtensionFromContentType(contentType);
+      return sanitizeFilename(decodedBase + (fallbackExt || ''));
+    }
+  } catch {
+    // fall through
+  }
+  const hash = crypto.createHash('sha256').update(String(url)).digest('hex').slice(0, 12);
+  const fallbackExt = guessExtensionFromContentType(contentType);
+  return sanitizeFilename(`remote-${hash}${fallbackExt || ''}`);
+}
+
+async function downloadRemote(url) {
+  const res = await fetch(url, { redirect: 'follow' });
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+  const contentType = res.headers.get('content-type') || 'application/octet-stream';
+  const arr = await res.arrayBuffer();
+  const buf = Buffer.from(arr);
+  // Safety: 25MB cap to avoid surprises
+  const maxBytes = 25 * 1024 * 1024;
+  if (buf.length > maxBytes) throw new Error(`Remote file too large (${buf.length} bytes)`);
+  const filename = filenameFromUrl(url, contentType);
+  return { buffer: buf, contentType, filename };
 }
 
 /**
@@ -100,40 +223,71 @@ function resolveImagePath(imagePath, mdxFilePath) {
   return resolve(mdxDir, imagePath);
 }
 
-/**
- * Upload file to R2 storage
- */
-async function uploadToR2(filePath, slug, filename) {
-  const fileKey = `blog/${slug}/${filename}`;
-  
+async function uploadToR2Buffer(buffer, contentType, slug, filename) {
+  const optimized = await maybeOptimizeJpeg({
+    buffer,
+    contentType,
+    filename,
+    enabled: args.optimizeJpeg,
+    quality: args.jpegQuality,
+    dryRun: args.dryRun,
+  });
+
+  buffer = optimized.buffer;
+  contentType = optimized.contentType;
+  filename = optimized.filename;
+
+  const safeName = sanitizeFilename(filename);
+  const fileKey = `blog/${slug}/${safeName}`;
+
   // Skip if already uploaded in this run
   if (uploadedFiles.has(fileKey)) {
     console.log(`   ⏭️  Skipped (already uploaded): ${fileKey}`);
-    return `${process.env.R2_PUBLIC_URL}/${fileKey}`;
+    return toPublicUrl(fileKey);
   }
-  
+
   try {
-    const fileContent = readFileSync(filePath);
-    const contentType = mime.lookup(filePath) || 'application/octet-stream';
-    
+    if (args.dryRun) {
+      const cdnUrl = toPublicUrl(fileKey);
+      console.log(`   🧪 Dry-run: would upload → ${cdnUrl}`);
+      uploadedFiles.add(fileKey);
+      return cdnUrl;
+    }
+
+    if (!s3Client) {
+      throw new Error('S3 client not initialized');
+    }
+
     const command = new PutObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME,
       Key: fileKey,
-      Body: fileContent,
-      ContentType: contentType,
+      Body: buffer,
+      ContentType: contentType || 'application/octet-stream',
     });
-    
+
     await s3Client.send(command);
     uploadedFiles.add(fileKey);
-    
-    const cdnUrl = `${process.env.R2_PUBLIC_URL}/${fileKey}`;
-    console.log(`   ✅ Uploaded: ${filename} → ${cdnUrl}`);
-    
+
+    const cdnUrl = toPublicUrl(fileKey);
+    console.log(`   ✅ Uploaded: ${safeName} → ${cdnUrl}`);
+    if (optimized.optimized) {
+      console.log(`   🗜️  JPEG optimized: ${optimized.beforeBytes}B → ${optimized.afterBytes}B (q=${args.jpegQuality})`);
+    }
+
     return cdnUrl;
   } catch (error) {
-    console.error(`   ❌ Failed to upload ${filename}:`, error.message);
+    console.error(`   ❌ Failed to upload ${safeName}:`, error.message);
     throw error;
   }
+}
+
+/**
+ * Upload local file to R2 storage
+ */
+async function uploadToR2File(filePath, slug, filename) {
+  const fileContent = readFileSync(filePath);
+  const contentType = mime.lookup(filePath) || 'application/octet-stream';
+  return uploadToR2Buffer(fileContent, contentType, slug, filename);
 }
 
 /**
@@ -143,7 +297,9 @@ async function processMDXFile(filePath) {
   console.log(`\n📄 Processing: ${basename(filePath)}`);
   
   const content = readFileSync(filePath, 'utf-8');
-  const { data: frontmatter, content: mdxContent } = matter(content);
+  const parsed = matter(content);
+  const frontmatter = parsed.data || {};
+  const mdxContent = parsed.content || '';
   
   // Get slug from frontmatter
   const slug = frontmatter.slug;
@@ -152,56 +308,86 @@ async function processMDXFile(filePath) {
     return;
   }
   
-  // Extract image paths
-  const imagePaths = extractImagePaths(mdxContent);
-  
-  if (imagePaths.length === 0) {
-    console.log('   ℹ️  No local images found');
+  // Extract image refs from body
+  const imageRefs = extractImageRefs(mdxContent);
+
+  // Also include frontmatter cover image if present
+  const coverRef = typeof frontmatter.image === 'string' ? frontmatter.image : null;
+
+  const localRefs = imageRefs.filter((p) => !isRemoteUrl(p));
+  const remoteRefs = imageRefs
+    .filter((p) => isRemoteUrl(p))
+    // Don't re-download/re-upload images that are already on our CDN.
+    .filter((p) => !isOurCdnUrl(p));
+
+  const candidates = [];
+  if (enableLocal) candidates.push(...localRefs.map((p) => ({ kind: 'body', ref: p, source: 'local' })));
+  if (enableRemote) candidates.push(...remoteRefs.map((p) => ({ kind: 'body', ref: p, source: 'remote' })));
+
+  if (coverRef) {
+    const coverIsRemote = isRemoteUrl(coverRef);
+    if ((coverIsRemote && enableRemote && !isOurCdnUrl(coverRef)) || (!coverIsRemote && enableLocal)) {
+      candidates.push({ kind: 'frontmatter_image', ref: coverRef, source: coverIsRemote ? 'remote' : 'local' });
+    }
+  }
+
+  if (candidates.length === 0) {
+    console.log('   ℹ️  No images to process (based on flags / content)');
     return;
   }
-  
-  console.log(`   📷 Found ${imagePaths.length} local image(s)`);
-  
-  let updatedContent = content;
+
+  console.log(`   📷 Found ${candidates.length} image reference(s) to process`);
+
+  let updatedBody = mdxContent;
+  let updatedFrontmatter = { ...frontmatter };
   let changeCount = 0;
-  
-  // Process each image
-  for (const imagePath of imagePaths) {
-    console.log(`\n   🔍 Processing: ${imagePath}`);
-    
-    // Resolve to filesystem path
-    const resolvedPath = resolveImagePath(imagePath, filePath);
-    
-    if (!existsSync(resolvedPath)) {
-      console.log(`   ⚠️  File not found: ${resolvedPath}`);
-      continue;
-    }
-    
+
+  for (const item of candidates) {
+    console.log(`\n   🔍 Processing (${item.source}): ${item.ref}`);
+
     try {
-      // Upload to R2
-      const filename = basename(resolvedPath);
-      const cdnUrl = await uploadToR2(resolvedPath, slug, filename);
-      
-      // Replace in content
-      // Escape special regex characters in the image path
-      const escapedPath = imagePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      
-      // Replace both markdown and HTML image references
-      const markdownRegex = new RegExp(`!\\[([^\\]]*)\\]\\(${escapedPath}\\)`, 'g');
-      const htmlRegex = new RegExp(`(<img[^>]+src=["'])${escapedPath}(["'][^>]*>)`, 'g');
-      
-      updatedContent = updatedContent.replace(markdownRegex, `![$1](${cdnUrl})`);
-      updatedContent = updatedContent.replace(htmlRegex, `$1${cdnUrl}$2`);
-      
+      let cdnUrl;
+
+      if (item.source === 'local') {
+        const resolvedPath = resolveImagePath(item.ref, filePath);
+        if (!existsSync(resolvedPath)) {
+          console.log(`   ⚠️  File not found: ${resolvedPath}`);
+          continue;
+        }
+        const filename = basename(resolvedPath);
+        cdnUrl = await uploadToR2File(resolvedPath, slug, filename);
+      } else {
+        const { buffer, contentType, filename } = await downloadRemote(item.ref);
+        cdnUrl = await uploadToR2Buffer(buffer, contentType, slug, filename);
+      }
+
+      if (item.kind === 'frontmatter_image') {
+        updatedFrontmatter.image = cdnUrl;
+        changeCount++;
+        continue;
+      }
+
+      // Replace both markdown and HTML image references in body
+      const escaped = escapeRegex(item.ref);
+      const markdownRegex = new RegExp(`!\\[([^\\]]*)\\]\\(${escaped}\\)`, 'g');
+      const htmlRegex = new RegExp(`(<img[^>]+src=[\"'])${escaped}([\"'][^>]*>)`, 'g');
+      updatedBody = updatedBody.replace(markdownRegex, `![$1](${cdnUrl})`);
+      updatedBody = updatedBody.replace(htmlRegex, `$1${cdnUrl}$2`);
+
       changeCount++;
     } catch (error) {
-      console.error(`   ❌ Error processing ${imagePath}:`, error.message);
+      console.error(`   ❌ Error processing ${item.ref}:`, error.message);
     }
   }
-  
-  // Write updated content back to file
+
   if (changeCount > 0) {
-    writeFileSync(filePath, updatedContent, 'utf-8');
+    if (args.dryRun) {
+      console.log(`\n   🧪 Dry-run: would update ${changeCount} image reference(s) in MDX file`);
+      return;
+    }
+
+    const updatedFile = matter.stringify(updatedBody, updatedFrontmatter);
+    writeFileSync(filePath, updatedFile, 'utf-8');
     console.log(`\n   💾 Updated ${changeCount} image reference(s) in MDX file`);
   }
 }
@@ -212,10 +398,14 @@ async function processMDXFile(filePath) {
 async function main() {
   console.log('🚀 Starting R2 Image Upload Process\n');
   console.log('📦 Configuration:');
-  console.log(`   Bucket: ${process.env.R2_BUCKET_NAME}`);
-  console.log(`   CDN URL: ${process.env.R2_PUBLIC_URL}`);
-  
-  const contentDir = join(projectRoot, 'content');
+  console.log(`   Mode: ${args.dryRun ? 'dry-run' : 'live'}`);
+  console.log(`   Local images: ${enableLocal ? 'enabled' : 'disabled'}`);
+  console.log(`   Remote images: ${enableRemote ? 'enabled' : 'disabled'}${enableRemote && args.includeRemote ? ' (--include-remote)' : ''}`);
+  console.log(`   JPEG optimize: ${args.optimizeJpeg ? `enabled (q=${args.jpegQuality})` : 'disabled'}`);
+  console.log(`   Bucket: ${process.env.R2_BUCKET_NAME || '(dry-run)'}`);
+  console.log(`   CDN URL: ${process.env.R2_PUBLIC_URL || '(dry-run)'}`);
+
+  const contentDir = args.contentDir ? resolve(args.contentDir) : join(projectRoot, 'content');
   
   if (!existsSync(contentDir)) {
     console.error(`❌ Content directory not found: ${contentDir}`);
