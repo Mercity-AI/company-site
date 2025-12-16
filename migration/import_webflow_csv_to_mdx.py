@@ -28,7 +28,7 @@ from typing import Dict, Iterable, List, Optional
 
 
 DEFAULT_CSV = "Pranav's Radical Site - Blog Posts.csv"
-DEFAULT_OUT_DIR = "content"
+DEFAULT_OUT_DIR = "../content"
 
 
 def parse_webflow_dt_to_iso_date(s: str) -> str:
@@ -232,7 +232,9 @@ def row_to_post(row: Dict[str, str]) -> CsvPost:
     author = (row.get("Author") or "").strip()
     category = (row.get("Post category") or "").strip()
     cover_image = (row.get("Blog Post Cover") or "").strip()
-    html_body = normalize_html_body(row.get("Blog Post Content") or "")
+    # html_body = normalize_html_body(row.get("Blog Post Content") or "")
+
+    html_body = normalize_html_body(row.get("scraped_content") or "")
 
     missing = [k for k, v in [("Name", title), ("Slug", slug), ("Published On", published_at), ("Meta description", summary), ("Author", author)] if not v]
     if missing:

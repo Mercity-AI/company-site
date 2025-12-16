@@ -1,7 +1,7 @@
 import { defineCollection, defineConfig, s } from "velite";
-import rehypePrettyCode from "rehype-pretty-code";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import rehypeHighlight from "rehype-highlight";
 
 // Author schema for multiple authors support
 const authorSchema = s.object({
@@ -66,16 +66,7 @@ export default defineConfig({
   markdown: {
     rehypePlugins: [
       rehypeSlug,
-      [
-        rehypePrettyCode,
-        {
-          theme: {
-            light: "github-light",
-            dark: "github-dark",
-          },
-          keepBackground: false,
-        },
-      ],
+      rehypeHighlight, // Add syntax highlighting with highlight.js-compatible classes
       [
         rehypeAutolinkHeadings,
         {
