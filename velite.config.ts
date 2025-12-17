@@ -47,7 +47,7 @@ const posts = defineCollection({
     .transform((data) => ({
       ...data,
       // Add computed permalink
-      permalink: `/blog/${data.slug}`,
+      permalink: `/blog-post/${data.slug}`,
       // Reading time estimate (roughly 200 words per minute)
       readingTime: `${Math.ceil(data.raw.split(/\s+/).length / 200)} min read`,
     })),

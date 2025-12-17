@@ -56,13 +56,6 @@ const BlogPostPage: React.FC = () => {
             {post.title}
           </h1>
           <div className="flex items-center gap-4 border-t border-b border-slate-100 py-6">
-            <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden">
-              {post.authors[0]?.image ? (
-                <img src={post.authors[0].image} alt={post.authors[0].name} className="w-full h-full object-cover" />
-              ) : (
-                <img src={`https://picsum.photos/200?random=${post.slug}`} alt={post.authors[0]?.name} className="w-full h-full object-cover" />
-              )}
-            </div>
             <div>
               <p className="text-sm font-medium text-slate-900">{post.authors[0]?.name}</p>
               {post.authors[0]?.role && (
