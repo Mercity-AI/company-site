@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, Variants } from 'framer-motion';
 import { TeamMember } from '../types';
+import SEO from '../components/SEO';
 
 const teamMembers: TeamMember[] = [
   {
@@ -50,7 +51,13 @@ const item: Variants = {
 
 const About: React.FC = () => {
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12">
+    <>
+      <SEO
+        title="About Us"
+        description="We are a collective of scientists, engineers, and dreamers. Founded in 2023, Mercity emerged from a simple question: How do we build intelligence that is robust, transparent, and aligned with human values?"
+        url="/about"
+      />
+      <div className="max-w-7xl mx-auto px-6 py-12">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -113,6 +120,7 @@ const About: React.FC = () => {
         <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-purple-100/50 rounded-full blur-[80px]" />
       </section>
     </div>
+    </>
   );
 };
 

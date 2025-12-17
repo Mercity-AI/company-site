@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { posts } from '@/.velite';
+import SEO from '../components/SEO';
 
 const BlogList: React.FC = () => {
   // Sort posts by date (newest first)
@@ -10,7 +11,13 @@ const BlogList: React.FC = () => {
   );
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-12">
+    <>
+      <SEO
+        title="Research Journal"
+        description="Deep dives into our research, engineering challenges, and the future of artificial intelligence."
+        url="/blog"
+      />
+      <div className="max-w-5xl mx-auto px-6 py-12">
       <div className="mb-24 pt-12">
         <h1 className="text-6xl md:text-8xl font-serif italic text-slate-900 mb-6 opacity-90">Journal</h1>
         <p className="text-slate-500 max-w-xl text-lg font-light">
@@ -54,6 +61,7 @@ const BlogList: React.FC = () => {
         ))}
       </div>
     </div>
+    </>
   );
 };
 

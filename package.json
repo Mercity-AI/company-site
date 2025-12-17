@@ -19,6 +19,7 @@
     "mime-types": "^3.0.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-helmet-async": "^2.0.5",
     "react-router-dom": "^7.9.6",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-highlight": "^7.0.2",
