@@ -23,6 +23,7 @@ function parseArgs(argv) {
     includeRemote: args.has('--include-remote'),
     localOnly: args.has('--local-only'),
     remoteOnly: args.has('--remote-only'),
+    allowAllRemote: args.has('--allow-all-remote'),
     optimizeJpeg: args.has('--optimize-jpeg'),
     jpegQuality: (() => {
       const idx = argv.indexOf('--jpeg-quality');
@@ -155,6 +156,15 @@ function isOurCdnUrl(url) {
     const u = new URL(url);
     const b = new URL(base);
     return u.origin === b.origin;
+  } catch {
+    return false;
+  }
+}
+
+function isWebsiteFilesUrl(url) {
+  try {
+    const u = new URL(url);
+    return u.origin === 'https://cdn.prod.website-files.com';
   } catch {
     return false;
   }
@@ -318,7 +328,9 @@ async function processMDXFile(filePath) {
   const remoteRefs = imageRefs
     .filter((p) => isRemoteUrl(p))
     // Don't re-download/re-upload images that are already on our CDN.
-    .filter((p) => !isOurCdnUrl(p));
+    .filter((p) => !isOurCdnUrl(p))
+    // By default, only process images from website-files.com (unless --allow-all-remote is set)
+    .filter((p) => args.allowAllRemote || isWebsiteFilesUrl(p));
 
   const candidates = [];
   if (enableLocal) candidates.push(...localRefs.map((p) => ({ kind: 'body', ref: p, source: 'local' })));
@@ -326,7 +338,10 @@ async function processMDXFile(filePath) {
 
   if (coverRef) {
     const coverIsRemote = isRemoteUrl(coverRef);
-    if ((coverIsRemote && enableRemote && !isOurCdnUrl(coverRef)) || (!coverIsRemote && enableLocal)) {
+    const coverAllowed = coverIsRemote 
+      ? enableRemote && !isOurCdnUrl(coverRef) && (args.allowAllRemote || isWebsiteFilesUrl(coverRef))
+      : enableLocal;
+    if (coverAllowed) {
       candidates.push({ kind: 'frontmatter_image', ref: coverRef, source: coverIsRemote ? 'remote' : 'local' });
     }
   }
@@ -401,6 +416,9 @@ async function main() {
   console.log(`   Mode: ${args.dryRun ? 'dry-run' : 'live'}`);
   console.log(`   Local images: ${enableLocal ? 'enabled' : 'disabled'}`);
   console.log(`   Remote images: ${enableRemote ? 'enabled' : 'disabled'}${enableRemote && args.includeRemote ? ' (--include-remote)' : ''}`);
+  if (enableRemote) {
+    console.log(`   Remote filter: ${args.allowAllRemote ? 'all remote URLs allowed (--allow-all-remote)' : 'only https://cdn.prod.website-files.com/ (default)'}`);
+  }
   console.log(`   JPEG optimize: ${args.optimizeJpeg ? `enabled (q=${args.jpegQuality})` : 'disabled'}`);
   console.log(`   Bucket: ${process.env.R2_BUCKET_NAME || '(dry-run)'}`);
   console.log(`   CDN URL: ${process.env.R2_PUBLIC_URL || '(dry-run)'}`);
