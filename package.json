@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:content": "velite --watch",
-    "build": "velite build && vite build",
+    "build": "velite build && vite build && node scripts/generate-blog-pages.js && node scripts/generate-sitemap.js",
     "preview": "vite preview",
     "upload:images": "node scripts/upload-images-to-r2.js"
   },

@@ -10,6 +10,9 @@ const BlogList: React.FC = () => {
     (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
   );
 
+  // In production, use static HTML files. In dev, use SPA routing
+  const isDev = import.meta.env.DEV;
+
   return (
     <>
       <SEO
@@ -35,7 +38,11 @@ const BlogList: React.FC = () => {
             transition={{ duration: 0.6 }}
             className="group block border-t border-slate-200 pt-12"
           >
-            <Link to={post.permalink} className="grid grid-cols-1 md:grid-cols-12 gap-6">
+            {isDev ? (
+              <Link to={`/blog-post/${post.slug}`} className="grid grid-cols-1 md:grid-cols-12 gap-6">
+            ) : (
+              <a href={`/blog-post/${post.slug}.html`} className="grid grid-cols-1 md:grid-cols-12 gap-6">
+            )}
               <div className="md:col-span-3 text-sm text-slate-400 font-mono flex flex-col gap-2">
                 <span>{new Date(post.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                 <span className="text-slate-800 font-medium">{post.category}</span>
@@ -56,7 +63,7 @@ const BlogList: React.FC = () => {
                   Read Article <span className="text-lg">→</span>
                 </div>
               </div>
-            </Link>
+            {isDev ? </Link> : </a>}
           </motion.article>
         ))}
       </div>

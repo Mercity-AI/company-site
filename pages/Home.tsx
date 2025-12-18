@@ -17,13 +17,16 @@ const Home: React.FC = () => {
     .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
     .slice(0, 2);
 
+  // In production, use static HTML files. In dev, use SPA routing
+  const isDev = import.meta.env.DEV;
+
   const featuredContent = [
     {
       type: 'Research',
       title: recentPosts[0]?.title || 'Towards Causal Reasoning in LLMs',
       date: recentPosts[0] ? new Date(recentPosts[0].publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Oct 12, 2024',
       summary: recentPosts[0]?.summary || 'Exploring how to induce causal structure in transformer representations through targeted interventions.',
-      link: recentPosts[0]?.permalink || '/blog',
+      link: recentPosts[0] ? (isDev ? `/blog-post/${recentPosts[0].slug}` : `/blog-post/${recentPosts[0].slug}.html`) : '/blog',
       gradient: 'bg-gradient-to-br from-orange-50 to-amber-100',
       tags: ['Alignment', 'Theory']
     },
@@ -41,7 +44,7 @@ const Home: React.FC = () => {
       title: recentPosts[1]?.title || 'Sparse Attention Patterns at Scale',
       date: recentPosts[1] ? new Date(recentPosts[1].publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Sep 28, 2024',
       summary: recentPosts[1]?.summary || 'Analyzing the emergence of sparsity in large-scale transformer models during training.',
-      link: recentPosts[1]?.permalink || '/blog',
+      link: recentPosts[1] ? (isDev ? `/blog-post/${recentPosts[1].slug}` : `/blog-post/${recentPosts[1].slug}.html`) : '/blog',
       gradient: 'bg-gradient-to-br from-emerald-50 to-teal-100',
       tags: ['Efficiency', 'Architecture']
     },
@@ -157,9 +160,9 @@ const Home: React.FC = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredContent.map((item, index) => (
-              <Link 
+              <a 
                 key={index}
-                to={item.link} 
+                href={item.link} 
                 className="group block bg-white border border-slate-200 hover:border-slate-300 transition-all duration-300 overflow-hidden"
               >
                 {/* Image Placeholder Area */}
@@ -193,7 +196,7 @@ const Home: React.FC = () => {
                     Read More <ArrowRight size={12} />
                   </div>
                 </div>
-              </Link>
+              </a>
             ))}
           </div>
         </div>

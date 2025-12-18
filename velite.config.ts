@@ -10,7 +10,7 @@ const authorSchema = s.object({
   role: s.string().optional(),
 });
 
-// Blog posts collection
+// Blog posts collection (full content for static HTML generation)
 const posts = defineCollection({
   name: "Post",
   pattern: "**/*.mdx",
@@ -53,6 +53,45 @@ const posts = defineCollection({
     })),
 });
 
+// OPTIONAL: Metadata-only collection (lightweight for blog list & homepage)
+// This significantly reduces bundle size by excluding full HTML content
+// Use this in BlogList.tsx and Home.tsx instead of the full 'posts' collection
+const postsMetadata = defineCollection({
+  name: "PostMetadata",
+  pattern: "**/*.mdx",
+  schema: s
+    .object({
+      // Lightweight fields only (no content, raw, toc)
+      title: s.string().max(120),
+      slug: s.slug("posts-meta"), // Use different namespace to avoid duplicate slug errors
+      publishedAt: s.isodate(),
+      createdAt: s.isodate().optional(),
+      updatedAt: s.isodate().optional(),
+      summary: s.string().max(500),
+      authors: s.array(authorSchema).min(1),
+      tags: s.array(s.string()).default([]),
+      category: s.string().default("Research"),
+      isTopPick: s.boolean().default(false),
+      image: s.string().optional(),
+      raw: s.raw(), // Keep for reading time calculation only
+    })
+    .transform((data) => ({
+      title: data.title,
+      slug: data.slug,
+      publishedAt: data.publishedAt,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+      summary: data.summary,
+      authors: data.authors,
+      tags: data.tags,
+      category: data.category,
+      isTopPick: data.isTopPick,
+      image: data.image,
+      permalink: `/blog-post/${data.slug}`,
+      readingTime: `${Math.ceil(data.raw.split(/\s+/).length / 220)} min read`,
+    })),
+});
+
 export default defineConfig({
   root: "content",
   output: {
@@ -62,7 +101,7 @@ export default defineConfig({
     name: "[name]-[hash:6].[ext]",
     clean: true,
   },
-  collections: { posts },
+  collections: { posts, postsMetadata },
   markdown: {
     rehypePlugins: [
       rehypeSlug,
