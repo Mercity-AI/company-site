@@ -116,12 +116,18 @@ pnpm upload:images --include-remote --dry-run
 - Downloads remote images (max 25MB) and uploads to R2
 - Generates safe filenames from URLs
 
+### Image Processing & Optimization
+- **PNG to JPG Conversion**: All PNG images are automatically converted to JPG format
+- **Smart Compression**: Only compresses images that are 200KB or larger
+- **JPEG Optimization**: When `--optimize-jpeg` is enabled, compresses JPEGs with mozjpeg (default quality: 70)
+- **Size Threshold**: Images under 200KB are not compressed to maintain quality for smaller assets
+
 ### R2 Upload
 - Connects to Cloudflare R2 using S3-compatible API
 - Uploads to organized structure: `blog/<slug>/<filename>`
 - Sets proper content types automatically
 - Avoids duplicate uploads in single run
-- Supports JPEG optimization (optional)
+- All images are converted to JPG format for consistency
 
 ### MDX Rewriting
 - Replaces local paths with full CDN URLs
@@ -156,10 +162,14 @@ pnpm upload:images --include-remote --dry-run
    📷 Found 2 image reference(s) to process
 
    🔍 Processing (local): ./hero.jpg
+   ⏭️  Skipped compression (under 200KB): 145362B
    ✅ Uploaded: hero.jpg → https://blog-cdn.mercity.ai/blog/optimize-lora-qlora/hero.jpg
 
    🔍 Processing (local): ./diagram.png
-   ✅ Uploaded: diagram.png → https://blog-cdn.mercity.ai/blog/optimize-lora-qlora/diagram.png
+   🔄 Converting PNG to JPG: diagram.png
+   ✓ Converted: 524288B → 489123B
+   ⏭️  Skipped compression (under 200KB): 489123B
+   ✅ Uploaded: diagram.jpg → https://blog-cdn.mercity.ai/blog/optimize-lora-qlora/diagram.jpg
 
    💾 Updated 2 image reference(s) in MDX file
 
@@ -190,9 +200,11 @@ pnpm upload:images --include-remote --dry-run
    📷 Found 3 image reference(s) to process
 
    🔍 Processing (local): ./local-image.jpg
+   🗜️  Compressed (≥200KB): 524288B → 312456B (q=70)
    ✅ Uploaded: local-image.jpg → https://blog-cdn.mercity.ai/blog/my-post/local-image.jpg
 
    🔍 Processing (remote): https://cdn.prod.website-files.com/path/to/image.jpg
+   ⏭️  Skipped compression (under 200KB): 156789B
    ✅ Uploaded: image.jpg → https://blog-cdn.mercity.ai/blog/my-post/image.jpg
 
    🔍 Processing (remote): https://example.com/image.png
@@ -242,6 +254,30 @@ node scripts/upload-images-to-r2.js --optimize-jpeg --jpeg-quality 85
 ```bash
 node scripts/upload-images-to-r2.js --content-dir ./custom-content
 ```
+
+## 🖼️ Image Processing Details
+
+### PNG to JPG Conversion
+All PNG images are automatically converted to JPG format:
+- Conversion uses high quality (95) to maintain visual fidelity
+- PNG transparency is replaced with white background
+- Filename extensions are automatically updated (.png → .jpg)
+- This ensures all blog images are in a consistent, web-optimized format
+
+### Smart Compression
+The script intelligently compresses images based on file size:
+- **Under 200KB**: No compression applied (maintains quality for smaller assets)
+- **200KB or larger**: Compression applied when `--optimize-jpeg` is enabled
+- Uses mozjpeg for superior compression quality
+- Default quality setting is 70 (adjustable via `--jpeg-quality`)
+
+### Processing Flow
+1. **PNG Detection**: Check if image is PNG format
+2. **PNG to JPG**: Convert PNG to JPG (high quality)
+3. **Size Check**: Check if resulting file is ≥ 200KB
+4. **Compression**: Apply JPEG optimization if enabled and file is large enough
+5. **Upload**: Upload processed image to R2
+6. **Update**: Update MDX file with new CDN URL
 
 ## 🔧 Troubleshooting
 
