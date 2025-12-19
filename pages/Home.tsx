@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Brain, Network, Cpu, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { posts } from '@/.velite';
+import SEO from '../components/SEO';
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -56,7 +57,13 @@ const Home: React.FC = () => {
   ];
 
   return (
-    <div className="w-full overflow-hidden">
+    <>
+      <SEO
+        title="Mercity Research"
+        description="Research-grade, reality-ready. Shipping the research to production. Custom training, real optimization, genuine architecture."
+        url="/"
+      />
+      <div className="w-full overflow-hidden">
       {/* Hero Section */}
       <section className="min-h-[90vh] flex flex-col justify-center px-6 relative">
         <div className="max-w-7xl mx-auto w-full z-10">
@@ -210,6 +217,7 @@ const Home: React.FC = () => {
         </div>
       </section>
     </div>
+    </>
   );
 };
 

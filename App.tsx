@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import About from './pages/About';
@@ -15,18 +16,20 @@ const ScrollToTopHelper = () => {
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <ScrollToTopHelper />
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/blog" element={<BlogList />} />
-          <Route path="/blog/:slug" element={<BlogPostPage />} />
-          <Route path="/showcase" element={<AnimationShowcase />} />
-        </Routes>
-      </Layout>
-    </Router>
+    <HelmetProvider>
+      <Router>
+        <ScrollToTopHelper />
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/blog" element={<BlogList />} />
+            <Route path="/blog-post/:slug" element={<BlogPostPage />} />
+            <Route path="/showcase" element={<AnimationShowcase />} />
+          </Routes>
+        </Layout>
+      </Router>
+    </HelmetProvider>
   );
 };
 

@@ -254,7 +254,7 @@ body {
   border-radius: 0.5rem;
   overflow-x: auto;
   margin: 1rem 0;
-  padding: 0;
+  padding: 1.25rem;
 }
 
 .prose pre code {

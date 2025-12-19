@@ -3,6 +3,7 @@ import { useParams, Link, Navigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { posts } from '@/.velite';
+import SEO from '../components/SEO';
 
 const BlogPostPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -35,8 +36,24 @@ const BlogPostPage: React.FC = () => {
     day: 'numeric'
   });
 
+  // Format dates for SEO
+  const publishedTimeISO = new Date(post.publishedAt).toISOString();
+  const modifiedTimeISO = post.updatedAt ? new Date(post.updatedAt).toISOString() : undefined;
+
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
+    <>
+      <SEO
+        title={post.title}
+        description={post.summary}
+        image={post.image}
+        url={post.permalink}
+        type="article"
+        publishedTime={publishedTimeISO}
+        modifiedTime={modifiedTimeISO}
+        author={post.authors[0]?.name}
+        tags={post.tags}
+      />
+      <div className="max-w-4xl mx-auto px-6 py-12">
       <Link to="/blog" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-900 transition-colors mb-12 group">
         <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Journal
       </Link>
@@ -56,13 +73,6 @@ const BlogPostPage: React.FC = () => {
             {post.title}
           </h1>
           <div className="flex items-center gap-4 border-t border-b border-slate-100 py-6">
-            <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden">
-              {post.authors[0]?.image ? (
-                <img src={post.authors[0].image} alt={post.authors[0].name} className="w-full h-full object-cover" />
-              ) : (
-                <img src={`https://picsum.photos/200?random=${post.slug}`} alt={post.authors[0]?.name} className="w-full h-full object-cover" />
-              )}
-            </div>
             <div>
               <p className="text-sm font-medium text-slate-900">{post.authors[0]?.name}</p>
               {post.authors[0]?.role && (
@@ -89,6 +99,7 @@ const BlogPostPage: React.FC = () => {
         />
       </motion.article>
     </div>
+    </>
   );
 };
 

@@ -1,7 +1,7 @@
 import { defineCollection, defineConfig, s } from "velite";
-import rehypePrettyCode from "rehype-pretty-code";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import rehypeHighlight from "rehype-highlight";
 
 // Author schema for multiple authors support
 const authorSchema = s.object({
@@ -47,9 +47,9 @@ const posts = defineCollection({
     .transform((data) => ({
       ...data,
       // Add computed permalink
-      permalink: `/blog/${data.slug}`,
+      permalink: `/blog-post/${data.slug}`,
       // Reading time estimate (roughly 200 words per minute)
-      readingTime: `${Math.ceil(data.raw.split(/\s+/).length / 200)} min read`,
+      readingTime: `${Math.ceil(data.raw.split(/\s+/).length / 220)} min read`,
     })),
 });
 
@@ -66,16 +66,7 @@ export default defineConfig({
   markdown: {
     rehypePlugins: [
       rehypeSlug,
-      [
-        rehypePrettyCode,
-        {
-          theme: {
-            light: "github-light",
-            dark: "github-dark",
-          },
-          keepBackground: false,
-        },
-      ],
+      rehypeHighlight, // Add syntax highlighting with highlight.js-compatible classes
       [
         rehypeAutolinkHeadings,
         {
