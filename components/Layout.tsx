@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ArrowRight } from 'lucide-react';
 import BlurBackground from './BlurBackground';
+import logo from '../no-background-logo.png';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -48,9 +49,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         }`}
       >
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-          <Link to="/" className="text-xl font-medium tracking-tight flex items-center gap-2 group">
-            <div className="w-3 h-3 bg-slate-900 rounded-sm group-hover:rotate-45 transition-transform duration-500" />
-            <span className="font-serif italic text-slate-900">Mercity</span>
+          <Link to="/" className="flex items-center group">
+            <img
+              src={logo}
+              alt="Mercity"
+              className="h-[42px] w-auto transition-transform duration-500 group-hover:scale-[1.02]"
+            />
           </Link>
 
           {/* Desktop Nav */}

@@ -71,15 +71,21 @@ const Home: React.FC = () => {
             initial="initial"
             animate="animate"
             variants={fadeIn}
-            className="max-w-4xl"
+            // className="max-w-6xl"
           >
-            <h1 className="text-5xl md:text-8xl font-light tracking-tighter text-slate-900 mb-7 leading-[1.1]">
+            {/* <h1 className="text-5xl md:text-8xl font-light tracking-tighter text-slate-900 mb-7 leading-[1.1]">
               Research-grade, <span className="font-serif italic text-slate-700"><br/> reality-ready</span>.
+            </h1> */}
+            <h1 className="text-5xl md:text-8xl font-light tracking-tighter text-slate-900 mb-7 leading-[1.1]">
+               <span className="font-serif italic text-slate-700">Building research led capabilities <br/> for product and enterprise teams.</span>
             </h1>
             <p className="text-xl md:text-2xl text-slate-500 font-light leading-relaxed max-w-2xl mb-12">
+              {/* We build research-grade and reality-ready capabilities and integrations ready to scale. */}
+              <br/>
               {/* We are decoding the fundamental principles of intelligence to build systems that reason, learn, and create alongside humanity. */}
-               <i>Shipping the research to production. <br/>
-               Custom training, real optimization, genuine architecture. <br/></i>
+              We do custom training, grunt optimization, built-from-scratch architecture. Anything and everything to give you an edge over the market.
+               {/* <i>Shipping the research to production. <br/>
+               Custom training, real optimization, genuine architecture. <br/></i> */}
                {/* <i><u>We do the deep work so your AI simply works.</u></i> */}
             </p>
             <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
