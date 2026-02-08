@@ -35,6 +35,14 @@ function isRemoteUrl(url) {
   return typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'));
 }
 
+function safeDecodeURIComponent(s) {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
+
 /**
  * Check if an image URL is accessible
  */
@@ -101,26 +109,34 @@ function resolveImageUrl(imagePath, mdxFilePath) {
     return imagePath;
   }
 
+  const candidates = [];
+
   // Try to resolve local paths (though we'll check if they exist)
   const mdxDir = dirname(mdxFilePath);
-  
+
   // Relative path
   if (imagePath.startsWith('./') || imagePath.startsWith('../')) {
-    const resolvedPath = resolve(mdxDir, imagePath);
-    if (existsSync(resolvedPath)) {
-      // For local files, we'll mark them as local
-      return { local: true, path: resolvedPath };
-    }
+    candidates.push(resolve(mdxDir, imagePath));
   }
-  
+
   // Absolute path from public folder
-  if (imagePath.startsWith('/')) {
+  else if (imagePath.startsWith('/')) {
     const publicPath = join(projectRoot, 'public', imagePath);
-    if (existsSync(publicPath)) {
-      return { local: true, path: publicPath };
+    candidates.push(publicPath);
+  } else {
+    candidates.push(resolve(mdxDir, imagePath));
+  }
+
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return { local: true, path: candidate };
+    }
+    const decodedCandidate = safeDecodeURIComponent(candidate);
+    if (decodedCandidate !== candidate && existsSync(decodedCandidate)) {
+      return { local: true, path: decodedCandidate };
     }
   }
-  
+
   // Otherwise, assume it's a remote URL or doesn't exist
   return imagePath;
 }
@@ -328,4 +344,3 @@ main().catch(error => {
   console.error('\n❌ Fatal error:', error);
   process.exit(1);
 });
-

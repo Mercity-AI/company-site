@@ -46,4 +46,12 @@ This project includes an automated image upload system for blog posts using Clou
    pnpm upload:images
    ```
 
-For detailed documentation, see [`scripts/README.md`](scripts/README.md).
+4. **Validate references (recommended)**:
+   ```bash
+   pnpm check:images
+   ```
+
+## Documentation
+
+- Script usage and flags: [`scripts/README.md`](scripts/README.md)
+- Content system guide: [`VELITE.md`](VELITE.md)

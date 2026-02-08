@@ -66,6 +66,7 @@ const s3Client = args.dryRun
   : new S3Client({
       region: 'auto',
       endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      forcePathStyle: true,
       credentials: {
         accessKeyId: process.env.R2_ACCESS_KEY_ID,
         secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
@@ -210,27 +211,43 @@ async function downloadRemote(url) {
  * Handles both relative paths (./image.jpg) and absolute paths (/blog/slug/image.jpg)
  */
 function resolveImagePath(imagePath, mdxFilePath) {
+  const candidates = [];
+
   // If it's a relative path, resolve from MDX file location
   if (imagePath.startsWith('./') || imagePath.startsWith('../')) {
     const mdxDir = dirname(mdxFilePath);
-    return resolve(mdxDir, imagePath);
+    candidates.push(resolve(mdxDir, imagePath));
   }
-  
+
   // If it's an absolute path, resolve from project root/public
-  if (imagePath.startsWith('/')) {
+  else if (imagePath.startsWith('/')) {
     // Try public folder first
     const publicPath = join(projectRoot, 'public', imagePath);
-    if (existsSync(publicPath)) {
-      return publicPath;
-    }
-    
+    candidates.push(publicPath);
+
     // Try from project root
-    return join(projectRoot, imagePath.substring(1));
+    candidates.push(join(projectRoot, imagePath.substring(1)));
   }
-  
+
   // Otherwise, resolve relative to MDX file
-  const mdxDir = dirname(mdxFilePath);
-  return resolve(mdxDir, imagePath);
+  else {
+    const mdxDir = dirname(mdxFilePath);
+    candidates.push(resolve(mdxDir, imagePath));
+  }
+
+  // Conditionally handle URL-encoded local paths from exports (e.g. %20 for spaces)
+  // by trying decoded variants only when the original path is missing.
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) return candidate;
+    const decodedCandidate = safeDecodeURIComponent(candidate);
+    if (decodedCandidate !== candidate && existsSync(decodedCandidate)) {
+      console.log(`   🔧 Resolved URL-encoded path: ${candidate} -> ${decodedCandidate}`);
+      return decodedCandidate;
+    }
+  }
+
+  // Preserve previous behavior for error reporting when no candidate exists.
+  return candidates[0];
 }
 
 async function uploadToR2Buffer(buffer, contentType, slug, filename) {
