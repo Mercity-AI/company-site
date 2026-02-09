@@ -13,9 +13,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
-  
+
   // Don't show standard background on showcase page as it has its own
   const isShowcase = location.pathname === '/showcase';
+  const isHomePage = location.pathname === '/';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -33,12 +34,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navLinks = [
     { name: 'Research', path: '/#research' },
     { name: 'About', path: '/about' },
-    { name: 'Journal', path: '/blog' },
   ];
 
   return (
     <div className={`min-h-screen flex flex-col relative text-text-main font-sans selection:bg-slate-200 selection:text-slate-900 ${isShowcase ? 'bg-transparent' : 'bg-background'}`}>
-      {!isShowcase && <BlurBackground />}
+      {!isShowcase && !isHomePage && <BlurBackground />}
 
       {/* Navigation */}
       <header 
@@ -69,9 +69,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-slate-900 transition-all duration-300 group-hover:w-full" />
               </Link>
             ))}
-            <button className="px-5 py-2 text-xs font-semibold uppercase tracking-wider border border-slate-200 rounded-full hover:bg-slate-900 hover:text-white transition-all duration-300">
-              Join Waitlist
-            </button>
+            <Link
+              to="/contact"
+              className="px-5 py-2 text-xs font-semibold uppercase tracking-wider border border-slate-200 rounded-full hover:bg-slate-900 hover:text-white transition-all duration-300"
+            >
+              Contact Us
+            </Link>
           </nav>
 
           {/* Mobile Toggle */}
@@ -103,7 +106,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   {link.name}
                 </Link>
               ))}
-              <Link to="/showcase" className="border-b border-slate-100 pb-4 text-indigo-600">Animation Showcase</Link>
+              <Link to="/contact" className="border-b border-slate-100 pb-4 text-slate-900 font-medium">Contact Us</Link>
             </div>
           </motion.div>
         )}
@@ -132,19 +135,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <li><Link to="/" className="hover:text-slate-900 transition-colors">Home</Link></li>
                   <li><Link to="/about" className="hover:text-slate-900 transition-colors">About Us</Link></li>
                   <li><Link to="/blog" className="hover:text-slate-900 transition-colors">Research Journal</Link></li>
-                  <li><Link to="/showcase" className="hover:text-slate-900 transition-colors text-indigo-500">Design Showcase</Link></li>
-                  <li><a href="#" className="hover:text-slate-900 transition-colors">Careers</a></li>
+                  <li><Link to="/contact" className="hover:text-slate-900 transition-colors">Contact Us</Link></li>
+                  <li><a href="https://www.linkedin.com/company/mercity-ai/jobs/" target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 transition-colors">Careers</a></li>
                 </ul>
               </div>
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-widest text-slate-900 mb-6">Connect</h4>
                 <ul className="space-y-4 text-sm text-slate-500 font-light">
-                  <li><a href="#" className="hover:text-slate-900 transition-colors">Twitter / X</a></li>
-                  <li><a href="#" className="hover:text-slate-900 transition-colors">LinkedIn</a></li>
-                  <li><a href="#" className="hover:text-slate-900 transition-colors">GitHub</a></li>
-                  <li className="flex items-center gap-2 cursor-pointer group">
-                    <span className="group-hover:underline">hello@Mercity.ai</span>
-                    <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
+                  <li><a href="https://x.com/Pranav2278" target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 transition-colors">Twitter / X</a></li>
+                  <li><a href="https://www.linkedin.com/company/mercity-ai/" target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 transition-colors">LinkedIn</a></li>
+                  <li><a href="https://github.com/Mercity-AI/" target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 transition-colors">GitHub</a></li>
+                  <li>
+                    <a href="mailto:pranav@mercity.io" className="inline-flex items-center gap-2 group">
+                      <span className="group-hover:underline">pranav@mercity.io</span>
+                      <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
+                    </a>
                   </li>
                 </ul>
               </div>

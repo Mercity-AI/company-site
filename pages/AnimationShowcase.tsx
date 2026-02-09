@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
 import { 
   EtherealAurora, 
   RuggedFlux, 
@@ -88,11 +87,8 @@ const AnimationShowcase: React.FC = () => {
               We are decoding the fundamental principles of intelligence to build systems that reason, learn, and create alongside humanity.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
-              <button className="group flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-full font-medium transition-all hover:bg-slate-800 hover:scale-105 shadow-xl shadow-slate-200/50">
-                Our Mission <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-              </button>
               <button className="text-slate-700 hover:text-slate-900 transition-colors flex items-center gap-2 text-sm font-semibold uppercase tracking-widest backdrop-blur-sm px-4 py-2 rounded-lg bg-white/20 hover:bg-white/40 border border-transparent hover:border-slate-200">
-                Read the Journal
+                Read Our Research
               </button>
             </div>
           </motion.div>

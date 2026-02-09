@@ -26,7 +26,9 @@ const SEO: React.FC<SEOProps> = ({
 }) => {
   const siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const fullUrl = url ? `${siteUrl}${url}` : siteUrl;
-  const ogImage = image || `${siteUrl}/static/banner.png`;
+  const ogImage = image
+    ? (image.startsWith('http') ? image : `${siteUrl}${image}`)
+    : `${siteUrl}/static/banner.jpg`;
   const fullTitle = title === 'Mercity Research' ? title : `${title} | Mercity Research`;
 
   return (
@@ -72,4 +74,3 @@ const SEO: React.FC<SEOProps> = ({
 };
 
 export default SEO;
-

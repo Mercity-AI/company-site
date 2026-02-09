@@ -1,9 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Brain, Network, Cpu, ArrowUpRight } from 'lucide-react';
+import { ArrowRight, Brain, Network, Cpu } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { posts } from '@/.velite';
 import SEO from '../components/SEO';
+import BentoGrid from '../components/BentoGrid';
+import BlurBackground from '../components/BlurBackground';
+import {
+  EtherealAurora,
+  RuggedFlux,
+  InteractiveNeuralGrid,
+  SilkWaves,
+  FocusDrift,
+  GradientMesh,
+  ArchitecturalGrid,
+  CognitivePulse,
+  CircuitLattice,
+  LiquidChrome,
+  DigitalRain,
+  BauhausGeometry,
+} from '../components/BackgroundVariations';
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -12,49 +28,57 @@ const fadeIn = {
 };
 
 const Home: React.FC = () => {
-  // Get latest 2 posts
-  const recentPosts = [...posts]
-    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
-    .slice(0, 2);
-
-  const featuredContent = [
-    {
-      type: 'Research',
-      title: recentPosts[0]?.title || 'Towards Causal Reasoning in LLMs',
-      date: recentPosts[0] ? new Date(recentPosts[0].publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Oct 12, 2024',
-      summary: recentPosts[0]?.summary || 'Exploring how to induce causal structure in transformer representations through targeted interventions.',
-      link: recentPosts[0]?.permalink || '/blog',
-      gradient: 'bg-gradient-to-br from-orange-50 to-amber-100',
-      tags: ['Alignment', 'Theory']
-    },
-    {
-      type: 'Dataset',
-      title: 'Mercity-CoT-100k',
-      date: 'Nov 04, 2024',
-      summary: 'A high-quality, manually verified dataset of 100,000 complex chain-of-thought reasoning traces across mathematics and logic domains.',
-      link: '/datasets/cot-100k',
-      gradient: 'bg-gradient-to-br from-indigo-50 to-blue-100',
-      tags: ['Dataset', 'Open Source']
-    },
-    {
-      type: 'Research',
-      title: recentPosts[1]?.title || 'Sparse Attention Patterns at Scale',
-      date: recentPosts[1] ? new Date(recentPosts[1].publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Sep 28, 2024',
-      summary: recentPosts[1]?.summary || 'Analyzing the emergence of sparsity in large-scale transformer models during training.',
-      link: recentPosts[1]?.permalink || '/blog',
-      gradient: 'bg-gradient-to-br from-emerald-50 to-teal-100',
-      tags: ['Efficiency', 'Architecture']
-    },
-    {
-      type: 'Model',
-      title: 'Aether-7B-Reason',
-      date: 'Oct 20, 2024',
-      summary: 'Our flagship parameter-efficient model, fine-tuned for multi-step reasoning and verifiable outputs. Available on Hugging Face.',
-      link: '/models/aether-7b',
-      gradient: 'bg-gradient-to-br from-slate-100 to-stone-200',
-      tags: ['Model', 'Weights']
-    }
+  const heroBackgroundVariants = [
+    CircuitLattice,
+    GradientMesh,
+    ArchitecturalGrid,
+    InteractiveNeuralGrid,
+    EtherealAurora,
+    RuggedFlux,
+    SilkWaves,
+    FocusDrift,
+    CognitivePulse,
+    LiquidChrome,
+    DigitalRain,
+    BauhausGeometry,
   ];
+  const [heroBackgroundIndex] = useState<number | null>(() => {
+    if (Math.random() < 0.7) return null;
+    return Math.floor(Math.random() * heroBackgroundVariants.length);
+  });
+  const HeroBackground = heroBackgroundIndex !== null ? heroBackgroundVariants[heroBackgroundIndex] : null;
+
+  const sortedPosts = [...posts]
+    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+    .slice(0, 4);
+
+  const gradients = [
+    'bg-gradient-to-br from-orange-50 to-amber-100',
+    'bg-gradient-to-br from-indigo-50 to-blue-100',
+    'bg-gradient-to-br from-emerald-50 to-teal-100',
+    'bg-gradient-to-br from-slate-100 to-stone-200',
+  ];
+  const featuredContent = sortedPosts.length > 0
+    ? sortedPosts.map((post, index) => ({
+        type: post.category || 'Research',
+        title: post.title,
+        date: new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        summary: post.summary,
+        link: post.permalink,
+        image: post.image,
+        gradient: gradients[index % gradients.length],
+      }))
+    : [
+        {
+          type: 'Research',
+          title: 'Mercity Research Updates',
+          date: 'Jan 1, 2026',
+          summary: 'New writing from the lab will appear here shortly.',
+          link: '/blog',
+          image: undefined,
+          gradient: gradients[0],
+        },
+      ];
 
   return (
     <>
@@ -65,35 +89,26 @@ const Home: React.FC = () => {
       />
       <div className="w-full overflow-hidden">
       {/* Hero Section */}
-      <section className="min-h-[90vh] flex flex-col justify-center px-6 relative">
-        <div className="max-w-7xl mx-auto w-full z-10">
+      <section className="min-h-[90vh] flex flex-col justify-center px-6 relative overflow-hidden">
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          {HeroBackground ? <HeroBackground /> : <BlurBackground className="!absolute !inset-0" />}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/30 to-white/75" />
+        </div>
+        <div className="max-w-7xl mx-auto w-full z-10 relative">
           <motion.div 
             initial="initial"
             animate="animate"
             variants={fadeIn}
-            // className="max-w-6xl"
           >
-            {/* <h1 className="text-5xl md:text-8xl font-light tracking-tighter text-slate-900 mb-7 leading-[1.1]">
-              Research-grade, <span className="font-serif italic text-slate-700"><br/> reality-ready</span>.
-            </h1> */}
             <h1 className="text-5xl md:text-8xl font-light tracking-tighter text-slate-900 mb-7 leading-[1.1]">
                <span className="font-serif italic text-slate-700">Building research led capabilities <br/> for product and enterprise teams.</span>
             </h1>
             <p className="text-xl md:text-2xl text-slate-500 font-light leading-relaxed max-w-2xl mb-12">
-              {/* We build research-grade and reality-ready capabilities and integrations ready to scale. */}
-              <br/>
-              {/* We are decoding the fundamental principles of intelligence to build systems that reason, learn, and create alongside humanity. */}
               We do custom training, grunt optimization, built-from-scratch architecture. Anything and everything to give you an edge over the market.
-               {/* <i>Shipping the research to production. <br/>
-               Custom training, real optimization, genuine architecture. <br/></i> */}
-               {/* <i><u>We do the deep work so your AI simply works.</u></i> */}
             </p>
-            <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
-              <Link to="/about" className="group flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-full font-medium transition-all hover:bg-slate-800 hover:scale-105">
-                Our Mission <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link to="/blog" className="text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-2 text-sm font-semibold uppercase tracking-widest">
-                Read the Journal
+            <div>
+              <Link to="/blog" className="group inline-flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-full font-medium transition-all hover:bg-slate-800 hover:scale-105">
+                Read Our Research <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
           </motion.div>
@@ -153,11 +168,29 @@ const Home: React.FC = () => {
         </div>
       </section>
 
+      <BentoGrid />
+
+      {/* Bridge Section */}
+      <section className="py-24 border-t border-slate-100 bg-white/50">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400 mb-6">Research to Enterprise</p>
+          <h2 className="text-3xl md:text-4xl font-light text-slate-900 mb-6 leading-tight">
+            We are a research lab that builds production-ready AI capabilities for enterprise teams.
+          </h2>
+          <p className="text-lg text-slate-500 font-light leading-relaxed mb-8">
+            From model evaluation and adaptation to deployment architecture, we help teams turn frontier research into durable business systems.
+          </p>
+          <Link to="/contact" className="text-sm font-semibold uppercase tracking-widest text-slate-900 hover:text-slate-600 transition-colors">
+            Start a Conversation
+          </Link>
+        </div>
+      </section>
+
       {/* Featured Work Section */}
       <section className="py-32 border-b border-slate-100">
         <div className="max-w-[80rem] mx-auto px-6">
           <div className="mb-16">
-            <h2 className="text-3xl font-light text-slate-900 mb-4">Latest from the Lab</h2>
+            <h2 className="text-3xl font-light text-slate-900 mb-4">Latest Publications</h2>
             <div className="h-0.5 w-12 bg-slate-900" />
           </div>
           
@@ -168,11 +201,20 @@ const Home: React.FC = () => {
                 to={item.link} 
                 className="group block bg-white border border-slate-200 hover:border-slate-300 transition-all duration-300 overflow-hidden"
               >
-                {/* Image Placeholder Area */}
-                <div className={`h-44 w-full ${item.gradient} relative overflow-hidden`}>
-                  <div className="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors duration-300" />
-                  {/* Optional: Add subtle pattern or noise here if needed */}
-                </div>
+                {item.image ? (
+                  <div className="h-44 w-full relative overflow-hidden bg-slate-100">
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      loading="lazy"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
+                ) : (
+                  <div className={`h-44 w-full ${item.gradient} relative overflow-hidden`}>
+                    <div className="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors duration-300" />
+                  </div>
+                )}
                 
                 {/* Content Area */}
                 <div className="p-6">
@@ -215,10 +257,10 @@ const Home: React.FC = () => {
             transition={{ duration: 1 }}
             className="font-serif text-3xl md:text-5xl text-slate-800 italic leading-tight"
           >
-            "The goal is not just to mimic human thought, but to extend the horizon of what is thinkable."
+            "Research only matters when it improves the systems people rely on every day."
           </motion.blockquote>
           <div className="mt-8 text-sm font-semibold uppercase tracking-widest text-slate-400">
-            Dr. Elena Vora, Chief Scientist
+            Mercity Research Team
           </div>
         </div>
       </section>
