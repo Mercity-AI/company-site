@@ -1,0 +1,39 @@
+---
+interface Props {
+  className?: string;
+}
+
+const { className = '' } = Astro.props;
+---
+
+<div class={`fixed inset-0 z-[-1] overflow-hidden pointer-events-none ${className}`}>
+  <div class="absolute -top-[10%] -right-[10%] w-[50vw] h-[50vw] bg-slate-200/40 rounded-full blur-[120px] mix-blend-multiply motion-safe:animate-[float-a_15s_ease-in-out_infinite]" />
+  <div class="absolute -bottom-[10%] -left-[10%] w-[40vw] h-[40vw] bg-indigo-50/60 rounded-full blur-[100px] mix-blend-multiply motion-safe:animate-[float-b_18s_ease-in-out_infinite]" />
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
+</div>
+
+<style>
+  @keyframes float-a {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+      opacity: 0.3;
+    }
+    50% {
+      transform: translate3d(20px, 0, 0) scale(1.1);
+      opacity: 0.5;
+    }
+  }
+
+  @keyframes float-b {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+      opacity: 0.2;
+    }
+    50% {
+      transform: translate3d(0, -30px, 0) scale(1.2);
+      opacity: 0.4;
+    }
+  }
+</style>

@@ -1,0 +1,189 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import BentoGrid from '@/components/BentoGrid.astro';
+import HeroSection from '@/components/HeroSection';
+import { formatShortDate, getPostUrl, sortPostsByPublishedDate } from '@/utils/blog';
+
+const posts = sortPostsByPublishedDate(await getCollection('posts'));
+const latestPosts = posts.slice(0, 4);
+
+const gradients = [
+  'bg-gradient-to-br from-orange-50 to-amber-100',
+  'bg-gradient-to-br from-indigo-50 to-blue-100',
+  'bg-gradient-to-br from-emerald-50 to-teal-100',
+  'bg-gradient-to-br from-slate-100 to-stone-200',
+];
+
+const featuredContent =
+  latestPosts.length > 0
+    ? latestPosts.map((post, index) => ({
+        type: post.data.category || 'Research',
+        title: post.data.title,
+        date: formatShortDate(post.data.publishedAt),
+        summary: post.data.summary,
+        link: getPostUrl(post),
+        image: post.data.image,
+        gradient: gradients[index % gradients.length],
+        transitionName: `post-title-${post.data.slug}`,
+      }))
+    : [
+        {
+          type: 'Research',
+          title: 'Mercity Research Updates',
+          date: 'Jan 1, 2026',
+          summary: 'New writing from the lab will appear here shortly.',
+          link: '/blog',
+          image: undefined,
+          gradient: gradients[0],
+          transitionName: 'fallback-post-title',
+        },
+      ];
+---
+
+<BaseLayout
+  title="Mercity Research"
+  description="Research-grade, reality-ready. Shipping the research to production. Custom training, real optimization, genuine architecture."
+  path="/"
+  showBlur={false}
+>
+  <div class="w-full overflow-hidden">
+    <HeroSection client:only="react" />
+
+    <section id="research" class="py-32 bg-white/40 backdrop-blur-sm">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-16">
+          <article class="group">
+            <div class="w-12 h-12 mb-8 text-slate-800 bg-slate-50 rounded-2xl flex items-center justify-center group-hover:bg-indigo-50 transition-colors duration-500">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9" />
+                <path d="M12 3c4.97 0 9 4.03 9 9" />
+                <circle cx="12" cy="12" r="2.5" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-medium mb-4 text-slate-900">Cognitive Architectures</h3>
+            <p class="text-slate-500 leading-relaxed font-light">
+              Moving beyond statistical pattern matching to structured reasoning and causal understanding.
+            </p>
+          </article>
+
+          <article class="group">
+            <div class="w-12 h-12 mb-8 text-slate-800 bg-slate-50 rounded-2xl flex items-center justify-center group-hover:bg-indigo-50 transition-colors duration-500">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M4 12h6" />
+                <path d="M14 12h6" />
+                <circle cx="12" cy="12" r="2" />
+                <path d="M12 4v6" />
+                <path d="M12 14v6" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-medium mb-4 text-slate-900">Sparse Modeling</h3>
+            <p class="text-slate-500 leading-relaxed font-light">
+              Efficiency is intelligence. Developing models that achieve more with significantly less compute.
+            </p>
+          </article>
+
+          <article class="group">
+            <div class="w-12 h-12 mb-8 text-slate-800 bg-slate-50 rounded-2xl flex items-center justify-center group-hover:bg-indigo-50 transition-colors duration-500">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <path d="M7 8h10" />
+                <path d="M7 12h10" />
+                <path d="M7 16h6" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-medium mb-4 text-slate-900">Scaffolding Agents</h3>
+            <p class="text-slate-500 leading-relaxed font-light">
+              Building harnesses for the real world to bridge the gap between modeling and reality.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <BentoGrid />
+
+    <section class="py-24 border-t border-slate-100 bg-white/50">
+      <div class="max-w-4xl mx-auto px-6 text-center">
+        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400 mb-6">Research to Enterprise</p>
+        <h2 class="text-3xl md:text-4xl font-light text-slate-900 mb-6 leading-tight">
+          We are a research lab that builds production-ready AI capabilities for enterprise teams.
+        </h2>
+        <p class="text-lg text-slate-500 font-light leading-relaxed mb-8">
+          From model evaluation and adaptation to deployment architecture, we help teams turn frontier research into
+          durable business systems.
+        </p>
+        <a href="/contact" class="text-sm font-semibold uppercase tracking-widest text-slate-900 hover:text-slate-600 transition-colors" data-astro-prefetch>
+          Start a Conversation
+        </a>
+      </div>
+    </section>
+
+    <section class="py-32 border-b border-slate-100">
+      <div class="max-w-[80rem] mx-auto px-6">
+        <div class="mb-16">
+          <h2 class="text-3xl font-light text-slate-900 mb-4">Latest Publications</h2>
+          <div class="h-0.5 w-12 bg-slate-900" />
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {featuredContent.map((item) => (
+            <a
+              href={item.link}
+              class="group block bg-white border border-slate-200 hover:border-slate-300 transition-all duration-300 overflow-hidden"
+              data-astro-prefetch
+            >
+              {item.image ? (
+                <div class="h-44 w-full relative overflow-hidden bg-slate-100">
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    loading="lazy"
+                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                </div>
+              ) : (
+                <div class={`h-44 w-full ${item.gradient} relative overflow-hidden`}>
+                  <div class="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors duration-300" />
+                </div>
+              )}
+
+              <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider border border-slate-200 rounded text-slate-500">
+                      {item.type}
+                    </span>
+                    <span class="text-xs text-slate-400 font-mono">{item.date}</span>
+                  </div>
+                </div>
+
+                <h3
+                  class="text-xl font-medium text-slate-900 mb-3 leading-tight group-hover:text-indigo-900 transition-colors"
+                  transition:name={item.transitionName}
+                >
+                  {item.title}
+                </h3>
+
+                <p class="text-slate-500 text-sm font-light leading-relaxed line-clamp-3">{item.summary}</p>
+
+                <div class="mt-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-900 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+                  Read More <span aria-hidden="true">→</span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="py-40 border-t border-slate-100 relative">
+      <div class="max-w-4xl mx-auto px-6 text-center">
+        <blockquote class="font-serif text-3xl md:text-5xl text-slate-800 italic leading-tight">
+          "Research only matters when it improves the systems people rely on every day."
+        </blockquote>
+        <div class="mt-8 text-sm font-semibold uppercase tracking-widest text-slate-400">Mercity Research Team</div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>

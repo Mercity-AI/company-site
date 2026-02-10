@@ -31,3 +31,4 @@ dist-ssr
 
 notion_work/
 .cursor/
+.astro

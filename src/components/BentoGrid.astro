@@ -1,0 +1,58 @@
+---
+const items = [
+  {
+    title: 'LLM Evaluation Tooling',
+    description: 'Reusable evaluation workflows for enterprise model selection, ranking, and guardrail testing.',
+    tags: ['Open Source', 'Evals', 'Reliability'],
+    className: 'md:col-span-2',
+  },
+  {
+    title: 'RAG Performance Stack',
+    description: 'Retrieval and reranking pipelines tuned for latency-sensitive production environments.',
+    tags: ['RAG', 'Infra'],
+    className: 'md:col-span-1',
+  },
+  {
+    title: 'Agent Harnesses',
+    description: 'Task-specific agent scaffolds with tool control, observability, and failure analysis built in.',
+    tags: ['Agents', 'Tool Use'],
+    className: 'md:col-span-1',
+  },
+  {
+    title: 'Custom Data Engines',
+    description: 'Domain data pipelines and curation loops for adaptation, finetuning, and evaluation at scale.',
+    tags: ['Datasets', 'Training'],
+    className: 'md:col-span-2',
+  },
+];
+---
+
+<section class="py-24 border-t border-slate-100">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="mb-12">
+      <h2 class="text-3xl font-light text-slate-900 mb-3">Open Workbench</h2>
+      <p class="text-slate-500 font-light max-w-2xl">
+        A live snapshot of what we are building across models, datasets, and deployment systems.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      {items.map((item, index) => (
+        <article
+          class={`rounded-2xl border border-slate-200 bg-white/85 p-8 backdrop-blur-sm transition-all duration-300 hover:-translate-y-[1px] hover:shadow-[0_10px_20px_-22px_rgba(15,23,42,0.35)] ${item.className}`}
+          style={`transition-delay: ${index * 50}ms;`}
+        >
+          <h3 class="text-xl font-medium text-slate-900 mb-3">{item.title}</h3>
+          <p class="text-slate-500 font-light leading-relaxed mb-6">{item.description}</p>
+          <div class="flex flex-wrap gap-2">
+            {item.tags.map((tag) => (
+              <span class="text-[10px] uppercase tracking-widest px-2 py-1 border border-slate-200 rounded text-slate-500">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>

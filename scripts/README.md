@@ -6,8 +6,8 @@ This folder contains utilities for blog image upload, validation, and optimizati
 
 | File | Command | Purpose |
 |---|---|---|
-| `scripts/upload-images-to-r2.js` | `pnpm upload:images` | Upload images to Cloudflare R2 and rewrite MDX references to CDN URLs. |
-| `scripts/check-images.js` | `pnpm check:images` | Validate image references in MDX files (local files + remote URLs). |
+| `scripts/upload-images-to-r2.js` | `pnpm upload:images` | Upload images to Cloudflare R2 and rewrite Markdown references to CDN URLs. |
+| `scripts/check-images.js` | `pnpm check:images` | Validate image references in Markdown files (local files + remote URLs). |
 | `scripts/image-optimizer.js` | Internal helper | Converts PNG to JPG and optionally compresses large JPEGs. |
 
 ## Required Environment Variables
@@ -24,7 +24,7 @@ R2_PUBLIC_URL=https://your-cdn-url.com
 
 ## Quick Workflow
 
-1. Add image references in `content/*.mdx`.
+1. Add image references in `content/*.md`.
 2. Run a dry run first: `pnpm upload:images --dry-run`.
 3. Run upload: `pnpm upload:images`.
 4. Validate all references: `pnpm check:images`.
@@ -33,7 +33,7 @@ R2_PUBLIC_URL=https://your-cdn-url.com
 
 Use this when importing a Notion markdown export (`.md`) plus its image folder.
 
-1. Create a new post file in `content/<slug>.mdx`.
+1. Create a new post file in `content/<slug>.md`.
 2. Add required frontmatter fields:
    - `title`
    - `slug`
@@ -109,7 +109,7 @@ pnpm upload:images --optimize-jpeg --jpeg-quality 85
 ## Upload Behavior
 
 - Uses slug-based object keys: `blog/<slug>/<filename>`.
-- Rewrites matching image references in MDX body and frontmatter.
+- Rewrites matching image references in Markdown body and frontmatter.
 - Skips remote URLs already on your configured CDN.
 - Converts PNG files to JPG before upload.
 - Compresses JPEG only when `--optimize-jpeg` is enabled and file size is at least 200KB.
@@ -117,7 +117,7 @@ pnpm upload:images --optimize-jpeg --jpeg-quality 85
 
 ## Validation Behavior (`pnpm check:images`)
 
-- Scans `content/*.mdx` for markdown, HTML, and frontmatter image references.
+- Scans `content/*.md` for markdown, HTML, and frontmatter image references.
 - Local references are checked with filesystem existence checks.
 - Remote references are checked with HTTP requests.
 - Exits with status code `1` if any reference fails (good for CI).
@@ -127,7 +127,7 @@ pnpm upload:images --optimize-jpeg --jpeg-quality 85
 | Issue | What to check |
 |---|---|
 | Missing env variable | Ensure `.env` contains all R2 variables listed above. |
-| File not found | Verify path is correct relative to the MDX file or under `public/`. |
+| File not found | Verify path is correct relative to the Markdown file or under `public/`. |
 | Upload access denied | Verify R2 credentials, bucket name, and token permissions. |
 | Remote image skipped | Use `--include-remote`; use `--allow-all-remote` for non-allowlisted domains. |
 | Remote download failed | Confirm URL is accessible and file is smaller than 25MB. |

@@ -318,7 +318,7 @@ async function uploadToR2File(filePath, slug, filename) {
 }
 
 /**
- * Process a single MDX file
+ * Process a single content file
  */
 async function processMDXFile(filePath) {
   console.log(`\n📄 Processing: ${basename(filePath)}`);
@@ -414,13 +414,13 @@ async function processMDXFile(filePath) {
 
   if (changeCount > 0) {
     if (args.dryRun) {
-      console.log(`\n   🧪 Dry-run: would update ${changeCount} image reference(s) in MDX file`);
+      console.log(`\n   🧪 Dry-run: would update ${changeCount} image reference(s) in content file`);
       return;
     }
 
     const updatedFile = matter.stringify(updatedBody, updatedFrontmatter);
     writeFileSync(filePath, updatedFile, 'utf-8');
-    console.log(`\n   💾 Updated ${changeCount} image reference(s) in MDX file`);
+    console.log(`\n   💾 Updated ${changeCount} image reference(s) in content file`);
   }
 }
 
@@ -447,12 +447,12 @@ async function main() {
     process.exit(1);
   }
   
-  // Get all MDX files
+  // Get all markdown content files
   const files = readdirSync(contentDir)
-    .filter(file => file.endsWith('.mdx'))
+    .filter(file => file.endsWith('.md') || file.endsWith('.mdx'))
     .map(file => join(contentDir, file));
   
-  console.log(`\n📁 Found ${files.length} MDX file(s) to process\n`);
+  console.log(`\n📁 Found ${files.length} content file(s) to process\n`);
   console.log('═'.repeat(60));
   
   // Process each file
