@@ -6,11 +6,29 @@ import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypeHighlight from 'rehype-highlight';
 
+function normalizeAllowedHostsBoolean(allowedHosts) {
+  return Array.isArray(allowedHosts) && allowedHosts.length === 1 && allowedHosts[0] === true
+    ? true
+    : allowedHosts;
+}
+
+const forceAllowAllHostsPlugin = {
+  name: 'force-allow-all-hosts',
+  configResolved(resolvedConfig) {
+    resolvedConfig.server.allowedHosts = normalizeAllowedHostsBoolean(resolvedConfig.server.allowedHosts);
+    resolvedConfig.preview.allowedHosts = normalizeAllowedHostsBoolean(resolvedConfig.preview.allowedHosts);
+  },
+};
+
 export default defineConfig({
   site: 'https://www.mercity.ai',
   integrations: [react(), sitemap()],
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss(), forceAllowAllHostsPlugin],
+    server: {
+      // host: '0.0.0.0',
+      allowedHosts: true,
+    },
   },
   markdown: {
     rehypePlugins: [
