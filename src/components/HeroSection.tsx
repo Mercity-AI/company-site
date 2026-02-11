@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
-import { USED_HERO_BACKGROUNDS } from './BackgroundVariations';
+import { GradientMesh, USED_HERO_BACKGROUNDS } from './BackgroundVariations';
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -16,17 +16,47 @@ const fallbackBackground = (
   </div>
 );
 
-export default function HeroSection() {
-  const selectedVariant = useMemo(() => {
-    if (Math.random() < 0.7) {
-      return null;
-    }
+type HeroBackgroundComponent = (typeof USED_HERO_BACKGROUNDS)[number] | null;
+const DYNAMIC_BACKGROUND_THRESHOLD = 0.7;
 
-    const index = Math.floor(Math.random() * USED_HERO_BACKGROUNDS.length);
-    return USED_HERO_BACKGROUNDS[index];
+function createPageSeed() {
+  if (typeof window === 'undefined') {
+    return Math.random();
+  }
+
+  if (window.crypto?.getRandomValues) {
+    const values = new Uint32Array(1);
+    window.crypto.getRandomValues(values);
+    return values[0] / 4294967296;
+  }
+
+  return Math.random();
+}
+
+function selectBackgroundForPageLoad(): HeroBackgroundComponent {
+  if (createPageSeed() < DYNAMIC_BACKGROUND_THRESHOLD) {
+    return null;
+  }
+
+  const index = Math.min(USED_HERO_BACKGROUNDS.length - 1, Math.floor(createPageSeed() * USED_HERO_BACKGROUNDS.length));
+  return USED_HERO_BACKGROUNDS[index];
+}
+
+export default function HeroSection() {
+  const [HeroBackground, setHeroBackground] = useState<HeroBackgroundComponent>(null);
+
+  useEffect(() => {
+    const nextBackground = selectBackgroundForPageLoad();
+    // Background variants are function components; wrap to store as state value.
+    setHeroBackground(() => nextBackground);
   }, []);
 
-  const HeroBackground = selectedVariant;
+  useEffect(() => {
+    document.body.classList.toggle('hero-gradient-mesh-soft-header', HeroBackground === GradientMesh);
+    return () => {
+      document.body.classList.remove('hero-gradient-mesh-soft-header');
+    };
+  }, [HeroBackground]);
 
   return (
     <section className="min-h-[90vh] flex flex-col justify-center px-6 relative overflow-hidden">

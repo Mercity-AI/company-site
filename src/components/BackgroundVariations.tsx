@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 const NoiseOverlay = ({ opacity = 0.03 }: { opacity?: number }) => (
@@ -149,7 +149,7 @@ export const ArchitecturalGrid: React.FC = () => {
 export const CircuitLattice: React.FC = () => {
   return (
     <div className="absolute inset-0 bg-slate-50 overflow-hidden">
-      <svg className="absolute w-full h-full opacity-35" width="100%" height="100%">
+      <svg className="absolute w-full h-full opacity-50" width="100%" height="100%">
         <defs>
           <pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse">
             <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#cbd5e1" strokeWidth="0.5" />
@@ -162,7 +162,7 @@ export const CircuitLattice: React.FC = () => {
           d="M 100,100 H 300 V 300 H 600"
           fill="none"
           stroke="#64748b"
-          strokeWidth="1.2"
+          strokeWidth="1.4"
           initial={{ pathLength: 0, opacity: 0 }}
           animate={{ pathLength: 1, opacity: [0, 1, 0] }}
           transition={{ duration: 3.5, repeat: Infinity, ease: 'linear', repeatDelay: 1 }}
@@ -171,7 +171,7 @@ export const CircuitLattice: React.FC = () => {
           d="M 800,500 V 200 H 500"
           fill="none"
           stroke="#64748b"
-          strokeWidth="1.2"
+          strokeWidth="1.4"
           initial={{ pathLength: 0, opacity: 0 }}
           animate={{ pathLength: 1, opacity: [0, 1, 0] }}
           transition={{ duration: 4.5, repeat: Infinity, ease: 'linear', delay: 2, repeatDelay: 2 }}
@@ -180,88 +180,50 @@ export const CircuitLattice: React.FC = () => {
           d="M 900,900 V 700 H 600"
           fill="none"
           stroke="#64748b"
-          strokeWidth="1.2"
+          strokeWidth="1.4"
           initial={{ pathLength: 0, opacity: 0 }}
           animate={{ pathLength: 1, opacity: [0, 1, 0] }}
           transition={{ duration: 4, repeat: Infinity, ease: 'linear', delay: 0.2, repeatDelay: 1.8 }}
         />
+        <motion.path
+          d="M 60,220 H 280 V 420 H 520"
+          fill="none"
+          stroke="#64748b"
+          strokeWidth="1.4"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: [0, 1, 0] }}
+          transition={{ duration: 3.2, repeat: Infinity, ease: 'linear', delay: 0.6, repeatDelay: 1.4 }}
+        />
+        <motion.path
+          d="M 180,740 H 420 V 560 H 740"
+          fill="none"
+          stroke="#64748b"
+          strokeWidth="1.4"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: [0, 1, 0] }}
+          transition={{ duration: 3.8, repeat: Infinity, ease: 'linear', delay: 1.2, repeatDelay: 1.6 }}
+        />
+        <motion.path
+          d="M 420,80 V 260 H 760"
+          fill="none"
+          stroke="#64748b"
+          strokeWidth="1.4"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: [0, 1, 0] }}
+          transition={{ duration: 4.3, repeat: Infinity, ease: 'linear', delay: 0.9, repeatDelay: 2 }}
+        />
+        <motion.path
+          d="M 120,540 V 360 H 300 V 180"
+          fill="none"
+          stroke="#64748b"
+          strokeWidth="1.4"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: [0, 1, 0] }}
+          transition={{ duration: 3.6, repeat: Infinity, ease: 'linear', delay: 1.8, repeatDelay: 1.3 }}
+        />
       </svg>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,white_90%)]" />
       <NoiseOverlay opacity={0.05} />
-    </div>
-  );
-};
-
-export const LiquidChrome: React.FC = () => {
-  return (
-    <div className="absolute inset-0 bg-slate-100 overflow-hidden">
-      <svg style={{ position: 'absolute', width: 0, height: 0 }}>
-        <filter id="goo">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="20" result="blur" />
-          <feColorMatrix
-            in="blur"
-            mode="matrix"
-            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
-            result="goo"
-          />
-          <feBlend in="SourceGraphic" in2="goo" />
-        </filter>
-      </svg>
-
-      <div style={{ filter: 'url(#goo)' }} className="absolute inset-0 w-full h-full">
-        <motion.div
-          animate={{ x: [0, 100, 0], y: [0, 50, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute top-[30%] left-[30%] w-64 h-64 bg-slate-300 rounded-full mix-blend-multiply opacity-60"
-        />
-        <motion.div
-          animate={{ x: [0, -80, 0], y: [0, 100, 0] }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-          className="absolute top-[30%] left-[40%] w-56 h-56 bg-indigo-200 rounded-full mix-blend-multiply opacity-60"
-        />
-        <motion.div
-          animate={{ x: [0, 60, 0], y: [0, -60, 0] }}
-          transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-          className="absolute top-[40%] left-[35%] w-48 h-48 bg-blue-200 rounded-full mix-blend-multiply opacity-60"
-        />
-      </div>
-      <NoiseOverlay />
-    </div>
-  );
-};
-
-export const DigitalRain: React.FC = () => {
-  const [height, setHeight] = useState(1200);
-  const drops = useMemo(
-    () =>
-      Array.from({ length: 20 }, () => ({
-        dropHeight: Math.random() * 100 + 50,
-        duration: Math.random() * 5 + 5,
-        delay: Math.random() * 5,
-      })),
-    [],
-  );
-
-  useEffect(() => {
-    setHeight(window.innerHeight);
-    const onResize = () => setHeight(window.innerHeight);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-
-  return (
-    <div className="absolute inset-0 bg-slate-50 overflow-hidden flex justify-around">
-      {drops.map((drop, index) => (
-        <motion.div
-          key={index}
-          className="w-[1px] bg-gradient-to-b from-transparent via-slate-400 to-transparent opacity-40"
-          initial={{ y: -200, height: drop.dropHeight }}
-          animate={{ y: height + 200 }}
-          transition={{ duration: drop.duration, repeat: Infinity, ease: 'linear', delay: drop.delay }}
-        />
-      ))}
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-transparent to-slate-50 pointer-events-none" />
-      <NoiseOverlay />
     </div>
   );
 };
@@ -271,14 +233,10 @@ export const USED_HERO_BACKGROUNDS = [
   GradientMesh,
   ArchitecturalGrid,
   InteractiveNeuralGrid,
-  LiquidChrome,
-  DigitalRain,
 ];
 
 export const SHOWCASE_VARIANTS = [
   { name: 'Circuit Lattice', component: CircuitLattice },
-  { name: 'Liquid Chrome', component: LiquidChrome },
-  { name: 'Digital Rain', component: DigitalRain },
   { name: 'Gradient Mesh', component: GradientMesh },
   { name: 'Architectural Grid', component: ArchitecturalGrid },
   { name: 'Interactive Neural', component: InteractiveNeuralGrid },

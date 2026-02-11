@@ -399,6 +399,11 @@ body {
   padding-bottom: 1rem;
 }
 
+body.hero-gradient-mesh-soft-header .site-header[data-scrolled='true'] {
+  background: color-mix(in oklab, white 56%, transparent);
+  border-color: color-mix(in oklab, #cbd5e1 56%, transparent);
+}
+
 .mobile-menu {
   opacity: 0;
   transform: translateY(-0.75rem);
