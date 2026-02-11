@@ -1,13 +1,6 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { GradientMesh, USED_HERO_BACKGROUNDS } from './BackgroundVariations';
-
-const fadeIn = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-};
 
 const fallbackBackground = (
   <div className="absolute inset-0 bg-slate-50">
@@ -65,7 +58,7 @@ export default function HeroSection() {
         <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/30 to-white/75" />
       </div>
       <div className="max-w-7xl mx-auto w-full z-10 relative">
-        <motion.div initial="initial" animate="animate" variants={fadeIn}>
+        <div className="hero-copy-enter">
           <h1 className="text-5xl md:text-8xl font-light tracking-tighter text-slate-900 mb-7 leading-[1.1]">
             <span className="font-serif italic text-slate-700">
               Building research led capabilities <br /> for product and enterprise teams.
@@ -83,17 +76,12 @@ export default function HeroSection() {
               Read Our Research <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </a>
           </div>
-        </motion.div>
+        </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.4 }}
-        transition={{ duration: 2, delay: 0.5 }}
-        className="absolute right-0 bottom-0 md:right-[10%] md:bottom-[20%] w-64 h-64 border border-slate-200 rounded-full flex items-center justify-center"
-      >
-        <div className="w-48 h-48 border border-slate-100 rounded-full animate-[spin_10s_linear_infinite]" />
-      </motion.div>
+      <div className="hero-orbit-enter absolute right-0 bottom-0 md:right-[10%] md:bottom-[20%] w-64 h-64 border border-slate-200 rounded-full flex items-center justify-center">
+        <div className="w-48 h-48 border border-slate-100 rounded-full motion-safe:animate-[spin_10s_linear_infinite]" />
+      </div>
     </section>
   );
 }
