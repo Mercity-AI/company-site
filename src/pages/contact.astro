@@ -2,6 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 
 const calendlyUrl = 'https://calendly.com/pranav-mercity/30min';
+const contactApiBaseUrl = import.meta.env.PUBLIC_CONTACT_API_BASE_URL ?? 'http://127.0.0.1:8000';
 ---
 
 <BaseLayout
@@ -21,7 +22,7 @@ const calendlyUrl = 'https://calendly.com/pranav-mercity/30min';
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
       <section class="bg-white/80 border border-slate-200 rounded-2xl p-8">
         <h2 class="text-2xl font-light text-slate-900 mb-6">Send a Message</h2>
-        <form class="space-y-5" id="contact-form">
+        <form class="space-y-5" id="contact-form" data-api-base-url={contactApiBaseUrl}>
           <div>
             <label for="name" class="block text-sm text-slate-700 mb-2">Name</label>
             <input id="name" name="name" type="text" required class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-400 bg-white" />
@@ -50,6 +51,7 @@ const calendlyUrl = 'https://calendly.com/pranav-mercity/30min';
           >
             Send Email
           </button>
+          <p id="contact-form-status" class="text-sm text-slate-600" aria-live="polite"></p>
         </form>
       </section>
 
@@ -78,20 +80,49 @@ const calendlyUrl = 'https://calendly.com/pranav-mercity/30min';
       script.async = true;
       document.body.appendChild(script);
 
-      const onSubmit = (event) => {
+      const statusEl = document.getElementById('contact-form-status');
+      const submitButton = form?.querySelector('button[type="submit"]');
+      const apiBaseUrl = form?.dataset.apiBaseUrl || 'http://127.0.0.1:8000';
+
+      const setStatus = (text, isError = false) => {
+        if (!statusEl) return;
+        statusEl.textContent = text;
+        statusEl.classList.toggle('text-rose-600', isError);
+        statusEl.classList.toggle('text-emerald-700', !isError);
+      };
+
+      const onSubmit = async (event) => {
         event.preventDefault();
+        if (!form) return;
+
+        submitButton?.setAttribute('disabled', 'disabled');
+        setStatus('Sending...');
+
         const formData = new FormData(form);
         const name = String(formData.get('name') ?? '').trim();
         const email = String(formData.get('email') ?? '').trim();
         const company = String(formData.get('company') ?? '').trim();
         const message = String(formData.get('message') ?? '').trim();
 
-        const subject = encodeURIComponent(`Mercity inquiry from ${name}${company ? ` (${company})` : ''}`);
-        const body = encodeURIComponent(
-          `Name: ${name}\nEmail: ${email}\nCompany: ${company || 'N/A'}\n\nMessage:\n${message}`,
-        );
+        try {
+          const response = await fetch(`${apiBaseUrl}/api/contact`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, company, message }),
+          });
 
-        window.location.href = `mailto:pranav@mercity.io?subject=${subject}&body=${body}`;
+          if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+          }
+
+          setStatus('Message sent successfully. We will get back to you soon.');
+          form.reset();
+        } catch (error) {
+          console.error('Failed to send contact form', error);
+          setStatus('Could not send right now. Please try again in a minute.', true);
+        } finally {
+          submitButton?.removeAttribute('disabled');
+        }
       };
 
       if (form) {
