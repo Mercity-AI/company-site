@@ -8,7 +8,7 @@ This folder contains utilities for blog image upload, validation, and optimizati
 |---|---|---|
 | `scripts/upload-images-to-r2.js` | `pnpm upload:images` | Upload images to Cloudflare R2 and rewrite Markdown references to CDN URLs. |
 | `scripts/check-images.js` | `pnpm check:images` | Validate image references in Markdown files (local files + remote URLs). |
-| `scripts/image-optimizer.js` | Internal helper | Converts PNG to JPG and optionally compresses large JPEGs. |
+| `scripts/image-optimizer.js` | Internal helper | Converts PNG to JPG and compresses large JPEGs (enabled by default). |
 
 ## Required Environment Variables
 
@@ -89,8 +89,11 @@ pnpm upload:images --dry-run
 # Dry run with remote processing
 pnpm upload:images --include-remote --dry-run
 
-# JPEG optimization (only files >= 200KB)
-pnpm upload:images --optimize-jpeg --jpeg-quality 85
+# JPEG optimization is on by default (only files >= 200KB)
+pnpm upload:images --jpeg-quality 85
+
+# Disable JPEG optimization
+pnpm upload:images --no-optimize-jpeg
 ```
 
 ## Upload Flags
@@ -102,7 +105,8 @@ pnpm upload:images --optimize-jpeg --jpeg-quality 85
 | `--local-only` | Process only local files (default behavior). |
 | `--remote-only` | Process only remote URLs. |
 | `--allow-all-remote` | Allow all remote domains; default allowlist is `https://cdn.prod.website-files.com/`. |
-| `--optimize-jpeg` | Enable JPEG compression for files 200KB or larger. |
+| `--no-optimize-jpeg` | Disable JPEG compression (compression is enabled by default). |
+| `--optimize-jpeg` | Explicitly enable JPEG compression (optional; default is already enabled). |
 | `--jpeg-quality <1-100>` | JPEG quality when optimization is enabled (default `70`). |
 | `--content-dir <path>` | Override content directory (default `content/`). |
 
@@ -112,7 +116,9 @@ pnpm upload:images --optimize-jpeg --jpeg-quality 85
 - Rewrites matching image references in Markdown body and frontmatter.
 - Skips remote URLs already on your configured CDN.
 - Converts PNG files to JPG before upload.
-- Compresses JPEG only when `--optimize-jpeg` is enabled and file size is at least 200KB.
+- Compresses JPEG by default when file size is at least 200KB.
+- Use `--no-optimize-jpeg` to skip JPEG compression.
+- Logs per-file and total optimization savings in bytes and percent.
 - Avoids duplicate uploads within one run.
 
 ## Validation Behavior (`pnpm check:images`)

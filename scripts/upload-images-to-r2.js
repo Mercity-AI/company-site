@@ -18,13 +18,15 @@ const projectRoot = resolve(__dirname, '..');
 
 function parseArgs(argv) {
   const args = new Set(argv.slice(2));
+  const explicitNoOptimize = args.has('--no-optimize-jpeg');
   return {
     dryRun: args.has('--dry-run'),
     includeRemote: args.has('--include-remote'),
     localOnly: args.has('--local-only'),
     remoteOnly: args.has('--remote-only'),
     allowAllRemote: args.has('--allow-all-remote'),
-    optimizeJpeg: args.has('--optimize-jpeg'),
+    // Default ON. Use --no-optimize-jpeg to disable.
+    optimizeJpeg: !explicitNoOptimize,
     jpegQuality: (() => {
       const idx = argv.indexOf('--jpeg-quality');
       if (idx !== -1 && argv[idx + 1]) {
@@ -75,6 +77,17 @@ const s3Client = args.dryRun
 
 // Track uploaded files to avoid duplicates in single run
 const uploadedFiles = new Set();
+const optimizationStats = {
+  optimizedCount: 0,
+  totalBeforeBytes: 0,
+  totalAfterBytes: 0,
+};
+
+function formatPercent(beforeBytes, afterBytes) {
+  if (!beforeBytes) return '0.00%';
+  const reduction = ((beforeBytes - afterBytes) / beforeBytes) * 100;
+  return `${reduction.toFixed(2)}%`;
+}
 
 /**
  * Extract all image references from MDX body content
@@ -298,7 +311,13 @@ async function uploadToR2Buffer(buffer, contentType, slug, filename) {
     const cdnUrl = toPublicUrl(fileKey);
     console.log(`   ✅ Uploaded: ${safeName} → ${cdnUrl}`);
     if (optimized.optimized) {
-      console.log(`   🗜️  JPEG optimized: ${optimized.beforeBytes}B → ${optimized.afterBytes}B (q=${args.jpegQuality})`);
+      optimizationStats.optimizedCount += 1;
+      optimizationStats.totalBeforeBytes += optimized.beforeBytes;
+      optimizationStats.totalAfterBytes += optimized.afterBytes;
+      const savedBytes = optimized.beforeBytes - optimized.afterBytes;
+      console.log(
+        `   🗜️  JPEG optimized: ${optimized.beforeBytes}B → ${optimized.afterBytes}B (saved ${savedBytes}B, ${formatPercent(optimized.beforeBytes, optimized.afterBytes)}, q=${args.jpegQuality})`,
+      );
     }
 
     return cdnUrl;
@@ -436,7 +455,7 @@ async function main() {
   if (enableRemote) {
     console.log(`   Remote filter: ${args.allowAllRemote ? 'all remote URLs allowed (--allow-all-remote)' : 'only https://cdn.prod.website-files.com/ (default)'}`);
   }
-  console.log(`   JPEG optimize: ${args.optimizeJpeg ? `enabled (q=${args.jpegQuality})` : 'disabled'}`);
+  console.log(`   JPEG optimize: ${args.optimizeJpeg ? `enabled by default (q=${args.jpegQuality}; disable with --no-optimize-jpeg)` : 'disabled (--no-optimize-jpeg)'}`);
   console.log(`   Bucket: ${process.env.R2_BUCKET_NAME || '(dry-run)'}`);
   console.log(`   CDN URL: ${process.env.R2_PUBLIC_URL || '(dry-run)'}`);
 
@@ -467,6 +486,12 @@ async function main() {
   
   console.log('\n✨ Process completed!');
   console.log(`📊 Total unique files uploaded: ${uploadedFiles.size}`);
+  if (optimizationStats.optimizedCount > 0) {
+    const totalSaved = optimizationStats.totalBeforeBytes - optimizationStats.totalAfterBytes;
+    console.log(
+      `📉 JPEG optimization summary: ${optimizationStats.optimizedCount} file(s), ${optimizationStats.totalBeforeBytes}B → ${optimizationStats.totalAfterBytes}B, saved ${totalSaved}B (${formatPercent(optimizationStats.totalBeforeBytes, optimizationStats.totalAfterBytes)})`,
+    );
+  }
 }
 
 // Run the script
