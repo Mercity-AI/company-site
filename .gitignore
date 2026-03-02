@@ -29,6 +29,6 @@ dist-ssr
 
 
 
-notion_work/
+.notion/
 .cursor/
 .astro

@@ -8,6 +8,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
+    "import:notion": "node scripts/import-notion.js",
     "upload:images": "node scripts/upload-images-to-r2.js",
     "check:images": "node scripts/check-images.js"
   },
@@ -16,15 +17,18 @@
     "dotenv": "^17.2.3",
     "framer-motion": "^12.23.24",
     "gray-matter": "^4.0.3",
+    "katex": "^0.16.33",
     "lucide-react": "^0.555.0",
     "mime-types": "^3.0.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-highlight": "^7.0.2",
+    "rehype-katex": "^7.0.1",
     "rehype-pretty-code": "^0.14.1",
     "rehype-slug": "^6.0.0",
     "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
     "sharp": "^0.34.5"
   },
   "devDependencies": {

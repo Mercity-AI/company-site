@@ -5,6 +5,8 @@ import tailwindcss from '@tailwindcss/vite';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypeHighlight from 'rehype-highlight';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 
 function normalizeAllowedHostsBoolean(allowedHosts) {
   return Array.isArray(allowedHosts) && allowedHosts.length === 1 && allowedHosts[0] === true
@@ -31,9 +33,11 @@ export default defineConfig({
     },
   },
   markdown: {
+    remarkPlugins: [remarkMath],
     rehypePlugins: [
       rehypeSlug,
       rehypeHighlight,
+      rehypeKatex,
       [
         rehypeAutolinkHeadings,
         {

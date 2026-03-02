@@ -4,18 +4,17 @@ slug: lcm-lora-distillation-training-fast-diffusion-models
 publishedAt: '2026-02-07'
 summary: >-
   A practical report on training LCM-LoRA adapters for Stable Diffusion 1.5 to
-  reduce generation from 25-50 denoising steps to 4-6 steps with quality/cost
-  trade-offs, setup details, and evaluation results.
+  reduce generation from 25-50 denoising steps to 4-6 steps, leading to massive
+  cost and time savings  with quality trade-offs, setup details, and evaluation
+  results.
 authors:
-  - name: Pranav
+  - name: Juhi Singh
+tags: []
 category: Diffusion Models
+image: >-
+  https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/Screenshot_2025-12-03_at_2.00.16_PM.jpg
+
 ---
-
-# LCM-LoRA Distillation: Training Fast Diffusion Models
-
----
-
-## Introduction
 
 If you've worked with Stable Diffusion, you've experienced the waiting game. Generating a high-quality image with SD1.5 requires 25–50 denoising steps—15–25 seconds on consumer hardware. That's too slow for iterating on prompts or building applications that need real-time responsiveness.
 
@@ -25,7 +24,7 @@ We trained a family of Latent Consistency Model (LCM) LoRA adapters that generat
 
 This report is written for ML practitioners who want to train their own LCM adapters—whether for custom base models, specialized domains, or simply to understand the process deeply. We assume familiarity with diffusion models and PyTorch, but explain LCM-specific concepts as they arise. Hobbyists looking to use (rather than train) LCM-LoRA can skip to the Results section. We share not just what worked, but the decisions and trade-offs we encountered along the way.
 
-![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-models/image.jpg)
+![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/image.jpg)
 
 ---
 
@@ -50,35 +49,35 @@ The subset consists of 25,000 image-caption pairs with the following properties:
 
 We've made our specific subset available at `Mercity/laion-subset` on HuggingFace Hub for reproducibility.
 
-![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-models/image-1.jpg)
+![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/image-1.jpg)
 
 > *Photo pour Japanese pagoda and old house in Kyoto at twilight - image libre de droit*
 > 
 
-![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-models/image-2.jpg)
+![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/image-2.jpg)
 
 > *Portrait - Anush, by Artur Mkhitaryan*
 > 
 
-![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-models/image-3.jpg)
+![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/image-3.jpg)
 
 > *Emerald Lake, Yoho National Park, British Columbia*
 > 
 
-![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-models/image-4.jpg)
+![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/image-4.jpg)
 
 > *Aztec City by 7leipnir on DeviantArt*
 > 
 
 ### WebDataset: Streaming for Scale
 
-![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-models/image-5.jpg)
+![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/image-5.jpg)
 
 When we first attempted to load our dataset naively—reading 25,000 images into memory with multiple data loading workers—we quickly hit memory limits. With 16 workers (standard for saturating GPU utilization), the memory footprint exploded to roughly 288GB. Our training machine had 80GB of VRAM and reasonable system RAM, but this approach was simply not feasible.
 
 **WebDataset** solved this problem elegantly. Rather than loading all images into memory, WebDataset stores data as sequential TAR archives that can be streamed on-demand. Each worker reads data sequentially from disk (or even directly from remote storage like S3), processes it, and discards it once the batch is assembled. Peak memory usage dropped to approximately 2GB regardless of dataset size.
 
-![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-models/image-6.jpg)
+![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/image-6.jpg)
 
 The format also has natural properties that benefit distributed training. We split our dataset into 25 TAR shards (~1000 samples each), and different workers can read different shards simultaneously without coordination overhead. The buffer-based shuffling (we used a buffer of 1000 samples) provides sufficient randomization while maintaining streaming efficiency.
 
@@ -132,7 +131,7 @@ There's also a dataset alignment benefit: SD1.5 was trained on LAION data, and w
 
 ### Understanding LoRA for Distillation
 
-![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-models/image-7.jpg)
+![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/image-7.jpg)
 
 **Low-Rank Adaptation (LoRA)** is a technique that lets us modify a large model's behavior by training only a small number of additional parameters. Instead of updating the full weight matrices in attention and other layers, LoRA adds pairs of low-rank matrices that capture the desired modifications.
 
@@ -195,7 +194,7 @@ Think of it like this: if standard diffusion is learning to walk a path one step
 
 [image](cid:2C74400D-A9DC-441F-8F10-C08D40DBEB49)
 
-![Screenshot 2025-12-03 at 2.00.16 PM.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-models/Screenshot_2025-12-03_at_2.00.16_PM.jpg)
+![Screenshot 2025-12-03 at 2.00.16 PM.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/Screenshot_2025-12-03_at_2.00.16_PM.jpg)
 
 ### The Training Loop
 
@@ -208,7 +207,7 @@ LCM distillation works by teaching the student model to predict what the teacher
 
 The student learns to match the teacher's multi-step behavior in a single forward pass. Over thousands of iterations, this compresses the teacher's 50-step knowledge into the student's few-step capability.
 
-![Screenshot 2025-12-03 at 2.36.53 PM.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-models/Screenshot_2025-12-03_at_2.36.53_PM.jpg)
+![Screenshot 2025-12-03 at 2.36.53 PM.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/Screenshot_2025-12-03_at_2.36.53_PM.jpg)
 
 ### Why This Works
 
@@ -220,9 +219,10 @@ This is fundamentally different from training a diffusion model from scratch. We
 
 **Huber loss** (with c=0.001 in our case) was chosen over standard L2 (MSE) loss because it's more robust to outliers. The `c` parameter controls the transition between L2 behavior (for small errors) and L1 behavior (for large errors).
 
-L(x)={0.5⋅x2if ∣x∣≤cc⋅(∣x∣−0.5⋅c)if ∣x∣>cL(x) = \begin{cases} 0.5 \cdot x^2 & \text{if } |x| \leq c \\ c \cdot (|x| - 0.5 \cdot c) & \text{if } |x| > c \end{cases}
+$$
+L(x) = \begin{cases} 0.5 \cdot x^2 & \text{if } |x| \leq c \\ c \cdot (|x| - 0.5 \cdot c) & \text{if } |x| > c \end{cases}
+$$
 
-L(x)={0.5⋅x2c⋅(∣x∣−0.5⋅c)if ∣x∣≤cif ∣x∣>c
 
 This helps training stability when occasional difficult samples—unusual compositions, extreme colors, or edge cases in the dataset—would otherwise create gradient spikes. L2 loss squares the error, so a single bad sample can dominate a batch's gradient. Huber loss caps this influence.
 
@@ -236,7 +236,6 @@ This is also why LCM models use low guidance at inference time (1.0-2.0): the gu
 
 ---
 
-You can copy this directly into Notion. The `$$...$$` block will render as a LaTeX equation. If Notion doesn't render the equation properly, replace it with this code block version:
 
 ### Optimizer and Memory
 
@@ -276,7 +275,7 @@ Rather than generating separate images for each step count (1 through 6), we cap
 
 We also reduced in-distribution validation by 25% to balance thoroughness against training time. Full validation was adding ~2 extra minutes per checkpoint. The reduced set still provides statistically meaningful metrics while keeping each validation pass under 5 minutes.
 
-![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-models/image-8.jpg)
+![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/image-8.jpg)
 
 ### Prompt Strategy
 
@@ -284,17 +283,17 @@ We evaluate on two prompt sets to understand both reproduction quality and gener
 
 **In-distribution prompts**: Randomly sampled from training captions (75% of the dataset). These test whether the model can reproduce the characteristics it was trained on.
 
-![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-models/image-9.jpg)
+![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/image-9.jpg)
 
-![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-models/image-10.jpg)
+![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/image-10.jpg)
 
 **Out-of-distribution prompts**: 50 manually curated prompts covering artistic styles, complex compositions, named landmarks, abstract concepts, and technical specifications. These test whether the model generalizes beyond training caption patterns.
 
 For each validation run, we sample 4 prompts from each set and generate 4 images per prompt across all 6 step counts.
 
-![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-models/image-11.jpg)
+![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/image-11.jpg)
 
-![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-models/image-12.jpg)
+![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/image-12.jpg)
 
 # How to Use These Models
 
@@ -436,7 +435,7 @@ For consumer GPUs with limited VRAM, our LCM-LoRA adapters add minimal overhead 
 | **Step 1200** | 477.8 | 457.1 | 444.6 | 430.9 | 337.2 | **254.2** |
 | **Step 1600** | 476.7 | 451.0 | 439.3 | 421.2 | 333.3 | **250.5** |
 
-![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-models/image-13.jpg)
+![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/image-13.jpg)
 
 **In-Distribution CLIP Scores (Higher / Less Negative is Better)**
 
@@ -450,7 +449,7 @@ For consumer GPUs with limited VRAM, our LCM-LoRA adapters add minimal overhead 
 > CLIP scores measure text-image alignment. Higher values (less negative) indicate better prompt adherence. Step 1600 achieves the best CLIP score at 6 steps (-13.25), while Step 800 shows strong performance at 5-6 steps.
 > 
 
-![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-models/image-14.jpg)
+![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/image-14.jpg)
 
 ---
 
@@ -466,7 +465,7 @@ For consumer GPUs with limited VRAM, our LCM-LoRA adapters add minimal overhead 
 > Out-of-distribution performance shows degradation at 5-6 steps across all checkpoints (scores worsen from ~-16 to ~-18), suggesting the model optimizes for in-distribution aesthetics at the cost of generalization.
 > 
 
-![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-models/image-15.jpg)
+![image.png](https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/image-15.jpg)
 
 ---
 

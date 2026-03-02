@@ -36,11 +36,13 @@ pnpm check
 
 Blog posts are loaded from `content/*.mdx` through `src/content.config.ts`.
 
-## Image scripts
+## Content scripts
 
 Cloudflare R2 helper scripts are unchanged:
 
 ```bash
+pnpm import:notion --dry-run
+pnpm import:notion -- ".notion/LCM Blog"
 pnpm upload:images
 pnpm check:images
 ```

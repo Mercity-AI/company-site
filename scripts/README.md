@@ -6,6 +6,7 @@ This folder contains utilities for blog image upload, validation, and optimizati
 
 | File | Command | Purpose |
 |---|---|---|
+| `scripts/import-notion.js` | `pnpm import:notion` | Import Notion-exported markdown + asset folders into `content/` and `public/blog/`. |
 | `scripts/upload-images-to-r2.js` | `pnpm upload:images` | Upload images to Cloudflare R2 and rewrite Markdown references to CDN URLs. |
 | `scripts/check-images.js` | `pnpm check:images` | Validate image references in Markdown files (local files + remote URLs). |
 | `scripts/image-optimizer.js` | Internal helper | Converts PNG to JPG and compresses large JPEGs (enabled by default). |
@@ -55,6 +56,42 @@ Notes:
 
 - URL-encoded local paths from Notion (e.g. `image%201.png`) are supported.
 - PNG files are converted to JPG during upload.
+
+## Automated Notion Import (`pnpm import:notion`)
+
+Use this to import local Notion exports first, then run image upload scripts later.
+
+Expected export shape (per post):
+
+- one markdown file: `Some Title <notion-id>.md`
+- one sibling asset folder: `Some Title/`
+
+The importer will:
+
+- derive slug from title (UUID removed),
+- write post to `content/<slug>.md`,
+- copy/move assets to `public/blog/<slug>/`,
+- rewrite local links to `/blog/<slug>/...`,
+- add missing required frontmatter defaults.
+
+Examples:
+
+```bash
+# Dry run from default source (.notion)
+pnpm import:notion --dry-run
+
+# Dry run a specific folder
+pnpm import:notion -- ".notion/LCM Blog" --dry-run
+
+# Import and keep source files (default behavior)
+pnpm import:notion -- ".notion/LCM Blog"
+
+# Import and move source files (remove source markdown/assets)
+pnpm import:notion -- ".notion/LCM Blog" --move
+
+# Overwrite existing content/<slug>.md and destination assets
+pnpm import:notion -- ".notion/LCM Blog" --overwrite
+```
 
 ## Supported Image References
 
