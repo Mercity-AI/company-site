@@ -29,6 +29,7 @@ app.add_middleware(
         "http://127.0.0.1:4321",
         "https://mercity.ai",
         "https://www.mercity.ai",
+        "http://5.78.43.33",
     ],
     allow_credentials=False,
     allow_methods=["POST", "GET", "OPTIONS"],
