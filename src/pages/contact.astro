@@ -119,7 +119,7 @@ const contactApiBaseUrl = import.meta.env.PUBLIC_CONTACT_API_BASE_URL ?? 'http:/
           form.reset();
         } catch (error) {
           console.error('Failed to send contact form', error);
-          setStatus('Could not send right now. Please try again in a minute.', true);
+          setStatus('Could not send right now. Please try again in a minute. Maybe try booking a call instead?', true);
         } finally {
           submitButton?.removeAttribute('disabled');
         }
