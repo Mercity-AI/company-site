@@ -18,6 +18,7 @@ interface Props {
   showBlur?: boolean;
   showFooter?: boolean;
   mainPaddedTop?: boolean;
+  hideNavOnScroll?: boolean;
 }
 
 const {
@@ -33,6 +34,7 @@ const {
   showBlur = true,
   showFooter = true,
   mainPaddedTop = true,
+  hideNavOnScroll = false,
 } = Astro.props;
 
 const fullPageTitle = fullTitle(title);
@@ -95,6 +97,8 @@ const year = new Date().getFullYear();
         id="site-header"
         data-site-header
         data-scrolled="false"
+        data-hidden="false"
+        data-hide-nav-on-scroll={hideNavOnScroll ? 'true' : 'false'}
         class="site-header fixed top-0 w-full z-50 border-b border-transparent py-6"
       >
         <div class="max-w-7xl mx-auto px-6 flex justify-between items-center">
@@ -249,9 +253,22 @@ const year = new Date().getFullYear();
         const mobileLinks = document.querySelectorAll('[data-mobile-link]');
         const closeMenu = () => setMenuState(false);
 
+        let lastScrollY = window.scrollY;
+
         const setScrolled = () => {
           if (!header) return;
-          header.dataset.scrolled = window.scrollY > 20 ? 'true' : 'false';
+          const currentY = window.scrollY;
+          header.dataset.scrolled = currentY > 20 ? 'true' : 'false';
+
+          if (header.dataset.hideNavOnScroll === 'true') {
+            if (currentY > lastScrollY && currentY > 80) {
+              header.dataset.hidden = 'true';
+            } else if (currentY < lastScrollY) {
+              header.dataset.hidden = 'false';
+            }
+          }
+
+          lastScrollY = currentY;
         };
 
         const setMenuState = (open) => {

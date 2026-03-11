@@ -34,6 +34,7 @@ const articlePath = getPostUrl(post);
   modifiedTime={modifiedTimeISO}
   author={post.data.authors[0]?.name}
   tags={post.data.tags}
+  hideNavOnScroll
 >
   <div class="max-w-4xl mx-auto px-6 py-12">
     <a href="/blog" class="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-900 transition-colors mb-12 group" data-astro-prefetch>
