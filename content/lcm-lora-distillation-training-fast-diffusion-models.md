@@ -1,15 +1,15 @@
 ---
-title: 'LCM-LoRA Distillation: Training Fast Diffusion Models'
+title: 'Latent Consistency Models: Training Fast Diffusion Models'
 slug: lcm-lora-distillation-training-fast-diffusion-models
 publishedAt: '2026-02-07'
 summary: >-
-  A practical report on training LCM-LoRA adapters for Stable Diffusion 1.5 to
+  A research log of our work on training Latent Consistency Model with LoRA adapters for Stable Diffusion 1.5 to
   reduce generation from 25-50 denoising steps to 4-6 steps, leading to massive
   cost and time savings  with quality trade-offs, setup details, and evaluation
   results.
 authors:
   - name: Juhi Singh
-tags: []
+tags: [Latent Consistency Models, Distillation]
 category: Diffusion Models
 image: >-
   https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/Screenshot_2025-12-03_at_2.00.16_PM.jpg

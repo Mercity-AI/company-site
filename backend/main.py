@@ -7,6 +7,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from dotenv import load_dotenv
+load_dotenv()
 
 def _clean_app_password(raw_password: str) -> str:
     # Gmail app passwords are 16 chars; users often store with spaces/dashes.
