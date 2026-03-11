@@ -2,6 +2,7 @@ import { readFileSync, readdirSync, existsSync, statSync } from 'fs';
 import { join, dirname, resolve, basename } from 'path';
 import { fileURLToPath } from 'url';
 import matter from 'gray-matter';
+import { extractMarkdownImageTargets } from './markdown-links.js';
 
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
@@ -15,14 +16,12 @@ const projectRoot = resolve(__dirname, '..');
 function extractImageRefs(content) {
   const imagePaths = new Set();
 
-  // Match markdown image syntax: ![alt](path)
-  const markdownRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
-  let match;
-  while ((match = markdownRegex.exec(content)) !== null) {
-    imagePaths.add(match[2]);
+  for (const target of extractMarkdownImageTargets(content)) {
+    imagePaths.add(target);
   }
 
   // Match HTML img tags: <img src="path" />
+  let match;
   const htmlRegex = /<img[^>]+src=["']([^"']+)["']/g;
   while ((match = htmlRegex.exec(content)) !== null) {
     imagePaths.add(match[1]);

@@ -7,6 +7,7 @@ import mime from 'mime-types';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
 import { maybeOptimizeJpeg } from './image-optimizer.js';
+import { extractMarkdownImageTargets, replaceMarkdownLinks } from './markdown-links.js';
 
 // Load environment variables
 dotenv.config();
@@ -96,14 +97,12 @@ function formatPercent(beforeBytes, afterBytes) {
 function extractImageRefs(content) {
   const imagePaths = new Set();
 
-  // Match markdown image syntax: ![alt](path)
-  const markdownRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
-  let match;
-  while ((match = markdownRegex.exec(content)) !== null) {
-    imagePaths.add(match[2]);
+  for (const target of extractMarkdownImageTargets(content)) {
+    imagePaths.add(target);
   }
 
   // Match HTML img tags: <img src="path" />
+  let match;
   const htmlRegex = /<img[^>]+src=["']([^"']+)["']/g;
   while ((match = htmlRegex.exec(content)) !== null) {
     imagePaths.add(match[1]);
@@ -420,9 +419,12 @@ async function processMDXFile(filePath) {
 
       // Replace both markdown and HTML image references in body
       const escaped = escapeRegex(item.ref);
-      const markdownRegex = new RegExp(`!\\[([^\\]]*)\\]\\(${escaped}\\)`, 'g');
       const htmlRegex = new RegExp(`(<img[^>]+src=[\"'])${escaped}([\"'][^>]*>)`, 'g');
-      updatedBody = updatedBody.replace(markdownRegex, `![$1](${cdnUrl})`);
+      updatedBody = replaceMarkdownLinks(updatedBody, (token) => {
+        if (token.type !== 'image') return null;
+        if (token.target !== item.ref) return null;
+        return cdnUrl;
+      });
       updatedBody = updatedBody.replace(htmlRegex, `$1${cdnUrl}$2`);
 
       changeCount++;

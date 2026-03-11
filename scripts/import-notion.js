@@ -12,6 +12,7 @@ import {
 import { basename, dirname, extname, join, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import matter from 'gray-matter';
+import { replaceMarkdownLinks } from './markdown-links.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -219,21 +220,10 @@ function normalizeAuthors(authors, fallbackAuthor) {
 }
 
 function rewriteLinks(markdown, resolveLink) {
-  let out = markdown;
-
-  // Markdown images
-  out = out.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (full, alt, target) => {
-    const replacement = resolveLink(target);
-    if (!replacement) return full;
-    return `![${alt}](${replacement})`;
-  });
-
-  // Markdown links (skip images)
-  out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (full, text, target, offset, whole) => {
-    if (offset > 0 && whole[offset - 1] === '!') return full;
-    const replacement = resolveLink(target);
-    if (!replacement) return full;
-    return `[${text}](${replacement})`;
+  let out = replaceMarkdownLinks(markdown, (token) => {
+    const replacement = resolveLink(token.target, token.type);
+    if (!replacement) return null;
+    return replacement;
   });
 
   // HTML src / href
