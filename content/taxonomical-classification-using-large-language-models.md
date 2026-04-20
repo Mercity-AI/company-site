@@ -14,7 +14,7 @@ authors:
 tags:
   - Classification
   - Hierarchical Classification
-category: Research
+category: Classification
 isTopPick: false
 image: >-
   https://blog-cdn.mercity.ai/blog/taxonomical-classification-using-large-language-models/intro.jpg
