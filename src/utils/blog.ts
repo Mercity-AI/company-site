@@ -6,7 +6,11 @@ export function getPostUrl(post: CollectionEntry<'posts'>): string {
   return `/blog-post/${post.data.slug}`;
 }
 
-export function sortPostsByPublishedDate(posts: CollectionEntry<'posts'>[]): CollectionEntry<'posts'>[] {
+export function getResearchUrl(entry: CollectionEntry<'research'>): string {
+  return `/research/${entry.data.slug}`;
+}
+
+export function sortPostsByPublishedDate<T extends { data: { publishedAt: Date } }>(posts: T[]): T[] {
   return [...posts].sort((a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime());
 }
 
