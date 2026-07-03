@@ -70,7 +70,7 @@ export default function HeroSection() {
           </p>
           <div>
             <a
-              href="/blog"
+              href="/research"
               className="group inline-flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-full font-medium transition-all hover:bg-slate-800 hover:scale-105"
             >
               Read Our Research <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />

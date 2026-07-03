@@ -24,6 +24,12 @@ const forceAllowAllHostsPlugin = {
 
 export default defineConfig({
   site: 'https://www.mercity.ai',
+  redirects: {
+    '/blog-post/laco-layer-pruning-for-qwen3-8b-our-research-log':
+      '/research/laco-layer-pruning-for-qwen3-8b-our-research-log',
+    '/blog-post/lcm-lora-distillation-training-fast-diffusion-models':
+      '/research/lcm-lora-distillation-training-fast-diffusion-models',
+  },
   integrations: [react(), sitemap()],
   vite: {
     plugins: [tailwindcss(), forceAllowAllHostsPlugin],

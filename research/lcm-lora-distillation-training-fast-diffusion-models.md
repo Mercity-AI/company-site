@@ -317,7 +317,7 @@ pipe = StableDiffusionPipeline.from_pretrained(
 ).to(device)
 
 # Load LCM-LoRA adapter
-pipe.load_lora_weights("Mercity/lcm-lora-sd15-step-800")
+pipe.load_lora_weights("Mercity/lcm-lora-sd1.5-800")
 
 # Switch to LCM scheduler
 pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
@@ -571,9 +571,9 @@ Zhai, X., et al. (2023). *Sigmoid Loss for Language Image Pre-Training*. ICCV 20
 
 Our trained checkpoints are available on HuggingFace Hub:
 
-- [Mercity/lcm-lora-sd15-step-400](https://huggingface.co/Mercity/lcm-lora-sd15-step-400)
-- [Mercity/lcm-lora-sd15-step-800](https://huggingface.co/Mercity/lcm-lora-sd15-step-800)
-- [Mercity/lcm-lora-sd15-step-1200](https://huggingface.co/Mercity/lcm-lora-sd15-step-1200)
-- [Mercity/lcm-lora-sd15-step-1600](https://huggingface.co/Mercity/lcm-lora-sd15-step-1600)
+- [Mercity/lcm-lora-sd1.5-400](https://huggingface.co/Mercity/lcm-lora-sd1.5-400)
+- [Mercity/lcm-lora-sd1.5-800](https://huggingface.co/Mercity/lcm-lora-sd1.5-800)
+- [Mercity/lcm-lora-sd1.5-1200](https://huggingface.co/Mercity/lcm-lora-sd1.5-1200)
+- [Mercity/lcm-lora-sd1.5-1600](https://huggingface.co/Mercity/lcm-lora-sd1.5-1600)
 
 **Training Dataset**: [Mercity/laion-subset](https://huggingface.co/datasets/Mercity/laion-subset)

@@ -32,7 +32,7 @@ We cover the surprising gap between the paper's description and the official imp
 
 **Qwen3-8B Layer Compression Architecture.** LaCo identifies layers with similar hidden state representations and merges them iteratively. Starting from layer 25, three merge operations collapse layers L21-L27 into a single layer, removing 6 layers total. Early layers (L0-L3) and upper layers (L28-L35) are protected from pruning. The final 30-layer model achieves 16.7% compression with a perplexity ratio of 1.68x, retaining 78-94% of reasoning capabilities.
 
-We have released both our [implementation code](https://github.com/Mercity-AI/LaCo-Qwen3) and the [pruned model weights on Hugging Face](https://huggingface.co/Mercity/Qwen3-8B-LaCo-30L) for the community to build upon, experiment with, and extend.
+We have released both our [implementation code](https://github.com/Mercity-AI/LACO-Compression) and the [pruned model weights on Hugging Face](https://huggingface.co/Mercity/Qwen3-8B-LaCo-30L) for the community to build upon, experiment with, and extend.
 
 ## Understanding LaCo: The Paper's Approach
 
@@ -432,4 +432,4 @@ The critical finding is the **knowledge cliff** between 16.7% and 22.2% compress
 
 The method is best understood as a **pre-processing step before fine-tuning**, not a standalone compression technique. A pruned model benefits significantly from post-training to recover lost capabilities before deployment. For applications prioritizing inference efficiency over knowledge-intensive tasks, or applications that will fine-tune on domain-specific data anyway, LaCo provides meaningful compression with acceptable quality tradeoffs.
 
-Our [implementation code](https://github.com/Mercity-AI/LaCo-Qwen3) and [pruned model weights](https://huggingface.co/Mercity/Qwen3-8B-LaCo-30L) are available for further experimentation and post-training research. We encourage the community to build on this work, particularly exploring post-training strategies to recover the lost factual knowledge while maintaining the efficiency gains from layer pruning.
+Our [implementation code](https://github.com/Mercity-AI/LACO-Compression) and [pruned model weights](https://huggingface.co/Mercity/Qwen3-8B-LaCo-30L) are available for further experimentation and post-training research. We encourage the community to build on this work, particularly exploring post-training strategies to recover the lost factual knowledge while maintaining the efficiency gains from layer pruning.

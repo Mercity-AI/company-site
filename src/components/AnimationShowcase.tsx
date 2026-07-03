@@ -53,7 +53,7 @@ export default function AnimationShowcase() {
             </p>
             <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
               <a
-                href="/blog"
+                href="/research"
                 className="text-slate-700 hover:text-slate-900 transition-colors flex items-center gap-2 text-sm font-semibold uppercase tracking-widest backdrop-blur-sm px-4 py-2 rounded-lg bg-white/20 hover:bg-white/40 border border-transparent hover:border-slate-200"
               >
                 Read Our Research
