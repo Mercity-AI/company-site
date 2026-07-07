@@ -8,7 +8,8 @@ summary: >-
   model's internal activations instead of running a second model over its output
   text.
 authors:
-  - name: Mercity Research Team
+  - name: Rishikesh
+  - name: Pranav Patel
 tags:
   - Interpretability
   - Guardrails
