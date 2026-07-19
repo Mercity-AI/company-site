@@ -9,38 +9,44 @@ const pipeline = [
   {
     step: '01',
     title: 'Map the space',
-    detail: 'Discover 3–6 factors of variation, expand each into a tree. The leaves define what "full coverage" means.',
+    detail: 'Turn an open-ended brief into a taxonomy of the factors that actually matter.',
     artifact: 'taxonomy.json',
+    accent: 'text-indigo-500',
   },
   {
     step: '02',
     title: 'Design the mix',
-    detail: 'Weighted strategies decide which branches combine and how often — the distribution is set before generation.',
+    detail: 'Weight the combinations that belong together before a model generates a word.',
     artifact: 'strategies.json',
+    accent: 'text-sky-500',
   },
   {
     step: '03',
     title: 'Generate with intent',
-    detail: 'Every point starts as a sampled mix, fans out into meta-prompts, and is optionally complexified before generation.',
+    detail: 'Sample the map, write a local meta-prompt, and produce schema-safe records.',
     artifact: 'dataset.raw.jsonl',
+    accent: 'text-emerald-500',
   },
   {
     step: '04',
     title: 'Critique & refine',
-    detail: 'Schema validation first, then a semantic critic on every record. Rejections feed refinement, not the dataset.',
+    detail: 'Put every record through validation, criticism, repair, and acceptance.',
     artifact: 'dataset.final.jsonl',
+    accent: 'text-fuchsia-500',
   },
   {
     step: '05',
     title: 'Prove the result',
-    detail: 'Dedupe, decontaminate, and measure coverage, diversity, and complexity — in a separate pass that never mutates data.',
+    detail: 'Dedupe, measure coverage, and keep the lineage that explains every row.',
     artifact: 'eval_report.json',
+    accent: 'text-amber-500',
   },
 ];
 
 const roles = [
   {
     name: 'strategic',
+    color: 'text-indigo-600',
     label: 'The thinker',
     calls: '~65 calls per run',
     detail:
@@ -48,6 +54,7 @@ const roles = [
   },
   {
     name: 'bulk',
+    color: 'text-sky-600',
     label: 'The workhorse',
     calls: 'Thousands of calls',
     detail:
@@ -55,18 +62,12 @@ const roles = [
   },
   {
     name: 'critic',
+    color: 'text-emerald-600',
     label: 'The judge',
     calls: 'One verdict per record',
     detail:
       'Semantic critique, complexity scoring, coverage reassignment. Runs at low temperature for consistent, strict verdicts. Models judge better than they generate — the pipeline leans on that gap.',
   },
-];
-
-const stats = [
-  { label: 'Accept rate', value: '96%', note: 'critic-approved on first pass' },
-  { label: 'Leaf coverage', value: '100%', note: 'across all four factors' },
-  { label: 'Cost per 1,000 rows', value: '$2.60', note: 'including the taxonomy build' },
-  { label: 'Wall time', value: '84 min', note: '~4,440 model calls' },
 ];
 
 const evalSuite = [
@@ -127,6 +128,10 @@ const lineageJson = `{
   <span class="tok-k">"critic_verdicts"</span>: [{ <span class="tok-k">"verdict"</span>: <span class="tok-s">"accept"</span> }],
   <span class="tok-k">"accepted"</span>: <span class="tok-n">true</span>
 }`;
+
+const recordJson = `<span class="text-slate-800">"waterproof trail running shoes size 9 under $80, nothing neon"</span>
+<span class="tok-c">&#123; <span class="tok-k">"category"</span>: <span class="tok-s">"trail running shoes"</span>, <span class="tok-k">"waterproof"</span>: <span class="tok-n">true</span>, <span class="tok-k">"size"</span>: <span class="tok-s">"9"</span>,
+  <span class="tok-k">"price_max"</span>: <span class="tok-n">80</span>, <span class="tok-k">"color_excluded"</span>: [<span class="tok-s">"neon"</span>] &#125;</span>`;
 ---
 
 <BaseLayout
@@ -135,68 +140,130 @@ const lineageJson = `{
   path="/open-source/simula"
   hideNavOnScroll
 >
-  <div class="max-w-5xl mx-auto px-6 py-12">
-    <a
-      href="/open-source"
-      class="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-900 transition-colors mb-12 group"
-      data-astro-prefetch
-    >
-      <span class="group-hover:-translate-x-1 transition-transform">←</span> Back to Open Source
-    </a>
-
+  <div class="max-w-7xl mx-auto px-6 py-12">
     <!-- Hero -->
-    <header class="mb-24">
-      <div class="flex flex-wrap items-center gap-4 text-sm text-slate-500 font-mono mb-8">
-        <span class="bg-slate-100 px-3 py-1 rounded-full text-slate-900">Open Source</span>
-        <span>Python</span>
-        <span>MIT License</span>
+    <header class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-28 pt-8">
+      <div>
+        <p class="flex items-center gap-3 font-mono text-xs tracking-[0.2em] uppercase text-slate-500 mb-10">
+          <span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+          Open-source synthetic data library
+        </p>
+        <h1 class="text-6xl md:text-7xl xl:text-[5.5rem] font-light text-slate-900 leading-[0.98] tracking-tight mb-8">
+          Synthetic data,<br />
+          <span class="font-serif italic">deliberately</span><br />
+          generated.
+        </h1>
+        <p class="text-slate-500 font-light text-lg leading-relaxed max-w-md mb-10">
+          Simula is a compact, CLI-first Python library for turning an infinite concept space into a dataset you can
+          inspect, measure, and trust.
+        </p>
+        <div class="flex flex-wrap items-center gap-4 mb-8">
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-6 py-3 text-xs font-semibold uppercase tracking-wider bg-slate-900 text-white rounded-full hover:bg-indigo-900 transition-all duration-300"
+          >
+            View on GitHub ↗
+          </a>
+          <a
+            href={RESEARCH_LOG_URL}
+            class="px-6 py-3 text-xs font-semibold uppercase tracking-wider border border-slate-200 rounded-full hover:bg-slate-900 hover:text-white transition-all duration-300"
+            data-astro-prefetch
+          >
+            Read the Research Log
+          </a>
+          <a
+            href={PAPER_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-6 py-3 text-xs font-semibold uppercase tracking-wider border border-slate-200 rounded-full hover:bg-slate-900 hover:text-white transition-all duration-300"
+          >
+            The Paper
+          </a>
+        </div>
+        <p class="font-mono text-xs text-slate-400">Python&ensp;·&ensp;MIT License&ensp;·&ensp;pip install simula</p>
       </div>
-      <h1 class="text-6xl md:text-8xl font-serif italic text-slate-900 mb-8 opacity-90">Simula</h1>
-      <p class="text-2xl md:text-3xl font-light text-slate-900 leading-snug max-w-3xl mb-6">
-        Synthetic data, generated <span class="font-serif italic">deliberately</span>.
-      </p>
-      <p class="text-slate-500 font-light text-lg leading-relaxed max-w-2xl mb-10">
-        A compact, CLI-first Python library for schema-shaped and free-text synthetic data. Simula makes the concept
-        space explicit before sampling it — so the dataset you get is the dataset you designed, with coverage you can
-        state as a fraction.
-      </p>
-      <div class="flex flex-wrap items-center gap-4">
-        <a
-          href={GITHUB_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="px-6 py-3 text-xs font-semibold uppercase tracking-wider bg-slate-900 text-white rounded-full hover:bg-indigo-900 transition-all duration-300"
+
+      <!-- Concept-space tree figure -->
+      <div class="relative hidden lg:block h-[540px] select-none" aria-hidden="true">
+        <div class="absolute inset-0 tree-grid rounded-2xl"></div>
+        <p class="absolute top-2 right-2 font-mono text-[11px] tracking-[0.25em] text-slate-400">
+          CONCEPT SPACE&ensp;<span class="text-slate-600 font-medium">001–∞</span>
+        </p>
+
+        <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none">
+          <!-- brief → factors -->
+          <line x1="12" y1="48" x2="42" y2="22" stroke="#818cf8" stroke-opacity="0.55" vector-effect="non-scaling-stroke" stroke-width="1"></line>
+          <line x1="12" y1="48" x2="42" y2="50" stroke="#818cf8" stroke-opacity="0.55" vector-effect="non-scaling-stroke" stroke-width="1"></line>
+          <line x1="12" y1="48" x2="42" y2="78" stroke="#818cf8" stroke-opacity="0.55" vector-effect="non-scaling-stroke" stroke-width="1"></line>
+          <!-- factors → leaves -->
+          <line x1="42" y1="22" x2="78" y2="10" stroke="#cbd5e1" vector-effect="non-scaling-stroke" stroke-width="1"></line>
+          <line x1="42" y1="50" x2="78" y2="42" stroke="#cbd5e1" vector-effect="non-scaling-stroke" stroke-width="1"></line>
+          <line x1="42" y1="78" x2="78" y2="70" stroke="#cbd5e1" vector-effect="non-scaling-stroke" stroke-width="1"></line>
+          <!-- faint continuations toward the edge of the space -->
+          <line x1="78" y1="10" x2="100" y2="4" stroke="#e2e8f0" vector-effect="non-scaling-stroke" stroke-width="1"></line>
+          <line x1="78" y1="42" x2="100" y2="42" stroke="#e2e8f0" vector-effect="non-scaling-stroke" stroke-width="1"></line>
+          <line x1="78" y1="70" x2="100" y2="82" stroke="#e2e8f0" vector-effect="non-scaling-stroke" stroke-width="1"></line>
+        </svg>
+
+        <!-- brief -->
+        <div
+          class="absolute -translate-x-1/2 -translate-y-1/2 bg-white border border-indigo-500 rounded-md px-4 py-2 font-mono shadow-[0_0_28px_rgba(79,70,229,0.22)]"
+          style="left:12%;top:48%"
         >
-          View on GitHub
-        </a>
-        <a
-          href={RESEARCH_LOG_URL}
-          class="px-6 py-3 text-xs font-semibold uppercase tracking-wider border border-slate-200 rounded-full hover:bg-slate-900 hover:text-white transition-all duration-300"
-          data-astro-prefetch
-        >
-          Read the Research Log
-        </a>
-        <a
-          href={PAPER_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="px-6 py-3 text-xs font-semibold uppercase tracking-wider border border-slate-200 rounded-full hover:bg-slate-900 hover:text-white transition-all duration-300"
-        >
-          The Paper
-        </a>
+          <p class="text-[13px] font-medium text-slate-900">DATASET</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">brief</p>
+        </div>
+
+        <!-- factors -->
+        <div class="absolute -translate-x-1/2 -translate-y-1/2 bg-white border border-slate-300 rounded-md px-4 py-2 font-mono" style="left:42%;top:22%">
+          <p class="text-[13px] text-slate-800">intent</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">factor</p>
+        </div>
+        <div class="absolute -translate-x-1/2 -translate-y-1/2 bg-white border border-slate-300 rounded-md px-4 py-2 font-mono" style="left:42%;top:50%">
+          <p class="text-[13px] text-slate-800">vertical</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">factor</p>
+        </div>
+        <div class="absolute -translate-x-1/2 -translate-y-1/2 bg-white border border-slate-300 rounded-md px-4 py-2 font-mono" style="left:42%;top:78%">
+          <p class="text-[13px] text-slate-800">complexity</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">factor</p>
+        </div>
+
+        <!-- leaves -->
+        <div class="absolute -translate-x-1/2 -translate-y-1/2 bg-white border border-indigo-400 rounded-md px-4 py-2 font-mono" style="left:78%;top:10%">
+          <p class="text-[13px] text-slate-800">known_item</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">leaf</p>
+        </div>
+        <div class="absolute -translate-x-1/2 -translate-y-1/2 bg-white border border-sky-400 rounded-md px-4 py-2 font-mono" style="left:78%;top:42%">
+          <p class="text-[13px] text-slate-800">footwear</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">leaf</p>
+        </div>
+        <div class="absolute -translate-x-1/2 -translate-y-1/2 bg-white border border-fuchsia-400 rounded-md px-4 py-2 font-mono" style="left:78%;top:70%">
+          <p class="text-[13px] text-slate-800">negation</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">leaf</p>
+        </div>
+
+        <!-- readouts -->
+        <div class="absolute -translate-x-1/2 -translate-y-1/2 bg-white border border-slate-200 rounded-md px-3 py-1.5 font-mono text-[11px] text-slate-500 shadow-sm" style="left:30%;top:93%">
+          coverage: <span class="text-emerald-600 font-medium">100%</span>
+        </div>
+        <div class="absolute -translate-x-1/2 -translate-y-1/2 bg-white border border-slate-200 rounded-md px-3 py-1.5 font-mono text-[11px] text-slate-500 shadow-sm" style="left:87%;top:80%">
+          critic: <span class="text-emerald-600 font-medium">pass</span>
+        </div>
       </div>
     </header>
 
     <!-- The premise -->
-    <section class="border-t border-slate-200 pt-16 mb-24">
+    <section class="border-t border-slate-200 pt-16 mb-28">
       <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
-        <div class="md:col-span-4">
+        <div class="md:col-span-5">
           <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">The premise</p>
           <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight">
             Random prompting samples what the model finds probable. That's not your dataset.
           </h2>
         </div>
-        <div class="md:col-span-7 md:col-start-6">
+        <div class="md:col-span-6 md:col-start-7">
           <p class="text-slate-500 font-light text-lg leading-relaxed mb-6">
             Prompt a model in a loop and it clusters around semantic modes: four hundred variations of "cheap wireless
             earbuds," zero queries about warranty transfers or regional sizing. The edges of the space — the cases your
@@ -211,27 +278,23 @@ const lineageJson = `{
       </div>
     </section>
 
-    <!-- Pipeline figure -->
-    <section class="mb-24">
+    <!-- Pipeline -->
+    <section class="mb-28">
       <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-8">The pipeline</p>
-      <div class="flex flex-col md:flex-row md:items-stretch gap-3">
+      <div class="grid grid-cols-1 md:grid-cols-5 border-y border-slate-200 md:divide-x divide-slate-200">
         {
-          pipeline.map((stage, i) => (
-            <>
-              <div class="flex-1 bg-white/70 border border-slate-200 rounded-xl p-5 flex flex-col">
-                <span class="text-xs font-mono text-slate-400 mb-3">{stage.step}</span>
-                <h3 class="text-base font-medium text-slate-900 mb-2">{stage.title}</h3>
-                <p class="text-sm text-slate-500 font-light leading-relaxed mb-4 flex-grow">{stage.detail}</p>
-                <span class="text-xs font-mono text-indigo-900 bg-indigo-50 px-2 py-1 rounded self-start">
-                  {stage.artifact}
-                </span>
+          pipeline.map((stage) => (
+            <div class="py-10 md:px-6 first:md:pl-0 last:md:pr-0 flex flex-col border-t border-slate-200 first:border-t-0 md:border-t-0">
+              <span class="font-mono text-xs text-slate-400 mb-12">{stage.step}</span>
+              <h3 class="text-lg font-medium text-slate-900 mb-3">{stage.title}</h3>
+              <p class="text-sm text-slate-500 font-light leading-relaxed mb-10 flex-grow">{stage.detail}</p>
+              <div class="flex items-center gap-2.5">
+                <svg class={`w-3.5 h-3.5 ${stage.accent}`} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M3 3l9 9M12 5.5V12H5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="font-mono text-xs text-slate-400">{stage.artifact}</span>
               </div>
-              {i < pipeline.length - 1 && (
-                <div class="hidden md:flex items-center text-slate-300 text-lg shrink-0" aria-hidden="true">
-                  →
-                </div>
-              )}
-            </>
+            </div>
           ))
         }
       </div>
@@ -242,13 +305,13 @@ const lineageJson = `{
     </section>
 
     <!-- One data point, end to end -->
-    <section class="border-t border-slate-200 pt-16 mb-24">
+    <section class="border-t border-slate-200 pt-16 mb-28">
       <div class="grid grid-cols-1 md:grid-cols-12 gap-8 mb-12">
-        <div class="md:col-span-4">
+        <div class="md:col-span-5">
           <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Anatomy of a data point</p>
           <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight">From sampled mix to accepted record.</h2>
         </div>
-        <div class="md:col-span-7 md:col-start-6">
+        <div class="md:col-span-6 md:col-start-7">
           <p class="text-slate-500 font-light text-lg leading-relaxed">
             No record goes straight from requirements to output. Each sampled mix fans out into multiple meta-prompt
             scenarios — one picked at random — so identical requirements still produce genuinely different records.
@@ -257,64 +320,82 @@ const lineageJson = `{
         </div>
       </div>
 
-      <div class="bg-white/70 border border-slate-200 rounded-xl p-6 md:p-10">
-        <div class="space-y-0">
+      <div class="bg-white/70 border border-slate-200 rounded-2xl p-6 md:p-12">
+        <div class="max-w-4xl">
           <!-- Mix -->
           <div>
-            <p class="text-xs font-mono uppercase tracking-widest text-slate-400 mb-3">1 · Sampled mix — one node per factor</p>
+            <p class="font-mono text-xs uppercase tracking-widest text-slate-400 mb-4">
+              <span class="text-indigo-500 font-medium">1</span> · Sampled mix — one node per factor
+            </p>
             <div class="flex flex-wrap gap-2">
-              <span class="text-xs font-mono bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full">
+              <span class="font-mono text-xs bg-sky-50 text-sky-800 border border-sky-100 px-3 py-1.5 rounded-full">
                 product_vertical: footwear → trail_running
               </span>
-              <span class="text-xs font-mono bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full">
+              <span class="font-mono text-xs bg-indigo-50 text-indigo-800 border border-indigo-100 px-3 py-1.5 rounded-full">
                 shopper_intent: known_item_hunt
               </span>
-              <span class="text-xs font-mono bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full">
+              <span class="font-mono text-xs bg-emerald-50 text-emerald-800 border border-emerald-100 px-3 py-1.5 rounded-full">
                 attribute_focus: price_and_availability
               </span>
-              <span class="text-xs font-mono bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full">
+              <span class="font-mono text-xs bg-fuchsia-50 text-fuchsia-800 border border-fuchsia-100 px-3 py-1.5 rounded-full">
                 query_complexity: terse_with_negation
               </span>
             </div>
           </div>
 
-          <div class="text-slate-300 py-4 pl-2" aria-hidden="true">↓</div>
+          <div class="text-slate-300 py-4 pl-1" aria-hidden="true">↓</div>
 
-          <!-- Meta-prompt -->
+          <!-- Meta-prompts -->
           <div>
-            <p class="text-xs font-mono uppercase tracking-widest text-slate-400 mb-3">
-              2 · Meta-prompt — 3 drafted, 1 picked at random
+            <p class="font-mono text-xs uppercase tracking-widest text-slate-400 mb-4">
+              <span class="text-sky-500 font-medium">2</span> · Meta-prompts — 3 drafted, 1 picked at random
             </p>
-            <p class="text-slate-700 font-light border-l-2 border-indigo-200 pl-4 max-w-2xl">
-              "Race-week replacement search: brand + waterproof + size, under $80, typed as bare keywords with a
-              negation."
-            </p>
-          </div>
-
-          <div class="flex items-center gap-3 py-4 pl-2" aria-hidden="true">
-            <span class="text-slate-300">↓</span>
-            <span class="text-xs font-mono text-slate-400">complexified at p = 0.3</span>
-          </div>
-
-          <!-- Record -->
-          <div>
-            <p class="text-xs font-mono uppercase tracking-widest text-slate-400 mb-3">3 · Generated record — schema-validated</p>
-            <div class="font-mono text-sm text-slate-700 bg-slate-50 border border-slate-100 rounded-lg p-4 overflow-x-auto max-w-2xl">
-              <p class="text-slate-900">"waterproof trail running shoes size 9 under $80, nothing neon"</p>
-              <p class="text-slate-500 mt-2 text-xs leading-relaxed">
-                &#123; "category": "trail running shoes", "waterproof": true, "size": "9", "price_max": 80,
-                "color_excluded": ["neon"] &#125;
+            <div class="space-y-3 max-w-2xl">
+              <p class="text-sm text-slate-400 font-light border-l-2 border-slate-200 pl-4 leading-relaxed">
+                "A runner hunting a specific shoe model they already know, with a hard price cap and one excluded
+                color."
+              </p>
+              <div class="border-l-2 border-indigo-500 pl-4">
+                <p class="text-slate-800 font-light leading-relaxed">
+                  "Race-week replacement search: brand + waterproof + size, under $80, typed as bare keywords with a
+                  negation."
+                  <span class="ml-2 inline-block align-middle font-mono text-[10px] uppercase tracking-wider bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">
+                    picked
+                  </span>
+                </p>
+              </div>
+              <p class="text-sm text-slate-400 font-light border-l-2 border-slate-200 pl-4 leading-relaxed">
+                "A bargain-hunter comparing two named brands on waterproofing and grip, budget-capped."
               </p>
             </div>
           </div>
 
-          <div class="text-slate-300 py-4 pl-2" aria-hidden="true">↓</div>
+          <div class="flex items-center gap-3 py-4 pl-1" aria-hidden="true">
+            <span class="text-slate-300">↓</span>
+            <span class="font-mono text-xs text-amber-600/80">complexified at p = 0.3 — more constraints, same requirements</span>
+          </div>
+
+          <!-- Record -->
+          <div>
+            <p class="font-mono text-xs uppercase tracking-widest text-slate-400 mb-4">
+              <span class="text-amber-500 font-medium">3</span> · Generated record — schema-validated
+            </p>
+            <div class="code-paper rounded-lg overflow-x-auto max-w-2xl">
+              <pre class="p-4 text-[13px] leading-relaxed"><code set:html={recordJson} /></pre>
+            </div>
+          </div>
+
+          <div class="text-slate-300 py-4 pl-1" aria-hidden="true">↓</div>
 
           <!-- Critic -->
           <div>
-            <p class="text-xs font-mono uppercase tracking-widest text-slate-400 mb-3">4 · Critic verdict</p>
+            <p class="font-mono text-xs uppercase tracking-widest text-slate-400 mb-4">
+              <span class="text-emerald-500 font-medium">4</span> · Critic verdict
+            </p>
             <div class="flex flex-wrap items-center gap-3">
-              <span class="text-xs font-mono bg-emerald-50 text-emerald-800 px-3 py-1.5 rounded-full">accept</span>
+              <span class="font-mono text-xs bg-emerald-50 text-emerald-800 border border-emerald-100 px-3 py-1.5 rounded-full">
+                accept ✓
+              </span>
               <span class="text-sm text-slate-500 font-light">
                 Rejections feed up to <span class="font-mono text-xs">max_refine_attempts</span> revisions — or the row
                 dies with its reason recorded.
@@ -326,22 +407,22 @@ const lineageJson = `{
     </section>
 
     <!-- Model roles -->
-    <section class="mb-24">
+    <section class="mb-28">
       <div class="mb-10">
         <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Three model roles</p>
-        <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight max-w-2xl">
+        <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight max-w-3xl">
           Expensive intelligence where it amortizes. Cheap throughput where volume lives.
         </h2>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div class="grid grid-cols-1 md:grid-cols-3 border-y border-slate-200 md:divide-x divide-slate-200">
         {
           roles.map((role) => (
-            <div class="bg-white/70 border border-slate-200 rounded-xl p-6">
-              <div class="flex items-baseline justify-between mb-4">
-                <span class="font-mono text-sm text-indigo-900">{role.name}</span>
-                <span class="text-xs font-mono text-slate-400">{role.calls}</span>
+            <div class="py-10 md:px-8 first:md:pl-0 last:md:pr-0 border-t border-slate-200 first:border-t-0 md:border-t-0">
+              <div class="flex items-baseline justify-between mb-6">
+                <span class={`font-mono text-sm font-medium ${role.color}`}>{role.name}</span>
+                <span class="font-mono text-xs text-slate-400">{role.calls}</span>
               </div>
-              <h3 class="text-lg font-medium text-slate-900 mb-2">{role.label}</h3>
+              <h3 class="text-lg font-medium text-slate-900 mb-3">{role.label}</h3>
               <p class="text-sm text-slate-500 font-light leading-relaxed">{role.detail}</p>
             </div>
           ))
@@ -350,9 +431,9 @@ const lineageJson = `{
     </section>
 
     <!-- Config -->
-    <section class="border-t border-slate-200 pt-16 mb-24">
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-        <div class="md:col-span-4">
+    <section class="border-t border-slate-200 pt-16 mb-28">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        <div class="lg:col-span-5">
           <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Configuration</p>
           <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight mb-6">One YAML per run.</h2>
           <p class="text-slate-500 font-light text-lg leading-relaxed mb-6">
@@ -365,35 +446,41 @@ const lineageJson = `{
             fingerprint so rows from two configs never blend silently.
           </p>
         </div>
-        <div class="md:col-span-8">
-          <div class="code-block rounded-xl overflow-hidden">
-            <div class="flex items-center justify-between px-5 py-3 border-b border-slate-700/50">
-              <span class="text-xs font-mono text-slate-400">config.yaml</span>
-              <span class="text-xs font-mono text-slate-500">abridged</span>
+        <div class="lg:col-span-7">
+          <div class="code-paper rounded-xl overflow-hidden shadow-sm">
+            <div class="flex items-center justify-between px-5 py-3 border-b border-[#e8e4d8]">
+              <span class="font-mono text-xs text-slate-500">config.yaml</span>
+              <span class="font-mono text-xs text-slate-400">abridged</span>
             </div>
-            <pre class="p-5 overflow-x-auto text-[13px] leading-relaxed"><code set:html={yamlConfig} /></pre>
+            <pre class="p-6 overflow-x-auto text-[13px] leading-relaxed"><code set:html={yamlConfig} /></pre>
+            <div class="flex items-center justify-between px-5 py-3 border-t border-[#e8e4d8]">
+              <span class="font-mono text-xs text-slate-500">$ simula run config.yaml</span>
+              <span class="font-mono text-xs text-slate-400">⏎</span>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
     <!-- Lineage -->
-    <section class="mb-24">
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-        <div class="md:col-span-8 order-2 md:order-1">
-          <div class="code-block rounded-xl overflow-hidden">
-            <div class="flex items-center justify-between px-5 py-3 border-b border-slate-700/50">
-              <span class="text-xs font-mono text-slate-400">dataset.final.jsonl — one row</span>
-              <span class="text-xs font-mono text-slate-500">abridged</span>
+    <section class="mb-28">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        <div class="lg:col-span-7 order-2 lg:order-1">
+          <div class="code-paper rounded-xl overflow-hidden shadow-sm">
+            <div class="flex items-center justify-between px-5 py-3 border-b border-[#e8e4d8]">
+              <span class="font-mono text-xs text-slate-500">dataset.final.jsonl — one row</span>
+              <span class="font-mono text-xs text-slate-400">abridged</span>
             </div>
-            <pre class="p-5 overflow-x-auto text-[13px] leading-relaxed"><code set:html={lineageJson} /></pre>
+            <pre class="p-6 overflow-x-auto text-[13px] leading-relaxed"><code set:html={lineageJson} /></pre>
+            <div class="flex items-center justify-between px-5 py-3 border-t border-[#e8e4d8]">
+              <span class="font-mono text-xs text-slate-500">$ simula evaluate config.yaml</span>
+              <span class="font-mono text-xs text-slate-400">⏎</span>
+            </div>
           </div>
         </div>
-        <div class="md:col-span-4 order-1 md:order-2">
+        <div class="lg:col-span-5 order-1 lg:order-2">
           <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Lineage</p>
-          <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight mb-6">
-            Every row can explain itself.
-          </h2>
+          <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight mb-6">Every row can explain itself.</h2>
           <p class="text-slate-500 font-light text-lg leading-relaxed">
             Taxonomy mix, strategy, meta-prompt, critic verdicts, and rejection reason travel with each record. Coverage
             math reads from it, the coverage-aware trimmer reads from it, and when quality drifts, per-row debugging
@@ -403,46 +490,18 @@ const lineageJson = `{
       </div>
     </section>
 
-    <!-- Numbers -->
-    <section class="border-t border-slate-200 pt-16 mb-24">
-      <div class="mb-10">
-        <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">In production</p>
-        <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight max-w-2xl">
-          Numbers from a real run, not a benchmark harness.
-        </h2>
-      </div>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {
-          stats.map((stat) => (
-            <div class="bg-white/70 border border-slate-200 rounded-xl p-6">
-              <p class="text-sm text-slate-500 font-light mb-2">{stat.label}</p>
-              <p class="text-3xl md:text-4xl font-semibold text-slate-900 mb-2">{stat.value}</p>
-              <p class="text-xs text-slate-400 font-light">{stat.note}</p>
-            </div>
-          ))
-        }
-      </div>
-      <p class="text-sm text-slate-400 font-light mt-6 max-w-2xl">
-        1,000-row job-posting extraction dataset: 841 distinct extraction key-sets, zero duplicates, zero empty lineage.
-        The full account — including what went wrong — is in the
-        <a href={RESEARCH_LOG_URL} class="text-slate-600 underline underline-offset-4 hover:text-indigo-900 transition-colors" data-astro-prefetch>
-          research log</a
-        >.
-      </p>
-    </section>
-
     <!-- Evaluation suite -->
-    <section class="mb-24">
+    <section class="border-t border-slate-200 pt-16 mb-28">
       <div class="mb-10">
         <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">The evaluation suite</p>
-        <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight max-w-2xl">
+        <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight max-w-3xl">
           Generation never writes eval reports. Evaluation never mutates datasets.
         </h2>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         {
           evalSuite.map((item) => (
-            <div class="bg-white/70 border border-slate-200 rounded-xl p-6">
+            <div class="bg-white/70 border border-slate-200 rounded-xl p-8">
               <h3 class="text-lg font-medium text-slate-900 mb-2">{item.title}</h3>
               <p class="text-sm text-slate-500 font-light leading-relaxed">{item.detail}</p>
             </div>
@@ -485,34 +544,42 @@ const lineageJson = `{
 </BaseLayout>
 
 <style>
-  .code-block {
-    background-color: #1e293b;
+  .tree-grid {
+    background-image:
+      linear-gradient(to right, rgba(15, 23, 42, 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(15, 23, 42, 0.045) 1px, transparent 1px);
+    background-size: 44px 44px;
   }
 
-  .code-block pre {
+  .code-paper {
+    background-color: #fbfaf5;
+    border: 1px solid #e8e4d8;
+  }
+
+  .code-paper pre {
     margin: 0;
   }
 
-  .code-block code {
+  .code-paper code {
     font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
-    color: #e2e8f0;
+    color: #44403c;
     display: block;
     white-space: pre;
   }
 
-  .code-block :global(.tok-k) {
-    color: #7dd3fc;
+  .code-paper :global(.tok-k) {
+    color: #1d4ed8;
   }
 
-  .code-block :global(.tok-s) {
-    color: #86efac;
+  .code-paper :global(.tok-s) {
+    color: #9a3412;
   }
 
-  .code-block :global(.tok-n) {
-    color: #fcd34d;
+  .code-paper :global(.tok-n) {
+    color: #b45309;
   }
 
-  .code-block :global(.tok-c) {
-    color: #64748b;
+  .code-paper :global(.tok-c) {
+    color: #a8a29e;
   }
 </style>
