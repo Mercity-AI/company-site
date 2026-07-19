@@ -2,7 +2,6 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 
 const GITHUB_URL = 'https://github.com/Mercity-AI/Simula';
-const PAPER_URL = 'https://arxiv.org/abs/2603.29791';
 const RESEARCH_LOG_URL = '/research/building-simula-our-synthetic-data-generation-library';
 
 const pipeline = [
@@ -154,10 +153,9 @@ const recordJson = `<span class="text-slate-800">"waterproof trail running shoes
           <span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
           Open-source synthetic data library
         </p>
-        <h1 class="text-6xl md:text-7xl xl:text-[5.5rem] font-light text-slate-900 leading-[0.98] tracking-tight mb-8">
+        <h1 class="text-[clamp(1.7rem,7.6vw,2.6rem)] sm:text-5xl md:text-6xl lg:text-[2.9rem] xl:text-[3.9rem] 2xl:text-[4.2rem] font-light text-slate-900 leading-[1.05] tracking-tight mb-8">
           Synthetic data,<br />
-          <span class="font-serif italic">deliberately</span><br />
-          generated.
+          <span class="whitespace-nowrap"><span class="font-serif italic">deliberately</span> generated.</span>
         </h1>
         <p class="text-slate-500 font-light text-lg leading-relaxed max-w-md mb-10">
           Simula is a compact, CLI-first Python library for turning an infinite concept space into a dataset you can
@@ -178,14 +176,6 @@ const recordJson = `<span class="text-slate-800">"waterproof trail running shoes
             data-astro-prefetch
           >
             Read the Research Log
-          </a>
-          <a
-            href={PAPER_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="px-6 py-3 text-xs font-semibold uppercase tracking-wider border border-slate-200 rounded-full hover:bg-slate-900 hover:text-white transition-all duration-300"
-          >
-            The Paper
           </a>
         </div>
         <p class="font-mono text-xs text-slate-400">Python&ensp;·&ensp;MIT License&ensp;·&ensp;pip install simula</p>
@@ -520,7 +510,7 @@ const recordJson = `<span class="text-slate-800">"waterproof trail running shoes
     <section class="border-t border-slate-200 pt-16 pb-8">
       <div class="max-w-3xl">
         <h2 class="text-3xl md:text-5xl font-light text-slate-900 leading-tight mb-6">
-          Intentionally small. <span class="font-serif italic">Deliberately</span> boring.
+          Intentionally small. <span class="font-serif italic">Unapologetically</span> boring.
         </h2>
         <p class="text-slate-500 font-light text-lg leading-relaxed mb-10">
           About ten modules of clear Python, one YAML per run, MIT licensed, with runnable offline examples and the
