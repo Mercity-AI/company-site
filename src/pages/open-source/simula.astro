@@ -140,9 +140,15 @@ const recordJson = `<span class="text-slate-800">"waterproof trail running shoes
   path="/open-source/simula"
   hideNavOnScroll
 >
-  <div class="max-w-7xl mx-auto px-6 py-12">
+  <div class="max-w-[92rem] mx-auto px-6 py-12">
     <!-- Hero -->
-    <header class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-28 pt-8">
+    <header class="relative isolate grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-28 pt-8">
+      <!-- frosted glow orbs -->
+      <div class="absolute inset-0 -z-10 pointer-events-none" aria-hidden="true">
+        <div class="hero-orb absolute -top-64 right-[16%] w-[36rem] h-[36rem] rounded-full bg-indigo-400/25 blur-[110px] motion-safe:animate-[orb-drift-a_22s_ease-in-out_infinite]"></div>
+        <div class="hero-orb absolute top-[58%] left-[34%] w-[26rem] h-[26rem] rounded-full bg-sky-300/30 blur-[100px] motion-safe:animate-[orb-drift-b_26s_ease-in-out_infinite]"></div>
+        <div class="hero-orb absolute top-[22%] -left-32 w-80 h-80 rounded-full bg-fuchsia-300/20 blur-[90px]"></div>
+      </div>
       <div>
         <p class="flex items-center gap-3 font-mono text-xs tracking-[0.2em] uppercase text-slate-500 mb-10">
           <span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
@@ -544,6 +550,26 @@ const recordJson = `<span class="text-slate-800">"waterproof trail running shoes
 </BaseLayout>
 
 <style>
+  @keyframes orb-drift-a {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(-30px, 24px, 0) scale(1.06);
+    }
+  }
+
+  @keyframes orb-drift-b {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(28px, -20px, 0) scale(0.95);
+    }
+  }
+
   .tree-grid {
     background-image:
       linear-gradient(to right, rgba(15, 23, 42, 0.045) 1px, transparent 1px),
