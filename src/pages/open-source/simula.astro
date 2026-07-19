@@ -1,0 +1,518 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+const GITHUB_URL = 'https://github.com/Mercity-AI/Simula';
+const PAPER_URL = 'https://arxiv.org/abs/2603.29791';
+const RESEARCH_LOG_URL = '/research/building-simula-our-synthetic-data-generation-library';
+
+const pipeline = [
+  {
+    step: '01',
+    title: 'Map the space',
+    detail: 'Discover 3–6 factors of variation, expand each into a tree. The leaves define what "full coverage" means.',
+    artifact: 'taxonomy.json',
+  },
+  {
+    step: '02',
+    title: 'Design the mix',
+    detail: 'Weighted strategies decide which branches combine and how often — the distribution is set before generation.',
+    artifact: 'strategies.json',
+  },
+  {
+    step: '03',
+    title: 'Generate with intent',
+    detail: 'Every point starts as a sampled mix, fans out into meta-prompts, and is optionally complexified before generation.',
+    artifact: 'dataset.raw.jsonl',
+  },
+  {
+    step: '04',
+    title: 'Critique & refine',
+    detail: 'Schema validation first, then a semantic critic on every record. Rejections feed refinement, not the dataset.',
+    artifact: 'dataset.final.jsonl',
+  },
+  {
+    step: '05',
+    title: 'Prove the result',
+    detail: 'Dedupe, decontaminate, and measure coverage, diversity, and complexity — in a separate pass that never mutates data.',
+    artifact: 'eval_report.json',
+  },
+];
+
+const roles = [
+  {
+    name: 'strategic',
+    label: 'The thinker',
+    calls: '~65 calls per run',
+    detail:
+      'Factor discovery, taxonomy expansion, strategy generation. Called rarely, so it can afford to be an expensive reasoning model — its decisions amortize across every row.',
+  },
+  {
+    name: 'bulk',
+    label: 'The workhorse',
+    calls: 'Thousands of calls',
+    detail:
+      'Meta-prompts, complexification, record generation, repairs, refinements. Called constantly, so it should be fast and cheap. This is where volume lives.',
+  },
+  {
+    name: 'critic',
+    label: 'The judge',
+    calls: 'One verdict per record',
+    detail:
+      'Semantic critique, complexity scoring, coverage reassignment. Runs at low temperature for consistent, strict verdicts. Models judge better than they generate — the pipeline leans on that gap.',
+  },
+];
+
+const stats = [
+  { label: 'Accept rate', value: '96%', note: 'critic-approved on first pass' },
+  { label: 'Leaf coverage', value: '100%', note: 'across all four factors' },
+  { label: 'Cost per 1,000 rows', value: '$2.60', note: 'including the taxonomy build' },
+  { label: 'Wall time', value: '84 min', note: '~4,440 model calls' },
+];
+
+const evalSuite = [
+  {
+    title: 'Dedupe & decontamination',
+    detail:
+      '13-gram Jaccard overlap against kept rows and against your test set. If your domain has a benchmark, decontamination is not optional.',
+  },
+  {
+    title: 'Coverage, two ways',
+    detail:
+      'Lineage-based coverage is free and trusts the generator. LLM reassignment costs a call per row and trusts nothing — and it works on datasets you didn’t generate.',
+  },
+  {
+    title: 'Embedding diversity',
+    detail:
+      'Global diversity asks whether the dataset spans the space. Local diversity asks whether nearby records are actually different. The two disagree in instructive ways.',
+  },
+  {
+    title: 'Complexity via calibrated Elo',
+    detail:
+      'Models are better at comparing than scoring, so records are ranked through batched comparisons stitched into one global rating — the chess system, applied to data.',
+  },
+];
+
+const yamlConfig = `<span class="tok-c"># One YAML per run. Bad config fails at load, not mid-run.</span>
+<span class="tok-k">description</span>: <span class="tok-s">&gt;</span>
+<span class="tok-s">  E-commerce search-query extraction. Each example pairs a</span>
+<span class="tok-s">  realistic shopper search with its parsed structured form.</span>
+
+<span class="tok-k">schema</span>:
+  <span class="tok-k">type</span>: <span class="tok-s">object</span>
+  <span class="tok-k">required</span>: [<span class="tok-s">"query"</span>, <span class="tok-s">"extraction"</span>]
+
+<span class="tok-k">models</span>:
+  <span class="tok-k">strategic</span>: { <span class="tok-k">model</span>: <span class="tok-s">"deepseek/deepseek-v4-pro"</span> }   <span class="tok-c"># thinks once</span>
+  <span class="tok-k">bulk</span>:      { <span class="tok-k">model</span>: <span class="tok-s">"deepseek/deepseek-v4-flash"</span> } <span class="tok-c"># the workhorse</span>
+  <span class="tok-k">critic</span>:    { <span class="tok-k">model</span>: <span class="tok-s">"deepseek/deepseek-v4-flash"</span> } <span class="tok-c"># the judge</span>
+
+<span class="tok-k">generation</span>:
+  <span class="tok-k">target_size</span>: <span class="tok-n">10000</span>
+  <span class="tok-k">scenarios_per_mix</span>: <span class="tok-n">3</span>    <span class="tok-c"># local diversity</span>
+  <span class="tok-k">complexity_ratio</span>: <span class="tok-n">0.3</span>  <span class="tok-c"># fraction pushed harder</span>
+  <span class="tok-k">concurrency</span>: <span class="tok-n">48</span>`;
+
+const lineageJson = `{
+  <span class="tok-k">"record"</span>: {
+    <span class="tok-k">"query"</span>: <span class="tok-s">"waterproof trail shoes size 9 under $80, no neon"</span>,
+    <span class="tok-k">"extraction"</span>: {
+      <span class="tok-k">"category"</span>: <span class="tok-s">"trail running shoes"</span>, <span class="tok-k">"waterproof"</span>: <span class="tok-n">true</span>,
+      <span class="tok-k">"size"</span>: <span class="tok-s">"9"</span>, <span class="tok-k">"price_max"</span>: <span class="tok-n">80</span>, <span class="tok-k">"color_excluded"</span>: [<span class="tok-s">"neon"</span>]
+    }
+  },
+  <span class="tok-k">"taxonomy_mix"</span>: [<span class="tok-s">"footwear &rarr; athletic &rarr; trail_running"</span>, <span class="tok-s">"..."</span>],
+  <span class="tok-k">"strategy_id"</span>: <span class="tok-s">"mainstream_purchase"</span>,
+  <span class="tok-k">"meta_prompt"</span>: <span class="tok-s">"Race-week replacement search: brand + ..."</span>,
+  <span class="tok-k">"complexified"</span>: <span class="tok-n">true</span>,
+  <span class="tok-k">"critic_verdicts"</span>: [{ <span class="tok-k">"verdict"</span>: <span class="tok-s">"accept"</span> }],
+  <span class="tok-k">"accepted"</span>: <span class="tok-n">true</span>
+}`;
+---
+
+<BaseLayout
+  title="Simula — Deliberate Synthetic Data Generation"
+  description="Simula is a compact, CLI-first Python library for schema-shaped and free-text synthetic data. Map the concept space first, then sample it on purpose. MIT licensed."
+  path="/open-source/simula"
+  hideNavOnScroll
+>
+  <div class="max-w-5xl mx-auto px-6 py-12">
+    <a
+      href="/open-source"
+      class="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-900 transition-colors mb-12 group"
+      data-astro-prefetch
+    >
+      <span class="group-hover:-translate-x-1 transition-transform">←</span> Back to Open Source
+    </a>
+
+    <!-- Hero -->
+    <header class="mb-24">
+      <div class="flex flex-wrap items-center gap-4 text-sm text-slate-500 font-mono mb-8">
+        <span class="bg-slate-100 px-3 py-1 rounded-full text-slate-900">Open Source</span>
+        <span>Python</span>
+        <span>MIT License</span>
+      </div>
+      <h1 class="text-6xl md:text-8xl font-serif italic text-slate-900 mb-8 opacity-90">Simula</h1>
+      <p class="text-2xl md:text-3xl font-light text-slate-900 leading-snug max-w-3xl mb-6">
+        Synthetic data, generated <span class="font-serif italic">deliberately</span>.
+      </p>
+      <p class="text-slate-500 font-light text-lg leading-relaxed max-w-2xl mb-10">
+        A compact, CLI-first Python library for schema-shaped and free-text synthetic data. Simula makes the concept
+        space explicit before sampling it — so the dataset you get is the dataset you designed, with coverage you can
+        state as a fraction.
+      </p>
+      <div class="flex flex-wrap items-center gap-4">
+        <a
+          href={GITHUB_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="px-6 py-3 text-xs font-semibold uppercase tracking-wider bg-slate-900 text-white rounded-full hover:bg-indigo-900 transition-all duration-300"
+        >
+          View on GitHub
+        </a>
+        <a
+          href={RESEARCH_LOG_URL}
+          class="px-6 py-3 text-xs font-semibold uppercase tracking-wider border border-slate-200 rounded-full hover:bg-slate-900 hover:text-white transition-all duration-300"
+          data-astro-prefetch
+        >
+          Read the Research Log
+        </a>
+        <a
+          href={PAPER_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="px-6 py-3 text-xs font-semibold uppercase tracking-wider border border-slate-200 rounded-full hover:bg-slate-900 hover:text-white transition-all duration-300"
+        >
+          The Paper
+        </a>
+      </div>
+    </header>
+
+    <!-- The premise -->
+    <section class="border-t border-slate-200 pt-16 mb-24">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+        <div class="md:col-span-4">
+          <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">The premise</p>
+          <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight">
+            Random prompting samples what the model finds probable. That's not your dataset.
+          </h2>
+        </div>
+        <div class="md:col-span-7 md:col-start-6">
+          <p class="text-slate-500 font-light text-lg leading-relaxed mb-6">
+            Prompt a model in a loop and it clusters around semantic modes: four hundred variations of "cheap wireless
+            earbuds," zero queries about warranty transfers or regional sizing. The edges of the space — the cases your
+            model will actually fail on — never show up.
+          </p>
+          <p class="text-slate-500 font-light text-lg leading-relaxed">
+            Simula's fix is structural. Decompose the domain into factors of variation, expand each into a taxonomy,
+            and sample data points as deliberate mixes of taxonomy nodes. Diversity stops being a hope and becomes a
+            number: combinations covered over combinations that exist.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pipeline figure -->
+    <section class="mb-24">
+      <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-8">The pipeline</p>
+      <div class="flex flex-col md:flex-row md:items-stretch gap-3">
+        {
+          pipeline.map((stage, i) => (
+            <>
+              <div class="flex-1 bg-white/70 border border-slate-200 rounded-xl p-5 flex flex-col">
+                <span class="text-xs font-mono text-slate-400 mb-3">{stage.step}</span>
+                <h3 class="text-base font-medium text-slate-900 mb-2">{stage.title}</h3>
+                <p class="text-sm text-slate-500 font-light leading-relaxed mb-4 flex-grow">{stage.detail}</p>
+                <span class="text-xs font-mono text-indigo-900 bg-indigo-50 px-2 py-1 rounded self-start">
+                  {stage.artifact}
+                </span>
+              </div>
+              {i < pipeline.length - 1 && (
+                <div class="hidden md:flex items-center text-slate-300 text-lg shrink-0" aria-hidden="true">
+                  →
+                </div>
+              )}
+            </>
+          ))
+        }
+      </div>
+      <p class="text-sm text-slate-400 font-light mt-6 max-w-2xl">
+        Every stage writes a human-inspectable artifact. Edit <span class="font-mono text-slate-500">taxonomy.json</span>
+        by hand and the pipeline reuses it — thirty seconds of expert review beats any amount of downstream filtering.
+      </p>
+    </section>
+
+    <!-- One data point, end to end -->
+    <section class="border-t border-slate-200 pt-16 mb-24">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-8 mb-12">
+        <div class="md:col-span-4">
+          <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Anatomy of a data point</p>
+          <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight">From sampled mix to accepted record.</h2>
+        </div>
+        <div class="md:col-span-7 md:col-start-6">
+          <p class="text-slate-500 font-light text-lg leading-relaxed">
+            No record goes straight from requirements to output. Each sampled mix fans out into multiple meta-prompt
+            scenarios — one picked at random — so identical requirements still produce genuinely different records.
+            That indirection is what keeps nearby rows from being near-duplicates.
+          </p>
+        </div>
+      </div>
+
+      <div class="bg-white/70 border border-slate-200 rounded-xl p-6 md:p-10">
+        <div class="space-y-0">
+          <!-- Mix -->
+          <div>
+            <p class="text-xs font-mono uppercase tracking-widest text-slate-400 mb-3">1 · Sampled mix — one node per factor</p>
+            <div class="flex flex-wrap gap-2">
+              <span class="text-xs font-mono bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full">
+                product_vertical: footwear → trail_running
+              </span>
+              <span class="text-xs font-mono bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full">
+                shopper_intent: known_item_hunt
+              </span>
+              <span class="text-xs font-mono bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full">
+                attribute_focus: price_and_availability
+              </span>
+              <span class="text-xs font-mono bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full">
+                query_complexity: terse_with_negation
+              </span>
+            </div>
+          </div>
+
+          <div class="text-slate-300 py-4 pl-2" aria-hidden="true">↓</div>
+
+          <!-- Meta-prompt -->
+          <div>
+            <p class="text-xs font-mono uppercase tracking-widest text-slate-400 mb-3">
+              2 · Meta-prompt — 3 drafted, 1 picked at random
+            </p>
+            <p class="text-slate-700 font-light border-l-2 border-indigo-200 pl-4 max-w-2xl">
+              "Race-week replacement search: brand + waterproof + size, under $80, typed as bare keywords with a
+              negation."
+            </p>
+          </div>
+
+          <div class="flex items-center gap-3 py-4 pl-2" aria-hidden="true">
+            <span class="text-slate-300">↓</span>
+            <span class="text-xs font-mono text-slate-400">complexified at p = 0.3</span>
+          </div>
+
+          <!-- Record -->
+          <div>
+            <p class="text-xs font-mono uppercase tracking-widest text-slate-400 mb-3">3 · Generated record — schema-validated</p>
+            <div class="font-mono text-sm text-slate-700 bg-slate-50 border border-slate-100 rounded-lg p-4 overflow-x-auto max-w-2xl">
+              <p class="text-slate-900">"waterproof trail running shoes size 9 under $80, nothing neon"</p>
+              <p class="text-slate-500 mt-2 text-xs leading-relaxed">
+                &#123; "category": "trail running shoes", "waterproof": true, "size": "9", "price_max": 80,
+                "color_excluded": ["neon"] &#125;
+              </p>
+            </div>
+          </div>
+
+          <div class="text-slate-300 py-4 pl-2" aria-hidden="true">↓</div>
+
+          <!-- Critic -->
+          <div>
+            <p class="text-xs font-mono uppercase tracking-widest text-slate-400 mb-3">4 · Critic verdict</p>
+            <div class="flex flex-wrap items-center gap-3">
+              <span class="text-xs font-mono bg-emerald-50 text-emerald-800 px-3 py-1.5 rounded-full">accept</span>
+              <span class="text-sm text-slate-500 font-light">
+                Rejections feed up to <span class="font-mono text-xs">max_refine_attempts</span> revisions — or the row
+                dies with its reason recorded.
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Model roles -->
+    <section class="mb-24">
+      <div class="mb-10">
+        <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Three model roles</p>
+        <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight max-w-2xl">
+          Expensive intelligence where it amortizes. Cheap throughput where volume lives.
+        </h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {
+          roles.map((role) => (
+            <div class="bg-white/70 border border-slate-200 rounded-xl p-6">
+              <div class="flex items-baseline justify-between mb-4">
+                <span class="font-mono text-sm text-indigo-900">{role.name}</span>
+                <span class="text-xs font-mono text-slate-400">{role.calls}</span>
+              </div>
+              <h3 class="text-lg font-medium text-slate-900 mb-2">{role.label}</h3>
+              <p class="text-sm text-slate-500 font-light leading-relaxed">{role.detail}</p>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Config -->
+    <section class="border-t border-slate-200 pt-16 mb-24">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+        <div class="md:col-span-4">
+          <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Configuration</p>
+          <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight mb-6">One YAML per run.</h2>
+          <p class="text-slate-500 font-light text-lg leading-relaxed mb-6">
+            All defaults and validation live in one place, so a bad <span class="font-mono text-sm">target_size</span>
+            fails loudly at load time instead of as a silent zero-row run. Task rules too rich for JSON Schema live in
+            plain Python prompt modules — validated before any model call.
+          </p>
+          <p class="text-slate-500 font-light text-lg leading-relaxed">
+            Smoke-test at 20 attempts for thirty cents, then bump the target. Resume reuses everything, guarded by a
+            fingerprint so rows from two configs never blend silently.
+          </p>
+        </div>
+        <div class="md:col-span-8">
+          <div class="code-block rounded-xl overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-3 border-b border-slate-700/50">
+              <span class="text-xs font-mono text-slate-400">config.yaml</span>
+              <span class="text-xs font-mono text-slate-500">abridged</span>
+            </div>
+            <pre class="p-5 overflow-x-auto text-[13px] leading-relaxed"><code set:html={yamlConfig} /></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Lineage -->
+    <section class="mb-24">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+        <div class="md:col-span-8 order-2 md:order-1">
+          <div class="code-block rounded-xl overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-3 border-b border-slate-700/50">
+              <span class="text-xs font-mono text-slate-400">dataset.final.jsonl — one row</span>
+              <span class="text-xs font-mono text-slate-500">abridged</span>
+            </div>
+            <pre class="p-5 overflow-x-auto text-[13px] leading-relaxed"><code set:html={lineageJson} /></pre>
+          </div>
+        </div>
+        <div class="md:col-span-4 order-1 md:order-2">
+          <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Lineage</p>
+          <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight mb-6">
+            Every row can explain itself.
+          </h2>
+          <p class="text-slate-500 font-light text-lg leading-relaxed">
+            Taxonomy mix, strategy, meta-prompt, critic verdicts, and rejection reason travel with each record. Coverage
+            math reads from it, the coverage-aware trimmer reads from it, and when quality drifts, per-row debugging
+            starts here — not in a log archaeology session.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Numbers -->
+    <section class="border-t border-slate-200 pt-16 mb-24">
+      <div class="mb-10">
+        <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">In production</p>
+        <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight max-w-2xl">
+          Numbers from a real run, not a benchmark harness.
+        </h2>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {
+          stats.map((stat) => (
+            <div class="bg-white/70 border border-slate-200 rounded-xl p-6">
+              <p class="text-sm text-slate-500 font-light mb-2">{stat.label}</p>
+              <p class="text-3xl md:text-4xl font-semibold text-slate-900 mb-2">{stat.value}</p>
+              <p class="text-xs text-slate-400 font-light">{stat.note}</p>
+            </div>
+          ))
+        }
+      </div>
+      <p class="text-sm text-slate-400 font-light mt-6 max-w-2xl">
+        1,000-row job-posting extraction dataset: 841 distinct extraction key-sets, zero duplicates, zero empty lineage.
+        The full account — including what went wrong — is in the
+        <a href={RESEARCH_LOG_URL} class="text-slate-600 underline underline-offset-4 hover:text-indigo-900 transition-colors" data-astro-prefetch>
+          research log</a
+        >.
+      </p>
+    </section>
+
+    <!-- Evaluation suite -->
+    <section class="mb-24">
+      <div class="mb-10">
+        <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">The evaluation suite</p>
+        <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight max-w-2xl">
+          Generation never writes eval reports. Evaluation never mutates datasets.
+        </h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {
+          evalSuite.map((item) => (
+            <div class="bg-white/70 border border-slate-200 rounded-xl p-6">
+              <h3 class="text-lg font-medium text-slate-900 mb-2">{item.title}</h3>
+              <p class="text-sm text-slate-500 font-light leading-relaxed">{item.detail}</p>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Closing CTA -->
+    <section class="border-t border-slate-200 pt-16 pb-8">
+      <div class="max-w-3xl">
+        <h2 class="text-3xl md:text-5xl font-light text-slate-900 leading-tight mb-6">
+          Intentionally small. <span class="font-serif italic">Deliberately</span> boring.
+        </h2>
+        <p class="text-slate-500 font-light text-lg leading-relaxed mb-10">
+          About ten modules of clear Python, one YAML per run, MIT licensed, with runnable offline examples and the
+          real configs from our production runs. If you're building fine-tuning or evaluation datasets and want this
+          pipeline applied to your domain — that's exactly the work we do.
+        </p>
+        <div class="flex flex-wrap items-center gap-4">
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-6 py-3 text-xs font-semibold uppercase tracking-wider bg-slate-900 text-white rounded-full hover:bg-indigo-900 transition-all duration-300"
+          >
+            View on GitHub
+          </a>
+          <a
+            href="/contact"
+            class="px-6 py-3 text-xs font-semibold uppercase tracking-wider border border-slate-200 rounded-full hover:bg-slate-900 hover:text-white transition-all duration-300"
+            data-astro-prefetch
+          >
+            Work With Us
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .code-block {
+    background-color: #1e293b;
+  }
+
+  .code-block pre {
+    margin: 0;
+  }
+
+  .code-block code {
+    font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+    color: #e2e8f0;
+    display: block;
+    white-space: pre;
+  }
+
+  .code-block :global(.tok-k) {
+    color: #7dd3fc;
+  }
+
+  .code-block :global(.tok-s) {
+    color: #86efac;
+  }
+
+  .code-block :global(.tok-n) {
+    color: #fcd34d;
+  }
+
+  .code-block :global(.tok-c) {
+    color: #64748b;
+  }
+</style>
