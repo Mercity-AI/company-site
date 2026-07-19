@@ -1,0 +1,11 @@
+---
+import ShowcaseLayout from '@/layouts/ShowcaseLayout.astro';
+import AnimationShowcase from '@/components/AnimationShowcase';
+---
+
+<ShowcaseLayout
+  title="Animation Showcase"
+  description="Interactive background variants used in the Mercity home and showcase experiences."
+>
+  <AnimationShowcase client:only="react" />
+</ShowcaseLayout>

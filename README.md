@@ -1,57 +1,48 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Mercity Research (Astro)
 
-# Run and deploy your AI Studio app
+Astro-based marketing and research site with MDX blog content and selective React islands for animated backgrounds.
 
-This contains everything you need to run your app locally.
+## Stack
 
-View your app in AI Studio: https://ai.studio/apps/drive/1jip51wXYGGd5zHyL5yUGgg51RGNgVgtk
+- Astro 5
+- React islands (`@astrojs/react`)
+- MDX content collections (`@astrojs/mdx`)
+- Tailwind CSS v4
+- View transitions via `astro:transitions`
 
-## Run Locally
+## Run
 
-**Prerequisites:**  Node.js
+Prerequisites: Node.js 20+ and `pnpm`.
 
-1. Install dependencies:
-   ```bash
-   pnpm install
-   ```
-2. Run the app:
-   ```bash
-   pnpm run dev
-   ```
+```bash
+pnpm install
+pnpm dev
+```
 
-## 📸 Image Management
+Build and preview:
 
-This project includes an automated image upload system for blog posts using Cloudflare R2.
+```bash
+pnpm build
+pnpm preview
+```
 
-### Setup R2 Image Upload
+Type/content check:
 
-1. **Configure Credentials**: Copy `.env.example` to `.env` and add your Cloudflare R2 credentials:
-   ```bash
-   R2_ACCOUNT_ID=your_account_id
-   R2_ACCESS_KEY_ID=your_access_key_id
-   R2_SECRET_ACCESS_KEY=your_secret_access_key
-   R2_BUCKET_NAME=your_bucket_name
-   R2_PUBLIC_URL=https://your-cdn-url.com
-   ```
+```bash
+pnpm check
+```
 
-2. **Add Images to Blog Posts**: Reference local images in your MDX files:
-   ```markdown
-   ![Hero Image](./hero.jpg)
-   ```
+## Content
 
-3. **Upload to R2**: Run the upload script to automatically upload images and update MDX files:
-   ```bash
-   pnpm upload:images
-   ```
+Blog posts are loaded from `content/*.mdx` through `src/content.config.ts`.
 
-4. **Validate references (recommended)**:
-   ```bash
-   pnpm check:images
-   ```
+## Content scripts
 
-## Documentation
+Cloudflare R2 helper scripts are unchanged:
 
-- Script usage and flags: [`scripts/README.md`](scripts/README.md)
-- Content system guide: [`VELITE.md`](VELITE.md)
+```bash
+pnpm import:notion --dry-run
+pnpm import:notion -- ".notion/LCM Blog"
+pnpm upload:images
+pnpm check:images
+```

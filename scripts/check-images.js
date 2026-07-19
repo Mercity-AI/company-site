@@ -2,6 +2,7 @@ import { readFileSync, readdirSync, existsSync, statSync } from 'fs';
 import { join, dirname, resolve, basename } from 'path';
 import { fileURLToPath } from 'url';
 import matter from 'gray-matter';
+import { extractMarkdownImageTargets } from './markdown-links.js';
 
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
@@ -15,14 +16,12 @@ const projectRoot = resolve(__dirname, '..');
 function extractImageRefs(content) {
   const imagePaths = new Set();
 
-  // Match markdown image syntax: ![alt](path)
-  const markdownRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
-  let match;
-  while ((match = markdownRegex.exec(content)) !== null) {
-    imagePaths.add(match[2]);
+  for (const target of extractMarkdownImageTargets(content)) {
+    imagePaths.add(target);
   }
 
   // Match HTML img tags: <img src="path" />
+  let match;
   const htmlRegex = /<img[^>]+src=["']([^"']+)["']/g;
   while ((match = htmlRegex.exec(content)) !== null) {
     imagePaths.add(match[1]);
@@ -142,7 +141,7 @@ function resolveImageUrl(imagePath, mdxFilePath) {
 }
 
 /**
- * Process a single MDX file
+ * Process a single content file
  */
 function processMDXFile(filePath) {
   const content = readFileSync(filePath, 'utf-8');
@@ -150,7 +149,7 @@ function processMDXFile(filePath) {
   const frontmatter = parsed.data || {};
   const mdxContent = parsed.content || '';
   
-  const slug = frontmatter.slug || basename(filePath, '.mdx');
+  const slug = frontmatter.slug || basename(filePath, filePath.endsWith('.mdx') ? '.mdx' : '.md');
   
   // Extract image refs from body
   const imageRefs = extractImageRefs(mdxContent);
@@ -183,12 +182,12 @@ async function main() {
     process.exit(1);
   }
   
-  // Get all MDX files
+  // Get all markdown content files
   const files = readdirSync(contentDir)
-    .filter(file => file.endsWith('.mdx'))
+    .filter(file => file.endsWith('.md') || file.endsWith('.mdx'))
     .map(file => join(contentDir, file));
   
-  console.log(`📁 Found ${files.length} MDX file(s)\n`);
+  console.log(`📁 Found ${files.length} content file(s)\n`);
   
   // Process all files
   const blogData = files.map(file => processMDXFile(file));
@@ -209,7 +208,7 @@ async function main() {
   
   // Check all images in parallel
   const imageRefsArray = Array.from(imageMap.keys());
-  const checkPromises = imageRefsArray.map(async (imageRef, index) => {
+  const checkPromises = imageRefsArray.map(async (imageRef) => {
     // Find a blog that uses this image to get the file path for resolution
     const blogsUsingImage = imageMap.get(imageRef) || [];
     const blog = blogData.find(b => blogsUsingImage.includes(b.slug));

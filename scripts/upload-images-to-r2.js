@@ -7,6 +7,7 @@ import mime from 'mime-types';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
 import { maybeOptimizeJpeg } from './image-optimizer.js';
+import { extractMarkdownImageTargets, replaceMarkdownLinks } from './markdown-links.js';
 
 // Load environment variables
 dotenv.config();
@@ -18,13 +19,15 @@ const projectRoot = resolve(__dirname, '..');
 
 function parseArgs(argv) {
   const args = new Set(argv.slice(2));
+  const explicitNoOptimize = args.has('--no-optimize-jpeg');
   return {
     dryRun: args.has('--dry-run'),
     includeRemote: args.has('--include-remote'),
     localOnly: args.has('--local-only'),
     remoteOnly: args.has('--remote-only'),
     allowAllRemote: args.has('--allow-all-remote'),
-    optimizeJpeg: args.has('--optimize-jpeg'),
+    // Default ON. Use --no-optimize-jpeg to disable.
+    optimizeJpeg: !explicitNoOptimize,
     jpegQuality: (() => {
       const idx = argv.indexOf('--jpeg-quality');
       if (idx !== -1 && argv[idx + 1]) {
@@ -75,6 +78,17 @@ const s3Client = args.dryRun
 
 // Track uploaded files to avoid duplicates in single run
 const uploadedFiles = new Set();
+const optimizationStats = {
+  optimizedCount: 0,
+  totalBeforeBytes: 0,
+  totalAfterBytes: 0,
+};
+
+function formatPercent(beforeBytes, afterBytes) {
+  if (!beforeBytes) return '0.00%';
+  const reduction = ((beforeBytes - afterBytes) / beforeBytes) * 100;
+  return `${reduction.toFixed(2)}%`;
+}
 
 /**
  * Extract all image references from MDX body content
@@ -83,14 +97,12 @@ const uploadedFiles = new Set();
 function extractImageRefs(content) {
   const imagePaths = new Set();
 
-  // Match markdown image syntax: ![alt](path)
-  const markdownRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
-  let match;
-  while ((match = markdownRegex.exec(content)) !== null) {
-    imagePaths.add(match[2]);
+  for (const target of extractMarkdownImageTargets(content)) {
+    imagePaths.add(target);
   }
 
   // Match HTML img tags: <img src="path" />
+  let match;
   const htmlRegex = /<img[^>]+src=["']([^"']+)["']/g;
   while ((match = htmlRegex.exec(content)) !== null) {
     imagePaths.add(match[1]);
@@ -298,7 +310,13 @@ async function uploadToR2Buffer(buffer, contentType, slug, filename) {
     const cdnUrl = toPublicUrl(fileKey);
     console.log(`   ✅ Uploaded: ${safeName} → ${cdnUrl}`);
     if (optimized.optimized) {
-      console.log(`   🗜️  JPEG optimized: ${optimized.beforeBytes}B → ${optimized.afterBytes}B (q=${args.jpegQuality})`);
+      optimizationStats.optimizedCount += 1;
+      optimizationStats.totalBeforeBytes += optimized.beforeBytes;
+      optimizationStats.totalAfterBytes += optimized.afterBytes;
+      const savedBytes = optimized.beforeBytes - optimized.afterBytes;
+      console.log(
+        `   🗜️  JPEG optimized: ${optimized.beforeBytes}B → ${optimized.afterBytes}B (saved ${savedBytes}B, ${formatPercent(optimized.beforeBytes, optimized.afterBytes)}, q=${args.jpegQuality})`,
+      );
     }
 
     return cdnUrl;
@@ -318,7 +336,7 @@ async function uploadToR2File(filePath, slug, filename) {
 }
 
 /**
- * Process a single MDX file
+ * Process a single content file
  */
 async function processMDXFile(filePath) {
   console.log(`\n📄 Processing: ${basename(filePath)}`);
@@ -401,9 +419,12 @@ async function processMDXFile(filePath) {
 
       // Replace both markdown and HTML image references in body
       const escaped = escapeRegex(item.ref);
-      const markdownRegex = new RegExp(`!\\[([^\\]]*)\\]\\(${escaped}\\)`, 'g');
       const htmlRegex = new RegExp(`(<img[^>]+src=[\"'])${escaped}([\"'][^>]*>)`, 'g');
-      updatedBody = updatedBody.replace(markdownRegex, `![$1](${cdnUrl})`);
+      updatedBody = replaceMarkdownLinks(updatedBody, (token) => {
+        if (token.type !== 'image') return null;
+        if (token.target !== item.ref) return null;
+        return cdnUrl;
+      });
       updatedBody = updatedBody.replace(htmlRegex, `$1${cdnUrl}$2`);
 
       changeCount++;
@@ -414,13 +435,13 @@ async function processMDXFile(filePath) {
 
   if (changeCount > 0) {
     if (args.dryRun) {
-      console.log(`\n   🧪 Dry-run: would update ${changeCount} image reference(s) in MDX file`);
+      console.log(`\n   🧪 Dry-run: would update ${changeCount} image reference(s) in content file`);
       return;
     }
 
     const updatedFile = matter.stringify(updatedBody, updatedFrontmatter);
     writeFileSync(filePath, updatedFile, 'utf-8');
-    console.log(`\n   💾 Updated ${changeCount} image reference(s) in MDX file`);
+    console.log(`\n   💾 Updated ${changeCount} image reference(s) in content file`);
   }
 }
 
@@ -436,7 +457,7 @@ async function main() {
   if (enableRemote) {
     console.log(`   Remote filter: ${args.allowAllRemote ? 'all remote URLs allowed (--allow-all-remote)' : 'only https://cdn.prod.website-files.com/ (default)'}`);
   }
-  console.log(`   JPEG optimize: ${args.optimizeJpeg ? `enabled (q=${args.jpegQuality})` : 'disabled'}`);
+  console.log(`   JPEG optimize: ${args.optimizeJpeg ? `enabled by default (q=${args.jpegQuality}; disable with --no-optimize-jpeg)` : 'disabled (--no-optimize-jpeg)'}`);
   console.log(`   Bucket: ${process.env.R2_BUCKET_NAME || '(dry-run)'}`);
   console.log(`   CDN URL: ${process.env.R2_PUBLIC_URL || '(dry-run)'}`);
 
@@ -447,12 +468,12 @@ async function main() {
     process.exit(1);
   }
   
-  // Get all MDX files
+  // Get all markdown content files
   const files = readdirSync(contentDir)
-    .filter(file => file.endsWith('.mdx'))
+    .filter(file => file.endsWith('.md') || file.endsWith('.mdx'))
     .map(file => join(contentDir, file));
   
-  console.log(`\n📁 Found ${files.length} MDX file(s) to process\n`);
+  console.log(`\n📁 Found ${files.length} content file(s) to process\n`);
   console.log('═'.repeat(60));
   
   // Process each file
@@ -467,6 +488,12 @@ async function main() {
   
   console.log('\n✨ Process completed!');
   console.log(`📊 Total unique files uploaded: ${uploadedFiles.size}`);
+  if (optimizationStats.optimizedCount > 0) {
+    const totalSaved = optimizationStats.totalBeforeBytes - optimizationStats.totalAfterBytes;
+    console.log(
+      `📉 JPEG optimization summary: ${optimizationStats.optimizedCount} file(s), ${optimizationStats.totalBeforeBytes}B → ${optimizationStats.totalAfterBytes}B, saved ${totalSaved}B (${formatPercent(optimizationStats.totalBeforeBytes, optimizationStats.totalAfterBytes)})`,
+    );
+  }
 }
 
 // Run the script

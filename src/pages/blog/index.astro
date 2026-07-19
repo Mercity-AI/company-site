@@ -1,0 +1,80 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { estimateReadingTime, formatDate, getPostUrl, sortPostsByPublishedDate } from '@/utils/blog';
+
+const posts = sortPostsByPublishedDate(await getCollection('posts'));
+---
+
+<BaseLayout
+  title="Blog"
+  description="Deep dives into AI engineering, applied machine learning, and the future of artificial intelligence."
+  path="/blog"
+  hideNavOnScroll
+>
+  <div class="max-w-[73rem] mx-auto px-6 py-12">
+    <div class="mb-24 pt-12">
+      <h1 class="text-6xl md:text-8xl font-serif italic text-slate-900 mb-6 opacity-90">Blog</h1>
+      <p class="text-slate-500 max-w-xl text-lg font-light">
+        Deep dives into AI engineering, applied machine learning, and the future of artificial intelligence.
+      </p>
+    </div>
+
+    <div class="space-y-20">
+      {posts.map((post) => (
+        <article class="group block border-t border-slate-200 pt-12 article-reveal" data-article-reveal>
+          <a href={getPostUrl(post)} class="grid grid-cols-1 md:grid-cols-12 gap-6" data-astro-prefetch>
+            <div class="md:col-span-3 text-sm text-slate-400 font-mono flex flex-col gap-2">
+              <span>{formatDate(post.data.publishedAt)}</span>
+              <span class="text-slate-800 font-medium">{post.data.category}</span>
+            </div>
+            <div class="md:col-span-9">
+              <h2
+                class="text-2xl md:text-4xl font-light text-slate-900 mb-4 group-hover:text-indigo-900 transition-colors leading-tight"
+                transition:name={`post-title-${post.data.slug}`}
+              >
+                {post.data.title}
+              </h2>
+              <p class="text-slate-500 font-light text-lg leading-relaxed max-w-3xl mb-6">{post.data.summary}</p>
+              <div class="flex items-center gap-4 text-sm text-slate-400">
+                <span>{post.data.authors[0]?.name}</span>
+                <span>·</span>
+                <span>{estimateReadingTime(post.body ?? post.data.summary)}</span>
+              </div>
+              <div class="flex items-center gap-2 text-sm font-medium uppercase tracking-widest text-slate-900 opacity-0 transform -translate-x-4 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 mt-4">
+                Read Article <span class="text-lg">→</span>
+              </div>
+            </div>
+          </a>
+        </article>
+      ))}
+    </div>
+  </div>
+
+  <script is:inline data-astro-rerun>
+    (() => {
+      if (window.__mercityBlogRevealCleanup) {
+        window.__mercityBlogRevealCleanup();
+      }
+
+      const items = document.querySelectorAll('[data-article-reveal]');
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.setAttribute('data-visible', 'true');
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { rootMargin: '-50px' },
+      );
+
+      items.forEach((item) => observer.observe(item));
+
+      window.__mercityBlogRevealCleanup = () => {
+        observer.disconnect();
+      };
+    })();
+  </script>
+</BaseLayout>

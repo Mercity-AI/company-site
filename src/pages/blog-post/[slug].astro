@@ -1,0 +1,79 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { estimateReadingTime, formatDate, getPostUrl } from '@/utils/blog';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+
+  return posts.map((post) => ({
+    params: { slug: post.data.slug },
+    props: { post },
+  }));
+}
+
+interface Props {
+  post: CollectionEntry<'posts'>;
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const publishedTimeISO = post.data.publishedAt.toISOString();
+const modifiedTimeISO = post.data.updatedAt ? post.data.updatedAt.toISOString() : undefined;
+const articlePath = getPostUrl(post);
+---
+
+<BaseLayout
+  title={post.data.title}
+  description={post.data.summary}
+  image={post.data.image}
+  path={articlePath}
+  type="article"
+  publishedTime={publishedTimeISO}
+  modifiedTime={modifiedTimeISO}
+  author={post.data.authors[0]?.name}
+  tags={post.data.tags}
+  hideNavOnScroll
+>
+  <div class="max-w-4xl mx-auto px-6 py-12">
+    <a href="/blog" class="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-900 transition-colors mb-12 group" data-astro-prefetch>
+      <span class="group-hover:-translate-x-1 transition-transform">←</span> Back to Blog
+    </a>
+
+    <article>
+      <header class="mb-12">
+        <div class="flex flex-wrap items-center gap-4 text-sm text-slate-500 font-mono mb-6">
+          <span class="bg-slate-100 px-3 py-1 rounded-full text-slate-900">{post.data.category}</span>
+          <span>{estimateReadingTime(post.body ?? post.data.summary)}</span>
+          <span>{formatDate(post.data.publishedAt)}</span>
+        </div>
+
+        <h1 class="text-4xl md:text-6xl font-light text-slate-900 leading-tight mb-8" transition:name={`post-title-${post.data.slug}`}>
+          {post.data.title}
+        </h1>
+
+        <div class="flex items-center gap-4 border-t border-b border-slate-100 py-6">
+          <div>
+            <p class="text-sm font-medium text-slate-900">{post.data.authors[0]?.name}</p>
+            {post.data.authors[0]?.role && <p class="text-xs text-slate-500">{post.data.authors[0]?.role}</p>}
+          </div>
+        </div>
+      </header>
+
+      {
+        post.data.tags.length > 0 && (
+          <div class="flex flex-wrap gap-2 mb-8">
+            {post.data.tags.map((tag) => (
+              <span class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full">{tag}</span>
+            ))}
+          </div>
+        )
+      }
+
+      <div class="prose prose-lg prose-slate max-w-none">
+        <Content />
+      </div>
+    </article>
+  </div>
+</BaseLayout>

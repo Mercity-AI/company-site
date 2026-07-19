@@ -1,0 +1,142 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+const calendlyUrl = 'https://calendly.com/pranav-mercity/30min';
+const contactApiBaseUrl = import.meta.env.PUBLIC_CONTACT_API_BASE_URL ?? 'http://127.0.0.1:8000';
+---
+
+<BaseLayout
+  title="Contact Us"
+  description="Get in touch with Mercity to discuss applied AI research, enterprise deployments, and technical partnerships."
+  path="/contact"
+>
+  <div class="max-w-7xl mx-auto px-6 py-14">
+    <div class="max-w-3xl mb-14">
+      <h1 class="text-5xl md:text-6xl font-light tracking-tight text-slate-900 mb-6">Contact Us</h1>
+      <p class="text-lg text-slate-500 font-light leading-relaxed">
+        Tell us what you are building and where your AI pipeline is stuck. We will follow up quickly with the right
+        next step.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+      <section class="bg-white/80 border border-slate-200 rounded-2xl p-8">
+        <h2 class="text-2xl font-light text-slate-900 mb-6">Send a Message</h2>
+        <form class="space-y-5" id="contact-form" data-api-base-url={contactApiBaseUrl}>
+          <div>
+            <label for="name" class="block text-sm text-slate-700 mb-2">Name</label>
+            <input id="name" name="name" type="text" required class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-400 bg-white" />
+          </div>
+          <div>
+            <label for="email" class="block text-sm text-slate-700 mb-2">Email</label>
+            <input id="email" name="email" type="email" required class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-400 bg-white" />
+          </div>
+          <div>
+            <label for="company" class="block text-sm text-slate-700 mb-2">Company</label>
+            <input id="company" name="company" type="text" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-400 bg-white" />
+          </div>
+          <div>
+            <label for="message" class="block text-sm text-slate-700 mb-2">Message</label>
+            <textarea
+              id="message"
+              name="message"
+              required
+              rows="6"
+              class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-400 bg-white resize-y"
+            ></textarea>
+          </div>
+          <button
+            type="submit"
+            class="px-6 py-3 bg-slate-900 text-white rounded-full text-sm font-semibold uppercase tracking-wider hover:bg-slate-800 transition-colors"
+          >
+            Send Email
+          </button>
+          <p id="contact-form-status" class="text-sm text-slate-600" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="bg-white/80 border border-slate-200 rounded-2xl p-8">
+        <h2 class="text-2xl font-light text-slate-900 mb-2">Book a Call</h2>
+        <p class="text-slate-500 font-light mb-6">Schedule a 30-minute conversation directly.</p>
+        <div
+          id="calendly-widget"
+          class="calendly-inline-widget rounded-xl overflow-hidden border border-slate-200"
+          data-url={calendlyUrl}
+          style="min-width:320px;height:680px;"
+        ></div>
+      </section>
+    </div>
+  </div>
+
+  <script is:inline data-astro-rerun>
+    (() => {
+      if (window.__mercityContactCleanup) {
+        window.__mercityContactCleanup();
+      }
+
+      const form = document.getElementById('contact-form');
+      const script = document.createElement('script');
+      script.src = 'https://assets.calendly.com/assets/external/widget.js';
+      script.async = true;
+      document.body.appendChild(script);
+
+      const statusEl = document.getElementById('contact-form-status');
+      const submitButton = form?.querySelector('button[type="submit"]');
+      const apiBaseUrl = form?.dataset.apiBaseUrl || 'http://127.0.0.1:8000';
+
+      const setStatus = (text, isError = false) => {
+        if (!statusEl) return;
+        statusEl.textContent = text;
+        statusEl.classList.toggle('text-rose-600', isError);
+        statusEl.classList.toggle('text-emerald-700', !isError);
+      };
+
+      const onSubmit = async (event) => {
+        event.preventDefault();
+        if (!form) return;
+
+        submitButton?.setAttribute('disabled', 'disabled');
+        setStatus('Sending...');
+
+        const formData = new FormData(form);
+        const name = String(formData.get('name') ?? '').trim();
+        const email = String(formData.get('email') ?? '').trim();
+        const company = String(formData.get('company') ?? '').trim();
+        const message = String(formData.get('message') ?? '').trim();
+
+        try {
+          const response = await fetch(`${apiBaseUrl}/api/contact`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, company, message }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+          }
+
+          setStatus('Message sent successfully. We will get back to you soon.');
+          form.reset();
+        } catch (error) {
+          console.error('Failed to send contact form', error);
+          setStatus('Could not send right now. Please try again in a minute. Maybe try booking a call instead?', true);
+        } finally {
+          submitButton?.removeAttribute('disabled');
+        }
+      };
+
+      if (form) {
+        form.addEventListener('submit', onSubmit);
+      }
+
+      window.__mercityContactCleanup = () => {
+        if (form) {
+          form.removeEventListener('submit', onSubmit);
+        }
+        if (script && script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      };
+    })();
+  </script>
+</BaseLayout>

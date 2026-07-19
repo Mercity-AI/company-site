@@ -1,0 +1,79 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { estimateReadingTime, formatDate, getResearchUrl } from '@/utils/blog';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('research');
+
+  return entries.map((entry) => ({
+    params: { slug: entry.data.slug },
+    props: { entry },
+  }));
+}
+
+interface Props {
+  entry: CollectionEntry<'research'>;
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const publishedTimeISO = entry.data.publishedAt.toISOString();
+const modifiedTimeISO = entry.data.updatedAt ? entry.data.updatedAt.toISOString() : undefined;
+const articlePath = getResearchUrl(entry);
+---
+
+<BaseLayout
+  title={entry.data.title}
+  description={entry.data.summary}
+  image={entry.data.image}
+  path={articlePath}
+  type="article"
+  publishedTime={publishedTimeISO}
+  modifiedTime={modifiedTimeISO}
+  author={entry.data.authors[0]?.name}
+  tags={entry.data.tags}
+  hideNavOnScroll
+>
+  <div class="max-w-4xl mx-auto px-6 py-12">
+    <a href="/research" class="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-900 transition-colors mb-12 group" data-astro-prefetch>
+      <span class="group-hover:-translate-x-1 transition-transform">←</span> Back to Research
+    </a>
+
+    <article>
+      <header class="mb-12">
+        <div class="flex flex-wrap items-center gap-4 text-sm text-slate-500 font-mono mb-6">
+          <span class="bg-slate-100 px-3 py-1 rounded-full text-slate-900">{entry.data.category}</span>
+          <span>{estimateReadingTime(entry.body ?? entry.data.summary)}</span>
+          <span>{formatDate(entry.data.publishedAt)}</span>
+        </div>
+
+        <h1 class="text-4xl md:text-6xl font-light text-slate-900 leading-tight mb-8" transition:name={`research-title-${entry.data.slug}`}>
+          {entry.data.title}
+        </h1>
+
+        <div class="flex items-center gap-4 border-t border-b border-slate-100 py-6">
+          <div>
+            <p class="text-sm font-medium text-slate-900">{entry.data.authors[0]?.name}</p>
+            {entry.data.authors[0]?.role && <p class="text-xs text-slate-500">{entry.data.authors[0]?.role}</p>}
+          </div>
+        </div>
+      </header>
+
+      {
+        entry.data.tags.length > 0 && (
+          <div class="flex flex-wrap gap-2 mb-8">
+            {entry.data.tags.map((tag) => (
+              <span class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full">{tag}</span>
+            ))}
+          </div>
+        )
+      }
+
+      <div class="prose prose-lg prose-slate max-w-none">
+        <Content />
+      </div>
+    </article>
+  </div>
+</BaseLayout>

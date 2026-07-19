@@ -29,5 +29,9 @@ dist-ssr
 
 
 
-notion_work/
+.notion/
 .cursor/
+.astro
+.pnpm-store
+*/__pycache__
+.claude
