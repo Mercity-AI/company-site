@@ -187,17 +187,37 @@ const recordJson = `<span class="text-slate-800">"waterproof trail running shoes
       </div>
 
       <!-- config.yaml card -->
-      <div class="hidden lg:block" aria-hidden="true">
-        <div class="code-paper rounded-xl overflow-hidden shadow-lg shadow-indigo-900/5 max-w-xl ml-auto">
+      <div class="hidden lg:block">
+        <div class="code-paper rounded-xl overflow-hidden shadow-lg shadow-indigo-900/5 max-w-xl ml-auto" data-demo-card>
           <div class="flex items-center justify-between px-5 py-3 border-b border-[#e8e4d8]">
             <span class="font-mono text-xs text-slate-500">config.yaml</span>
-            <span class="font-mono text-xs text-slate-400">the whole interface</span>
+            <span class="font-mono text-xs text-slate-400" data-demo-label>the whole interface</span>
           </div>
-          <pre class="p-6 overflow-x-auto text-[13px] leading-relaxed"><code set:html={heroYaml} /></pre>
-          <div class="flex items-center justify-between px-5 py-3 border-t border-[#e8e4d8]">
+          <div class="relative overflow-hidden transition-[height] duration-300 ease-out" data-demo-body>
+            <pre class="p-6 overflow-x-auto text-[13px] leading-relaxed transition-opacity duration-200" data-demo-config><code set:html={heroYaml} /></pre>
+            <video
+              class="hidden absolute inset-0 w-full h-full object-cover bg-[#0a1020]"
+              data-demo-video
+              src="/simula-demo.mp4"
+              muted
+              loop
+              playsinline
+              preload="metadata"
+              aria-label="Recorded terminal session of simula run generating a dataset"
+            ></video>
+          </div>
+          <button
+            type="button"
+            class="w-full flex items-center justify-between gap-4 px-5 py-2.5 border-t border-[#e8e4d8] cursor-pointer hover:bg-[#f3efe3] transition-colors duration-200"
+            data-demo-toggle
+            aria-pressed="false"
+          >
             <span class="font-mono text-xs text-slate-600">$ simula run config.yaml</span>
-            <span class="font-mono text-xs text-slate-400">⏎</span>
-          </div>
+            <span
+              class="inline-flex items-center rounded-full bg-indigo-600 px-3.5 py-1.5 font-mono text-xs text-white"
+              data-demo-glyph
+            >⏎ run</span>
+          </button>
         </div>
       </div>
     </header>
@@ -224,6 +244,21 @@ const recordJson = `<span class="text-slate-800">"waterproof trail running shoes
           </p>
         </div>
       </div>
+    </section>
+
+    <!-- See it run -->
+    <section class="mb-28">
+      <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-8">See it run</p>
+      <video
+        class="block w-full max-w-4xl mx-auto h-auto rounded-xl shadow-xl shadow-slate-900/10"
+        data-demo-strip
+        src="/simula-demo.mp4"
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        aria-label="Recorded terminal session: simula run generating and evaluating a dataset"
+      ></video>
     </section>
 
     <!-- Pipeline -->
@@ -463,10 +498,11 @@ const recordJson = `<span class="text-slate-800">"waterproof trail running shoes
 
     <!-- Closing CTA -->
     <section class="border-t border-slate-200 pt-16 pb-8">
+      <h2 class="text-3xl md:text-5xl font-light text-slate-900 leading-tight mb-6">
+        Intentionally small.
+        <span class="whitespace-nowrap"><span class="font-serif italic">Unapologetically</span> boring.</span>
+      </h2>
       <div class="max-w-3xl">
-        <h2 class="text-3xl md:text-5xl font-light text-slate-900 leading-tight mb-6">
-          Intentionally small. <span class="font-serif italic">Unapologetically</span> boring.
-        </h2>
         <p class="text-slate-500 font-light text-lg leading-relaxed mb-10">
           About ten modules of clear Python, one YAML per run, MIT licensed, with runnable offline examples and the
           real configs from our production runs. If you're building fine-tuning or evaluation datasets and want this
@@ -493,6 +529,71 @@ const recordJson = `<span class="text-slate-800">"waterproof trail running shoes
     </section>
   </div>
 </BaseLayout>
+
+<script>
+  function initSimulaDemos() {
+    const card = document.querySelector<HTMLElement>('[data-demo-card]');
+    if (card && !card.dataset.bound) {
+      card.dataset.bound = 'true';
+      const body = card.querySelector<HTMLElement>('[data-demo-body]')!;
+      const pre = card.querySelector<HTMLElement>('[data-demo-config]')!;
+      const video = card.querySelector<HTMLVideoElement>('[data-demo-video]')!;
+      const toggle = card.querySelector<HTMLButtonElement>('[data-demo-toggle]')!;
+      const glyph = card.querySelector<HTMLElement>('[data-demo-glyph]')!;
+      const label = card.querySelector<HTMLElement>('[data-demo-label]');
+      let open = false;
+      let settle: ReturnType<typeof setTimeout>;
+
+      toggle.addEventListener('click', () => {
+        open = !open;
+        clearTimeout(settle);
+        body.style.height = `${body.offsetHeight}px`;
+        requestAnimationFrame(() => {
+          if (open) {
+            body.style.height = `${Math.round((body.clientWidth * 830) / 1010)}px`;
+            pre.classList.add('opacity-0');
+            video.classList.remove('hidden');
+            video.muted = true;
+            video.currentTime = 0;
+            video.play().catch(() => {});
+          } else {
+            body.style.height = `${pre.offsetHeight}px`;
+            pre.classList.remove('opacity-0');
+            video.pause();
+            settle = setTimeout(() => {
+              video.classList.add('hidden');
+              body.style.height = '';
+            }, 320);
+          }
+        });
+        glyph.textContent = open ? '✕ close' : '⏎ run';
+        if (label) label.textContent = open ? 'recorded demo' : 'the whole interface';
+        toggle.setAttribute('aria-pressed', String(open));
+      });
+    }
+
+    const strip = document.querySelector<HTMLVideoElement>('[data-demo-strip]');
+    if (strip && !strip.dataset.bound) {
+      strip.dataset.bound = 'true';
+      strip.muted = true;
+      const io = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              strip.play().catch(() => {});
+            } else {
+              strip.pause();
+            }
+          });
+        },
+        { threshold: 0.35 }
+      );
+      io.observe(strip);
+    }
+  }
+
+  document.addEventListener('astro:page-load', initSimulaDemos);
+</script>
 
 <style>
   @keyframes orb-drift-a {
