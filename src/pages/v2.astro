@@ -116,7 +116,7 @@ const tooling = [
     <div class="hero-scrim"></div>
     <div class="shell hero-in">
       <h1 class="rv" data-rv style="--rv-delay:120ms">
-        Building research led capabilities for <em>product and enterprise teams.</em>
+        Building research led capabilities<br />for product and enterprise teams.
       </h1>
       <p class="rv" data-rv style="--rv-delay:240ms">
         We generate the data nobody has, train the model nobody sells, and then prove it actually works.
@@ -329,19 +329,24 @@ const tooling = [
   }
   .hero h1 {
     margin-top: 0;
-    max-width: 17ch;
+    max-width: none;
     font-family: var(--hero-serif);
-    font-size: clamp(36px, 6.12vw, 75.6px);
+    /* Capped so each of the two lines fits on one row inside the shell. */
+    font-size: clamp(33px, 5.4vw, 66px);
     font-weight: 400;
-    line-height: 1.04;
+    line-height: 1.08;
     letter-spacing: -0.028em;
-    text-wrap: balance;
     color: var(--ink);
   }
-  .hero h1 em {
-    font-style: italic;
-    font-weight: 400;
-    color: var(--indigo-700);
+  /* Below the shell width the forced break would overflow; let it wrap. */
+  @media (max-width: 820px) {
+    .hero h1 {
+      max-width: 17ch;
+      text-wrap: balance;
+    }
+    .hero h1 br {
+      display: none;
+    }
   }
   .hero p {
     margin-top: 25.2px;
