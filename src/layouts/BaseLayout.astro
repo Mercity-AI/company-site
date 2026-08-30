@@ -120,12 +120,12 @@ const year = new Date().getFullYear();
         data-hide-nav-on-scroll={hideNavOnScroll ? 'true' : 'false'}
         class="site-header fixed top-0 w-full z-50 border-b border-transparent py-6"
       >
-        <div class="max-w-[92rem] mx-auto px-6 lg:px-[3.25rem] flex justify-between items-center">
+        <div class="max-w-[92rem] mx-auto page-gutter lg:px-[3.25rem] flex justify-between items-center">
           <a href="/" class="flex items-center group" transition:name="site-logo" data-astro-prefetch>
             <img
               src="/no-background-logo.png"
               alt="Mercity"
-              class="h-[42px] w-auto transition-transform duration-500 group-hover:scale-[1.02]"
+              class="h-[2.625rem] w-auto transition-transform duration-500 group-hover:scale-[1.02]"
             />
           </a>
 
@@ -212,7 +212,7 @@ const year = new Date().getFullYear();
       {
         showFooter && (
           <footer class="border-t border-slate-200 mt-20 bg-white/50 backdrop-blur-sm">
-            <div class="max-w-[92rem] mx-auto px-6 lg:px-[3.25rem] py-16">
+            <div class="max-w-[92rem] mx-auto page-gutter lg:px-[3.25rem] py-16">
               <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
                 <div class="col-span-1 md:col-span-2">
                   <h3 class="font-serif italic text-xl mb-6">Mercity</h3>
@@ -363,6 +363,37 @@ const year = new Date().getFullYear();
             link.removeEventListener('click', closeMenu);
           });
         };
+      })();
+    </script>
+
+    <script is:inline data-astro-rerun>
+      (() => {
+        if (window.__mercityRevealCleanup) {
+          window.__mercityRevealCleanup();
+        }
+
+        const nodes = document.querySelectorAll('[data-reveal]');
+        if (!nodes.length) return;
+
+        if (!('IntersectionObserver' in window)) {
+          nodes.forEach((node) => node.setAttribute('data-visible', 'true'));
+          return;
+        }
+
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return;
+              entry.target.setAttribute('data-visible', 'true');
+              observer.unobserve(entry.target);
+            });
+          },
+          { rootMargin: '0px 0px -10% 0px', threshold: 0.01 }
+        );
+
+        nodes.forEach((node) => observer.observe(node));
+
+        window.__mercityRevealCleanup = () => observer.disconnect();
       })();
     </script>
   </body>

@@ -1,0 +1,20 @@
+---
+interface Props {
+  as?: keyof HTMLElementTagNameMap;
+  class?: string;
+  delay?: number;
+  from?: 'up' | 'left' | 'right';
+}
+
+const { as = 'div', class: className, delay = 0, from = 'up' }: Props = Astro.props;
+const Tag = as as any;
+---
+
+<Tag
+  class:list={['reveal', className]}
+  data-reveal
+  data-reveal-from={from}
+  style={`--reveal-delay:${delay}ms`}
+>
+  <slot />
+</Tag>

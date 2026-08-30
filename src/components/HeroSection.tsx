@@ -52,26 +52,26 @@ export default function HeroSection() {
   }, [HeroBackground]);
 
   return (
-    <section className="min-h-[90vh] flex flex-col justify-center px-6 relative overflow-hidden">
+    <section className="hero-original min-h-[90vh] flex flex-col justify-center relative overflow-hidden">
       <div className="absolute inset-0 z-0 pointer-events-none">
         {HeroBackground ? <HeroBackground /> : fallbackBackground}
         <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/30 to-white/75" />
       </div>
       <div className="max-w-7xl mx-auto w-full z-10 relative">
         <div className="hero-copy-enter">
-          <h1 className="text-5xl md:text-8xl font-light tracking-tighter text-slate-900 mb-7 leading-[1.1]">
+          <h1 className="hero-headline text-5xl md:text-8xl font-light tracking-tighter text-slate-900 mb-7 leading-[1.1]">
             <span className="font-serif italic text-slate-700">
               Building research led capabilities <br /> for product and enterprise teams.
             </span>
           </h1>
-          <p className="text-xl md:text-2xl text-slate-500 font-light leading-relaxed max-w-2xl mb-12">
+          <p className="hero-sub text-xl md:text-2xl text-slate-500 font-light leading-relaxed max-w-2xl mb-12">
             We do custom training, grunt optimization, built-from-scratch architecture. Anything and everything to
             give you an edge over the market.
           </p>
           <div>
             <a
               href="/research"
-              className="group inline-flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-full font-medium transition-all hover:bg-slate-800 hover:scale-105"
+              className="hero-cta group inline-flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-full font-medium transition-all hover:bg-slate-800 hover:scale-105"
             >
               Read Our Research <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </a>
@@ -79,8 +79,8 @@ export default function HeroSection() {
         </div>
       </div>
 
-      <div className="hero-orbit-enter absolute right-0 bottom-0 md:right-[10%] md:bottom-[20%] w-64 h-64 border border-slate-200 rounded-full flex items-center justify-center">
-        <div className="w-48 h-48 border border-slate-100 rounded-full motion-safe:animate-[spin_10s_linear_infinite]" />
+      <div className="hero-ring hero-orbit-enter absolute right-0 bottom-0 md:right-[10%] md:bottom-[20%] w-64 h-64 border border-slate-200 rounded-full flex items-center justify-center">
+        <div className="hero-ring-inner w-48 h-48 border border-slate-100 rounded-full motion-safe:animate-[spin_10s_linear_infinite]" />
       </div>
     </section>
   );

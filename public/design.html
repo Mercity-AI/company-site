@@ -1,0 +1,968 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Mercity Design Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Inter+Tight:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,400&family=Work+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   MERCITY DESIGN LAB
+   Scratch surface. Not part of the site's design system yet.
+   Everything here is a proposal to argue with.
+   ══════════════════════════════════════════════════════════════════ */
+
+:root{
+  /* Anchor hue — the existing brand indigo #4f46e5 = hsl(243 75% 59%) */
+  --h-indigo:243;
+  --h-teal:178;
+  --h-amber:34;
+  --h-neutral:240;
+
+  --indigo-50:hsl(243 41% 97%);
+  --indigo-100:hsl(243 47% 94%);
+  --indigo-200:hsl(243 54% 87%);
+  --indigo-300:hsl(243 62% 78%);
+  --indigo-400:hsl(243 69% 68%);
+  --indigo-500:hsl(243 75% 59%);
+  --indigo-600:hsl(243 69% 50%);
+  --indigo-700:hsl(243 66% 41%);
+  --indigo-800:hsl(243 62% 32%);
+  --indigo-900:hsl(243 56% 23%);
+
+  --teal-50:hsl(178 34% 96%);
+  --teal-100:hsl(178 38% 92%);
+  --teal-200:hsl(178 45% 84%);
+  --teal-300:hsl(178 51% 71%);
+  --teal-400:hsl(178 57% 55%);
+  --teal-500:hsl(178 62% 42%);
+  --teal-600:hsl(178 66% 34%);
+  --teal-700:hsl(178 70% 27%);
+  --teal-800:hsl(178 72% 21%);
+  --teal-900:hsl(178 74% 15%);
+
+  --amber-50:hsl(34 78% 96%);
+  --amber-100:hsl(34 82% 92%);
+  --amber-200:hsl(34 86% 84%);
+  --amber-300:hsl(34 88% 73%);
+  --amber-400:hsl(34 88% 63%);
+  --amber-500:hsl(34 84% 53%);
+  --amber-600:hsl(34 78% 45%);
+  --amber-700:hsl(32 74% 36%);
+  --amber-800:hsl(30 70% 28%);
+  --amber-900:hsl(28 64% 20%);
+
+  --n-0:#ffffff;
+  --n-50:hsl(240 24% 99%);
+  --n-100:hsl(240 18% 96%);
+  --n-200:hsl(240 13% 91%);
+  --n-300:hsl(240 10% 83%);
+  --n-400:hsl(240 8% 65%);
+  --n-500:hsl(240 7% 49%);
+  --n-600:hsl(240 8% 37%);
+  --n-700:hsl(240 10% 27%);
+  --n-800:hsl(240 12% 17%);
+  --n-900:hsl(240 14% 10%);
+
+  --ground:var(--n-50);
+  --surface:var(--n-0);
+  --ink:var(--n-900);
+  --ink-2:var(--n-700);
+  --ink-3:var(--n-500);
+  --line:var(--n-200);
+  --line-2:var(--n-300);
+
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --serif:'Playfair Display',Georgia,serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+
+*,*::before,*::after{box-sizing:border-box;}
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;scroll-behavior:smooth;color-scheme:light;}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;}
+h1,h2,h3,h4,p,figure,ul,ol{margin:0;}
+ul{padding:0;list-style:none;}
+a{color:inherit;}
+:focus-visible{outline:2px solid var(--indigo-500);outline-offset:3px;}
+canvas{display:block;}
+
+.wrap{max-width:1240px;margin:0 auto;padding-inline:32px;}
+@media(max-width:640px){.wrap{padding-inline:20px;}}
+
+/* ── Chrome ─────────────────────────────────────────────────────── */
+.topbar{position:sticky;top:0;z-index:60;background:hsl(240 24% 99% / .86);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);}
+.topbar-in{display:flex;align-items:center;justify-content:space-between;gap:24px;height:60px;}
+.brand{font-family:var(--serif);font-style:italic;font-size:19px;}
+.brand b{font-family:var(--mono);font-style:normal;font-weight:500;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--indigo-600);margin-left:10px;vertical-align:middle;}
+.tnav{display:flex;gap:22px;overflow-x:auto;}
+.tnav a{font-size:12px;font-weight:500;color:var(--ink-3);text-decoration:none;white-space:nowrap;transition:color .3s var(--ease);}
+.tnav a:hover{color:var(--ink);}
+@media(max-width:820px){.tnav{display:none;}}
+
+section{border-top:1px solid var(--line);}
+.sec{padding-block:88px;}
+.eyebrow{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--indigo-600);}
+.h2{margin-top:14px;font-size:clamp(28px,3.4vw,40px);font-weight:300;line-height:1.14;letter-spacing:-.025em;text-wrap:balance;max-width:22ch;}
+.h2 em{font-family:var(--serif);font-style:italic;font-weight:400;}
+.note{margin-top:18px;max-width:68ch;font-size:15.5px;font-weight:300;line-height:1.78;color:var(--ink-3);}
+.h3{font-size:13px;font-weight:600;letter-spacing:.02em;color:var(--ink);}
+.kicker{margin-top:56px;padding-bottom:12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;justify-content:space-between;gap:16px;}
+.kicker span{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);}
+
+/* ── Hero ───────────────────────────────────────────────────────── */
+.hero{position:relative;overflow:hidden;border-top:0;background:var(--n-900);color:var(--n-50);}
+.hero canvas{position:absolute;inset:0;width:100%;height:100%;}
+.hero-in{position:relative;z-index:2;padding-block:132px 108px;}
+.hero h1{font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(38px,6.4vw,74px);line-height:1.06;letter-spacing:-.03em;max-width:15ch;text-wrap:balance;}
+.hero p{margin-top:26px;max-width:56ch;font-size:17px;font-weight:300;line-height:1.75;color:hsl(240 18% 96% / .72);}
+.hero .eyebrow{color:var(--teal-300);}
+
+/* ── Color ──────────────────────────────────────────────────────── */
+.wheel-row{display:grid;grid-template-columns:300px 1fr;gap:56px;align-items:center;margin-top:44px;}
+@media(max-width:900px){.wheel-row{grid-template-columns:1fr;gap:36px;}}
+.wheel-box{position:relative;width:300px;height:300px;justify-self:center;}
+.wheel-box canvas{width:300px;height:300px;border-radius:50%;}
+.scheme dt{font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px;}
+.scheme dd{margin:6px 0 22px 24px;font-size:14.5px;font-weight:300;line-height:1.72;color:var(--ink-3);max-width:58ch;}
+.chip{width:14px;height:14px;border-radius:3px;flex:none;box-shadow:0 0 0 1px hsl(240 14% 10% / .12);}
+
+.ramp{margin-top:26px;}
+.ramp-head{display:flex;align-items:baseline;gap:12px;margin-bottom:10px;}
+.ramp-head h4{margin:0;font-size:14px;font-weight:600;}
+.ramp-head code{font-family:var(--mono);font-size:11px;color:var(--ink-3);}
+.ramp-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;}
+@media(max-width:820px){.ramp-grid{grid-template-columns:repeat(5,1fr);}}
+.sw{border:0;padding:0;background:none;text-align:left;cursor:pointer;font:inherit;}
+.sw i{display:block;height:66px;border-radius:4px;box-shadow:inset 0 0 0 1px hsl(240 14% 10% / .08);transition:transform .4s var(--ease);}
+.sw:hover i{transform:translateY(-4px);}
+.sw b{display:block;margin-top:7px;font-family:var(--mono);font-size:10px;font-weight:500;color:var(--ink-2);}
+.sw u{display:block;font-family:var(--mono);font-size:9.5px;text-decoration:none;color:var(--ink-3);}
+
+.pairs{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:14px;margin-top:26px;}
+.pair{border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--surface);}
+.pair .demo{padding:22px 20px;}
+.pair .demo b{display:block;font-size:17px;font-weight:600;letter-spacing:-.01em;}
+.pair .demo span{display:block;margin-top:5px;font-size:13px;font-weight:300;}
+.pair .meta{display:flex;justify-content:space-between;gap:10px;padding:10px 14px;border-top:1px solid var(--line);font-family:var(--mono);font-size:10px;color:var(--ink-3);background:var(--n-50);}
+.tag{padding:1px 6px;border-radius:3px;font-weight:500;}
+.tag.aaa{background:var(--teal-100);color:var(--teal-800);}
+.tag.aa{background:var(--indigo-100);color:var(--indigo-800);}
+.tag.fail{background:var(--amber-100);color:var(--amber-800);}
+
+/* ── Type ───────────────────────────────────────────────────────── */
+.scale-row{display:flex;align-items:baseline;gap:22px;padding:14px 0;border-bottom:1px solid var(--line);}
+.scale-row code{flex:none;width:88px;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);}
+.scale-row span{line-height:1.15;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+.spec{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:34px 32px;margin-top:16px;}
+.spec-top{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px;}
+.spec-top h4{margin:0;font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--indigo-600);}
+.spec-top em{font-style:normal;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);}
+.spec .disp{font-size:clamp(28px,3.6vw,42px);line-height:1.1;letter-spacing:-.025em;text-wrap:balance;max-width:22ch;}
+.spec .body{margin-top:16px;font-size:16px;line-height:1.75;max-width:64ch;color:var(--ink-2);}
+.spec .lab{margin-top:18px;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);}
+
+.calib{display:grid;grid-template-columns:280px 1fr;gap:36px;margin-top:24px;border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:30px;}
+@media(max-width:900px){.calib{grid-template-columns:1fr;}}
+.ctrl{margin-bottom:22px;}
+.ctrl label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);}
+.ctrl label b{color:var(--indigo-600);font-weight:500;}
+.ctrl input{width:100%;margin-top:9px;accent-color:var(--indigo-500);}
+.btn{font:inherit;cursor:pointer;border-radius:4px;transition:all .3s var(--ease);}
+.btn-solid{width:100%;padding:11px 14px;border:1px solid var(--indigo-600);background:var(--indigo-600);color:#fff;font-size:12px;font-weight:500;}
+.btn-solid:hover{background:var(--indigo-700);border-color:var(--indigo-700);}
+.btn-ghost{width:100%;margin-top:8px;padding:11px 14px;border:1px solid var(--line-2);background:transparent;color:var(--ink-2);font-size:12px;font-weight:500;}
+.btn-ghost:hover{border-color:var(--ink-3);color:var(--ink);}
+.readout{margin-top:20px;padding-top:16px;border-top:1px solid var(--line);font-family:var(--mono);font-size:10.5px;line-height:2;color:var(--ink-3);}
+.readout b{color:var(--ink);font-weight:500;}
+
+/* ── Shaders ────────────────────────────────────────────────────── */
+.shaders{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:34px;}
+@media(max-width:900px){.shaders{grid-template-columns:1fr;}}
+.shader{position:relative;border-radius:8px;overflow:hidden;aspect-ratio:16/10;background:var(--n-800);}
+.shader canvas{position:absolute;inset:0;width:100%;height:100%;}
+.shader .cap{position:absolute;left:18px;bottom:16px;z-index:2;color:#fff;text-shadow:0 1px 12px hsl(240 14% 10% / .5);}
+.shader .cap b{display:block;font-size:15px;font-weight:500;letter-spacing:-.01em;}
+.shader .cap span{display:block;margin-top:3px;font-family:var(--mono);font-size:10px;opacity:.72;}
+.grain-svg{position:absolute;inset:0;z-index:1;opacity:.5;mix-blend-mode:overlay;pointer-events:none;}
+
+/* ── Components ─────────────────────────────────────────────────── */
+.comp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:30px;}
+.panel{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:26px 24px;}
+.panel > h4{margin:0 0 18px;font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.b1{padding:10px 20px;border:1px solid var(--n-900);background:var(--n-900);color:#fff;font-size:13px;font-weight:500;}
+.b1:hover{background:var(--n-800);}
+.b2{padding:10px 20px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font-size:13px;font-weight:500;}
+.b2:hover{border-color:var(--n-900);}
+.b3{padding:10px 20px;border:1px solid var(--indigo-500);background:var(--indigo-500);color:#fff;font-size:13px;font-weight:500;}
+.b3:hover{background:var(--indigo-600);border-color:var(--indigo-600);}
+.b4{padding:10px 0;border:0;background:none;color:var(--indigo-700);font-size:13px;font-weight:500;text-decoration:underline;text-underline-offset:3px;}
+
+.pill{display:inline-flex;align-items:center;gap:7px;padding:4px 11px;border-radius:999px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;}
+.pill i{width:5px;height:5px;border-radius:50%;background:currentColor;}
+.p-neutral{background:var(--n-100);color:var(--ink-2);}
+.p-indigo{background:var(--indigo-100);color:var(--indigo-800);}
+.p-teal{background:var(--teal-100);color:var(--teal-800);}
+.p-amber{background:var(--amber-100);color:var(--amber-800);}
+
+.field{width:100%;padding:11px 13px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);font:inherit;font-size:13.5px;color:var(--ink);}
+.field::placeholder{color:var(--n-400);}
+.field:focus{outline:none;border-color:var(--indigo-500);box-shadow:0 0 0 3px var(--indigo-100);}
+
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:0 0 10px;border-bottom:1px solid var(--line-2);font-family:var(--mono);font-size:9.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);}
+td{padding:11px 0;border-bottom:1px solid var(--line);color:var(--ink-2);}
+td:last-child{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink);}
+
+.stat{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:22px 22px 24px;}
+.stat b{display:block;font-family:var(--serif);font-size:38px;font-weight:500;line-height:1;letter-spacing:-.02em;color:var(--indigo-700);}
+.stat span{display:block;margin-top:10px;font-size:12.5px;font-weight:300;color:var(--ink-3);}
+
+/* ── Philosophy ─────────────────────────────────────────────────── */
+.laws{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-top:38px;}
+.law{background:var(--surface);padding:30px 28px 34px;}
+.law b{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.14em;color:var(--indigo-600);}
+.law h4{margin:14px 0 0;font-size:17px;font-weight:500;letter-spacing:-.015em;}
+.law p{margin-top:11px;font-size:14px;font-weight:300;line-height:1.75;color:var(--ink-3);}
+
+footer{border-top:1px solid var(--line);}
+.foot{padding-block:44px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-family:var(--mono);font-size:10.5px;color:var(--n-400);}
+
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <span class="brand">Mercity<b>Design Lab</b></span>
+    <nav class="tnav">
+      <a href="#color">Colour</a>
+      <a href="#ramps">Ramps</a>
+      <a href="#combine">Combinations</a>
+      <a href="#type">Type</a>
+      <a href="#calibrate">Calibration</a>
+      <a href="#surface">Surfaces</a>
+      <a href="#components">Components</a>
+      <a href="#philosophy">Philosophy</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ═══ HERO ═══════════════════════════════════════════════════════ -->
+<section class="hero">
+  <canvas id="heroCanvas"></canvas>
+  <svg class="grain-svg" aria-hidden="true"><filter id="gr"><feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#gr)" opacity="0.42"/></svg>
+  <div class="wrap hero-in">
+    <span class="eyebrow">Working document · v1</span>
+    <h1>Deciding what this place <em>looks like</em> before deciding what it says.</h1>
+    <p>
+      Everything on this page is a proposal. Three hues chosen off the wheel rather than picked by eye,
+      the ramps built from them, five type pairings set in the same specimen so they can be judged against
+      each other, a live calibration panel for the size-weight-contrast question, and four grain-washed
+      surface treatments. Argue with any of it — nothing here has shipped.
+    </p>
+  </div>
+</section>
+
+<!-- ═══ COLOUR ═════════════════════════════════════════════════════ -->
+<section class="sec" id="color">
+  <div class="wrap">
+    <span class="eyebrow">01 — Colour</span>
+    <h2 class="h2">Three hues, chosen off the wheel <em>rather than by eye.</em></h2>
+    <p class="note">
+      The anchor is the indigo already in the stylesheet — <code style="font-family:var(--mono);font-size:13px">#4f46e5</code>,
+      which is <code style="font-family:var(--mono);font-size:13px">hsl(243 75% 59%)</code>. Rather than invent
+      around it, the other two are derived from it geometrically. Its direct complement sits at 63°, an unusable
+      olive; the split-complements either side of that are 33° and 93°. 33° is amber and reads as warmth and
+      warning. 93° is chartreuse and reads as nothing good. So amber takes the signal slot, and the third is
+      pulled in the other direction to 178° — teal, close enough to indigo to feel related, far enough to
+      separate cleanly in a chart.
+    </p>
+
+    <div class="wheel-row">
+      <div class="wheel-box"><canvas id="wheel" width="600" height="600"></canvas></div>
+      <dl class="scheme">
+        <dt><span class="chip" style="background:var(--indigo-500)"></span> Indigo · 243° · anchor</dt>
+        <dd>
+          Carries identity. Links, primary actions, the one word in a headline that earns emphasis.
+          It is the only colour allowed to appear without a reason — everything else has a job.
+        </dd>
+        <dt><span class="chip" style="background:var(--teal-500)"></span> Teal · 178° · instrument</dt>
+        <dd>
+          65° from the anchor: related, not analogous. This is the data colour — benchmark bars, diagram strokes,
+          code accents, anything that means <em>measurement</em>. It never competes with indigo for a call to action.
+        </dd>
+        <dt><span class="chip" style="background:var(--amber-500)"></span> Amber · 34° · signal</dt>
+        <dd>
+          The split-complement, 151° off the anchor. Reserved: a live badge, a caveat, a number that got worse.
+          If amber shows up twice on one screen, one of the two is decoration and should be removed.
+        </dd>
+        <dt><span class="chip" style="background:var(--n-500)"></span> Neutral · 240° at 7–14% sat</dt>
+        <dd>
+          Not grey. The whole neutral ramp is pulled toward the anchor hue, so text and rules sit in the same
+          world as the accent instead of reading as a stock stylesheet. At these saturations you cannot name
+          the tint, but you can tell when it is missing.
+        </dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ RAMPS ══════════════════════════════════════════════════════ -->
+<section class="sec" id="ramps">
+  <div class="wrap">
+    <span class="eyebrow">02 — Ramps</span>
+    <h2 class="h2">Ten steps each, <em>built not sampled.</em></h2>
+    <p class="note">
+      Every step holds the hue and moves saturation and lightness on a fixed curve, so the four ramps stay
+      siblings. Contrast is measured against white and against ink 900 — click any swatch to copy its value.
+    </p>
+    <div id="ramps"></div>
+  </div>
+</section>
+
+<!-- ═══ COMBINATIONS ═══════════════════════════════════════════════ -->
+<section class="sec" id="combine">
+  <div class="wrap">
+    <span class="eyebrow">03 — Combinations</span>
+    <h2 class="h2">Which pairs actually <em>survive contact.</em></h2>
+    <p class="note">
+      Contrast ratios computed live. AAA is 7.0, AA is 4.5, and anything under 3.0 is decoration only — never
+      body text. The failures are left in deliberately: they are the combinations that look best in a swatch
+      grid and collapse the moment you set 15px type in them.
+    </p>
+    <div class="pairs" id="pairs"></div>
+  </div>
+</section>
+
+<!-- ═══ TYPE ═══════════════════════════════════════════════════════ -->
+<section class="sec" id="type">
+  <div class="wrap">
+    <span class="eyebrow">04 — Type</span>
+    <h2 class="h2">Five pairings, <em>one specimen.</em></h2>
+    <p class="note">
+      Same words, same sizes, same measure in each — the only variable is the typeface. Judged on one question:
+      does the display face have a point of view without making the body face harder to read at 16px?
+    </p>
+
+    <div class="kicker"><h3 class="h3">The scale</h3><span>1.25 ratio · rem at 16px root</span></div>
+    <div id="scale"></div>
+
+    <div class="kicker"><h3 class="h3">Pairings</h3><span>display · body · mono</span></div>
+    <div id="specimens"></div>
+  </div>
+</section>
+
+<!-- ═══ CALIBRATION ════════════════════════════════════════════════ -->
+<section class="sec" id="calibrate">
+  <div class="wrap">
+    <span class="eyebrow">05 — Calibration</span>
+    <h2 class="h2">Your hunch, <em>made adjustable.</em></h2>
+    <p class="note">
+      You said body text feels slightly small, slightly light and slightly washed out — and that roughly
+      +10% size, +5% weight and +10% darker would fix it. That is three variables interacting, which is
+      impossible to judge in the abstract. Here they are as sliders, with the resulting numbers and the live
+      contrast ratio underneath. The preset button jumps straight to your proposal.
+    </p>
+
+    <div class="calib">
+      <div>
+        <div class="ctrl">
+          <label>Size <b id="vSize">100%</b></label>
+          <input type="range" id="rSize" min="85" max="135" step="1" value="100">
+        </div>
+        <div class="ctrl">
+          <label>Weight <b id="vWeight">300</b></label>
+          <input type="range" id="rWeight" min="200" max="600" step="10" value="300">
+        </div>
+        <div class="ctrl">
+          <label>Ink darkness <b id="vDark">0%</b></label>
+          <input type="range" id="rDark" min="0" max="45" step="1" value="0">
+        </div>
+        <div class="ctrl">
+          <label>Line height <b id="vLead">1.72</b></label>
+          <input type="range" id="rLead" min="140" max="200" step="1" value="172">
+        </div>
+        <button class="btn btn-solid" id="applyHunch">Apply your proposal</button>
+        <button class="btn btn-ghost" id="resetHunch">Back to what the site ships</button>
+        <div class="readout">
+          computed size <b id="oSize">15.00px</b><br>
+          weight <b id="oWeight">300</b><br>
+          colour <b id="oColor">#737373</b><br>
+          contrast on white <b id="oRatio">4.74</b> <span id="oGrade"></span>
+        </div>
+      </div>
+      <div>
+        <p id="calibText" style="max-width:64ch;">
+          We build the benchmark your problem actually needs, then measure against it honestly — task-specific
+          evaluations, adversarial probes and regression harnesses wired into CI. Public benchmarks rarely
+          measure the thing you are paid for, and a number that only moves on a leaderboard is a number that
+          will not survive your first week in production. So we report the results that argue against the model
+          we just trained for you, alongside the ones that flatter it.
+        </p>
+        <p style="margin-top:22px;font-family:var(--mono);font-size:10.5px;color:var(--n-400);">
+          ↑ live · this paragraph is the control surface
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SURFACES ═══════════════════════════════════════════════════ -->
+<section class="sec" id="surface">
+  <div class="wrap">
+    <span class="eyebrow">06 — Surfaces</span>
+    <h2 class="h2">Grain, erosion, and <em>colour that moves slowly.</em></h2>
+    <p class="note">
+      Four fragment shaders, all fed the same three hues, all grained in the shader rather than by an overlay
+      image. Grain is what stops a gradient reading as a 2014 startup header — it adds tooth, breaks the banding,
+      and makes a flat colour feel like it was printed onto something. Each runs at low amplitude and very low
+      speed; on a real page you would not consciously see them move.
+    </p>
+    <div class="shaders">
+      <figure class="shader"><canvas data-shader="0"></canvas><figcaption class="cap"><b>Aurora Drift</b><span>domain-warped fbm · all three hues</span></figcaption></figure>
+      <figure class="shader"><canvas data-shader="1"></canvas><figcaption class="cap"><b>Withered Wash</b><span>eroded bands · heavy grain · desaturated</span></figcaption></figure>
+      <figure class="shader"><canvas data-shader="2"></canvas><figcaption class="cap"><b>Ink Bloom</b><span>radial plume · indigo into teal</span></figcaption></figure>
+      <figure class="shader"><canvas data-shader="3"></canvas><figcaption class="cap"><b>Sediment</b><span>strata · amber through neutral</span></figcaption></figure>
+    </div>
+    <p class="note" style="margin-top:26px;">
+      Read them as candidates for the hero only. A shader behind body copy is a legibility problem wearing a
+      nice coat — if one of these ships, it ships behind large display type with a solid panel for anything
+      that has to be read.
+    </p>
+  </div>
+</section>
+
+<!-- ═══ COMPONENTS ═════════════════════════════════════════════════ -->
+<section class="sec" id="components">
+  <div class="wrap">
+    <span class="eyebrow">07 — Components</span>
+    <h2 class="h2">The same three hues, <em>doing actual work.</em></h2>
+    <p class="note">
+      Swatches prove nothing. These are the shapes the palette has to survive: four button weights competing
+      for the same eye, status pills that must be distinguishable at a glance, a table where the numbers matter
+      more than the labels, and a stat block.
+    </p>
+
+    <div class="comp-grid">
+      <div class="panel">
+        <h4>Buttons — one primary per view</h4>
+        <div class="row">
+          <button class="btn b1">Start a conversation</button>
+          <button class="btn b2">Read the paper</button>
+        </div>
+        <div class="row" style="margin-top:12px;">
+          <button class="btn b3">Primary, indigo</button>
+          <button class="btn b4">Tertiary link</button>
+        </div>
+        <p style="margin:18px 0 0;font-size:12.5px;font-weight:300;line-height:1.7;color:var(--ink-3);">
+          Ink-900 is the default primary; indigo is for moments that are genuinely about the brand. Using both
+          on one screen makes neither read as primary.
+        </p>
+      </div>
+
+      <div class="panel">
+        <h4>Status — meaning, not decoration</h4>
+        <div class="row">
+          <span class="pill p-neutral"><i></i>Draft</span>
+          <span class="pill p-indigo"><i></i>Research</span>
+          <span class="pill p-teal"><i></i>Benchmarked</span>
+          <span class="pill p-amber"><i></i>Preliminary</span>
+        </div>
+        <div class="row" style="margin-top:20px;">
+          <input class="field" placeholder="you@company.com" aria-label="Email">
+        </div>
+        <p style="margin:18px 0 0;font-size:12.5px;font-weight:300;line-height:1.7;color:var(--ink-3);">
+          Teal means measured. Amber means provisional. If a pill's colour does not change the reader's
+          confidence in the thing it labels, it should be neutral.
+        </p>
+      </div>
+
+      <div class="panel">
+        <h4>Data — teal carries the numbers</h4>
+        <table>
+          <thead><tr><th>Benchmark</th><th>Ours</th></tr></thead>
+          <tbody>
+            <tr><td>Task-specific eval</td><td>94.2</td></tr>
+            <tr><td>Adversarial suite</td><td>81.7</td></tr>
+            <tr><td>Regression harness</td><td>99.1</td></tr>
+            <tr><td>Held-out distribution</td><td>76.4</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel" style="padding:0;border:0;background:none;display:grid;gap:14px;">
+        <div class="stat"><b>10×</b><span>Faster iteration on custom training runs</span></div>
+        <div class="stat"><b>&lt;1 day</b><span>From hypothesis to a measured baseline</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PHILOSOPHY ═════════════════════════════════════════════════ -->
+<section class="sec" id="philosophy">
+  <div class="wrap">
+    <span class="eyebrow">08 — Philosophy</span>
+    <h2 class="h2">Six rules, so the next decision <em>argues with something.</em></h2>
+    <p class="note">
+      A design system is mostly a record of arguments already settled. These are the ones worth settling first.
+    </p>
+
+    <div class="laws">
+      <div class="law">
+        <b>01</b>
+        <h4>One curve, everywhere</h4>
+        <p>
+          Every transition on the site is 600ms on cubic-bezier(.22, 1, .36, 1), 24px of travel, fired once.
+          The reason it reads as expensive is not that it is clever — it is that nothing deviates from it.
+        </p>
+      </div>
+      <div class="law">
+        <b>02</b>
+        <h4>Colour needs a reason</h4>
+        <p>
+          Indigo is identity, teal is measurement, amber is caution. Any use that is not one of those three
+          is decoration, and decoration is what makes a research lab look like a SaaS company.
+        </p>
+      </div>
+      <div class="law">
+        <b>03</b>
+        <h4>Structure encodes something true</h4>
+        <p>
+          Numbered markers only where order matters. An eyebrow only where the section needs naming.
+          A rule only where two things genuinely separate. Otherwise it is furniture.
+        </p>
+      </div>
+      <div class="law">
+        <b>04</b>
+        <h4>Specific beats clever</h4>
+        <p>
+          "Cognitive architectures" told nobody anything. "Synthetic data generation" tells them whether to
+          keep reading. Copy is design material, and vagueness is a visual problem as much as a verbal one.
+        </p>
+      </div>
+      <div class="law">
+        <b>05</b>
+        <h4>Boldness gets spent once</h4>
+        <p>
+          A grained shader hero or a 96px italic serif headline — one of them, not both. Whatever the loud
+          element is, everything within two screens of it goes quiet to pay for it.
+        </p>
+      </div>
+      <div class="law">
+        <b>06</b>
+        <h4>Legibility outranks taste</h4>
+        <p>
+          If the calibration panel says a pairing lands under 4.5:1 at body size, it loses, regardless of how
+          it looks in a swatch. This is the only rule here that is not negotiable.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <span>Mercity Design Lab · scratch surface · /design.html</span>
+    <span id="fps">—</span>
+  </div>
+</footer>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   COLOUR MATHS
+   ══════════════════════════════════════════════════════════════════ */
+function hsl2rgb(h, s, l){
+  s/=100; l/=100;
+  const k = n => (n + h/30) % 12;
+  const a = s * Math.min(l, 1-l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n)-3, Math.min(9-k(n), 1)));
+  return [Math.round(f(0)*255), Math.round(f(8)*255), Math.round(f(4)*255)];
+}
+const hex = ([r,g,b]) => '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+function lum([r,g,b]){
+  const c = [r,g,b].map(v => { v/=255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); });
+  return 0.2126*c[0] + 0.7152*c[1] + 0.0722*c[2];
+}
+function ratio(a, b){
+  const l1 = lum(a), l2 = lum(b);
+  return (Math.max(l1,l2) + 0.05) / (Math.min(l1,l2) + 0.05);
+}
+const grade = r => r >= 7 ? ['AAA','aaa'] : r >= 4.5 ? ['AA','aa'] : ['FAIL','fail'];
+
+const RAMPS = {
+  Indigo:  { hue: 243, steps: [[41,97],[47,94],[54,87],[62,78],[69,68],[75,59],[69,50],[66,41],[62,32],[56,23]] },
+  Teal:    { hue: 178, steps: [[34,96],[38,92],[45,84],[51,71],[57,55],[62,42],[66,34],[70,27],[72,21],[74,15]] },
+  Amber:   { hue: 34,  steps: [[78,96],[82,92],[86,84],[88,73],[88,63],[84,53],[78,45],[74,36],[70,28],[64,20]] },
+  Neutral: { hue: 240, steps: [[24,99],[18,96],[13,91],[10,83],[8,65],[7,49],[8,37],[10,27],[12,17],[14,10]] },
+};
+const KEYS = [50,100,200,300,400,500,600,700,800,900];
+const WHITE = [255,255,255];
+const INK = hsl2rgb(240, 14, 10);
+
+/* ── Ramp grids ─────────────────────────────────────────────────── */
+const rampHost = document.getElementById('ramps');
+Object.entries(RAMPS).forEach(([name, def]) => {
+  const sat = def.steps.map(s => s[0]);
+  const wrap = document.createElement('div');
+  wrap.className = 'ramp';
+  wrap.innerHTML = `<div class="ramp-head"><h4>${name}</h4><code>hue ${def.hue}° · sat ${Math.min(...sat)}–${Math.max(...sat)}%</code></div><div class="ramp-grid"></div>`;
+  const grid = wrap.querySelector('.ramp-grid');
+  def.steps.forEach(([s, l], i) => {
+    const rgb = hsl2rgb(def.hue, s, l);
+    const h = hex(rgb);
+    const onWhite = ratio(rgb, WHITE), onInk = ratio(rgb, INK);
+    const best = Math.max(onWhite, onInk).toFixed(1);
+    const b = document.createElement('button');
+    b.className = 'sw';
+    b.title = `hsl(${def.hue} ${s}% ${l}%) · vs white ${onWhite.toFixed(2)} · vs ink ${onInk.toFixed(2)}`;
+    b.innerHTML = `<i style="background:${h}"></i><b>${KEYS[i]}</b><u>${h}</u><u>${best}:1</u>`;
+    b.addEventListener('click', () => {
+      navigator.clipboard?.writeText(h);
+      const u = b.querySelector('u');
+      const old = u.textContent; u.textContent = 'copied';
+      setTimeout(() => u.textContent = old, 900);
+    });
+    grid.appendChild(b);
+  });
+  rampHost.appendChild(wrap);
+});
+
+/* ── Combination cards ──────────────────────────────────────────── */
+const COMBOS = [
+  ['Ink on paper',      [240,14,10],  [240,24,99], 'Default body. Everything else must beat this or justify itself.'],
+  ['Indigo on paper',   [243,66,41],  [240,24,99], 'Links and emphasis. Indigo-700, not 500 — 500 fails at body size.'],
+  ['Indigo 500 on paper',[243,75,59], [240,24,99], 'The brand colour, unusable for text. Fills and borders only.'],
+  ['Paper on indigo',   [240,24,99],  [243,66,41], 'Primary button. Reverses cleanly at every weight.'],
+  ['Teal on teal-50',   [178,72,21],  [178,34,96], 'Data callouts. Reads technical without shouting.'],
+  ['Amber on amber-50', [30,70,28],   [34,78,96],  'Caution blocks. The dark end is a brown, and that is correct.'],
+  ['Teal 500 on paper', [178,62,42],  [240,24,99], 'Looks great, fails body text. Charts and rules only.'],
+  ['Muted on paper',    [240,7,49],   [240,24,99], 'Secondary copy. The floor — go lighter and it becomes hostile.'],
+];
+const pairHost = document.getElementById('pairs');
+COMBOS.forEach(([label, fg, bg, why]) => {
+  const f = hsl2rgb(...fg), b = hsl2rgb(...bg);
+  const r = ratio(f, b), [g, cls] = grade(r);
+  const el = document.createElement('div');
+  el.className = 'pair';
+  el.innerHTML = `
+    <div class="demo" style="background:${hex(b)};color:${hex(f)}">
+      <b>${label}</b>
+      <span>The quick brown fox jumps over 13 lazy dogs at 13px.</span>
+    </div>
+    <div class="meta"><span>${hex(f)} / ${hex(b)}</span><span>${r.toFixed(2)}:1 <em class="tag ${cls}" style="font-style:normal">${g}</em></span></div>`;
+  pairHost.appendChild(el);
+});
+
+/* ── Colour wheel ───────────────────────────────────────────────── */
+(function(){
+  const cv = document.getElementById('wheel'), c = cv.getContext('2d');
+  const R = 300, inner = 196;
+  c.clearRect(0,0,600,600);
+  for (let a = 0; a < 360; a++){
+    for (let step = 0; step < 4; step++){
+      const l = 74 - step * 11, rad = inner + step * 26;
+      c.beginPath();
+      c.strokeStyle = `hsl(${a} 72% ${l}%)`;
+      c.lineWidth = 27;
+      c.arc(R, R, rad, (a-90.6)*Math.PI/180, (a-88.4)*Math.PI/180);
+      c.stroke();
+    }
+  }
+  const marks = [[243,'Indigo'],[178,'Teal'],[34,'Amber'],[63,'']];
+  marks.forEach(([h, name]) => {
+    const rad = (h-90)*Math.PI/180;
+    const x = R + Math.cos(rad)*152, y = R + Math.sin(rad)*152;
+    c.beginPath();
+    c.fillStyle = name ? `hsl(${h} 75% 55%)` : 'transparent';
+    c.strokeStyle = name ? 'rgba(255,255,255,.95)' : 'hsl(240 14% 10% / .35)';
+    c.lineWidth = name ? 4 : 2;
+    c.setLineDash(name ? [] : [4,4]);
+    c.arc(x, y, name ? 15 : 9, 0, Math.PI*2);
+    if (name) c.fill();
+    c.stroke();
+    c.setLineDash([]);
+    if (name){
+      c.beginPath();
+      c.strokeStyle = 'hsl(240 14% 10% / .18)';
+      c.lineWidth = 1.5;
+      c.moveTo(R, R); c.lineTo(x, y); c.stroke();
+    }
+  });
+  c.font = '500 19px ui-monospace, Menlo, monospace';
+  c.fillStyle = 'hsl(240 14% 10%)';
+  c.textAlign = 'center';
+  c.fillText('243 · 178 · 34', R, R - 6);
+  c.font = '400 15px ui-monospace, Menlo, monospace';
+  c.fillStyle = 'hsl(240 7% 49%)';
+  c.fillText('anchor / instrument / signal', R, R + 20);
+})();
+
+/* ══════════════════════════════════════════════════════════════════
+   TYPE
+   ══════════════════════════════════════════════════════════════════ */
+const SCALE = [
+  ['display-xl','4.768rem','76.3px'], ['display','3.815rem','61.0px'],
+  ['h1','3.052rem','48.8px'], ['h2','2.441rem','39.1px'],
+  ['h3','1.953rem','31.3px'], ['h4','1.563rem','25.0px'],
+  ['lead','1.25rem','20.0px'], ['body','1rem','16.0px'],
+  ['small','0.8rem','12.8px'], ['micro','0.64rem','10.2px'],
+];
+const scaleHost = document.getElementById('scale');
+SCALE.forEach(([n, rem, px]) => {
+  const d = document.createElement('div');
+  d.className = 'scale-row';
+  d.innerHTML = `<code>${n}</code><code style="width:120px">${rem} · ${px}</code>
+    <span style="font-size:${rem};font-weight:${parseFloat(px) > 30 ? 300 : 400}">Research-grade, reality-ready</span>`;
+  scaleHost.appendChild(d);
+});
+
+const PAIRINGS = [
+  ['Current', "'Playfair Display', Georgia, serif", "'Inter', sans-serif", 'italic',
+   'Playfair Display · Inter · JetBrains Mono', 'What ships today. High-contrast Didone; elegant, a little formal, and the italic is doing most of the work.'],
+  ['Modern editorial', "'Instrument Serif', Georgia, serif", "'Inter Tight', sans-serif", 'normal',
+   'Instrument Serif · Inter Tight · JetBrains Mono', 'Tighter and more contemporary. Instrument has real personality at display size and disappears politely below 24px.'],
+  ['Academic press', "'Newsreader', Georgia, serif", "'IBM Plex Sans', sans-serif", 'normal',
+   'Newsreader · IBM Plex Sans · IBM Plex Mono', 'Reads like a journal. Plex carries the engineering credibility; the closest to what a research lab actually is.'],
+  ['Warm technical', "'Fraunces', Georgia, serif", "'Work Sans', sans-serif", 'normal',
+   'Fraunces · Work Sans · JetBrains Mono', 'Softer and more human. Fraunces has wonky optical sizing that stops it feeling corporate — the riskiest option here.'],
+  ['All-sans instrument', "'Inter Tight', sans-serif", "'Inter', sans-serif", 'normal',
+   'Inter Tight · Inter · JetBrains Mono', 'No serif at all. Quietest and most neutral; loses the editorial character but never fights the content.'],
+];
+const specHost = document.getElementById('specimens');
+PAIRINGS.forEach(([name, disp, body, style, stack, verdict]) => {
+  const el = document.createElement('div');
+  el.className = 'spec';
+  el.innerHTML = `
+    <div class="spec-top"><h4>${name}</h4><em>${stack}</em></div>
+    <div class="disp" style="font-family:${disp};font-style:${style};font-weight:400;">
+      Building research led capabilities for product and enterprise teams.
+    </div>
+    <div class="body" style="font-family:${body};font-weight:300;">
+      We do custom training, real optimization and built-from-scratch architecture — generate the data nobody
+      has, train the model nobody sells, then prove it actually works. ${verdict}
+    </div>
+    <div class="lab" style="font-family:${body};font-weight:500;">Synthetic data · Custom training · Evaluation</div>`;
+  specHost.appendChild(el);
+});
+
+/* ── Calibration ────────────────────────────────────────────────── */
+(function(){
+  const base = { size: 15, weight: 300, lightness: 45, lead: 1.72 };
+  const el = document.getElementById('calibText');
+  const rS = document.getElementById('rSize'), rW = document.getElementById('rWeight'),
+        rD = document.getElementById('rDark'), rL = document.getElementById('rLead');
+
+  function apply(){
+    const sizePct = +rS.value, weight = +rW.value, dark = +rD.value, lead = +rL.value / 100;
+    const px = base.size * sizePct / 100;
+    const light = base.lightness * (1 - dark / 100);
+    const rgb = hsl2rgb(240, 7, light);
+    const h = hex(rgb), r = ratio(rgb, WHITE), [g, cls] = grade(r);
+
+    el.style.fontSize = px.toFixed(2) + 'px';
+    el.style.fontWeight = weight;
+    el.style.color = h;
+    el.style.lineHeight = lead;
+
+    document.getElementById('vSize').textContent = sizePct + '%';
+    document.getElementById('vWeight').textContent = weight;
+    document.getElementById('vDark').textContent = dark + '%';
+    document.getElementById('vLead').textContent = lead.toFixed(2);
+    document.getElementById('oSize').textContent = px.toFixed(2) + 'px';
+    document.getElementById('oWeight').textContent = weight;
+    document.getElementById('oColor').textContent = h;
+    document.getElementById('oRatio').textContent = r.toFixed(2);
+    const gr = document.getElementById('oGrade');
+    gr.textContent = g; gr.className = 'tag ' + cls;
+  }
+  [rS, rW, rD, rL].forEach(r => r.addEventListener('input', apply));
+  document.getElementById('applyHunch').addEventListener('click', () => {
+    rS.value = 110; rW.value = 320; rD.value = 10; rL.value = 172; apply();
+  });
+  document.getElementById('resetHunch').addEventListener('click', () => {
+    rS.value = 100; rW.value = 300; rD.value = 0; rL.value = 172; apply();
+  });
+  apply();
+})();
+
+/* ══════════════════════════════════════════════════════════════════
+   SHADERS
+   ══════════════════════════════════════════════════════════════════ */
+const VERT = `
+attribute vec2 p;
+void main(){ gl_Position = vec4(p, 0.0, 1.0); }`;
+
+const FRAG = `
+precision highp float;
+uniform vec2 uRes;
+uniform float uTime;
+uniform int uMode;
+
+vec3 cIndigo = vec3(0.310, 0.275, 0.898);
+vec3 cTeal   = vec3(0.041, 0.686, 0.647);
+vec3 cAmber  = vec3(0.925, 0.639, 0.153);
+vec3 cInk    = vec3(0.086, 0.086, 0.114);
+vec3 cPaper  = vec3(0.976, 0.976, 0.992);
+
+float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
+
+float vnoise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+             mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+}
+
+float fbm(vec2 p){
+  float v = 0.0, a = 0.5;
+  for (int i = 0; i < 5; i++){ v += a * vnoise(p); p *= 2.03; a *= 0.5; }
+  return v;
+}
+
+void main(){
+  vec2 uv = gl_FragCoord.xy / uRes;
+  vec2 st = uv * vec2(uRes.x / uRes.y, 1.0);
+  float t = uTime * 0.05;
+  vec3 col;
+
+  if (uMode == 0){
+    // Aurora Drift — domain-warped fbm across all three hues
+    vec2 q = vec2(fbm(st * 1.7 + t), fbm(st * 1.7 + vec2(3.2, 1.7) - t));
+    vec2 r = vec2(fbm(st * 2.1 + 3.0 * q + vec2(1.7, 9.2) + t * 0.7),
+                  fbm(st * 2.1 + 3.0 * q + vec2(8.3, 2.8) - t * 0.5));
+    float f = fbm(st * 1.4 + 3.4 * r);
+    col = mix(cInk, cIndigo, clamp(f * 1.5, 0.0, 1.0));
+    col = mix(col, cTeal, clamp(r.x * 0.9, 0.0, 1.0));
+    col = mix(col, cAmber, clamp(pow(q.y, 2.6) * 0.7, 0.0, 1.0));
+    col *= 0.62 + 0.5 * f;
+  } else if (uMode == 1){
+    // Withered Wash — eroded horizontal bands, desaturated, heavy grain
+    float bands = fbm(vec2(st.x * 1.2 + t * 0.4, st.y * 9.0));
+    float erode = fbm(st * 6.0 - t);
+    float m = smoothstep(0.32, 0.78, bands * 0.75 + erode * 0.45);
+    col = mix(cInk * 1.3, cIndigo * 0.72, m);
+    col = mix(col, vec3(dot(col, vec3(0.299, 0.587, 0.114))), 0.42);
+    col = mix(col, cAmber * 0.55, pow(erode, 4.0) * 0.5);
+    col *= 0.85 + 0.3 * bands;
+  } else if (uMode == 2){
+    // Ink Bloom — radial plume, indigo into teal
+    vec2 c = st - vec2(uRes.x / uRes.y * 0.5, 0.46);
+    float d = length(c);
+    float plume = fbm(c * 3.2 + vec2(0.0, t * 1.6));
+    float body = smoothstep(0.62, 0.02, d + plume * 0.28);
+    col = mix(cInk * 0.85, cIndigo, body);
+    col = mix(col, cTeal, smoothstep(0.55, 0.0, d + plume * 0.4) * 0.72);
+    col += cPaper * pow(smoothstep(0.28, 0.0, d + plume * 0.3), 3.0) * 0.32;
+  } else {
+    // Sediment — layered strata, amber through neutral
+    float warp = fbm(st * 2.4 + t * 0.6) * 0.24;
+    float y = st.y + warp;
+    float strata = fract(y * 4.2);
+    float edge = smoothstep(0.0, 0.06, strata) * smoothstep(1.0, 0.94, strata);
+    float depth = floor(y * 4.2) / 4.2;
+    col = mix(cAmber * 0.62, cInk * 1.6, clamp(depth * 1.15, 0.0, 1.0));
+    col = mix(col * 0.72, col, edge);
+    col = mix(col, cIndigo * 0.7, fbm(st * 3.0 - t) * 0.34);
+  }
+
+  // Grain — in-shader, not an overlay
+  float g = hash(gl_FragCoord.xy + fract(uTime) * 91.7) - 0.5;
+  col += g * (uMode == 1 ? 0.13 : 0.055);
+
+  // Vignette
+  vec2 v = uv - 0.5;
+  col *= 1.0 - dot(v, v) * 0.55;
+
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+}`;
+
+function makeShader(canvas, mode){
+  const gl = canvas.getContext('webgl', { antialias: false, alpha: false });
+  if (!gl){
+    canvas.style.background = 'linear-gradient(135deg, #1a1a24, #4f46e5)';
+    return null;
+  }
+  function compile(type, src){
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
+      console.error(gl.getShaderInfoLog(s)); return null;
+    }
+    return s;
+  }
+  const vs = compile(gl.VERTEX_SHADER, VERT), fs = compile(gl.FRAGMENT_SHADER, FRAG);
+  if (!vs || !fs) return null;
+  const prog = gl.createProgram();
+  gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)){
+    console.error(gl.getProgramInfoLog(prog)); return null;
+  }
+  gl.useProgram(prog);
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog, 'p');
+  gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+  const uRes = gl.getUniformLocation(prog, 'uRes');
+  const uTime = gl.getUniformLocation(prog, 'uTime');
+  const uMode = gl.getUniformLocation(prog, 'uMode');
+  gl.uniform1i(uMode, mode);
+
+  function size(){
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.6);
+    const w = Math.max(1, Math.round(canvas.clientWidth * dpr));
+    const h = Math.max(1, Math.round(canvas.clientHeight * dpr));
+    if (canvas.width !== w || canvas.height !== h){
+      canvas.width = w; canvas.height = h;
+      gl.viewport(0, 0, w, h);
+    }
+    gl.uniform2f(uRes, canvas.width, canvas.height);
+  }
+  return { gl, size, draw(t){ size(); gl.uniform1f(uTime, t); gl.drawArrays(gl.TRIANGLES, 0, 3); } };
+}
+
+(function(){
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const targets = [];
+  const hero = document.getElementById('heroCanvas');
+  const h = makeShader(hero, 0);
+  if (h) targets.push({ r: h, el: hero });
+  document.querySelectorAll('[data-shader]').forEach(cv => {
+    const r = makeShader(cv, +cv.dataset.shader);
+    if (r) targets.push({ r, el: cv });
+  });
+
+  const seen = new WeakSet();
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    e.isIntersecting ? seen.add(e.target) : seen.delete(e.target);
+  }), { rootMargin: '120px' });
+  targets.forEach(t => io.observe(t.el));
+
+  if (reduce){ targets.forEach(t => t.r.draw(4.0)); return; }
+
+  let frames = 0, last = performance.now();
+  const fpsEl = document.getElementById('fps');
+  (function loop(now){
+    const t = now / 1000;
+    targets.forEach(x => { if (seen.has(x.el)) x.r.draw(t); });
+    if (++frames >= 60){
+      fpsEl.textContent = Math.round(frames * 1000 / (now - last)) + ' fps · ' + targets.length + ' shaders';
+      frames = 0; last = now;
+    }
+    requestAnimationFrame(loop);
+  })(performance.now());
+})();
+</script>
+</body>
+</html>
