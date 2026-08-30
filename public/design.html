@@ -483,12 +483,12 @@ footer{border-top:1px solid var(--line);}
       reseeds on click and can be re-rendered at any size for any section. Every one is drawn in our three hues.
     </p>
     <p class="note" style="margin-top:14px;">
-      On the library question: the contour tile uses <b style="font-weight:500;color:var(--ink-2)">d3-contour</b>,
-      which is the correct tool — proper marching squares over a scalar field, and not worth hand-rolling. The
-      rest are ~30 lines of canvas each, which is genuinely less code than wiring up a dependency, and it means
-      the palette is a variable rather than something to fight. If we want to go further into shader territory
-      later, <b style="font-weight:500;color:var(--ink-2)">Paper Shaders</b> and <b style="font-weight:500;color:var(--ink-2)">three.js</b>
-      are the two real options.
+      On the library question: the contour tile originally used <b style="font-weight:500;color:var(--ink-2)">d3-contour</b>,
+      which silently failed — its UMD build needs <b style="font-weight:500;color:var(--ink-2)">d3-array</b> as a peer, and
+      without it every call threw. Marching squares is about forty lines, so it is hand-rolled here and the
+      dependency is gone. Everything on this page now runs on nothing but the page itself. If we want to go
+      further into shader territory later, <b style="font-weight:500;color:var(--ink-2)">Paper Shaders</b> and
+      <b style="font-weight:500;color:var(--ink-2)">three.js</b> are the two real options.
     </p>
 
     <div class="backs" id="backs"></div>
@@ -791,8 +791,8 @@ const PAIRINGS = [
    'Instrument Serif · Inter Tight · JetBrains Mono', 'Tighter and more contemporary. Instrument has real personality at display size and disappears politely below 24px.'],
   ['Academic press', "'Newsreader', Georgia, serif", "'IBM Plex Sans', sans-serif", 'normal',
    'Newsreader · IBM Plex Sans · IBM Plex Mono', 'Reads like a journal. Plex carries the engineering credibility; the closest to what a research lab actually is.'],
-  ['Warm technical', "'Fraunces', Georgia, serif", "'Work Sans', sans-serif", 'normal',
-   'Fraunces · Work Sans · JetBrains Mono', 'Softer and more human. Fraunces has wonky optical sizing that stops it feeling corporate — the riskiest option here.'],
+  ['Warm technical — SELECTED', "'Fraunces', Georgia, serif", "'Inter', sans-serif", 'normal',
+   'Fraunces · Inter · JetBrains Mono', 'The direction. Fraunces has wonky optical sizing that stops it feeling corporate; Inter underneath keeps it legible and familiar. This is what /v2 is built in.'],
   ['All-sans instrument', "'Inter Tight', sans-serif", "'Inter', sans-serif", 'normal',
    'Inter Tight · Inter · JetBrains Mono', 'No serif at all. Quietest and most neutral; loses the editorial character but never fights the content.'],
 ];
@@ -1025,7 +1025,6 @@ function makeShader(canvas, mode){
 })();
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/d3-contour@4/dist/d3-contour.min.js"></script>
 <script>
 /* ══════════════════════════════════════════════════════════════════
    TREATMENTS + BACKDROPS
@@ -1092,6 +1091,40 @@ function grain(ctx, w, h, amount, mono){
     else { d[i] += n; d[i+1] += n * 0.92; d[i+2] += n * 1.06; }
   }
   ctx.putImageData(img, 0, 0);
+}
+
+// Marching squares. Emits line segments for one threshold over a scalar
+// field -- enough to stroke contours, and no dependency to keep alive.
+function marchingSquares(values, gw, gh, threshold, out){
+  const at = (x, y) => values[y * gw + x];
+  const cut = (a, b) => (threshold - a) / (b - a);
+  for (let y = 0; y < gh - 1; y++){
+    for (let x = 0; x < gw - 1; x++){
+      const tl = at(x, y), tr = at(x+1, y), br = at(x+1, y+1), bl = at(x, y+1);
+      let idx = 0;
+      if (tl > threshold) idx |= 8;
+      if (tr > threshold) idx |= 4;
+      if (br > threshold) idx |= 2;
+      if (bl > threshold) idx |= 1;
+      if (idx === 0 || idx === 15) continue;
+      const T = [x + cut(tl, tr), y];
+      const R = [x + 1, y + cut(tr, br)];
+      const B = [x + cut(bl, br), y + 1];
+      const L = [x, y + cut(tl, bl)];
+      const seg = (a, b) => out.push(a[0], a[1], b[0], b[1]);
+      switch (idx){
+        case 1: case 14: seg(L, B); break;
+        case 2: case 13: seg(B, R); break;
+        case 3: case 12: seg(L, R); break;
+        case 4: case 11: seg(T, R); break;
+        case 6: case 9:  seg(T, B); break;
+        case 7: case 8:  seg(L, T); break;
+        case 5:  seg(L, T); seg(B, R); break;
+        case 10: seg(T, R); seg(L, B); break;
+      }
+    }
+  }
+  return out;
 }
 
 const BAYER8 = [
@@ -1214,7 +1247,7 @@ TREATMENTS.forEach(([name, tech, fn]) => {
    ══════════════════════════════════════════════════════════════════ */
 const BACKDROPS = [
 
-['Contour field', 'd3-contour · marching squares over fbm', (ctx, w, h, seed) => {
+['Contour field', 'marching squares over fbm · hand-rolled', (ctx, w, h, seed) => {
   ctx.fillStyle = css(PAPER); ctx.fillRect(0, 0, w, h);
   const fbm = makeNoise(seed);
   const gw = 150, gh = Math.max(40, Math.round(150 * h / w));
@@ -1224,22 +1257,25 @@ const BACKDROPS = [
       values[y * gw + x] = fbm(x / 19, y / 19, 4);
 
   const sx = w / gw, sy = h / gh;
-  if (window.d3 && d3.contours){
-    const cs = d3.contours().size([gw, gh]).thresholds(14)(values);
-    ctx.lineWidth = Math.max(1, w / 900);
-    cs.forEach((c, i) => {
-      ctx.strokeStyle = `hsl(243 62% ${68 - i * 1.6}% / ${0.35 + i * 0.035})`;
-      ctx.beginPath();
-      c.coordinates.forEach(poly => poly.forEach(ring => {
-        ring.forEach(([x, y], k) => k ? ctx.lineTo(x * sx, y * sy) : ctx.moveTo(x * sx, y * sy));
-        ctx.closePath();
-      }));
-      ctx.stroke();
-    });
-  } else {
-    ctx.fillStyle = css(rgb(243, 40, 70));
-    ctx.font = '12px monospace';
-    ctx.fillText('d3-contour unavailable', 16, 26);
+  let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i < values.length; i++){
+    if (values[i] < lo) lo = values[i];
+    if (values[i] > hi) hi = values[i];
+  }
+  ctx.lineWidth = Math.max(1, w / 900);
+  ctx.lineCap = 'round';
+  const BANDS = 15;
+  for (let k = 1; k < BANDS; k++){
+    const th = lo + (hi - lo) * (k / BANDS);
+    const segs = marchingSquares(values, gw, gh, th, []);
+    if (!segs.length) continue;
+    ctx.strokeStyle = `hsl(243 62% ${70 - k * 1.7}% / ${0.34 + k * 0.032})`;
+    ctx.beginPath();
+    for (let i = 0; i < segs.length; i += 4){
+      ctx.moveTo(segs[i] * sx, segs[i+1] * sy);
+      ctx.lineTo(segs[i+2] * sx, segs[i+3] * sy);
+    }
+    ctx.stroke();
   }
   grain(ctx, w, h, 9, true);
 }],

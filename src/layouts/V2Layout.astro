@@ -1,0 +1,342 @@
+---
+/**
+ * Standalone shell for the landing page V2 experiment.
+ *
+ * Deliberately does not extend BaseLayout: V2 runs its own type stack
+ * (Fraunces / Inter / JetBrains Mono) and its own palette, and must not
+ * be able to disturb the shipping site. No ClientRouter here either, so
+ * the backdrop generators run on a plain page load.
+ */
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description }: Props = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+
+    <style is:global>
+      /* ══════════════════════════════════════════════════════════════
+         V2 — scoped entirely to this layout.
+         Palette from /design.html: indigo 243 (identity),
+         teal 178 (measurement), amber 34 (signal), neutrals at 240.
+         ══════════════════════════════════════════════════════════════ */
+      :root {
+        --indigo-100: hsl(243 47% 94%);
+        --indigo-200: hsl(243 54% 87%);
+        --indigo-300: hsl(243 62% 78%);
+        --indigo-500: hsl(243 75% 59%);
+        --indigo-600: hsl(243 69% 50%);
+        --indigo-700: hsl(243 66% 41%);
+
+        --teal-100: hsl(178 38% 92%);
+        --teal-500: hsl(178 62% 42%);
+        --teal-700: hsl(178 70% 27%);
+        --teal-800: hsl(178 72% 21%);
+
+        --amber-100: hsl(34 82% 92%);
+        --amber-500: hsl(34 84% 53%);
+        --amber-800: hsl(30 70% 28%);
+
+        --n-0: #ffffff;
+        --n-50: hsl(240 24% 99%);
+        --n-100: hsl(240 18% 96%);
+        --n-200: hsl(240 13% 91%);
+        --n-300: hsl(240 10% 83%);
+        --n-400: hsl(240 8% 65%);
+        --n-500: hsl(240 7% 49%);
+        --n-700: hsl(240 10% 27%);
+        --n-800: hsl(240 12% 17%);
+        --n-900: hsl(240 14% 10%);
+
+        --ground: var(--n-50);
+        --surface: var(--n-0);
+        --ink: var(--n-900);
+        --ink-2: var(--n-700);
+        --ink-3: var(--n-500);
+        --line: var(--n-200);
+        --line-2: var(--n-300);
+
+        --display: 'Fraunces', Georgia, 'Times New Roman', serif;
+        --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+        --ease: cubic-bezier(0.22, 1, 0.36, 1);
+        --shell: 1240px;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        scroll-behavior: smooth;
+        color-scheme: light;
+      }
+
+      body {
+        margin: 0;
+        background: var(--ground);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 16px;
+        line-height: 1.6;
+      }
+
+      h1, h2, h3, h4, p, figure, ul {
+        margin: 0;
+      }
+      ul {
+        padding: 0;
+        list-style: none;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      canvas {
+        display: block;
+      }
+      :focus-visible {
+        outline: 2px solid var(--indigo-500);
+        outline-offset: 3px;
+      }
+
+      .shell {
+        max-width: var(--shell);
+        margin: 0 auto;
+        padding-inline: 30px;
+      }
+      @media (max-width: 640px) {
+        .shell {
+          padding-inline: 20px;
+        }
+      }
+
+      /* ── Reveal — the one curve ─────────────────────────────────── */
+      .rv {
+        opacity: 0;
+        transform: translateY(24px);
+        transition:
+          opacity 600ms var(--ease),
+          transform 600ms var(--ease);
+        transition-delay: var(--rv-delay, 0ms);
+      }
+      .rv[data-from='left'] {
+        transform: translateX(-24px);
+      }
+      .rv[data-from='right'] {
+        transform: translateX(24px);
+      }
+      .rv[data-visible='true'] {
+        opacity: 1;
+        transform: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .rv {
+          opacity: 1;
+          transform: none;
+          transition: none;
+        }
+      }
+
+      /* ── Shared type ────────────────────────────────────────────── */
+      .eyebrow {
+        display: block;
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--indigo-600);
+      }
+      .h2 {
+        margin-top: 16px;
+        max-width: 20ch;
+        font-family: var(--display);
+        font-size: clamp(31px, 4.1vw, 50px);
+        font-weight: 400;
+        line-height: 1.08;
+        letter-spacing: -0.022em;
+        text-wrap: balance;
+      }
+      .h2 em {
+        font-style: italic;
+        font-weight: 300;
+        color: var(--indigo-700);
+      }
+      .lede {
+        margin-top: 20px;
+        max-width: 62ch;
+        font-size: 16.5px;
+        font-weight: 400;
+        line-height: 1.76;
+        color: var(--ink-3);
+      }
+      .band {
+        border-top: 1px solid var(--line);
+        padding-block: clamp(84px, 10vw, 132px);
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="v2-nav">
+      <div class="shell v2-nav-in">
+        <a href="/v2" class="v2-mark">Mercity<i>v2</i></a>
+        <nav class="v2-links">
+          <a href="#work">What we do</a>
+          <a href="#who">Who we serve</a>
+          <a href="#open">Open source</a>
+          <a href="#tooling">Tooling</a>
+        </nav>
+        <a href="/contact" class="v2-cta">Start a conversation</a>
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="v2-foot">
+      <div class="shell v2-foot-in">
+        <span>Mercity Research — landing V2, experimental. The shipping page is at <a href="/">/</a>.</span>
+        <span>Design system: <a href="/design.html">/design.html</a></span>
+      </div>
+    </footer>
+
+    <style is:global>
+      .v2-nav {
+        position: sticky;
+        top: 0;
+        z-index: 60;
+        background: hsl(240 24% 99% / 0.82);
+        backdrop-filter: blur(16px);
+        border-bottom: 1px solid var(--line);
+      }
+      .v2-nav-in {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        height: 66px;
+      }
+      .v2-mark {
+        font-family: var(--display);
+        font-size: 21px;
+        font-weight: 500;
+        letter-spacing: -0.02em;
+      }
+      .v2-mark i {
+        font-family: var(--mono);
+        font-style: normal;
+        font-size: 9.5px;
+        font-weight: 500;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--indigo-600);
+        margin-left: 9px;
+        vertical-align: 3px;
+      }
+      .v2-links {
+        display: flex;
+        gap: 34px;
+      }
+      .v2-links a {
+        font-size: 13.5px;
+        font-weight: 400;
+        color: var(--ink-3);
+        transition: color 300ms var(--ease);
+      }
+      .v2-links a:hover {
+        color: var(--ink);
+      }
+      .v2-cta {
+        padding: 9px 18px;
+        border: 1px solid var(--line-2);
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        transition:
+          background 300ms var(--ease),
+          color 300ms var(--ease),
+          border-color 300ms var(--ease);
+      }
+      .v2-cta:hover {
+        background: var(--ink);
+        color: #fff;
+        border-color: var(--ink);
+      }
+      @media (max-width: 900px) {
+        .v2-links {
+          display: none;
+        }
+      }
+
+      .v2-foot {
+        border-top: 1px solid var(--line);
+        background: var(--surface);
+      }
+      .v2-foot-in {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
+        padding-block: 40px;
+        font-family: var(--mono);
+        font-size: 10.5px;
+        color: var(--n-400);
+      }
+      .v2-foot a {
+        color: var(--indigo-600);
+      }
+    </style>
+
+    <script is:inline>
+      /* ── Reveal observer ──────────────────────────────────────── */
+      (() => {
+        const nodes = document.querySelectorAll('[data-rv]');
+        if (!nodes.length) return;
+        if (!('IntersectionObserver' in window)) {
+          nodes.forEach((n) => n.setAttribute('data-visible', 'true'));
+          return;
+        }
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((e) => {
+              if (!e.isIntersecting) return;
+              e.target.setAttribute('data-visible', 'true');
+              io.unobserve(e.target);
+            });
+          },
+          { rootMargin: '0px 0px -10% 0px', threshold: 0.01 }
+        );
+        nodes.forEach((n) => io.observe(n));
+      })();
+    </script>
+
+    <script is:inline src="/v2-backdrops.js"></script>
+  </body>
+</html>

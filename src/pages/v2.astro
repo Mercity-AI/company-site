@@ -1,0 +1,808 @@
+---
+import V2Layout from '@/layouts/V2Layout.astro';
+
+const capabilities = [
+  {
+    name: 'Synthetic Data Generation',
+    backdrop: 'halftone',
+    seed: 4021,
+    summary:
+      'We build pipelines that produce exactly the distribution your model is missing — curriculum-controlled, deduplicated, and verified against the real task rather than against a prompt template. Millions of samples, shipped with the generation code, the filter criteria and a coverage report, so you can audit what went into the run instead of trusting it.',
+  },
+  {
+    name: 'Custom Architecture & Training',
+    backdrop: 'contour',
+    seed: 9137,
+    summary:
+      'When the off-the-shelf model is the wrong shape, we design one that is not: modified attention, task-native tokenizers, reworked objectives, and the kernels to make them run fast. Continued pretraining through post-training, on your compute, with every checkpoint and hyperparameter decision documented and handed over.',
+  },
+  {
+    name: 'Evaluation & Benchmarking',
+    backdrop: 'ridgeline',
+    seed: 2288,
+    summary:
+      'Public benchmarks rarely measure the thing you are actually paid for. We build the evaluation your problem needs — task-specific suites, adversarial probes and regression harnesses wired into CI — then run it honestly, including the results that argue against the model we just trained for you.',
+  },
+];
+
+const openWork = [
+  {
+    name: 'Datasets',
+    backdrop: 'strata',
+    seed: 771,
+    meta: '14 releases · HuggingFace',
+    href: '/open-source/simula',
+    summary:
+      'Curated and synthetic corpora released with the generation code, the filtering criteria and the failure modes we already know about — so you can judge whether a set fits your problem before you spend a training run finding out.',
+  },
+  {
+    name: 'Models',
+    backdrop: 'isoline',
+    seed: 5410,
+    meta: '9 checkpoints · Apache-2.0',
+    href: '/open-source/simula',
+    summary:
+      'Checkpoints, adapters and complete training recipes from experiments we think are worth reproducing — published with the evaluation numbers that convinced us to keep them, and the ablations that did not make the cut.',
+  },
+  {
+    name: 'Research',
+    backdrop: 'contour',
+    seed: 3364,
+    meta: '30+ write-ups · Updated weekly',
+    href: '/research',
+    summary:
+      'Long-form write-ups of what worked, what did not, and the specific reason why — implementation detail included, because that is reliably the part every other post leaves out and the part you need in order to reproduce it.',
+  },
+];
+
+const tooling = [
+  {
+    name: 'Simula',
+    kind: 'Python',
+    href: '/open-source/simula',
+    summary:
+      'Deliberate synthetic data generation. Describe the distribution you want as a spec, and Simula plans, generates and verifies a corpus against it.',
+  },
+  {
+    name: 'Assay',
+    kind: 'Python',
+    href: '/open-source/simula',
+    summary:
+      'An evaluation harness for task-specific benchmarks. Define graders once, run them across models and checkpoints, and diff results across a training run.',
+  },
+  {
+    name: 'Sieve',
+    kind: 'Rust · Python',
+    href: '/open-source/simula',
+    summary:
+      'Corpus filtering and near-duplicate detection at billion-document scale, with every decision traceable back to the rule that made it.',
+  },
+  {
+    name: 'Anvil',
+    kind: 'CUDA · Triton',
+    href: '/open-source/simula',
+    summary:
+      'Fused kernels and training utilities for architectures that do not fit the standard stack, benchmarked against the reference implementation on every commit.',
+  },
+];
+---
+
+<V2Layout
+  title="Mercity Research — Landing V2"
+  description="Research-led capabilities for product and enterprise teams. Synthetic data, custom training, and evaluation that tells the truth."
+>
+  <!-- ═══ HERO ═══════════════════════════════════════════════════ -->
+  <section class="hero">
+    <canvas class="hero-bg" data-backdrop="blurfield" data-seed="8812" data-dpr="1.2" aria-hidden="true"></canvas>
+    <div class="hero-scrim"></div>
+    <div class="shell hero-in">
+      <span class="eyebrow hero-eyebrow rv" data-rv>Applied AI research · since 2023</span>
+      <h1 class="rv" data-rv style="--rv-delay:120ms">
+        Building research led capabilities for <em>product and enterprise teams.</em>
+      </h1>
+      <p class="rv" data-rv style="--rv-delay:240ms">
+        We generate the data nobody has, train the model nobody sells, and then prove it actually works.
+        Custom training, real optimization and built-from-scratch architecture — anything that gives you an
+        edge the market cannot buy off a shelf.
+      </p>
+      <div class="hero-actions rv" data-rv style="--rv-delay:360ms">
+        <a class="btn-solid" href="#work">See what we do<span aria-hidden="true">→</span></a>
+        <a class="btn-quiet" href="/research">Read our research</a>
+      </div>
+    </div>
+    <div class="hero-strip">
+      <div class="shell hero-strip-in">
+        <span>Synthetic data</span><i></i>
+        <span>Custom training</span><i></i>
+        <span>Evaluation &amp; benchmarking</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ WHAT WE WORK ON ════════════════════════════════════════ -->
+  <section class="band" id="work">
+    <div class="shell">
+      <span class="eyebrow rv" data-rv>What we work on</span>
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Three things, and we do <em>all three at depth.</em></h2>
+      <p class="lede rv" data-rv style="--rv-delay:160ms">
+        Not a service menu. These are the three problems we have run at scale often enough to have opinions
+        about, and they compose into a single pipeline: generate the data nobody has, train the model nobody
+        sells, then prove it actually works.
+      </p>
+
+      <div class="cap-grid">
+        {
+          capabilities.map((c, i) => (
+            <article class="cap rv" data-rv style={`--rv-delay:${100 + i * 90}ms`}>
+              <div class="cap-art">
+                <canvas data-backdrop={c.backdrop} data-seed={c.seed} aria-hidden="true"></canvas>
+              </div>
+              <div class="cap-body">
+                <span class="cap-idx">{String(i + 1).padStart(2, '0')}</span>
+                <h3>{c.name}</h3>
+                <p>{c.summary}</p>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ WHO WE WORK WITH ═══════════════════════════════════════ -->
+  <section class="band band-tint" id="who">
+    <div class="shell">
+      <span class="eyebrow rv" data-rv>Who we work with</span>
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">
+        Two kinds of teams keep <em>finding their way to us.</em>
+      </h2>
+      <p class="lede rv" data-rv style="--rv-delay:160ms">
+        They arrive with very different problems and leave with the same thing: a capability that belongs to
+        them, rather than a subscription that renews.
+      </p>
+
+      <div class="persona-grid">
+        <article class="persona rv" data-rv data-from="left" style="--rv-delay:120ms">
+          <div class="persona-art">
+            <canvas data-backdrop="facets" data-seed="6104" aria-hidden="true"></canvas>
+            <span class="persona-tag">Product</span>
+          </div>
+          <div class="persona-body">
+            <h3>Product companies seeking <em>real differentiation</em></h3>
+            <p>
+              Your product works, but the model behind it is the same endpoint your three closest competitors
+              are calling — which means your moat is your interface. We build the layer that cannot be
+              replicated by swapping an API key: trained on data only you have, shaped around the task your
+              users actually perform, and measurably better at it than anything general-purpose. You own the
+              weights, the pipeline and the evaluations that prove the gap.
+            </p>
+            <p class="persona-foot">Typically 6–14 weeks, from a working baseline to a deployed model.</p>
+          </div>
+        </article>
+
+        <article class="persona rv" data-rv data-from="right" style="--rv-delay:200ms">
+          <div class="persona-art">
+            <canvas data-backdrop="curves" data-seed="1937" aria-hidden="true"></canvas>
+            <span class="persona-tag">Enterprise</span>
+          </div>
+          <div class="persona-body">
+            <h3>Enterprises integrating AI <em>structurally, not superficially</em></h3>
+            <p>
+              You are past the pilot stage and the demos have stopped being interesting. We work alongside your
+              existing teams to put AI into the systems the business genuinely runs on — data foundations,
+              evaluation gates, deployment and serving architecture, and the review process that keeps a model
+              honest after launch. We build the internal capability at the same time, so the thing still works
+              long after our engagement ends.
+            </p>
+            <p class="persona-foot">Embedded engagements, with your engineers in the room from week one.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ WE SHIP OPENLY ═════════════════════════════════════════ -->
+  <section class="band" id="open">
+    <div class="shell">
+      <div class="open-head">
+        <div class="open-head-copy">
+          <span class="eyebrow rv" data-rv>Open source</span>
+          <h2 class="h2 rv" data-rv style="--rv-delay:80ms">We ship <em>openly,</em> and in public.</h2>
+          <p class="lede rv" data-rv style="--rv-delay:160ms">
+            Most of what we learn on client work ends up public in some form. Datasets we had to build because
+            nothing suitable existed, weights from runs worth reproducing, and write-ups detailed enough that
+            you could follow them end to end. Take it, fork it, and tell us where we got it wrong.
+          </p>
+        </div>
+        <a class="wipe rv" data-rv style="--rv-delay:240ms" href="/open-source/simula">
+          <span class="wipe-fill"></span>
+          <span class="wipe-label">Explore our open work</span>
+          <span class="wipe-label" aria-hidden="true">→</span>
+        </a>
+      </div>
+
+      <div class="open-grid">
+        {
+          openWork.map((o, i) => (
+            <a class="open-card rv" data-rv style={`--rv-delay:${100 + i * 90}ms`} href={o.href}>
+              <div class="open-art">
+                <canvas data-backdrop={o.backdrop} data-seed={o.seed} aria-hidden="true"></canvas>
+              </div>
+              <div class="open-body">
+                <h3>{o.name}</h3>
+                <p>{o.summary}</p>
+                <span class="open-meta">{o.meta}</span>
+              </div>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ TOOLING ════════════════════════════════════════════════ -->
+  <section class="band band-tint" id="tooling">
+    <div class="shell">
+      <span class="eyebrow rv" data-rv>Tooling</span>
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">
+        Alongside the data and the weights, we <em>open the tools.</em>
+      </h2>
+      <p class="lede rv" data-rv style="--rv-delay:160ms">
+        Nearly all of this started as something we needed internally and got tired of rewriting for the next
+        engagement. It stays maintained because we run on it ourselves — the same libraries are in the loop on
+        client projects the week they ship.
+      </p>
+
+      <div class="tool-grid">
+        {
+          tooling.map((t, i) => (
+            <a class="tool rv" data-rv style={`--rv-delay:${80 + i * 80}ms`} href={t.href}>
+              <div class="tool-top">
+                <span class="tool-name">{t.name}</span>
+                <span class="tool-kind">{t.kind}</span>
+              </div>
+              <div>
+                <span class="tool-dot"></span>
+                <p>{t.summary}</p>
+              </div>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CLOSING ════════════════════════════════════════════════ -->
+  <section class="closer">
+    <canvas class="closer-bg" data-backdrop="strata" data-seed="4488" data-dpr="1.2" aria-hidden="true"></canvas>
+    <div class="shell closer-in">
+      <h2 class="rv" data-rv>Bring us the problem that <em>does not fit the API.</em></h2>
+      <p class="rv" data-rv style="--rv-delay:120ms">
+        If an off-the-shelf model already solves it, you do not need us. If it nearly solves it and the last
+        fifteen percent is the whole business, that is the conversation we want.
+      </p>
+      <a class="btn-light rv" data-rv style="--rv-delay:240ms" href="/contact">
+        Start a conversation<span aria-hidden="true">→</span>
+      </a>
+    </div>
+  </section>
+</V2Layout>
+
+<style is:global>
+  /* ══════════════════════════════════════════════════════════════
+     V2 PAGE
+     ══════════════════════════════════════════════════════════════ */
+
+  /* ── Hero ───────────────────────────────────────────────────── */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    background: var(--n-900);
+    color: var(--n-50);
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .hero-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      hsl(240 14% 8% / 0.9) 0%,
+      hsl(240 14% 8% / 0.7) 42%,
+      hsl(240 14% 8% / 0.32) 100%
+    );
+  }
+  .hero-in {
+    position: relative;
+    z-index: 2;
+    padding-block: clamp(104px, 13vw, 168px) clamp(88px, 11vw, 140px);
+  }
+  .hero-eyebrow {
+    color: var(--teal-500);
+  }
+  .hero h1 {
+    margin-top: 22px;
+    max-width: 17ch;
+    font-family: var(--display);
+    font-size: clamp(40px, 7vw, 88px);
+    font-weight: 400;
+    line-height: 1.02;
+    letter-spacing: -0.032em;
+    text-wrap: balance;
+  }
+  .hero h1 em {
+    font-style: italic;
+    font-weight: 300;
+    color: var(--indigo-300);
+  }
+  .hero p {
+    margin-top: 28px;
+    max-width: 54ch;
+    font-size: clamp(16px, 1.6vw, 18.5px);
+    font-weight: 300;
+    line-height: 1.74;
+    color: hsl(240 18% 96% / 0.74);
+  }
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 40px;
+  }
+  .btn-solid,
+  .btn-quiet,
+  .btn-light {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 28px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 500;
+    transition:
+      transform 400ms var(--ease),
+      background 400ms var(--ease),
+      border-color 400ms var(--ease),
+      color 400ms var(--ease);
+  }
+  .btn-solid {
+    background: var(--n-50);
+    color: var(--n-900);
+    border: 1px solid var(--n-50);
+  }
+  .btn-solid:hover {
+    transform: translateY(-2px);
+    background: #fff;
+  }
+  .btn-solid span,
+  .btn-light span {
+    transition: transform 400ms var(--ease);
+  }
+  .btn-solid:hover span,
+  .btn-light:hover span {
+    transform: translateX(4px);
+  }
+  .btn-quiet {
+    border: 1px solid hsl(240 18% 96% / 0.28);
+    color: hsl(240 18% 96% / 0.88);
+  }
+  .btn-quiet:hover {
+    transform: translateY(-2px);
+    border-color: hsl(240 18% 96% / 0.6);
+    color: #fff;
+  }
+  .hero-strip {
+    position: relative;
+    z-index: 2;
+    border-top: 1px solid hsl(240 18% 96% / 0.14);
+    background: hsl(240 14% 8% / 0.55);
+    backdrop-filter: blur(8px);
+  }
+  .hero-strip-in {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    flex-wrap: wrap;
+    padding-block: 17px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: hsl(240 18% 96% / 0.6);
+  }
+  .hero-strip-in i {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--teal-500);
+  }
+
+  /* ── Bands ──────────────────────────────────────────────────── */
+  .band-tint {
+    background: var(--n-100);
+  }
+
+  /* ── Capabilities ───────────────────────────────────────────── */
+  .cap-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+    margin-top: 58px;
+  }
+  @media (max-width: 940px) {
+    .cap-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .cap {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    transition:
+      transform 500ms var(--ease),
+      border-color 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  .cap:hover {
+    transform: translateY(-6px);
+    border-color: var(--line-2);
+    box-shadow: 0 20px 46px -30px hsl(240 14% 10% / 0.4);
+  }
+  .cap-art {
+    height: 132px;
+    border-bottom: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .cap-art canvas {
+    width: 100%;
+    height: 100%;
+  }
+  .cap-body {
+    padding: 30px 28px 34px;
+  }
+  .cap-idx {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--indigo-600);
+  }
+  .cap h3 {
+    margin-top: 14px;
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.018em;
+    line-height: 1.18;
+  }
+  .cap p {
+    margin-top: 15px;
+    font-size: 14.5px;
+    font-weight: 400;
+    line-height: 1.76;
+    color: var(--ink-3);
+  }
+
+  /* ── Personas ───────────────────────────────────────────────── */
+  .persona-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 58px;
+  }
+  @media (max-width: 940px) {
+    .persona-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .persona {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    transition:
+      transform 500ms var(--ease),
+      border-color 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  .persona:hover {
+    transform: translateY(-6px);
+    border-color: var(--line-2);
+    box-shadow: 0 20px 46px -30px hsl(240 14% 10% / 0.4);
+  }
+  .persona-art {
+    position: relative;
+    height: 176px;
+    overflow: hidden;
+  }
+  .persona-art canvas {
+    width: 100%;
+    height: 100%;
+  }
+  .persona-tag {
+    position: absolute;
+    left: 20px;
+    top: 18px;
+    padding: 5px 13px;
+    border-radius: 999px;
+    background: hsl(240 24% 99% / 0.92);
+    backdrop-filter: blur(6px);
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .persona-body {
+    padding: 34px 34px 38px;
+  }
+  .persona h3 {
+    font-family: var(--display);
+    font-size: clamp(23px, 2.5vw, 30px);
+    font-weight: 400;
+    line-height: 1.16;
+    letter-spacing: -0.022em;
+    text-wrap: balance;
+  }
+  .persona h3 em {
+    font-style: italic;
+    font-weight: 300;
+    color: var(--indigo-700);
+  }
+  .persona p {
+    margin-top: 18px;
+    font-size: 15px;
+    line-height: 1.78;
+    color: var(--ink-3);
+  }
+  .persona-foot {
+    margin-top: 26px !important;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 13px !important;
+    color: var(--ink-2) !important;
+  }
+
+  /* ── Open source ────────────────────────────────────────────── */
+  .open-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 40px;
+    flex-wrap: wrap;
+  }
+  .open-head-copy {
+    flex: 1 1 30rem;
+    min-width: 0;
+  }
+  .wipe {
+    position: relative;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex: none;
+    padding: 15px 26px;
+    border: 1px solid var(--ink);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transition: color 300ms var(--ease);
+  }
+  .wipe-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--ink);
+    transform: translateX(-100%);
+    transition: transform 350ms var(--ease);
+  }
+  .wipe-label {
+    position: relative;
+    z-index: 1;
+  }
+  .wipe:hover {
+    color: var(--n-50);
+  }
+  .wipe:hover .wipe-fill {
+    transform: translateX(0);
+  }
+
+  .open-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+    margin-top: 58px;
+  }
+  @media (max-width: 940px) {
+    .open-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .open-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    transition:
+      transform 500ms var(--ease),
+      border-color 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  .open-card:hover {
+    transform: translateY(-6px);
+    border-color: var(--line-2);
+    box-shadow: 0 20px 46px -30px hsl(240 14% 10% / 0.4);
+  }
+  .open-art {
+    aspect-ratio: 16 / 10;
+    border-bottom: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .open-art canvas {
+    width: 100%;
+    height: 100%;
+  }
+  .open-body {
+    padding: 28px 28px 32px;
+  }
+  .open-body h3 {
+    font-family: var(--display);
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+  }
+  .open-body p {
+    margin-top: 13px;
+    font-size: 14.5px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+  .open-meta {
+    display: block;
+    margin-top: 20px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--n-400);
+  }
+
+  /* ── Tooling ────────────────────────────────────────────────── */
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-top: 52px;
+  }
+  @media (max-width: 1080px) {
+    .tool-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 620px) {
+    .tool-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .tool {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 44px;
+    min-height: 17rem;
+    padding: 26px 24px 28px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    transition:
+      transform 500ms var(--ease),
+      border-color 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  .tool:hover {
+    transform: translateY(-6px);
+    border-color: var(--line-2);
+    box-shadow: 0 20px 46px -30px hsl(240 14% 10% / 0.4);
+  }
+  .tool-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .tool-name {
+    font-family: var(--display);
+    font-size: 21px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .tool-kind {
+    padding-top: 7px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--n-400);
+    white-space: nowrap;
+  }
+  .tool-dot {
+    display: block;
+    width: 6px;
+    height: 6px;
+    margin-bottom: 15px;
+    border-radius: 50%;
+    background: var(--indigo-500);
+    opacity: 0.5;
+    transition:
+      opacity 450ms var(--ease),
+      transform 450ms var(--ease);
+  }
+  .tool:hover .tool-dot {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+  .tool p {
+    font-size: 14px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+
+  /* ── Closer ─────────────────────────────────────────────────── */
+  .closer {
+    position: relative;
+    overflow: hidden;
+    border-top: 1px solid var(--line);
+    background: var(--n-900);
+    color: var(--n-50);
+  }
+  .closer-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.55;
+  }
+  .closer-in {
+    position: relative;
+    z-index: 2;
+    padding-block: clamp(88px, 11vw, 146px);
+    text-align: center;
+  }
+  .closer h2 {
+    margin-inline: auto;
+    max-width: 18ch;
+    font-family: var(--display);
+    font-size: clamp(31px, 4.6vw, 56px);
+    font-weight: 400;
+    line-height: 1.06;
+    letter-spacing: -0.028em;
+    text-wrap: balance;
+  }
+  .closer h2 em {
+    font-style: italic;
+    font-weight: 300;
+    color: var(--amber-500);
+  }
+  .closer p {
+    margin: 24px auto 0;
+    max-width: 56ch;
+    font-size: 16.5px;
+    font-weight: 300;
+    line-height: 1.76;
+    color: hsl(240 18% 96% / 0.76);
+  }
+  .btn-light {
+    margin-top: 38px;
+    background: var(--n-50);
+    color: var(--n-900);
+    border: 1px solid var(--n-50);
+  }
+  .btn-light:hover {
+    transform: translateY(-2px);
+    background: #fff;
+  }
+</style>
