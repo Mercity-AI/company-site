@@ -3,8 +3,9 @@ import V2Layout from '@/layouts/V2Layout.astro';
 
 /**
  * Open-source section, vertical treatment.
- * Left column holds the argument and stays put; the right column is a
- * stack of panels. Separate route so /v2 is untouched.
+ * One bordered object: a full-height block on the left carrying the
+ * argument, and three panels stacked flush on the right sharing their
+ * edges. Separate route so /v2 is untouched.
  */
 
 const shipped = [
@@ -36,26 +37,30 @@ const shipped = [
   <div class="note-bar">
     <div class="shell note-bar-in">
       <span>Open-source section, vertical treatment. Full page at <a href="/v2">/v2</a>.</span>
-      <span>Left column holds; right column stacks</span>
+      <span>One object — panels stacked flush</span>
     </div>
   </div>
 
   <section class="band osv">
     <div class="shell osv-in">
       <div class="osv-left">
-        <span class="osv-eyebrow rv" data-rv>Open source</span>
-        <h2 class="rv" data-rv style="--rv-delay:80ms">
-          Most of what we learn on client work ends up public in some form.
-        </h2>
-        <p class="osv-note rv" data-rv style="--rv-delay:160ms">
-          Datasets we had to build because nothing suitable existed, weights from runs worth reproducing, and
-          write-ups detailed enough to follow end to end. Take it, fork it, and tell us where we got it wrong.
-        </p>
-        <a class="osv-cta rv" data-rv style="--rv-delay:240ms" href="/open-source/simula">
-          <span class="osv-cta-fill"></span>
-          <span class="osv-cta-label">Explore our open work</span>
-          <span class="osv-cta-label" aria-hidden="true">→</span>
-        </a>
+        <div>
+          <span class="osv-eyebrow rv" data-rv>Open source</span>
+          <h2 class="rv" data-rv style="--rv-delay:80ms">
+            Most of what we learn on client work ends up public in some form.
+          </h2>
+        </div>
+        <div class="osv-foot">
+          <p class="osv-note rv" data-rv style="--rv-delay:160ms">
+            Datasets we had to build because nothing suitable existed, weights from runs worth reproducing, and
+            write-ups detailed enough to follow end to end. Take it, fork it, and tell us where we got it wrong.
+          </p>
+          <a class="osv-cta rv" data-rv style="--rv-delay:240ms" href="/open-source/simula">
+            <span class="osv-cta-fill"></span>
+            <span class="osv-cta-label">Explore our open work</span>
+            <span class="osv-cta-label" aria-hidden="true">→</span>
+          </a>
+        </div>
       </div>
 
       <div class="osv-right">
@@ -97,33 +102,41 @@ const shipped = [
     }
   
     .osv {
-      background: var(--n-100);
+      background: var(--ground);
     }
+
+    /* The whole thing is one bordered object; every internal edge is
+       shared rather than gapped. */
     .osv-in {
       display: grid;
-      grid-template-columns: 0.82fr 1.18fr;
-      gap: 56px;
-      align-items: start;
+      grid-template-columns: 0.78fr 1.22fr;
+      align-items: stretch;
+      border: 1px solid var(--line-2);
+      background: var(--surface);
     }
     @media (max-width: 1000px) {
       .osv-in {
         grid-template-columns: 1fr;
-        gap: 40px;
       }
     }
-  
-    /* Left column holds while the stack scrolls past it. */
+
     .osv-left {
-      position: sticky;
-      top: 108px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 38px 34px 36px;
+      background: var(--n-100);
+      border-right: 1px solid var(--line-2);
     }
     @media (max-width: 1000px) {
       .osv-left {
-        position: static;
+        border-right: 0;
+        border-bottom: 1px solid var(--line-2);
       }
     }
     .osv-eyebrow {
       display: inline-block;
+      align-self: flex-start;
       padding-bottom: 5px;
       border-bottom: 1px solid var(--line-2);
       font-family: var(--mono);
@@ -137,16 +150,18 @@ const shipped = [
       margin-top: 24px;
       max-width: 17ch;
       font-family: var(--hero-serif);
-      font-size: clamp(28px, 3.5vw, 41px);
+      font-size: clamp(26px, 3.2vw, 38px);
       font-weight: 400;
       line-height: 1.14;
       letter-spacing: -0.02em;
       color: var(--ink);
       text-wrap: balance;
     }
+    .osv-foot {
+      margin-top: 44px;
+    }
     .osv-note {
-      margin-top: 22px;
-      max-width: 46ch;
+      max-width: 42ch;
       font-size: 14.4px;
       line-height: 1.76;
       color: var(--ink-3);
@@ -157,7 +172,7 @@ const shipped = [
       display: inline-flex;
       align-items: center;
       gap: 9px;
-      margin-top: 30px;
+      margin-top: 26px;
       padding: 14.5px 25.2px;
       border: 1px solid var(--ink);
       font-size: 11.2px;
@@ -183,28 +198,27 @@ const shipped = [
     .osv-cta:hover .osv-cta-fill {
       transform: translateX(0);
     }
-  
-    /* Right column: the same surface treatment as the cards on /v2. */
+
     .osv-right {
       display: flex;
       flex-direction: column;
-      gap: 20px;
     }
+    /* Flush: each panel is divided by one shared hairline, not a gap. */
     .osp {
       position: relative;
       display: flex;
       flex-direction: column;
-      min-height: 330px;
+      min-height: 300px;
       padding: 28px 30px 30px;
       background: var(--surface);
-      border: 1px solid var(--line);
-      transition:
-        border-color 500ms var(--ease),
-        box-shadow 500ms var(--ease);
+      border-bottom: 1px solid var(--line);
+      transition: background 500ms var(--ease);
+    }
+    .osp:last-child {
+      border-bottom: 0;
     }
     .osp:hover {
-      border-color: var(--line-2);
-      box-shadow: 0 14px 34px -26px hsl(240 14% 10% / 0.26);
+      background: var(--n-50);
     }
     .osp-head {
       display: flex;
