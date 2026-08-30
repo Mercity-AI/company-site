@@ -4,14 +4,14 @@ import V2Layout from '@/layouts/V2Layout.astro';
 /**
  * Open-source section, vertical treatment.
  * Left column holds the argument and stays put; the right column is a
- * stack of panels on graph paper. Separate route so /v2 is untouched.
+ * stack of panels. Separate route so /v2 is untouched.
  */
 
 const shipped = [
   {
     num: '01',
     title: 'Datasets, and the code that made them',
-    backdrop: 'sdGap',
+    backdrop: 'strata',
     seed: 771,
     meta: '14 releases · HuggingFace',
     copy: 'Curated and synthetic corpora released with the generation code, the filtering criteria and the failure modes we already know about — so you can judge whether a set fits your problem before you spend a training run finding out.',
@@ -19,7 +19,7 @@ const shipped = [
   {
     num: '02',
     title: 'Model weights and the recipes behind them',
-    backdrop: 'archLoss',
+    backdrop: 'isoline',
     seed: 5410,
     meta: '9 checkpoints · Apache-2.0',
     copy: 'Checkpoints, adapters and complete training recipes from experiments worth reproducing — published with the evaluation numbers that convinced us to keep them, and the ablations that did not make the cut.',
@@ -62,15 +62,11 @@ const shipped = [
       </div>
 
       <div class="osv-right">
-        <div class="osv-paper" aria-hidden="true"></div>
         {
           shipped.map((o, i) => (
             <article class="osp rv" data-rv style={`--rv-delay:${100 + i * 90}ms`}>
               <div class="osp-head">
-                <span class="osp-num">
-                  <i aria-hidden="true"></i>
-                  {o.num}
-                </span>
+                <span class="osp-num">{o.num}</span>
                 <h3>{o.title}</h3>
               </div>
               <figure class="osp-art">
@@ -84,201 +80,180 @@ const shipped = [
       </div>
     </div>
   </section>
-</V2Layout>
 
-<style is:global>
-  .note-bar {
-    background: var(--n-900);
-    color: hsl(240 18% 96% / 0.72);
-  }
-  .note-bar-in {
-    display: flex;
-    justify-content: space-between;
-    gap: 18px;
-    flex-wrap: wrap;
-    padding-block: 11px;
-    font-family: var(--mono);
-    font-size: 9.9px;
-    letter-spacing: 0.06em;
-  }
-  .note-bar a {
-    color: var(--teal-500);
-  }
-
-  .osv {
-    background: var(--n-100);
-  }
-  .osv-in {
-    display: grid;
-    grid-template-columns: 0.82fr 1.18fr;
-    gap: 56px;
-    align-items: start;
-  }
-  @media (max-width: 1000px) {
+  <style is:global>
+    .note-bar {
+      background: var(--n-900);
+      color: hsl(240 18% 96% / 0.72);
+    }
+    .note-bar-in {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      padding-block: 11px;
+      font-family: var(--mono);
+      font-size: 9.9px;
+      letter-spacing: 0.06em;
+    }
+    .note-bar a {
+      color: var(--teal-500);
+    }
+  
+    .osv {
+      background: var(--n-100);
+    }
     .osv-in {
-      grid-template-columns: 1fr;
-      gap: 40px;
+      display: grid;
+      grid-template-columns: 0.82fr 1.18fr;
+      gap: 56px;
+      align-items: start;
     }
-  }
-
-  /* Left column holds while the stack scrolls past it. */
-  .osv-left {
-    position: sticky;
-    top: 108px;
-  }
-  @media (max-width: 1000px) {
+    @media (max-width: 1000px) {
+      .osv-in {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+    }
+  
+    /* Left column holds while the stack scrolls past it. */
     .osv-left {
-      position: static;
+      position: sticky;
+      top: 108px;
     }
-  }
-  .osv-eyebrow {
-    display: inline-block;
-    padding-bottom: 5px;
-    border-bottom: 1px solid var(--line-2);
-    font-family: var(--mono);
-    font-size: 9.9px;
-    font-weight: 500;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-  }
-  .osv-left h2 {
-    margin-top: 24px;
-    max-width: 17ch;
-    font-family: var(--hero-serif);
-    font-size: clamp(28px, 3.5vw, 41px);
-    font-weight: 400;
-    line-height: 1.14;
-    letter-spacing: -0.02em;
-    color: var(--ink);
-    text-wrap: balance;
-  }
-  .osv-note {
-    margin-top: 22px;
-    max-width: 46ch;
-    font-size: 14.4px;
-    line-height: 1.76;
-    color: var(--ink-3);
-  }
-  .osv-cta {
-    position: relative;
-    overflow: hidden;
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    margin-top: 30px;
-    padding: 14.5px 25.2px;
-    border: 1px solid var(--ink);
-    font-size: 11.2px;
-    font-weight: 500;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    transition: color 300ms var(--ease);
-  }
-  .osv-cta-fill {
-    position: absolute;
-    inset: 0;
-    background: var(--ink);
-    transform: translateX(-100%);
-    transition: transform 350ms var(--ease);
-  }
-  .osv-cta-label {
-    position: relative;
-    z-index: 1;
-  }
-  .osv-cta:hover {
-    color: var(--n-50);
-  }
-  .osv-cta:hover .osv-cta-fill {
-    transform: translateX(0);
-  }
-
-  /* Right column: panels floated on graph paper. */
-  .osv-right {
-    position: relative;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  .osv-paper {
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(var(--line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--line) 1px, transparent 1px);
-    background-size: 21px 21px;
-    opacity: 0.75;
-    pointer-events: none;
-  }
-
-  .osp {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    min-height: 330px;
-    padding: 28px 30px 30px;
-    background: hsl(243 30% 94%);
-    transition: background 500ms var(--ease);
-  }
-  .osp:hover {
-    background: hsl(243 34% 92%);
-  }
-  .osp-head {
-    display: flex;
-    align-items: flex-start;
-    gap: 18px;
-  }
-  .osp-num {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding-top: 7px;
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    color: var(--ink-3);
-    white-space: nowrap;
-  }
-  /* The tick is the one place amber earns its keep here: it marks the
-     item, it is not decoration. */
-  .osp-num i {
-    display: block;
-    width: 2px;
-    height: 11px;
-    background: var(--amber-500);
-  }
-  .osp h3 {
-    max-width: 15ch;
-    font-family: var(--hero-serif);
-    font-size: clamp(20px, 2.1vw, 25px);
-    font-weight: 400;
-    line-height: 1.2;
-    letter-spacing: -0.014em;
-    color: var(--ink);
-  }
-  .osp-art {
-    flex: 1;
-    margin: 22px 0 0;
-    min-height: 96px;
-    opacity: 0.9;
-  }
-  .osp-art canvas {
-    width: 100%;
-    height: 100%;
-  }
-  .osp > p {
-    margin-top: 22px;
-    max-width: 62ch;
-    font-size: 13.5px;
-    line-height: 1.72;
-    color: var(--ink-2);
-  }
-  .osp-meta {
-    margin-top: 14px;
-    font-family: var(--mono);
-    font-size: 9.9px;
-    letter-spacing: 0.08em;
-    color: var(--ink-3);
-  }
-</style>
+    @media (max-width: 1000px) {
+      .osv-left {
+        position: static;
+      }
+    }
+    .osv-eyebrow {
+      display: inline-block;
+      padding-bottom: 5px;
+      border-bottom: 1px solid var(--line-2);
+      font-family: var(--mono);
+      font-size: 9.9px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+    .osv-left h2 {
+      margin-top: 24px;
+      max-width: 17ch;
+      font-family: var(--hero-serif);
+      font-size: clamp(28px, 3.5vw, 41px);
+      font-weight: 400;
+      line-height: 1.14;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      text-wrap: balance;
+    }
+    .osv-note {
+      margin-top: 22px;
+      max-width: 46ch;
+      font-size: 14.4px;
+      line-height: 1.76;
+      color: var(--ink-3);
+    }
+    .osv-cta {
+      position: relative;
+      overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-top: 30px;
+      padding: 14.5px 25.2px;
+      border: 1px solid var(--ink);
+      font-size: 11.2px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      transition: color 300ms var(--ease);
+    }
+    .osv-cta-fill {
+      position: absolute;
+      inset: 0;
+      background: var(--ink);
+      transform: translateX(-100%);
+      transition: transform 350ms var(--ease);
+    }
+    .osv-cta-label {
+      position: relative;
+      z-index: 1;
+    }
+    .osv-cta:hover {
+      color: var(--n-50);
+    }
+    .osv-cta:hover .osv-cta-fill {
+      transform: translateX(0);
+    }
+  
+    /* Right column: the same surface treatment as the cards on /v2. */
+    .osv-right {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .osp {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 330px;
+      padding: 28px 30px 30px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      transition:
+        border-color 500ms var(--ease),
+        box-shadow 500ms var(--ease);
+    }
+    .osp:hover {
+      border-color: var(--line-2);
+      box-shadow: 0 14px 34px -26px hsl(240 14% 10% / 0.26);
+    }
+    .osp-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+    }
+    .osp-num {
+      padding-top: 7px;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      color: var(--indigo-600);
+      white-space: nowrap;
+    }
+    .osp h3 {
+      max-width: 15ch;
+      font-family: var(--hero-serif);
+      font-size: clamp(20px, 2.1vw, 25px);
+      font-weight: 400;
+      line-height: 1.2;
+      letter-spacing: -0.014em;
+      color: var(--ink);
+    }
+    .osp-art {
+      flex: 1;
+      margin: 22px 0 0;
+      min-height: 96px;
+    }
+    .osp-art canvas {
+      width: 100%;
+      height: 100%;
+    }
+    .osp > p {
+      margin-top: 22px;
+      max-width: 62ch;
+      font-size: 13.5px;
+      line-height: 1.72;
+      color: var(--ink-2);
+    }
+    .osp-meta {
+      margin-top: 14px;
+      font-family: var(--mono);
+      font-size: 9.9px;
+      letter-spacing: 0.08em;
+      color: var(--n-400);
+    }
+  </style>
+</V2Layout>

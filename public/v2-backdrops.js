@@ -632,7 +632,7 @@
       [0.22, 0.48, 0.74, 0.95].forEach((t, i) => {
         const x = w * 0.08 + t * w * 0.86, y = yAt(t);
         ctx.beginPath();
-        ctx.arc(x, y, Math.max(2.6, w / 190), 0, 6.29);
+        ctx.arc(x, y, Math.max(2.86, w / 173), 0, 6.29);
         ctx.fillStyle = i === 3 ? css(hsl2rgb(34, 84, 50)) : css(hsl2rgb(178, 64, 36));
         ctx.fill();
       });
