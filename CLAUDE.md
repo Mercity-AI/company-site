@@ -15,7 +15,7 @@ experiment live side by side; nothing on `/v2*` can affect `/`.
 |---|---|
 | `/` | The shipping landing page. Redesigned sections, original hero. |
 | `/v2` | Landing page V2. Standalone experiment, own layout and type stack. |
-| `/v2-open` | Two treatments of the open-source section, for comparison. |
+| `/v2-open` | Two treatments of the open-source section, A and B, for comparison. |
 | `/design.html` | Design lab. Static file in `public/`, no Astro layout. |
 | `/blog`, `/research`, `/about`, `/contact`, `/open-source/simula` | Unchanged. |
 
@@ -70,7 +70,26 @@ sans did at the same size.
 **Nav** — full-bleed at rest; past 28px of scroll the header background
 collapses and re-forms as a centred 792px pill on the inner bar, which loses
 20% of its height. The bar's pill is the only rounded corner left; every
-button is square.
+button is square. Both hero buttons and both CTAs wipe black left to right
+on hover.
+
+**Hero** — exactly one viewport. `min-height: calc(100vh - var(--nav-h))`,
+declared again in `svh` so mobile does not count the URL bar, with the content
+flex-centred rather than placed by asymmetric padding.
+
+`--nav-h` (62.2px) is defined once in the layout and `.v2-bar` derives its own
+height from it, so the hero cannot drift from the nav it subtracts. The nav is
+sticky, not fixed, so it occupies layout space — hero plus nav is what equals
+one screen.
+
+The headline is upright, one colour, and breaks to two rows via
+`max-width: 36ch` plus `text-wrap: balance`. Do **not** use a `<br>`: if the
+longer half does not fit the container it wraps again and you get four lines,
+not two. The size cap is what makes two rows possible — at the current
+`clamp(35.2px, 5.39vw, 63.8px)` the longer line runs about 1040px against
+roughly 1079px of available width, so it is close. If it tips to three lines,
+either drop the cap a few px or let the hero break out of `--shell` to a wider
+measure.
 
 ## Backdrop generators
 
@@ -94,7 +113,7 @@ A variant switcher is supported but currently unused:
 | Generator | Where | What it says |
 |---|---|---|
 | `blurlight` | Hero ground | Blurred tints, dithered, grained. |
-| `curvesOverlay` | Hero corner | Transparent overlay, no ground of its own, CSS-masked so it has no edge. |
+| `heroCurves` | Hero, full bleed | Five lines entering one edge and leaving the other, rising as they cross. Transparent, no ground, no grain; masked so the top of the hero stays clear. Coordinates are fractions of the hero's own height. |
 | `sdTarget` | Synthetic data | Bars matched to a dashed target curve — generated to spec. |
 | `archLoss` | Custom architecture | A training run with the checkpoints we kept. |
 | `evalBars` | Evaluation | Benchmark bars with the bad one marked, not hidden. |
@@ -110,9 +129,25 @@ Also available, currently unused: `blurfield`, `convergence`, `facets`,
 Two rules learned the hard way:
 
 - A generator used **as an overlay** must not paint a ground or apply grain.
-  Both draw a visible rectangle. `curvesOverlay` is the correct pattern.
+  Both draw a visible rectangle, and grain draws it even where the marks are
+  invisible. `heroCurves` is the correct pattern: `clearRect`, strokes only.
 - Generators should fill the frame they are given. Large internal insets make
   the art box look empty; 2–4% is the working range.
+
+## Open-source treatments (`/v2-open`)
+
+Both live on the page, labelled, running the same content and graphics with
+different seeds.
+
+- **A** — sticky left column, panels as separate cards with gaps. Scrolls.
+- **B** — one bordered object: every internal edge shared, no gaps, left block
+  full height. Capped to `min(100vh - 190px, 760px)` with the three panels
+  sharing that height via flex, so all three are visible at once. Panel
+  padding, title size and copy tighten to suit, and the body is clamped to
+  three lines. Below 1000px the cap lifts and panels return to natural height.
+
+A flush stack cannot use the lift-and-shadow hover — a panel lifting out of a
+continuous rectangle leaves a hole. B shifts background instead.
 
 ## Design lab (`/design.html`)
 
