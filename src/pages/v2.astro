@@ -303,6 +303,13 @@ const tooling = [
     overflow: hidden;
     background: var(--n-50);
     color: var(--ink);
+    /* Exactly one viewport once the sticky nav is accounted for. svh
+       keeps it honest on mobile, where 100vh includes the URL bar. */
+    min-height: calc(100vh - var(--nav-h));
+    min-height: calc(100svh - var(--nav-h));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
   .hero-bg {
     position: absolute;
@@ -325,7 +332,7 @@ const tooling = [
   .hero-in {
     position: relative;
     z-index: 2;
-    padding-block: clamp(93.6px, 11.7vw, 151.2px) clamp(79.2px, 9.9vw, 126px);
+    padding-block: clamp(56px, 7vw, 92px);
   }
   .hero h1 {
     margin-top: 0;

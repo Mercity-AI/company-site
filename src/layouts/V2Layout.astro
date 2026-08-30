@@ -81,6 +81,9 @@ const { title, description }: Props = Astro.props;
 
         --ease: cubic-bezier(0.22, 1, 0.36, 1);
         --shell: 1116px;
+        /* Resting nav height including its bottom border. The hero
+           subtracts this to land on exactly one viewport. */
+        --nav-h: 62.2px;
       }
 
       *,
@@ -251,7 +254,7 @@ const { title, description }: Props = Astro.props;
         align-items: center;
         justify-content: space-between;
         gap: 21.6px;
-        height: 61.2px;
+        height: calc(var(--nav-h) - 1px);
         max-width: var(--shell);
         margin-inline: auto;
         padding-inline: 18.59px;
