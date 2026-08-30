@@ -310,15 +310,25 @@ const note =
   }
 
   /* ── B: one object, flush panels ────────────────────────────── */
+  /* B is capped to one viewport: all three panels visible without
+     scrolling, so they share the available height rather than stacking
+     past the fold. */
   .osB {
     background: var(--ground);
+    padding-block: 44px 52px;
   }
   .osB-in {
     display: grid;
     grid-template-columns: 0.78fr 1.22fr;
     align-items: stretch;
+    height: min(calc(100vh - 190px), 760px);
     border: 1px solid var(--line-2);
     background: var(--surface);
+  }
+  @media (max-width: 1000px) {
+    .osB-in {
+      height: auto;
+    }
   }
   @media (max-width: 1000px) {
     .osB-in {
@@ -350,11 +360,42 @@ const note =
   .osBp {
     display: flex;
     flex-direction: column;
-    min-height: 300px;
-    padding: 28px 30px 30px;
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
+    padding: 20px 26px 22px;
     background: var(--surface);
     border-bottom: 1px solid var(--line);
     transition: background 500ms var(--ease);
+  }
+  @media (max-width: 1000px) {
+    .osBp {
+      flex: none;
+      min-height: 300px;
+      padding: 28px 30px 30px;
+    }
+  }
+  .osBp h3 {
+    font-size: clamp(18px, 1.8vw, 22px);
+  }
+  .osBp-art {
+    margin-top: 12px;
+    min-height: 0;
+  }
+  .osBp > p {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-top: 14px;
+    font-size: 12.8px;
+    line-height: 1.66;
+  }
+  .osBp-meta {
+    margin-top: 10px;
+  }
+  .osB-left {
+    overflow: hidden;
   }
   .osBp:last-child {
     border-bottom: 0;

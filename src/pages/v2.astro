@@ -129,7 +129,7 @@ const tooling = [
       </div>
     </div>
     <figure class="hero-plate" aria-hidden="true">
-      <canvas data-backdrop="curvesOverlay" data-seed="5521" data-dpr="1.3"></canvas>
+      <canvas data-backdrop="heroCurves" data-seed="5521" data-dpr="1.3"></canvas>
     </figure>
   </section>
 
@@ -399,28 +399,30 @@ const tooling = [
     border-color: var(--ink);
     color: var(--ink);
   }
-  /* Curve family drawn straight onto the wash. No border, no ground of
-     its own, and masked away from the corner so it has no edge at all. */
+  /* Full-bleed across the hero: the lines enter at one edge and leave at
+     the other. Transparent, so there is no image to have an edge; the top
+     fade only keeps them off the paragraph. */
   .hero-plate {
     position: absolute;
-    right: -3%;
-    bottom: -6%;
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 1;
     margin: 0;
-    width: min(54vw, 640px);
-    aspect-ratio: 16 / 10;
-    pointer-events: none;
-    -webkit-mask-image: radial-gradient(135% 135% at 100% 100%, #000 34%, transparent 76%);
-    mask-image: radial-gradient(135% 135% at 100% 100%, #000 34%, transparent 76%);
-  }
-  .hero-plate canvas {
     width: 100%;
-    height: 100%;
+    height: 52%;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 34%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 34%);
   }
   @media (max-width: 900px) {
     .hero-plate {
       display: none;
     }
+  }
+  .hero-plate canvas {
+    width: 100%;
+    height: 100%;
   }
 
   /* ── Bands ──────────────────────────────────────────────────── */

@@ -839,26 +839,33 @@
       grain(ctx, w, h, 16, true);
     },
 
-    // Curve family as a transparent overlay: no ground of its own, no
-    // grain, flipped vertically so the sweep rises. Drawn straight onto
-    // whatever is behind it, and masked by CSS so it has no edge.
-    curvesOverlay(ctx, w, h, seed) {
+    // Hero curves. Transparent, no ground, no grain -- five lines that
+    // enter at the left edge and leave at the right, rising as they go.
+    // Sparse on purpose; the point is the sweep, not the texture.
+    heroCurves(ctx, w, h, seed) {
       const r = rng(seed);
       ctx.clearRect(0, 0, w, h);
-      ctx.save();
-      ctx.translate(0, h);
-      ctx.scale(1, -1);
-      ctx.lineWidth = Math.max(1.1, w / 780);
-      ctx.strokeStyle = 'hsl(243 60% 44% / .3)';
-      const ax = w * (0.78 + r() * 0.5);
-      const ay = h * (0.08 + r() * 0.3);
-      for (let i = 0; i < 13; i++) {
+      ctx.lineCap = 'round';
+      const N = 5;
+      const drift = 0.12 + r() * 0.1;
+      for (let i = 0; i < N; i++) {
+        const t = i / (N - 1);
+        const y0 = h * (0.34 + t * 0.6);
+        const y1 = h * (0.06 + t * 0.52);
         ctx.beginPath();
-        ctx.moveTo(-w * 0.05, h * (-0.15 + i * 0.115));
-        ctx.quadraticCurveTo(ax, ay + i * h * 0.075, w * 1.1, h * (0.55 + i * 0.06));
+        ctx.moveTo(-w * 0.04, y0);
+        ctx.bezierCurveTo(
+          w * 0.3,
+          y0 + h * drift,
+          w * 0.68,
+          y1 - h * (drift * 0.4),
+          w * 1.04,
+          y1
+        );
+        ctx.lineWidth = Math.max(1, (w / 1500) * (1.5 - t * 0.5));
+        ctx.strokeStyle = `hsl(243 58% 46% / ${0.3 - t * 0.09})`;
         ctx.stroke();
       }
-      ctx.restore();
     },
 
     contour(ctx, w, h, seed) {
