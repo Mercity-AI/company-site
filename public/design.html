@@ -191,6 +191,20 @@ section{border-top:1px solid var(--line);}
 .shader .cap span{display:block;margin-top:3px;font-family:var(--mono);font-size:10px;opacity:.72;}
 .grain-svg{position:absolute;inset:0;z-index:1;opacity:.5;mix-blend-mode:overlay;pointer-events:none;}
 
+/* ── Treatments & backdrops ─────────────────────────────────────── */
+.treat{display:grid;grid-template-columns:1fr;gap:14px;margin-top:34px;}
+.backs{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:34px;}
+@media(max-width:820px){.backs{grid-template-columns:1fr;}}
+.tile{position:relative;margin:0;border-radius:8px;overflow:hidden;background:var(--n-800);aspect-ratio:16/10;cursor:pointer;}
+.tile-wide{aspect-ratio:auto;height:132px;cursor:default;}
+.tile canvas{position:absolute;inset:0;width:100%;height:100%;}
+.tile figcaption{position:absolute;left:16px;bottom:14px;z-index:2;color:#fff;text-shadow:0 1px 14px hsl(240 14% 10% / .65);pointer-events:none;}
+.tile-wide figcaption{left:18px;bottom:12px;}
+.tile figcaption b{display:block;font-size:14.5px;font-weight:500;letter-spacing:-.01em;}
+.tile figcaption span{display:block;margin-top:2px;font-family:var(--mono);font-size:10px;opacity:.74;}
+.tile .reseed{position:absolute;right:14px;top:12px;z-index:2;font-family:var(--mono);font-style:normal;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#fff;opacity:0;padding:4px 9px;border-radius:999px;background:hsl(240 14% 10% / .45);backdrop-filter:blur(6px);transition:opacity .3s var(--ease);}
+.tile:hover .reseed{opacity:.9;}
+
 /* ── Components ─────────────────────────────────────────────────── */
 .comp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:30px;}
 .panel{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:26px 24px;}
@@ -249,6 +263,8 @@ footer{border-top:1px solid var(--line);}
       <a href="#type">Type</a>
       <a href="#calibrate">Calibration</a>
       <a href="#surface">Surfaces</a>
+      <a href="#treatments">Treatments</a>
+      <a href="#backdrops">Backdrops</a>
       <a href="#components">Components</a>
       <a href="#philosophy">Philosophy</a>
     </nav>
@@ -324,7 +340,7 @@ footer{border-top:1px solid var(--line);}
       Every step holds the hue and moves saturation and lightness on a fixed curve, so the four ramps stay
       siblings. Contrast is measured against white and against ink 900 — click any swatch to copy its value.
     </p>
-    <div id="ramps"></div>
+    <div id="rampGrid"></div>
   </div>
 </section>
 
@@ -440,10 +456,54 @@ footer{border-top:1px solid var(--line);}
   </div>
 </section>
 
+<!-- ═══ TREATMENTS ═════════════════════════════════════════════════ -->
+<section class="sec" id="treatments">
+  <div class="wrap">
+    <span class="eyebrow">07 — Treatments</span>
+    <h2 class="h2">The same three hues, <em>put through something.</em></h2>
+    <p class="note">
+      A flat gradient is the most generic surface there is. Each of these takes the identical indigo → teal →
+      amber ramp and runs it through one process. Dithering quantises it into bands and lets an ordered matrix
+      break the edges, so it reads as printed rather than rendered. Grain adds tooth. Blur destroys the
+      geometry and leaves only colour. The last panel stacks all three, which is the combination that stops
+      looking like CSS.
+    </p>
+    <div class="treat" id="treat"></div>
+  </div>
+</section>
+
+<!-- ═══ BACKDROPS ══════════════════════════════════════════════════ -->
+<section class="sec" id="backdrops">
+  <div class="wrap">
+    <span class="eyebrow">08 — Backdrops</span>
+    <h2 class="h2">Designer weird random stuff, <em>catalogued.</em></h2>
+    <p class="note">
+      The genre you pointed at: contour lines, stacked facets, curve families — marks that carry no information
+      and exist to give a flat section something to sit on. Each tile below is a generator, not an image, so it
+      reseeds on click and can be re-rendered at any size for any section. Every one is drawn in our three hues.
+    </p>
+    <p class="note" style="margin-top:14px;">
+      On the library question: the contour tile uses <b style="font-weight:500;color:var(--ink-2)">d3-contour</b>,
+      which is the correct tool — proper marching squares over a scalar field, and not worth hand-rolling. The
+      rest are ~30 lines of canvas each, which is genuinely less code than wiring up a dependency, and it means
+      the palette is a variable rather than something to fight. If we want to go further into shader territory
+      later, <b style="font-weight:500;color:var(--ink-2)">Paper Shaders</b> and <b style="font-weight:500;color:var(--ink-2)">three.js</b>
+      are the two real options.
+    </p>
+
+    <div class="backs" id="backs"></div>
+
+    <p class="note" style="margin-top:28px;">
+      Click any tile to reseed it. These belong behind section headers, inside empty grid cells, as card
+      artwork, or bled off one edge of a full-width band — never behind body copy.
+    </p>
+  </div>
+</section>
+
 <!-- ═══ COMPONENTS ═════════════════════════════════════════════════ -->
 <section class="sec" id="components">
   <div class="wrap">
-    <span class="eyebrow">07 — Components</span>
+    <span class="eyebrow">09 — Components</span>
     <h2 class="h2">The same three hues, <em>doing actual work.</em></h2>
     <p class="note">
       Swatches prove nothing. These are the shapes the palette has to survive: four button weights competing
@@ -509,7 +569,7 @@ footer{border-top:1px solid var(--line);}
 <!-- ═══ PHILOSOPHY ═════════════════════════════════════════════════ -->
 <section class="sec" id="philosophy">
   <div class="wrap">
-    <span class="eyebrow">08 — Philosophy</span>
+    <span class="eyebrow">10 — Philosophy</span>
     <h2 class="h2">Six rules, so the next decision <em>argues with something.</em></h2>
     <p class="note">
       A design system is mostly a record of arguments already settled. These are the ones worth settling first.
@@ -608,7 +668,7 @@ const WHITE = [255,255,255];
 const INK = hsl2rgb(240, 14, 10);
 
 /* ── Ramp grids ─────────────────────────────────────────────────── */
-const rampHost = document.getElementById('ramps');
+const rampHost = document.getElementById('rampGrid');
 Object.entries(RAMPS).forEach(([name, def]) => {
   const sat = def.steps.map(s => s[0]);
   const wrap = document.createElement('div');
@@ -962,6 +1022,414 @@ function makeShader(canvas, mode){
     }
     requestAnimationFrame(loop);
   })(performance.now());
+})();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/d3-contour@4/dist/d3-contour.min.js"></script>
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   TREATMENTS + BACKDROPS
+   Every generator is deterministic on a seed and redraws on resize,
+   so a tile can be re-rendered at any size for any section.
+   ══════════════════════════════════════════════════════════════════ */
+(function(){
+
+/* ── Shared helpers ─────────────────────────────────────────────── */
+const HUES = { indigo: 243, teal: 178, amber: 34, ink: 240 };
+
+const pending = [];
+function register(cv, draw){ cv.__draw = draw; pending.push(cv); }
+
+function rgb(h, s, l){ return hsl2rgb(h, s, l); }
+function mixRGB(a, b, t){
+  return [a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t, a[2] + (b[2]-a[2])*t];
+}
+// Sample a multi-stop ramp at t in [0,1]
+function ramp(stops, t){
+  t = Math.max(0, Math.min(1, t));
+  const n = stops.length - 1;
+  const i = Math.min(n - 1, Math.floor(t * n));
+  return mixRGB(stops[i], stops[i+1], t * n - i);
+}
+const css = c => `rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;
+
+// Deterministic PRNG so a seed reproduces a tile exactly
+function rng(seed){
+  let s = seed >>> 0 || 1;
+  return () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return ((s >>> 0) % 100000) / 100000; };
+}
+
+// Value-noise fbm, seeded
+function makeNoise(seed){
+  const r = rng(seed);
+  const perm = new Uint8Array(512);
+  const p = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) p[i] = i;
+  for (let i = 255; i > 0; i--){ const j = (r() * (i+1)) | 0; const t = p[i]; p[i] = p[j]; p[j] = t; }
+  for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
+  const grad = (ix, iy) => (perm[(ix + perm[iy & 255]) & 255] / 255);
+  function noise(x, y){
+    const ix = Math.floor(x), iy = Math.floor(y);
+    const fx = x - ix, fy = y - iy;
+    const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
+    const a = grad(ix, iy),   b = grad(ix + 1, iy);
+    const c = grad(ix, iy+1), d = grad(ix + 1, iy + 1);
+    return (a + (b - a) * ux) + ((c + (d - c) * ux) - (a + (b - a) * ux)) * uy;
+  }
+  return function fbm(x, y, oct){
+    let v = 0, amp = 0.5, f = 1;
+    for (let i = 0; i < (oct || 5); i++){ v += amp * noise(x * f, y * f); f *= 2.03; amp *= 0.5; }
+    return v;
+  };
+}
+
+// Film grain, applied to whatever is already on the context
+function grain(ctx, w, h, amount, mono){
+  const img = ctx.getImageData(0, 0, w, h), d = img.data;
+  for (let i = 0; i < d.length; i += 4){
+    const n = (Math.random() - 0.5) * amount;
+    if (mono){ d[i] += n; d[i+1] += n; d[i+2] += n; }
+    else { d[i] += n; d[i+1] += n * 0.92; d[i+2] += n * 1.06; }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+const BAYER8 = [
+   0,32, 8,40, 2,34,10,42,
+  48,16,56,24,50,18,58,26,
+  12,44, 4,36,14,46, 6,38,
+  60,28,52,20,62,30,54,22,
+   3,35,11,43, 1,33, 9,41,
+  51,19,59,27,49,17,57,25,
+  15,47, 7,39,13,45, 5,37,
+  63,31,55,23,61,29,53,21,
+];
+
+// Set up a canvas at device resolution and hand back (ctx, w, h)
+function fit(cv, maxDpr){
+  const dpr = Math.min(window.devicePixelRatio || 1, maxDpr || 2);
+  const w = Math.max(1, Math.round(cv.clientWidth * dpr));
+  const h = Math.max(1, Math.round(cv.clientHeight * dpr));
+  if (cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
+  return [cv.getContext('2d'), w, h, dpr];
+}
+
+/* ── Palette stops ──────────────────────────────────────────────── */
+const TRIO   = [rgb(243,66,32), rgb(243,75,59), rgb(178,62,42), rgb(34,84,53)];
+const WARM   = [rgb(34,84,58),  rgb(243,60,52), rgb(240,14,10)];
+const COOL   = [rgb(240,14,10), rgb(243,69,50), rgb(178,57,55)];
+const PAPER  = rgb(240,24,99);
+const INK900 = rgb(240,14,10);
+
+/* ══════════════════════════════════════════════════════════════════
+   07 — TREATMENTS
+   ══════════════════════════════════════════════════════════════════ */
+const TREATMENTS = [
+  ['Untreated', 'linear ramp · indigo → teal → amber', (ctx, w, h) => {
+    for (let x = 0; x < w; x++){
+      ctx.fillStyle = css(ramp(TRIO, x / w));
+      ctx.fillRect(x, 0, 1, h);
+    }
+  }],
+
+  ['Ordered dither', 'Bayer 8×8 · 6 levels', (ctx, w, h) => {
+    const img = ctx.createImageData(w, h), d = img.data;
+    const LEVELS = 6;
+    for (let y = 0; y < h; y++){
+      for (let x = 0; x < w; x++){
+        const bump = (BAYER8[(y & 7) * 8 + (x & 7)] / 64 - 0.5);
+        const t = x / w + (y / h) * 0.18 + bump * (1 / LEVELS);
+        const q = Math.round(Math.max(0, Math.min(1, t)) * (LEVELS - 1)) / (LEVELS - 1);
+        const c = ramp(TRIO, q);
+        const i = (y * w + x) * 4;
+        d[i] = c[0]; d[i+1] = c[1]; d[i+2] = c[2]; d[i+3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+  }],
+
+  ['Grain', 'monochrome film grain at 34%', (ctx, w, h) => {
+    for (let x = 0; x < w; x++){
+      ctx.fillStyle = css(ramp(TRIO, x / w));
+      ctx.fillRect(x, 0, 1, h);
+    }
+    grain(ctx, w, h, 34, true);
+  }],
+
+  ['Blur field', 'six blurred sources · no geometry left', (ctx, w, h) => {
+    ctx.fillStyle = css(ramp(TRIO, 0.4)); ctx.fillRect(0, 0, w, h);
+    const r = rng(7);
+    ctx.filter = `blur(${Math.round(h * 0.22)}px)`;
+    for (let i = 0; i < 6; i++){
+      ctx.fillStyle = css(ramp(TRIO, r()));
+      ctx.beginPath();
+      ctx.ellipse(r() * w, r() * h, w * (0.14 + r() * 0.2), h * (0.2 + r() * 0.35), r() * 3.14, 0, 6.29);
+      ctx.fill();
+    }
+    ctx.filter = 'none';
+    grain(ctx, w, h, 14, false);
+  }],
+
+  ['All three', 'blur → dither → grain', (ctx, w, h) => {
+    ctx.fillStyle = css(ramp(TRIO, 0.4)); ctx.fillRect(0, 0, w, h);
+    const r = rng(19);
+    ctx.filter = `blur(${Math.round(h * 0.2)}px)`;
+    for (let i = 0; i < 7; i++){
+      ctx.fillStyle = css(ramp(TRIO, r()));
+      ctx.beginPath();
+      ctx.ellipse(r() * w, r() * h, w * (0.12 + r() * 0.22), h * (0.18 + r() * 0.34), r() * 3.14, 0, 6.29);
+      ctx.fill();
+    }
+    ctx.filter = 'none';
+    // quantise what the blur produced
+    const img = ctx.getImageData(0, 0, w, h), d = img.data;
+    const LEVELS = 7;
+    for (let y = 0; y < h; y++){
+      for (let x = 0; x < w; x++){
+        const i = (y * w + x) * 4;
+        const bump = (BAYER8[(y & 7) * 8 + (x & 7)] / 64 - 0.5) * (255 / LEVELS);
+        for (let k = 0; k < 3; k++){
+          const v = d[i+k] + bump;
+          d[i+k] = Math.round(Math.max(0, Math.min(255, v)) / 255 * (LEVELS-1)) / (LEVELS-1) * 255;
+        }
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    grain(ctx, w, h, 26, true);
+  }],
+];
+
+const treatHost = document.getElementById('treat');
+TREATMENTS.forEach(([name, tech, fn]) => {
+  const fig = document.createElement('figure');
+  fig.className = 'tile tile-wide';
+  fig.innerHTML = `<canvas></canvas><figcaption><b>${name}</b><span>${tech}</span></figcaption>`;
+  treatHost.appendChild(fig);
+  const cv = fig.querySelector('canvas');
+  register(cv, () => { const [c, w, h] = fit(cv, 1.4); c.setTransform(1,0,0,1,0,0); c.clearRect(0,0,w,h); fn(c, w, h); });
+});
+
+/* ══════════════════════════════════════════════════════════════════
+   08 — BACKDROPS
+   ══════════════════════════════════════════════════════════════════ */
+const BACKDROPS = [
+
+['Contour field', 'd3-contour · marching squares over fbm', (ctx, w, h, seed) => {
+  ctx.fillStyle = css(PAPER); ctx.fillRect(0, 0, w, h);
+  const fbm = makeNoise(seed);
+  const gw = 150, gh = Math.max(40, Math.round(150 * h / w));
+  const values = new Array(gw * gh);
+  for (let y = 0; y < gh; y++)
+    for (let x = 0; x < gw; x++)
+      values[y * gw + x] = fbm(x / 19, y / 19, 4);
+
+  const sx = w / gw, sy = h / gh;
+  if (window.d3 && d3.contours){
+    const cs = d3.contours().size([gw, gh]).thresholds(14)(values);
+    ctx.lineWidth = Math.max(1, w / 900);
+    cs.forEach((c, i) => {
+      ctx.strokeStyle = `hsl(243 62% ${68 - i * 1.6}% / ${0.35 + i * 0.035})`;
+      ctx.beginPath();
+      c.coordinates.forEach(poly => poly.forEach(ring => {
+        ring.forEach(([x, y], k) => k ? ctx.lineTo(x * sx, y * sy) : ctx.moveTo(x * sx, y * sy));
+        ctx.closePath();
+      }));
+      ctx.stroke();
+    });
+  } else {
+    ctx.fillStyle = css(rgb(243, 40, 70));
+    ctx.font = '12px monospace';
+    ctx.fillText('d3-contour unavailable', 16, 26);
+  }
+  grain(ctx, w, h, 9, true);
+}],
+
+['Stacked facets', 'diamond lattice · diagonal ramp · grain', (ctx, w, h, seed) => {
+  const r = rng(seed), fbm = makeNoise(seed);
+  ctx.fillStyle = css(INK900); ctx.fillRect(0, 0, w, h);
+  const s = Math.max(24, w / 13);
+  ctx.save();
+  for (let y = -1; y < h / (s * 0.5) + 2; y++){
+    for (let x = -1; x < w / s + 2; x++){
+      const cx = x * s + (y % 2 ? s * 0.5 : 0), cy = y * s * 0.5;
+      let t = (cx / w) * 0.55 + (cy / h) * 0.6;
+      t += (fbm(cx / 220, cy / 220, 3) - 0.5) * 0.24;
+      ctx.fillStyle = css(ramp(WARM, t));
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - s * 0.52);
+      ctx.lineTo(cx + s * 0.52, cy);
+      ctx.lineTo(cx, cy + s * 0.52);
+      ctx.lineTo(cx - s * 0.52, cy);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = `rgba(0,0,0,${0.05 + r() * 0.07})`;
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+  grain(ctx, w, h, 20, true);
+}],
+
+['Curve family', 'shared control point · flat ground', (ctx, w, h, seed) => {
+  const r = rng(seed);
+  ctx.fillStyle = css(ramp(TRIO, 0.28)); ctx.fillRect(0, 0, w, h);
+  ctx.lineWidth = Math.max(1, w / 1100);
+  ctx.strokeStyle = `hsl(243 62% 24% / .78)`;
+  const ax = w * (0.8 + r() * 0.5), ay = h * (0.1 + r() * 0.3);
+  for (let i = 0; i < 13; i++){
+    const y0 = h * (-0.15 + i * 0.115);
+    ctx.beginPath();
+    ctx.moveTo(-w * 0.05, y0);
+    ctx.quadraticCurveTo(ax, ay + i * h * 0.075, w * 1.1, h * (0.55 + i * 0.06));
+    ctx.stroke();
+  }
+  grain(ctx, w, h, 16, true);
+}],
+
+['Ridgeline', 'stacked noise profiles · occluded', (ctx, w, h, seed) => {
+  const fbm = makeNoise(seed);
+  ctx.fillStyle = css(ramp(COOL, 0.08)); ctx.fillRect(0, 0, w, h);
+  const rows = 26, step = h / (rows + 6);
+  ctx.lineWidth = Math.max(1, w / 1000);
+  for (let i = rows; i >= 0; i--){
+    const base = h * 0.22 + i * step;
+    ctx.beginPath();
+    ctx.moveTo(-2, h + 2);
+    for (let x = -2; x <= w + 2; x += 3){
+      const amp = step * 3.4 * (0.35 + fbm(x / 700, i / 9, 2));
+      ctx.lineTo(x, base - amp * (fbm(x / 190, i / 5.5, 4) - 0.42));
+    }
+    ctx.lineTo(w + 2, h + 2);
+    ctx.closePath();
+    ctx.fillStyle = css(ramp(COOL, 0.05 + (i / rows) * 0.1));
+    ctx.fill();
+    ctx.strokeStyle = `hsl(178 55% ${58 - i * 0.7}% / .85)`;
+    ctx.stroke();
+  }
+  grain(ctx, w, h, 12, true);
+}],
+
+['Halftone bloom', 'dot radius modulated by a noise field', (ctx, w, h, seed) => {
+  const fbm = makeNoise(seed);
+  ctx.fillStyle = css(PAPER); ctx.fillRect(0, 0, w, h);
+  const gap = Math.max(6, w / 92);
+  ctx.fillStyle = css(rgb(243, 69, 50));
+  for (let y = gap * 0.5; y < h; y += gap){
+    for (let x = gap * 0.5; x < w; x += gap){
+      const d = Math.hypot(x - w * 0.62, y - h * 0.44) / (w * 0.6);
+      let v = fbm(x / 190, y / 190, 4) * 1.25 - d * 0.85;
+      v = Math.max(0, Math.min(1, v));
+      if (v < 0.04) continue;
+      ctx.globalAlpha = 0.35 + v * 0.55;
+      ctx.beginPath();
+      ctx.arc(x, y, v * gap * 0.56, 0, 6.29);
+      ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+  grain(ctx, w, h, 8, true);
+}],
+
+['Riso overprint', 'two plates · deliberate misregistration', (ctx, w, h, seed) => {
+  const fbm = makeNoise(seed), r = rng(seed);
+  ctx.fillStyle = css(rgb(40, 40, 97)); ctx.fillRect(0, 0, w, h);
+  const off = w * 0.012;
+  [[rgb(243,72,56), -off, -off*0.6, 0], [rgb(178,64,46), off, off*0.7, 12]].forEach(([col, dx, dy, phase]) => {
+    ctx.save();
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.globalAlpha = 0.82;
+    ctx.fillStyle = css(col);
+    ctx.beginPath();
+    const steps = 90;
+    for (let i = 0; i <= steps; i++){
+      const a = (i / steps) * 6.2832;
+      const rad = Math.min(w, h) * (0.3 + fbm(Math.cos(a) * 1.6 + phase, Math.sin(a) * 1.6 + phase, 3) * 0.42);
+      const x = w * 0.5 + dx + Math.cos(a) * rad * 1.25;
+      const y = h * 0.52 + dy + Math.sin(a) * rad;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  });
+  grain(ctx, w, h, 30, false);
+}],
+
+['Isoline drift', 'concentric offsets · warped by noise', (ctx, w, h, seed) => {
+  const fbm = makeNoise(seed);
+  ctx.fillStyle = css(ramp(TRIO, 0.02)); ctx.fillRect(0, 0, w, h);
+  ctx.lineWidth = Math.max(1, w / 1200);
+  const cx = w * 0.42, cy = h * 0.5;
+  for (let k = 1; k <= 34; k++){
+    ctx.beginPath();
+    const base = k * (Math.min(w, h) / 26);
+    for (let i = 0; i <= 130; i++){
+      const a = (i / 130) * 6.2832;
+      const warp = (fbm(Math.cos(a) * 1.1 + k * 0.09, Math.sin(a) * 1.1 + k * 0.09, 4) - 0.5);
+      const rad = base * (1 + warp * 0.55);
+      const x = cx + Math.cos(a) * rad * 1.5, y = cy + Math.sin(a) * rad;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = `hsl(${178 + k * 1.6} 60% ${72 - k * 0.9}% / .55)`;
+    ctx.stroke();
+  }
+  grain(ctx, w, h, 10, true);
+}],
+
+['Strata bleed', 'horizontal bands · dithered boundaries', (ctx, w, h, seed) => {
+  const fbm = makeNoise(seed);
+  const img = ctx.createImageData(w, h), d = img.data;
+  const LEVELS = 9;
+  for (let y = 0; y < h; y++){
+    for (let x = 0; x < w; x++){
+      const warp = (fbm(x / 260, y / 90, 3) - 0.5) * 0.5;
+      const bump = (BAYER8[(y & 7) * 8 + (x & 7)] / 64 - 0.5) * (1.4 / LEVELS);
+      const t = Math.max(0, Math.min(1, y / h + warp + bump));
+      const c = ramp(WARM, Math.round(t * (LEVELS-1)) / (LEVELS-1));
+      const i = (y * w + x) * 4;
+      d[i] = c[0]; d[i+1] = c[1]; d[i+2] = c[2]; d[i+3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  grain(ctx, w, h, 22, true);
+}],
+
+];
+
+const backHost = document.getElementById('backs');
+BACKDROPS.forEach(([name, tech, fn], idx) => {
+  const fig = document.createElement('figure');
+  fig.className = 'tile';
+  fig.innerHTML = `<canvas></canvas><figcaption><b>${name}</b><span>${tech}</span></figcaption><i class="reseed">reseed</i>`;
+  backHost.appendChild(fig);
+  const cv = fig.querySelector('canvas');
+  let seed = 1000 + idx * 137;
+  const draw = () => {
+    const [c, w, h] = fit(cv, 1.4);
+    c.setTransform(1,0,0,1,0,0);
+    c.clearRect(0, 0, w, h);
+    fn(c, w, h, seed);
+  };
+  register(cv, draw);
+  fig.addEventListener('click', () => { seed = (Math.random() * 100000) | 0; draw(); });
+});
+
+/* ── Draw on first sight, redraw on resize ──────────────────────── */
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    e.target.__draw();
+    e.target.__drawn = true;
+  });
+}, { rootMargin: '200px' });
+pending.forEach(cv => io.observe(cv));
+
+let rt;
+window.addEventListener('resize', () => {
+  clearTimeout(rt);
+  rt = setTimeout(() => pending.forEach(cv => { if (cv.__drawn) cv.__draw(); }), 180);
+});
 })();
 </script>
 </body>
