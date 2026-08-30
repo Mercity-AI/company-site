@@ -183,13 +183,13 @@
     blurlight(ctx, w, h, seed) {
       const r = rng(seed);
       const LIGHT = [
-        hsl2rgb(240, 34, 97),
-        hsl2rgb(243, 60, 85),
-        hsl2rgb(178, 46, 84),
-        hsl2rgb(34, 62, 89),
-        hsl2rgb(243, 48, 91),
+        hsl2rgb(240, 41, 96),
+        hsl2rgb(243, 72, 83),
+        hsl2rgb(178, 55, 82),
+        hsl2rgb(34, 74, 87),
+        hsl2rgb(243, 58, 89),
       ];
-      ctx.fillStyle = css(hsl2rgb(243, 34, 95));
+      ctx.fillStyle = css(hsl2rgb(243, 41, 94));
       ctx.fillRect(0, 0, w, h);
       ctx.filter = `blur(${Math.round(Math.min(w, h) * 0.17)}px)`;
       for (let i = 0; i < 6; i++) {
@@ -850,10 +850,11 @@
       const drift = 0.12 + r() * 0.1;
       for (let i = 0; i < N; i++) {
         const t = i / (N - 1);
-        // Sitting low in the frame; the last line bleeds off the bottom,
-        // which the hero clips, so the family reads as continuing.
-        const y0 = h * (0.6 + t * 0.46);
-        const y1 = h * (0.32 + t * 0.4);
+        // The plate is the full hero now, so these are fractions of the
+        // hero's own height. The lowest lines bleed past the bottom and
+        // get clipped, which reads as the family continuing.
+        const y0 = h * (0.82 + t * 0.3);
+        const y1 = h * (0.64 + t * 0.26);
         ctx.beginPath();
         ctx.moveTo(-w * 0.04, y0);
         ctx.bezierCurveTo(
