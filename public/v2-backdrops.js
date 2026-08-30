@@ -183,13 +183,13 @@
     blurlight(ctx, w, h, seed) {
       const r = rng(seed);
       const LIGHT = [
-        hsl2rgb(240, 30, 99),
-        hsl2rgb(243, 56, 91),
-        hsl2rgb(178, 46, 89),
-        hsl2rgb(34, 84, 90),
-        hsl2rgb(243, 40, 95),
+        hsl2rgb(240, 34, 97),
+        hsl2rgb(243, 64, 80),
+        hsl2rgb(178, 54, 78),
+        hsl2rgb(34, 88, 78),
+        hsl2rgb(243, 58, 86),
       ];
-      ctx.fillStyle = css(hsl2rgb(240, 30, 99));
+      ctx.fillStyle = css(hsl2rgb(243, 44, 93));
       ctx.fillRect(0, 0, w, h);
       ctx.filter = `blur(${Math.round(Math.min(w, h) * 0.17)}px)`;
       for (let i = 0; i < 9; i++) {
