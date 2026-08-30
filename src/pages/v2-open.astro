@@ -9,7 +9,6 @@ import V2Layout from '@/layouts/V2Layout.astro';
 
 const shipped = [
   {
-    num: '01',
     title: 'Datasets, and the code that made them',
     backdrop: 'strata',
     seed: 771,
@@ -17,7 +16,6 @@ const shipped = [
     copy: 'Curated and synthetic corpora released with the generation code, the filtering criteria and the failure modes we already know about — so you can judge whether a set fits your problem before you spend a training run finding out.',
   },
   {
-    num: '02',
     title: 'Model weights and the recipes behind them',
     backdrop: 'isoline',
     seed: 5410,
@@ -25,7 +23,6 @@ const shipped = [
     copy: 'Checkpoints, adapters and complete training recipes from experiments worth reproducing — published with the evaluation numbers that convinced us to keep them, and the ablations that did not make the cut.',
   },
   {
-    num: '03',
     title: 'Write-ups you can actually follow',
     backdrop: 'contour',
     seed: 3364,
@@ -66,7 +63,6 @@ const shipped = [
           shipped.map((o, i) => (
             <article class="osp rv" data-rv style={`--rv-delay:${100 + i * 90}ms`}>
               <div class="osp-head">
-                <span class="osp-num">{o.num}</span>
                 <h3>{o.title}</h3>
               </div>
               <figure class="osp-art">
@@ -213,15 +209,6 @@ const shipped = [
     .osp-head {
       display: flex;
       align-items: flex-start;
-      gap: 18px;
-    }
-    .osp-num {
-      padding-top: 7px;
-      font-family: var(--mono);
-      font-size: 10px;
-      letter-spacing: 0.14em;
-      color: var(--indigo-600);
-      white-space: nowrap;
     }
     .osp h3 {
       max-width: 15ch;

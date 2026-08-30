@@ -183,13 +183,13 @@
     blurlight(ctx, w, h, seed) {
       const r = rng(seed);
       const LIGHT = [
-        hsl2rgb(240, 34, 97),
-        hsl2rgb(243, 64, 80),
-        hsl2rgb(178, 54, 78),
-        hsl2rgb(34, 88, 78),
-        hsl2rgb(243, 58, 86),
+        hsl2rgb(240, 40, 96),
+        hsl2rgb(243, 82, 71),
+        hsl2rgb(178, 70, 66),
+        hsl2rgb(34, 94, 69),
+        hsl2rgb(243, 74, 79),
       ];
-      ctx.fillStyle = css(hsl2rgb(243, 44, 93));
+      ctx.fillStyle = css(hsl2rgb(243, 58, 88));
       ctx.fillRect(0, 0, w, h);
       ctx.filter = `blur(${Math.round(Math.min(w, h) * 0.17)}px)`;
       for (let i = 0; i < 9; i++) {
@@ -533,7 +533,13 @@
       for (let i = 0; i < n; i++) {
         const t = i / (n - 1);
         const hgt = target(t) * (0.86 + fbm(i / 3.5, 1.2, 2) * 0.3);
-        ctx.fillStyle = `hsl(178 60% 40% / ${0.3 + (hgt / (h * 0.6)) * 0.5})`;
+        // Hue walks indigo -> teal across the chart, and each bar is lighter
+        // at the crown than at the base, so the block reads as depth.
+        const hue = 246 - t * 70;
+        const g = ctx.createLinearGradient(0, base - hgt, 0, base);
+        g.addColorStop(0, `hsl(${hue} 74% 64% / .95)`);
+        g.addColorStop(1, `hsl(${hue} 60% 38% / .5)`);
+        ctx.fillStyle = g;
         ctx.fillRect(pad + i * bw + bw * 0.16, base - hgt, bw * 0.68, hgt);
       }
       ctx.beginPath();
