@@ -28,7 +28,7 @@ const { title, description }: Props = Astro.props;
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300..700&family=Inter:wght@300..600&family=JetBrains+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Inter+Tight:wght@300..700&family=Inter:wght@300..600&family=JetBrains+Mono:wght@400;500&display=swap"
     />
 
     <style is:global>
@@ -74,11 +74,13 @@ const { title, description }: Props = Astro.props;
         --line-2: var(--n-300);
 
         --display: 'Inter Tight', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        /* Hero only. Everything else stays on the sans. */
+        --hero-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
         --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
 
         --ease: cubic-bezier(0.22, 1, 0.36, 1);
-        --shell: 1240px;
+        --shell: 1116px;
       }
 
       *,
@@ -99,7 +101,7 @@ const { title, description }: Props = Astro.props;
         background: var(--ground);
         color: var(--ink);
         font-family: var(--sans);
-        font-size: 16px;
+        font-size: 14.4px;
         line-height: 1.6;
       }
 
@@ -125,11 +127,11 @@ const { title, description }: Props = Astro.props;
       .shell {
         max-width: var(--shell);
         margin: 0 auto;
-        padding-inline: 30px;
+        padding-inline: 22.95px;
       }
       @media (max-width: 640px) {
         .shell {
-          padding-inline: 20px;
+          padding-inline: 15.3px;
         }
       }
 
@@ -164,33 +166,33 @@ const { title, description }: Props = Astro.props;
       .eyebrow {
         display: block;
         font-family: var(--mono);
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 500;
         letter-spacing: 0.18em;
         text-transform: uppercase;
         color: var(--indigo-600);
       }
       .h2 {
-        margin-top: 16px;
+        margin-top: 14.4px;
         max-width: 22ch;
         font-family: var(--display);
-        font-size: clamp(30px, 3.9vw, 47px);
+        font-size: clamp(27px, 3.51vw, 42.3px);
         font-weight: 460;
         line-height: 1.12;
         letter-spacing: -0.03em;
         text-wrap: balance;
       }
       .lede {
-        margin-top: 20px;
+        margin-top: 18px;
         max-width: 62ch;
-        font-size: 16.5px;
+        font-size: 14.85px;
         font-weight: 400;
         line-height: 1.76;
         color: var(--ink-3);
       }
       .band {
         border-top: 1px solid var(--line);
-        padding-block: clamp(84px, 10vw, 132px);
+        padding-block: clamp(64.26px, 7.65vw, 100.98px);
       }
     </style>
   </head>
@@ -238,7 +240,7 @@ const { title, description }: Props = Astro.props;
           border-color 550ms var(--ease);
       }
       .v2-nav[data-scrolled='true'] {
-        padding-block: 12px;
+        padding-block: 10.8px;
         background: transparent;
         backdrop-filter: none;
         border-bottom-color: transparent;
@@ -248,11 +250,11 @@ const { title, description }: Props = Astro.props;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 24px;
-        height: 68px;
+        gap: 21.6px;
+        height: 61.2px;
         max-width: var(--shell);
         margin-inline: auto;
-        padding-inline: 30px;
+        padding-inline: 22.95px;
         background: transparent;
         border: 1px solid transparent;
         border-radius: 0;
@@ -266,9 +268,9 @@ const { title, description }: Props = Astro.props;
           box-shadow 550ms var(--ease);
       }
       .v2-nav[data-scrolled='true'] .v2-bar {
-        height: 54px;
-        max-width: 880px;
-        padding-inline: 22px;
+        height: 48.6px;
+        max-width: 792px;
+        padding-inline: 19.8px;
         border-radius: 999px;
         border-color: var(--line-2);
         background: var(--n-0);
@@ -280,18 +282,18 @@ const { title, description }: Props = Astro.props;
 
       .v2-mark {
         font-family: var(--display);
-        font-size: 21px;
+        font-size: 18.9px;
         font-weight: 500;
         letter-spacing: -0.03em;
         transition: font-size 550ms var(--ease);
       }
       .v2-nav[data-scrolled='true'] .v2-mark {
-        font-size: 17px;
+        font-size: 15.3px;
       }
       .v2-mark i {
         font-family: var(--mono);
         font-style: normal;
-        font-size: 9.5px;
+        font-size: 8.55px;
         font-weight: 500;
         letter-spacing: 0.14em;
         text-transform: uppercase;
@@ -302,14 +304,14 @@ const { title, description }: Props = Astro.props;
 
       .v2-links {
         display: flex;
-        gap: 34px;
+        gap: 30.6px;
         transition: gap 550ms var(--ease);
       }
       .v2-nav[data-scrolled='true'] .v2-links {
-        gap: 26px;
+        gap: 23.4px;
       }
       .v2-links a {
-        font-size: 13.5px;
+        font-size: 12.15px;
         font-weight: 400;
         color: var(--ink-3);
         transition:
@@ -317,17 +319,19 @@ const { title, description }: Props = Astro.props;
           font-size 550ms var(--ease);
       }
       .v2-nav[data-scrolled='true'] .v2-links a {
-        font-size: 12.5px;
+        font-size: 11.25px;
       }
       .v2-links a:hover {
         color: var(--ink);
       }
 
       .v2-cta {
-        padding: 9px 18px;
-        border: 1px solid var(--line-2);
+        padding: 8.1px 16.2px;
+        border: 1px solid var(--ink);
+        background: var(--ink);
+        color: var(--n-50);
         border-radius: 999px;
-        font-size: 11px;
+        font-size: 9.9px;
         font-weight: 500;
         letter-spacing: 0.08em;
         text-transform: uppercase;
@@ -340,13 +344,13 @@ const { title, description }: Props = Astro.props;
           font-size 550ms var(--ease);
       }
       .v2-nav[data-scrolled='true'] .v2-cta {
-        padding: 7px 15px;
-        font-size: 10px;
+        padding: 6.3px 13.5px;
+        font-size: 9px;
       }
       .v2-cta:hover {
-        background: var(--ink);
+        background: var(--indigo-700);
+        border-color: var(--indigo-700);
         color: #fff;
-        border-color: var(--ink);
       }
       @media (max-width: 900px) {
         .v2-links {
@@ -361,11 +365,11 @@ const { title, description }: Props = Astro.props;
       .v2-foot-in {
         display: flex;
         justify-content: space-between;
-        gap: 20px;
+        gap: 18px;
         flex-wrap: wrap;
-        padding-block: 40px;
+        padding-block: 36px;
         font-family: var(--mono);
-        font-size: 10.5px;
+        font-size: 9.45px;
         color: var(--n-400);
       }
       .v2-foot a {

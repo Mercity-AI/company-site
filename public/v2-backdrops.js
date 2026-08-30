@@ -357,6 +357,70 @@
       grain(ctx, w, h, 11, true);
     },
 
+    // STRUCTURE — integration read as load-bearing, not surface.
+    // Warped horizontal strata are the systems the business already runs
+    // on; straight columns pass through every one of them and joint at
+    // each crossing. Something driven through the levels, not laid on top.
+    structure(ctx, w, h, seed) {
+      const fbm = makeNoise(seed);
+      ctx.fillStyle = css(hsl2rgb(240, 26, 98));
+      ctx.fillRect(0, 0, w, h);
+
+      const layers = 6;
+      const top = h * 0.12;
+      const gap = (h * 0.78) / (layers - 1);
+      const yAt = (i, x) => top + i * gap + (fbm(x / (w * 0.5), i * 1.7, 3) - 0.5) * gap * 0.42;
+
+      // the existing layers: irregular, organic, already there
+      for (let i = 0; i < layers; i++) {
+        ctx.beginPath();
+        for (let x = -4; x <= w + 4; x += 4) {
+          const y = yAt(i, x);
+          x === -4 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.lineWidth = Math.max(1.1, w / 780);
+        ctx.strokeStyle = `hsl(243 34% ${72 - i * 3}% / .5)`;
+        ctx.stroke();
+
+        // a soft band under each, so they read as strata not wires
+        ctx.lineTo(w + 4, yAt(i, w + 4) + gap * 0.3);
+        for (let x = w + 4; x >= -4; x -= 4) ctx.lineTo(x, yAt(i, x) + gap * 0.3);
+        ctx.closePath();
+        ctx.fillStyle = `hsl(243 46% 62% / .05)`;
+        ctx.fill();
+      }
+
+      // the columns: straight, deliberate, all the way through
+      const cols = 5;
+      const cx0 = w * 0.17;
+      const span = w * 0.66;
+      for (let c = 0; c < cols; c++) {
+        const x = cx0 + (c / (cols - 1)) * span;
+        ctx.beginPath();
+        ctx.moveTo(x, top - gap * 0.5);
+        ctx.lineTo(x, top + (layers - 1) * gap + gap * 0.5);
+        ctx.lineWidth = Math.max(1.6, w / 340);
+        ctx.strokeStyle = 'hsl(178 66% 32% / .82)';
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // joints where a column meets a layer
+        for (let i = 0; i < layers; i++) {
+          ctx.beginPath();
+          ctx.arc(x, yAt(i, x), Math.max(2.4, w / 250), 0, 6.29);
+          ctx.fillStyle = css(hsl2rgb(178, 68, 30));
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(x, yAt(i, x), Math.max(5, w / 130), 0, 6.29);
+          ctx.strokeStyle = 'hsl(178 66% 32% / .22)';
+          ctx.lineWidth = Math.max(1, w / 1100);
+          ctx.stroke();
+        }
+      }
+
+      grain(ctx, w, h, 11, true);
+    },
+
     facets(ctx, w, h, seed) {
       const r = rng(seed);
       const fbm = makeNoise(seed);
