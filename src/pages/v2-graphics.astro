@@ -1,0 +1,268 @@
+---
+import V2Layout from '@/layouts/V2Layout.astro';
+
+/**
+ * Candidate gallery for the three capability-card graphics.
+ * Rendered at the proposed card-art size (25% taller than /v2 ships
+ * today) so the choice is made at the size it will actually run.
+ */
+
+const sets = [
+  {
+    card: 'Synthetic Data Generation',
+    claim: 'Produce exactly the distribution your model is missing.',
+    options: [
+      {
+        key: 'sdGap',
+        name: 'Gap fill',
+        says: 'A real cloud with a hole in it, and generated points filling precisely that hole. The most literal reading of the claim.',
+      },
+      {
+        key: 'sdCurriculum',
+        name: 'Curriculum ramp',
+        says: 'Seven passes, each getting denser and harder left to right. Says controlled, not scraped.',
+      },
+      {
+        key: 'sdFanout',
+        name: 'Seed fanout',
+        says: 'Four seeds branching into hundreds of samples. Says scale from a small, deliberate source.',
+      },
+      {
+        key: 'sdTarget',
+        name: 'Generated to spec',
+        says: 'A dashed target distribution with generated bars matched to it. Says verified against a spec.',
+      },
+    ],
+  },
+  {
+    card: 'Custom Architecture & Training',
+    claim: 'When the off-the-shelf model is the wrong shape, we design one that is not.',
+    options: [
+      {
+        key: 'archReshape',
+        name: 'Cut to the task',
+        says: 'Uniform blocks on the left of the line, a profile shaped to the problem on the right. Directly the headline.',
+      },
+      {
+        key: 'archStack',
+        name: 'Layers replaced',
+        says: 'A stack with three layers swapped out and marked. Says surgical, not rebuilt from nothing.',
+      },
+      {
+        key: 'archLoss',
+        name: 'Training run',
+        says: 'A loss curve with kept checkpoints. The most legible to an engineer, the most generic to everyone else.',
+      },
+      {
+        key: 'archWiring',
+        name: 'Attention mask',
+        says: 'Inherited dense attention beside the sparse mask we chose. The most technically specific of the four.',
+      },
+    ],
+  },
+  {
+    card: 'Evaluation & Benchmarking',
+    claim: 'Run it honestly, including the results that argue against us.',
+    options: [
+      {
+        key: 'evalBars',
+        name: 'The bad number',
+        says: 'Benchmark bars with the short one marked in amber rather than hidden. Says honest reporting.',
+      },
+      {
+        key: 'evalThreshold',
+        name: 'Evaluation gate',
+        says: 'Runs against a threshold, failures in amber. Says CI gate, not leaderboard.',
+      },
+      {
+        key: 'evalScatter',
+        name: 'With error bars',
+        says: 'Measurement with the uncertainty left visible. The most instrument-like.',
+      },
+      {
+        key: 'evalRegression',
+        name: 'Drift caught',
+        says: 'A metric falling off a cliff with the harness catching it. Says regression suite.',
+      },
+    ],
+  },
+];
+---
+
+<V2Layout title="Mercity — Graphic candidates" description="Candidate graphics for the three capability cards.">
+  <div class="note-bar">
+    <div class="shell note-bar-in">
+      <span>Candidates for the three capability cards. Full page at <a href="/v2">/v2</a>.</span>
+      <span>Shown at the proposed size — 25% taller than /v2 ships today</span>
+    </div>
+  </div>
+
+  <section class="band gal-head">
+    <div class="shell">
+      <span class="wws-eyebrow">Graphic candidates</span>
+      <h2 class="wws-title">Four expressions each. Pick one per card.</h2>
+      <p class="wws-sub">
+        Each of these is a generator, not an image, so whichever wins can be reseeded to a different
+        composition without redrawing anything. They all use the same three hues: indigo for identity, teal
+        for measurement, amber only where something is genuinely a caution or an exception.
+      </p>
+    </div>
+  </section>
+
+  {
+    sets.map((set) => (
+      <section class="band gal">
+        <div class="shell">
+          <div class="gal-title">
+            <h3>{set.card}</h3>
+            <p>{set.claim}</p>
+          </div>
+          <div class="gal-grid">
+            {set.options.map((o, i) => (
+              <figure class="gal-item rv" data-rv style={`--rv-delay:${i * 70}ms`}>
+                <div class="gal-art">
+                  <canvas data-backdrop={o.key} data-seed={4100 + i * 311} aria-hidden="true"></canvas>
+                </div>
+                <figcaption>
+                  <b>{o.name}</b>
+                  <code>{o.key}</code>
+                  <span>{o.says}</span>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+    ))
+  }
+</V2Layout>
+
+<style is:global>
+  .note-bar {
+    background: var(--n-900);
+    color: hsl(240 18% 96% / 0.72);
+  }
+  .note-bar-in {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+    padding-block: 11px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    letter-spacing: 0.06em;
+  }
+  .note-bar a {
+    color: var(--teal-500);
+  }
+
+  .gal-head {
+    text-align: center;
+    background: var(--n-100);
+  }
+  .wws-eyebrow {
+    display: inline-block;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--line-2);
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .wws-title {
+    margin: 25px auto 0;
+    max-width: 24ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(26px, 3.3vw, 39px);
+    font-weight: 400;
+    line-height: 1.16;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+  .wws-sub {
+    margin: 20px auto 0;
+    max-width: 66ch;
+    font-size: 14.4px;
+    line-height: 1.76;
+    color: var(--ink-3);
+  }
+
+  .gal {
+    padding-block: 58px;
+  }
+  .gal-title h3 {
+    font-family: var(--display);
+    font-size: 21px;
+    font-weight: 520;
+    letter-spacing: -0.026em;
+  }
+  .gal-title p {
+    margin-top: 7px;
+    font-size: 14px;
+    color: var(--ink-3);
+  }
+
+  .gal-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 30px;
+  }
+  @media (max-width: 1100px) {
+    .gal-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 620px) {
+    .gal-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .gal-item {
+    margin: 0;
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+    transition: border-color 500ms var(--ease);
+  }
+  .gal-item:hover {
+    border-color: var(--ink-3);
+  }
+  /* 148.5px is the proposed card-art height: 118.8 x 1.25 */
+  .gal-art {
+    height: 148.5px;
+    border-bottom: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .gal-art canvas {
+    width: 100%;
+    height: 100%;
+  }
+  .gal-item figcaption {
+    display: block;
+    padding: 17px 18px 20px;
+  }
+  .gal-item figcaption b {
+    display: block;
+    font-family: var(--display);
+    font-size: 15px;
+    font-weight: 520;
+    letter-spacing: -0.02em;
+  }
+  .gal-item figcaption code {
+    display: block;
+    margin-top: 4px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--indigo-600);
+  }
+  .gal-item figcaption span {
+    display: block;
+    margin-top: 10px;
+    font-size: 12.6px;
+    line-height: 1.68;
+    color: var(--ink-3);
+  }
+</style>

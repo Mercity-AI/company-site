@@ -421,6 +421,372 @@
       grain(ctx, w, h, 11, true);
     },
 
+    /* ══════════════════════════════════════════════════════════════
+       CANDIDATES — three capability cards, four expressions each.
+       Concept first: each one has to say something specific about the
+       work, the way divergence and structure do.
+       ══════════════════════════════════════════════════════════════ */
+
+    /* ── 1. Synthetic data generation ───────────────────────────── */
+
+    // The distribution you are missing, filled precisely.
+    sdGap(ctx, w, h, seed) {
+      const r = rng(seed);
+      ctx.fillStyle = css(hsl2rgb(240, 26, 98));
+      ctx.fillRect(0, 0, w, h);
+      const cx = w * 0.5, cy = h * 0.52, rx = w * 0.36, ry = h * 0.38;
+      const hx = w * 0.6, hy = h * 0.44, hr = Math.min(w, h) * 0.19;
+      const inHole = (x, y) => Math.hypot((x - hx) / 1.25, y - hy) < hr;
+
+      let placed = 0;
+      while (placed < 620) {
+        const a = r() * 6.2832, d = Math.sqrt(r());
+        const x = cx + Math.cos(a) * rx * d, y = cy + Math.sin(a) * ry * d;
+        placed++;
+        if (inHole(x, y)) continue;
+        ctx.fillStyle = `hsl(243 40% 56% / ${0.2 + r() * 0.3})`;
+        ctx.beginPath();
+        ctx.arc(x, y, Math.max(1, w / 320), 0, 6.29);
+        ctx.fill();
+      }
+      // what we generate: same shape, different mark
+      ctx.strokeStyle = css(hsl2rgb(34, 84, 48));
+      ctx.lineWidth = Math.max(1, w / 500);
+      for (let i = 0; i < 150; i++) {
+        const a = r() * 6.2832, d = Math.sqrt(r());
+        const x = hx + Math.cos(a) * hr * 1.25 * d, y = hy + Math.sin(a) * hr * d;
+        ctx.beginPath();
+        ctx.arc(x, y, Math.max(1.6, w / 210), 0, 6.29);
+        ctx.stroke();
+      }
+      ctx.setLineDash([Math.max(2, w / 160), Math.max(3, w / 110)]);
+      ctx.strokeStyle = 'hsl(34 84% 48% / .55)';
+      ctx.beginPath();
+      ctx.ellipse(hx, hy, hr * 1.25, hr, 0, 0, 6.29);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      grain(ctx, w, h, 10, true);
+    },
+
+    // Curriculum: density and difficulty ramp together.
+    sdCurriculum(ctx, w, h, seed) {
+      const r = rng(seed);
+      ctx.fillStyle = css(hsl2rgb(240, 26, 98));
+      ctx.fillRect(0, 0, w, h);
+      const rows = 7, pad = h * 0.13;
+      const step = (h - pad * 2) / (rows - 1);
+      for (let i = 0; i < rows; i++) {
+        const y = pad + i * step;
+        for (let k = 0; k < 130; k++) {
+          const t = k / 129;
+          if (r() > 0.12 + t * t * 0.95) continue;
+          const x = w * 0.08 + t * w * 0.84;
+          const hue = 243 - t * 62;
+          ctx.fillStyle = `hsl(${hue} ${44 + t * 22}% ${58 - t * 14}% / ${0.3 + t * 0.55})`;
+          ctx.beginPath();
+          ctx.arc(x, y + (r() - 0.5) * step * 0.5, Math.max(1.1, (w / 300) * (0.6 + t * 0.9)), 0, 6.29);
+          ctx.fill();
+        }
+      }
+      grain(ctx, w, h, 10, true);
+    },
+
+    // A handful of seeds, millions of samples.
+    sdFanout(ctx, w, h, seed) {
+      const r = rng(seed);
+      ctx.fillStyle = css(hsl2rgb(240, 26, 98));
+      ctx.fillRect(0, 0, w, h);
+      const seeds = 4;
+      for (let s = 0; s < seeds; s++) {
+        const sy = h * (0.2 + (s / (seeds - 1)) * 0.6);
+        const sx = w * 0.1;
+        for (let b = 0; b < 26; b++) {
+          const ty = sy + (r() - 0.5) * h * 0.5;
+          const tx = w * (0.55 + r() * 0.4);
+          ctx.beginPath();
+          ctx.moveTo(sx, sy);
+          ctx.quadraticCurveTo(w * 0.34, sy + (ty - sy) * 0.25, tx, ty);
+          ctx.strokeStyle = `hsl(243 44% 62% / ${0.07 + r() * 0.1})`;
+          ctx.lineWidth = Math.max(0.8, w / 1400);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(tx, ty, Math.max(1.2, w / 300), 0, 6.29);
+          ctx.fillStyle = `hsl(178 58% 42% / ${0.3 + r() * 0.45})`;
+          ctx.fill();
+        }
+        ctx.beginPath();
+        ctx.arc(sx, sy, Math.max(3.4, w / 110), 0, 6.29);
+        ctx.fillStyle = css(hsl2rgb(243, 66, 44));
+        ctx.fill();
+      }
+      grain(ctx, w, h, 10, true);
+    },
+
+    // Generated to a spec, then checked against it.
+    sdTarget(ctx, w, h, seed) {
+      const fbm = makeNoise(seed);
+      ctx.fillStyle = css(hsl2rgb(240, 26, 98));
+      ctx.fillRect(0, 0, w, h);
+      const n = 26, base = h * 0.86, pad = w * 0.08;
+      const bw = (w - pad * 2) / n;
+      const target = (t) => Math.exp(-Math.pow((t - 0.46) * 2.5, 2)) * h * 0.6;
+      for (let i = 0; i < n; i++) {
+        const t = i / (n - 1);
+        const hgt = target(t) * (0.86 + fbm(i / 3.5, 1.2, 2) * 0.3);
+        ctx.fillStyle = `hsl(178 60% 40% / ${0.3 + (hgt / (h * 0.6)) * 0.5})`;
+        ctx.fillRect(pad + i * bw + bw * 0.16, base - hgt, bw * 0.68, hgt);
+      }
+      ctx.beginPath();
+      for (let i = 0; i <= 120; i++) {
+        const t = i / 120, x = pad + t * (w - pad * 2), y = base - target(t);
+        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      }
+      ctx.setLineDash([Math.max(3, w / 130), Math.max(3, w / 130)]);
+      ctx.strokeStyle = css(hsl2rgb(243, 66, 44));
+      ctx.lineWidth = Math.max(1.4, w / 420);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      grain(ctx, w, h, 10, true);
+    },
+
+    /* ── 2. Custom architecture & training ──────────────────────── */
+
+    // Off the shelf is uniform. Ours is cut to the task.
+    archReshape(ctx, w, h, seed) {
+      const fbm = makeNoise(seed);
+      ctx.fillStyle = css(hsl2rgb(240, 26, 98));
+      ctx.fillRect(0, 0, w, h);
+      const n = 16, pad = w * 0.07, cw = (w - pad * 2) / n, mid = h * 0.5;
+      for (let i = 0; i < n; i++) {
+        const t = i / (n - 1);
+        const uniform = h * 0.3;
+        const shaped = h * (0.12 + Math.abs(fbm(i / 2.6, 3.1, 3) - 0.42) * 1.5);
+        const hgt = uniform + (shaped - uniform) * Math.max(0, (t - 0.34) / 0.66);
+        const custom = t > 0.34;
+        ctx.fillStyle = custom
+          ? `hsl(178 60% 40% / ${0.34 + (t - 0.34) * 0.75})`
+          : 'hsl(243 30% 62% / .22)';
+        ctx.fillRect(pad + i * cw + cw * 0.14, mid - hgt / 2, cw * 0.72, hgt);
+      }
+      ctx.setLineDash([Math.max(2, w / 200), Math.max(3, w / 150)]);
+      ctx.strokeStyle = 'hsl(240 10% 55% / .5)';
+      ctx.lineWidth = Math.max(1, w / 900);
+      ctx.beginPath();
+      ctx.moveTo(pad + n * cw * 0.34, h * 0.08);
+      ctx.lineTo(pad + n * cw * 0.34, h * 0.92);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      grain(ctx, w, h, 10, true);
+    },
+
+    // The stack, with the layers we replaced called out.
+    archStack(ctx, w, h, seed) {
+      const r = rng(seed);
+      ctx.fillStyle = css(hsl2rgb(240, 26, 98));
+      ctx.fillRect(0, 0, w, h);
+      const rows = 9, pad = h * 0.08;
+      const rh = (h - pad * 2) / rows;
+      const swapped = new Set([2, 3, 6]);
+      for (let i = 0; i < rows; i++) {
+        const y = pad + i * rh;
+        const ww = w * (0.42 + r() * 0.3);
+        const x = (w - ww) / 2;
+        if (swapped.has(i)) {
+          ctx.fillStyle = 'hsl(178 60% 40% / .8)';
+          ctx.fillRect(x - w * 0.05, y + rh * 0.16, ww + w * 0.1, rh * 0.62);
+          ctx.fillStyle = css(hsl2rgb(34, 84, 50));
+          ctx.beginPath();
+          ctx.arc(x - w * 0.09, y + rh * 0.47, Math.max(2.2, w / 260), 0, 6.29);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = 'hsl(243 28% 60% / .2)';
+          ctx.fillRect(x, y + rh * 0.2, ww, rh * 0.54);
+        }
+      }
+      grain(ctx, w, h, 10, true);
+    },
+
+    // A training run, with the checkpoints we kept.
+    archLoss(ctx, w, h, seed) {
+      const fbm = makeNoise(seed);
+      ctx.fillStyle = css(hsl2rgb(240, 26, 98));
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = 'hsl(240 12% 74% / .5)';
+      ctx.lineWidth = Math.max(0.8, w / 1600);
+      for (let i = 1; i < 4; i++) {
+        ctx.beginPath();
+        ctx.moveTo(w * 0.08, h * (0.15 + i * 0.2));
+        ctx.lineTo(w * 0.94, h * (0.15 + i * 0.2));
+        ctx.stroke();
+      }
+      const yAt = (t) => h * 0.16 + Math.exp(-t * 3.1) * h * 0.62 + (fbm(t * 22, 2, 2) - 0.5) * h * 0.07;
+      ctx.beginPath();
+      for (let i = 0; i <= 200; i++) {
+        const t = i / 200, x = w * 0.08 + t * w * 0.86;
+        i ? ctx.lineTo(x, yAt(t)) : ctx.moveTo(x, yAt(t));
+      }
+      ctx.strokeStyle = css(hsl2rgb(243, 66, 46));
+      ctx.lineWidth = Math.max(1.5, w / 420);
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+      [0.22, 0.48, 0.74, 0.95].forEach((t, i) => {
+        const x = w * 0.08 + t * w * 0.86, y = yAt(t);
+        ctx.beginPath();
+        ctx.arc(x, y, Math.max(2.6, w / 190), 0, 6.29);
+        ctx.fillStyle = i === 3 ? css(hsl2rgb(34, 84, 50)) : css(hsl2rgb(178, 64, 36));
+        ctx.fill();
+      });
+      grain(ctx, w, h, 10, true);
+    },
+
+    // Dense attention on the left, the mask we designed on the right.
+    archWiring(ctx, w, h, seed) {
+      const r = rng(seed);
+      const band = 2 + ((r() * 3) | 0);
+      const stride = 3 + ((r() * 3) | 0);
+      ctx.fillStyle = css(hsl2rgb(240, 26, 98));
+      ctx.fillRect(0, 0, w, h);
+      const n = 12, size = Math.min(w * 0.38, h * 0.76);
+      const cell = size / n;
+      const draw = (ox, oy, keep, hue, alpha) => {
+        for (let j = 0; j < n; j++) {
+          for (let i = 0; i < n; i++) {
+            if (!keep(i, j)) continue;
+            ctx.fillStyle = `hsl(${hue} 58% 44% / ${alpha})`;
+            ctx.fillRect(ox + i * cell + 0.6, oy + j * cell + 0.6, cell - 1.2, cell - 1.2);
+          }
+        }
+      };
+      const oy = (h - size) / 2;
+      draw(w * 0.08, oy, (i, j) => i <= j, 243, 0.2);
+      // banded + strided: a mask that was chosen, not inherited
+      draw(w * 0.54, oy, (i, j) => i <= j && (j - i < band || i % stride === 0 || j === n - 1), 178, 0.72);
+      ctx.strokeStyle = 'hsl(240 10% 60% / .45)';
+      ctx.lineWidth = Math.max(1, w / 1100);
+      ctx.strokeRect(w * 0.08, oy, size, size);
+      ctx.strokeRect(w * 0.54, oy, size, size);
+      grain(ctx, w, h, 10, true);
+    },
+
+    /* ── 3. Evaluation & benchmarking ───────────────────────────── */
+
+    // Including the number that argues against us.
+    evalBars(ctx, w, h, seed) {
+      const r = rng(seed);
+      const vary = 0.06;
+      ctx.fillStyle = css(hsl2rgb(240, 26, 98));
+      ctx.fillRect(0, 0, w, h);
+      const rows = 6, pad = h * 0.12;
+      const rh = (h - pad * 2) / rows;
+      const vals = [0.92, 0.78, 0.85, 0.34, 0.71, 0.63].map((v) => v + (r() - 0.5) * vary);
+      vals.forEach((v, i) => {
+        const y = pad + i * rh;
+        ctx.fillStyle = 'hsl(240 12% 88% / .8)';
+        ctx.fillRect(w * 0.1, y + rh * 0.24, w * 0.82, rh * 0.46);
+        const bad = i === 3;
+        ctx.fillStyle = bad ? css(hsl2rgb(34, 84, 52)) : css(hsl2rgb(178, 62, 40));
+        ctx.fillRect(w * 0.1, y + rh * 0.24, w * 0.82 * v, rh * 0.46);
+        if (bad) {
+          ctx.strokeStyle = css(hsl2rgb(34, 74, 40));
+          ctx.lineWidth = Math.max(1.2, w / 600);
+          ctx.beginPath();
+          ctx.moveTo(w * 0.1 + w * 0.82 * v, y + rh * 0.1);
+          ctx.lineTo(w * 0.1 + w * 0.82 * v, y + rh * 0.84);
+          ctx.stroke();
+        }
+      });
+      grain(ctx, w, h, 10, true);
+    },
+
+    // A gate, and the runs that did not clear it.
+    evalThreshold(ctx, w, h, seed) {
+      const r = rng(seed);
+      const fbm = makeNoise(seed);
+      ctx.fillStyle = css(hsl2rgb(240, 26, 98));
+      ctx.fillRect(0, 0, w, h);
+      const gate = h * 0.46;
+      ctx.setLineDash([Math.max(3, w / 130), Math.max(3, w / 130)]);
+      ctx.strokeStyle = css(hsl2rgb(243, 60, 50));
+      ctx.lineWidth = Math.max(1.3, w / 500);
+      ctx.beginPath();
+      ctx.moveTo(w * 0.05, gate);
+      ctx.lineTo(w * 0.95, gate);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      for (let i = 0; i < 62; i++) {
+        const t = i / 61;
+        const x = w * 0.08 + t * w * 0.84;
+        const y = h * 0.2 + (fbm(t * 7, 4, 3) * 0.9 + (r() - 0.5) * 0.3) * h * 0.58;
+        const pass = y < gate;
+        ctx.beginPath();
+        ctx.arc(x, y, Math.max(2, w / 230), 0, 6.29);
+        ctx.fillStyle = pass ? 'hsl(178 62% 38% / .78)' : 'hsl(34 84% 50% / .85)';
+        ctx.fill();
+      }
+      grain(ctx, w, h, 10, true);
+    },
+
+    // Measurement, with the uncertainty left in.
+    evalScatter(ctx, w, h, seed) {
+      const r = rng(seed);
+      const fbm = makeNoise(seed);
+      ctx.fillStyle = css(hsl2rgb(240, 26, 98));
+      ctx.fillRect(0, 0, w, h);
+      const n = 15;
+      for (let i = 0; i < n; i++) {
+        const t = i / (n - 1);
+        const x = w * 0.1 + t * w * 0.82;
+        const y = h * 0.76 - Math.pow(t, 0.7) * h * 0.5 + (fbm(t * 9, 5, 2) - 0.5) * h * 0.12;
+        const err = h * (0.04 + r() * 0.07);
+        ctx.strokeStyle = 'hsl(243 40% 58% / .45)';
+        ctx.lineWidth = Math.max(1, w / 900);
+        ctx.beginPath();
+        ctx.moveTo(x, y - err);
+        ctx.lineTo(x, y + err);
+        ctx.moveTo(x - w * 0.008, y - err);
+        ctx.lineTo(x + w * 0.008, y - err);
+        ctx.moveTo(x - w * 0.008, y + err);
+        ctx.lineTo(x + w * 0.008, y + err);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x, y, Math.max(2.2, w / 210), 0, 6.29);
+        ctx.fillStyle = css(hsl2rgb(178, 64, 36));
+        ctx.fill();
+      }
+      grain(ctx, w, h, 10, true);
+    },
+
+    // The harness catching drift before your users do.
+    evalRegression(ctx, w, h, seed) {
+      const fbm = makeNoise(seed);
+      ctx.fillStyle = css(hsl2rgb(240, 26, 98));
+      ctx.fillRect(0, 0, w, h);
+      const dip = 0.72;
+      const yAt = (t) =>
+        h * 0.4 - (fbm(t * 6, 6, 3) - 0.5) * h * 0.16 +
+        (t > dip ? Math.min(1, (t - dip) / 0.1) * h * 0.34 : 0);
+      ctx.beginPath();
+      for (let i = 0; i <= 200; i++) {
+        const t = i / 200, x = w * 0.07 + t * w * 0.86;
+        i ? ctx.lineTo(x, yAt(t)) : ctx.moveTo(x, yAt(t));
+      }
+      ctx.strokeStyle = css(hsl2rgb(178, 64, 36));
+      ctx.lineWidth = Math.max(1.6, w / 400);
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+      const dx = w * 0.07 + (dip + 0.1) * w * 0.86, dy = yAt(dip + 0.1);
+      ctx.beginPath();
+      ctx.arc(dx, dy, Math.max(7, w / 68), 0, 6.29);
+      ctx.strokeStyle = css(hsl2rgb(34, 84, 50));
+      ctx.lineWidth = Math.max(1.4, w / 520);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(dx, dy, Math.max(2.4, w / 220), 0, 6.29);
+      ctx.fillStyle = css(hsl2rgb(34, 84, 50));
+      ctx.fill();
+      grain(ctx, w, h, 10, true);
+    },
+
     facets(ctx, w, h, seed) {
       const r = rng(seed);
       const fbm = makeNoise(seed);
