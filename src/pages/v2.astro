@@ -93,12 +93,12 @@ const tooling = [
 >
   <!-- ═══ HERO ═══════════════════════════════════════════════════ -->
   <section class="hero">
-    <canvas class="hero-bg" data-backdrop="blurfield" data-seed="8812" data-dpr="1.2" aria-hidden="true"></canvas>
+    <canvas class="hero-bg" data-backdrop="blurlight" data-seed="8812" data-dpr="1.2" aria-hidden="true"></canvas>
     <div class="hero-scrim"></div>
     <div class="shell hero-in">
       <span class="eyebrow hero-eyebrow rv" data-rv>Applied AI research · since 2023</span>
       <h1 class="rv" data-rv style="--rv-delay:120ms">
-        Building research led capabilities for <em>product and enterprise teams.</em>
+        Building research led capabilities for product and enterprise teams.
       </h1>
       <p class="rv" data-rv style="--rv-delay:240ms">
         We generate the data nobody has, train the model nobody sells, and then prove it actually works.
@@ -123,7 +123,7 @@ const tooling = [
   <section class="band" id="work">
     <div class="shell">
       <span class="eyebrow rv" data-rv>What we work on</span>
-      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Three things, and we do <em>all three at depth.</em></h2>
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Three things, and we do all three at depth.</h2>
       <p class="lede rv" data-rv style="--rv-delay:160ms">
         Not a service menu. These are the three problems we have run at scale often enough to have opinions
         about, and they compose into a single pipeline: generate the data nobody has, train the model nobody
@@ -154,7 +154,7 @@ const tooling = [
     <div class="shell">
       <span class="eyebrow rv" data-rv>Who we work with</span>
       <h2 class="h2 rv" data-rv style="--rv-delay:80ms">
-        Two kinds of teams keep <em>finding their way to us.</em>
+        Two kinds of teams keep finding their way to us.
       </h2>
       <p class="lede rv" data-rv style="--rv-delay:160ms">
         They arrive with very different problems and leave with the same thing: a capability that belongs to
@@ -164,11 +164,11 @@ const tooling = [
       <div class="persona-grid">
         <article class="persona rv" data-rv data-from="left" style="--rv-delay:120ms">
           <div class="persona-art">
-            <canvas data-backdrop="facets" data-seed="6104" aria-hidden="true"></canvas>
+            <canvas data-backdrop="divergence" data-seed="6104" aria-hidden="true"></canvas>
             <span class="persona-tag">Product</span>
           </div>
           <div class="persona-body">
-            <h3>Product companies seeking <em>real differentiation</em></h3>
+            <h3>Product companies seeking real differentiation</h3>
             <p>
               Your product works, but the model behind it is the same endpoint your three closest competitors
               are calling — which means your moat is your interface. We build the layer that cannot be
@@ -182,11 +182,11 @@ const tooling = [
 
         <article class="persona rv" data-rv data-from="right" style="--rv-delay:200ms">
           <div class="persona-art">
-            <canvas data-backdrop="curves" data-seed="1937" aria-hidden="true"></canvas>
+            <canvas data-backdrop="convergence" data-seed="1937" aria-hidden="true"></canvas>
             <span class="persona-tag">Enterprise</span>
           </div>
           <div class="persona-body">
-            <h3>Enterprises integrating AI <em>structurally, not superficially</em></h3>
+            <h3>Enterprises integrating AI structurally, not superficially</h3>
             <p>
               You are past the pilot stage and the demos have stopped being interesting. We work alongside your
               existing teams to put AI into the systems the business genuinely runs on — data foundations,
@@ -207,7 +207,7 @@ const tooling = [
       <div class="open-head">
         <div class="open-head-copy">
           <span class="eyebrow rv" data-rv>Open source</span>
-          <h2 class="h2 rv" data-rv style="--rv-delay:80ms">We ship <em>openly,</em> and in public.</h2>
+          <h2 class="h2 rv" data-rv style="--rv-delay:80ms">We ship openly, and in public.</h2>
           <p class="lede rv" data-rv style="--rv-delay:160ms">
             Most of what we learn on client work ends up public in some form. Datasets we had to build because
             nothing suitable existed, weights from runs worth reproducing, and write-ups detailed enough that
@@ -245,7 +245,7 @@ const tooling = [
     <div class="shell">
       <span class="eyebrow rv" data-rv>Tooling</span>
       <h2 class="h2 rv" data-rv style="--rv-delay:80ms">
-        Alongside the data and the weights, we <em>open the tools.</em>
+        Alongside the data and the weights, we open the tools.
       </h2>
       <p class="lede rv" data-rv style="--rv-delay:160ms">
         Nearly all of this started as something we needed internally and got tired of rewriting for the next
@@ -276,7 +276,7 @@ const tooling = [
   <section class="closer">
     <canvas class="closer-bg" data-backdrop="strata" data-seed="4488" data-dpr="1.2" aria-hidden="true"></canvas>
     <div class="shell closer-in">
-      <h2 class="rv" data-rv>Bring us the problem that <em>does not fit the API.</em></h2>
+      <h2 class="rv" data-rv>Bring us the problem that does not fit the API.</h2>
       <p class="rv" data-rv style="--rv-delay:120ms">
         If an off-the-shelf model already solves it, you do not need us. If it nearly solves it and the last
         fifteen percent is the whole business, that is the conversation we want.
@@ -297,8 +297,8 @@ const tooling = [
   .hero {
     position: relative;
     overflow: hidden;
-    background: var(--n-900);
-    color: var(--n-50);
+    background: var(--n-50);
+    color: var(--ink);
   }
   .hero-bg {
     position: absolute;
@@ -306,14 +306,16 @@ const tooling = [
     width: 100%;
     height: 100%;
   }
+  /* Lifts the left third toward paper so the headline always has a
+     quiet ground, whatever the generator lands on. */
   .hero-scrim {
     position: absolute;
     inset: 0;
     background: linear-gradient(
-      105deg,
-      hsl(240 14% 8% / 0.9) 0%,
-      hsl(240 14% 8% / 0.7) 42%,
-      hsl(240 14% 8% / 0.32) 100%
+      100deg,
+      hsl(240 30% 99% / 0.92) 0%,
+      hsl(240 30% 99% / 0.74) 46%,
+      hsl(240 30% 99% / 0.28) 100%
     );
   }
   .hero-in {
@@ -322,30 +324,26 @@ const tooling = [
     padding-block: clamp(104px, 13vw, 168px) clamp(88px, 11vw, 140px);
   }
   .hero-eyebrow {
-    color: var(--teal-500);
+    color: var(--teal-700);
   }
   .hero h1 {
     margin-top: 22px;
     max-width: 17ch;
     font-family: var(--display);
-    font-size: clamp(40px, 7vw, 88px);
-    font-weight: 400;
+    font-size: clamp(40px, 6.8vw, 84px);
+    font-weight: 600;
     line-height: 1.02;
-    letter-spacing: -0.032em;
+    letter-spacing: -0.042em;
     text-wrap: balance;
-  }
-  .hero h1 em {
-    font-style: italic;
-    font-weight: 300;
-    color: var(--indigo-300);
+    color: var(--ink);
   }
   .hero p {
     margin-top: 28px;
     max-width: 54ch;
     font-size: clamp(16px, 1.6vw, 18.5px);
-    font-weight: 300;
+    font-weight: 400;
     line-height: 1.74;
-    color: hsl(240 18% 96% / 0.74);
+    color: var(--ink-3);
   }
   .hero-actions {
     display: flex;
@@ -370,13 +368,13 @@ const tooling = [
       color 400ms var(--ease);
   }
   .btn-solid {
-    background: var(--n-50);
-    color: var(--n-900);
-    border: 1px solid var(--n-50);
+    background: var(--ink);
+    color: var(--n-50);
+    border: 1px solid var(--ink);
   }
   .btn-solid:hover {
     transform: translateY(-2px);
-    background: #fff;
+    background: var(--n-800);
   }
   .btn-solid span,
   .btn-light span {
@@ -387,19 +385,20 @@ const tooling = [
     transform: translateX(4px);
   }
   .btn-quiet {
-    border: 1px solid hsl(240 18% 96% / 0.28);
-    color: hsl(240 18% 96% / 0.88);
+    border: 1px solid var(--line-2);
+    color: var(--ink-2);
+    background: hsl(240 30% 99% / 0.6);
   }
   .btn-quiet:hover {
     transform: translateY(-2px);
-    border-color: hsl(240 18% 96% / 0.6);
-    color: #fff;
+    border-color: var(--ink);
+    color: var(--ink);
   }
   .hero-strip {
     position: relative;
     z-index: 2;
-    border-top: 1px solid hsl(240 18% 96% / 0.14);
-    background: hsl(240 14% 8% / 0.55);
+    border-top: 1px solid var(--line);
+    background: hsl(240 30% 99% / 0.72);
     backdrop-filter: blur(8px);
   }
   .hero-strip-in {
@@ -412,7 +411,7 @@ const tooling = [
     font-size: 10.5px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: hsl(240 18% 96% / 0.6);
+    color: var(--ink-3);
   }
   .hero-strip-in i {
     width: 4px;
@@ -475,10 +474,10 @@ const tooling = [
   .cap h3 {
     margin-top: 14px;
     font-family: var(--display);
-    font-size: 22px;
-    font-weight: 500;
-    letter-spacing: -0.018em;
-    line-height: 1.18;
+    font-size: 21px;
+    font-weight: 600;
+    letter-spacing: -0.028em;
+    line-height: 1.2;
   }
   .cap p {
     margin-top: 15px;
@@ -518,7 +517,7 @@ const tooling = [
   }
   .persona-art {
     position: relative;
-    height: 176px;
+    height: 208px;
     overflow: hidden;
   }
   .persona-art canvas {
@@ -545,16 +544,11 @@ const tooling = [
   }
   .persona h3 {
     font-family: var(--display);
-    font-size: clamp(23px, 2.5vw, 30px);
-    font-weight: 400;
+    font-size: clamp(22px, 2.4vw, 29px);
+    font-weight: 600;
     line-height: 1.16;
-    letter-spacing: -0.022em;
+    letter-spacing: -0.034em;
     text-wrap: balance;
-  }
-  .persona h3 em {
-    font-style: italic;
-    font-weight: 300;
-    color: var(--indigo-700);
   }
   .persona p {
     margin-top: 18px;
@@ -656,9 +650,9 @@ const tooling = [
   }
   .open-body h3 {
     font-family: var(--display);
-    font-size: 20px;
-    font-weight: 500;
-    letter-spacing: -0.015em;
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -0.025em;
   }
   .open-body p {
     margin-top: 13px;
@@ -718,9 +712,9 @@ const tooling = [
   }
   .tool-name {
     font-family: var(--display);
-    font-size: 21px;
-    font-weight: 500;
-    letter-spacing: -0.02em;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
   }
   .tool-kind {
     padding-top: 7px;
@@ -774,18 +768,13 @@ const tooling = [
   }
   .closer h2 {
     margin-inline: auto;
-    max-width: 18ch;
+    max-width: 19ch;
     font-family: var(--display);
-    font-size: clamp(31px, 4.6vw, 56px);
-    font-weight: 400;
-    line-height: 1.06;
-    letter-spacing: -0.028em;
+    font-size: clamp(30px, 4.4vw, 53px);
+    font-weight: 600;
+    line-height: 1.08;
+    letter-spacing: -0.038em;
     text-wrap: balance;
-  }
-  .closer h2 em {
-    font-style: italic;
-    font-weight: 300;
-    color: var(--amber-500);
   }
   .closer p {
     margin: 24px auto 0;

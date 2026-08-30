@@ -178,6 +178,185 @@
       grain(ctx, w, h, 24, true);
     },
 
+    // Light wash for the hero. Same construction as blurfield, but the
+    // sources are tints rather than saturated hues, so ink sits on top.
+    blurlight(ctx, w, h, seed) {
+      const r = rng(seed);
+      const LIGHT = [
+        hsl2rgb(240, 30, 99),
+        hsl2rgb(243, 56, 91),
+        hsl2rgb(178, 46, 89),
+        hsl2rgb(34, 84, 90),
+        hsl2rgb(243, 40, 95),
+      ];
+      ctx.fillStyle = css(hsl2rgb(240, 30, 99));
+      ctx.fillRect(0, 0, w, h);
+      ctx.filter = `blur(${Math.round(Math.min(w, h) * 0.17)}px)`;
+      for (let i = 0; i < 9; i++) {
+        ctx.fillStyle = css(ramp(LIGHT, r()));
+        ctx.beginPath();
+        ctx.ellipse(r() * w, r() * h, w * (0.1 + r() * 0.22), h * (0.22 + r() * 0.42), r() * 3.14, 0, 6.29);
+        ctx.fill();
+      }
+      ctx.filter = 'none';
+
+      const img = ctx.getImageData(0, 0, w, h);
+      const d = img.data;
+      const L = 10;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const i = (y * w + x) * 4;
+          const bump = (BAYER8[(y & 7) * 8 + (x & 7)] / 64 - 0.5) * (255 / L);
+          for (let k = 0; k < 3; k++) {
+            const v = Math.max(0, Math.min(255, d[i + k] + bump));
+            d[i + k] = (Math.round((v / 255) * (L - 1)) / (L - 1)) * 255;
+          }
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      grain(ctx, w, h, 15, true);
+    },
+
+    // DIVERGENCE — the market converges, one line leaves.
+    // Streamlines share a flow field and are pulled toward the centre
+    // line, so the bundle tightens left to right. A single line starts
+    // inside it and picks up an increasing counter-force past mid-width.
+    divergence(ctx, w, h, seed) {
+      const fbm = makeNoise(seed);
+      ctx.fillStyle = css(hsl2rgb(240, 26, 98));
+      ctx.fillRect(0, 0, w, h);
+
+      const mid = h * 0.54;
+      const step = Math.max(2.2, w / 260);
+
+      function trace(y0, breakout) {
+        const pts = [];
+        let x = -w * 0.06;
+        let y = y0;
+        while (x < w * 1.07) {
+          const p = Math.max(0, Math.min(1, x / w));
+          // shared field
+          const a = (fbm(x / (w * 0.62), y / (h * 0.9), 3) - 0.5) * 1.15;
+          // consensus: everything is drawn toward the centre line
+          const pull = (mid - y) * 0.014 * (0.35 + p * 1.5);
+          let dy = Math.sin(a) * step * 0.85 + pull;
+          if (breakout) {
+            const t = Math.max(0, (p - 0.36) / 0.64);
+            dy -= t * t * step * 0.92; // departure, easing in
+          }
+          x += Math.cos(a) * step + step * 0.72;
+          y += dy;
+          pts.push(x, y);
+        }
+        return pts;
+      }
+
+      const N = 44;
+      for (let i = 0; i < N; i++) {
+        const t = i / (N - 1);
+        const pts = trace(h * (0.06 + t * 0.9), false);
+        ctx.beginPath();
+        ctx.moveTo(pts[0], pts[1]);
+        for (let k = 2; k < pts.length; k += 2) ctx.lineTo(pts[k], pts[k + 1]);
+        ctx.lineWidth = Math.max(0.8, w / 1500);
+        ctx.strokeStyle = `hsl(243 34% 62% / ${0.16 + Math.abs(0.5 - t) * 0.1})`;
+        ctx.stroke();
+      }
+
+      // the one that leaves
+      const lead = trace(h * 0.47, true);
+      ctx.beginPath();
+      ctx.moveTo(lead[0], lead[1]);
+      for (let k = 2; k < lead.length; k += 2) ctx.lineTo(lead[k], lead[k + 1]);
+      ctx.lineWidth = Math.max(1.8, w / 460);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = css(hsl2rgb(34, 84, 53));
+      ctx.stroke();
+
+      const ex = lead[lead.length - 2];
+      const ey = lead[lead.length - 1];
+      ctx.beginPath();
+      ctx.arc(ex, ey, Math.max(3, w / 160), 0, 6.29);
+      ctx.fillStyle = css(hsl2rgb(34, 84, 53));
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(ex, ey, Math.max(7, w / 74), 0, 6.29);
+      ctx.strokeStyle = 'hsl(34 84% 53% / .34)';
+      ctx.lineWidth = Math.max(1, w / 900);
+      ctx.stroke();
+
+      grain(ctx, w, h, 11, true);
+    },
+
+    // CONVERGENCE — loose on the outside, structured at the centre.
+    // Curves enter from every edge and terminate on the nodes of a
+    // regular lattice: many things brought in and given an order.
+    convergence(ctx, w, h, seed) {
+      const r = rng(seed);
+      ctx.fillStyle = css(hsl2rgb(240, 26, 98));
+      ctx.fillRect(0, 0, w, h);
+
+      const cols = 5;
+      const rows = 4;
+      const gw = w * 0.34;
+      const gh = h * 0.42;
+      const ox = (w - gw) / 2;
+      const oy = (h - gh) / 2;
+      const nodes = [];
+      for (let j = 0; j < rows; j++)
+        for (let i = 0; i < cols; i++)
+          nodes.push([ox + (i / (cols - 1)) * gw, oy + (j / (rows - 1)) * gh]);
+
+      // incoming, from all four edges
+      const N = 34;
+      ctx.lineWidth = Math.max(0.9, w / 1300);
+      for (let i = 0; i < N; i++) {
+        const node = nodes[(r() * nodes.length) | 0];
+        const side = (r() * 4) | 0;
+        const q = r();
+        let sx;
+        let sy;
+        if (side === 0) { sx = -w * 0.05; sy = h * q; }
+        else if (side === 1) { sx = w * 1.05; sy = h * q; }
+        else if (side === 2) { sx = w * q; sy = -h * 0.05; }
+        else { sx = w * q; sy = h * 1.05; }
+
+        const cx = sx + (node[0] - sx) * (0.28 + r() * 0.3) + (r() - 0.5) * w * 0.3;
+        const cy = sy + (node[1] - sy) * (0.28 + r() * 0.3) + (r() - 0.5) * h * 0.3;
+
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.quadraticCurveTo(cx, cy, node[0], node[1]);
+        ctx.strokeStyle = `hsl(243 40% 60% / ${0.14 + r() * 0.16})`;
+        ctx.stroke();
+      }
+
+      // the lattice they resolve onto
+      ctx.strokeStyle = 'hsl(178 62% 38% / .38)';
+      ctx.lineWidth = Math.max(0.9, w / 1400);
+      for (let j = 0; j < rows; j++) {
+        ctx.beginPath();
+        ctx.moveTo(ox, oy + (j / (rows - 1)) * gh);
+        ctx.lineTo(ox + gw, oy + (j / (rows - 1)) * gh);
+        ctx.stroke();
+      }
+      for (let i = 0; i < cols; i++) {
+        ctx.beginPath();
+        ctx.moveTo(ox + (i / (cols - 1)) * gw, oy);
+        ctx.lineTo(ox + (i / (cols - 1)) * gw, oy + gh);
+        ctx.stroke();
+      }
+      nodes.forEach(([nx, ny]) => {
+        ctx.beginPath();
+        ctx.arc(nx, ny, Math.max(2, w / 300), 0, 6.29);
+        ctx.fillStyle = css(hsl2rgb(178, 66, 34));
+        ctx.fill();
+      });
+
+      grain(ctx, w, h, 11, true);
+    },
+
     facets(ctx, w, h, seed) {
       const r = rng(seed);
       const fbm = makeNoise(seed);
