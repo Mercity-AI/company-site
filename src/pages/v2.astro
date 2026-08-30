@@ -4,22 +4,29 @@ import V2Layout from '@/layouts/V2Layout.astro';
 const capabilities = [
   {
     name: 'Synthetic Data Generation',
-    backdrop: 'halftone',
+    backdrop: 'sdTarget',
     seed: 4021,
     summary:
       'We build pipelines that produce exactly the distribution your model is missing — curriculum-controlled, deduplicated, and verified against the real task rather than against a prompt template. Millions of samples, shipped with the generation code, the filter criteria and a coverage report, so you can audit what went into the run instead of trusting it.',
   },
   {
     name: 'Custom Architecture & Training',
-    backdrop: 'contour',
+    backdrop: 'archLoss',
     seed: 9137,
     summary:
       'When the off-the-shelf model is the wrong shape, we design one that is not: modified attention, task-native tokenizers, reworked objectives, and the kernels to make them run fast. Continued pretraining through post-training, on your compute, with every checkpoint and hyperparameter decision documented and handed over.',
   },
   {
     name: 'Evaluation & Benchmarking',
-    backdrop: 'ridgeline',
+    backdrop: 'evalBars',
     seed: 2288,
+    // Undecided -- rendered with a switcher so all four can be compared in place.
+    variants: [
+      { key: 'evalBars', label: 'Bad number' },
+      { key: 'evalThreshold', label: 'Gate' },
+      { key: 'evalScatter', label: 'Error bars' },
+      { key: 'evalRegression', label: 'Drift' },
+    ],
     summary:
       'Public benchmarks rarely measure the thing you are actually paid for. We build the evaluation your problem needs — task-specific suites, adversarial probes and regression harnesses wired into CI — then run it honestly, including the results that argue against the model we just trained for you.',
   },
@@ -147,8 +154,27 @@ const tooling = [
           capabilities.map((c, i) => (
             <article class="cap rv" data-rv style={`--rv-delay:${100 + i * 90}ms`}>
               <div class="cap-art">
-                <canvas data-backdrop={c.backdrop} data-seed={c.seed} aria-hidden="true"></canvas>
+                <canvas
+                  id={c.variants ? `capArt${i}` : undefined}
+                  data-backdrop={c.backdrop}
+                  data-seed={c.seed}
+                  aria-hidden="true"
+                ></canvas>
               </div>
+              {c.variants && (
+                <div class="cap-switch" data-backdrop-switch={`#capArt${i}`} role="group" aria-label="Graphic variant">
+                  {c.variants.map((v, k) => (
+                    <button
+                      type="button"
+                      data-variant={v.key}
+                      class={k === 0 ? 'is-on' : undefined}
+                      aria-pressed={k === 0 ? 'true' : 'false'}
+                    >
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+              )}
               <div class="cap-body">
                 <span class="cap-idx">{String(i + 1).padStart(2, '0')}</span>
                 <h3>{c.name}</h3>
@@ -464,6 +490,39 @@ const tooling = [
     font-weight: 400;
     line-height: 1.76;
     color: var(--ink-3);
+  }
+
+  /* Control strip under the art -- temporary, for choosing. */
+  .cap-switch {
+    display: flex;
+    border-bottom: 1px solid var(--line);
+    background: var(--n-50);
+  }
+  .cap-switch button {
+    flex: 1;
+    padding: 8px 4px;
+    border: 0;
+    border-right: 1px solid var(--line);
+    background: transparent;
+    font-family: var(--mono);
+    font-size: 8.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    cursor: pointer;
+    transition:
+      color 300ms var(--ease),
+      background 300ms var(--ease);
+  }
+  .cap-switch button:last-child {
+    border-right: 0;
+  }
+  .cap-switch button:hover {
+    color: var(--ink);
+  }
+  .cap-switch button.is-on {
+    background: var(--indigo-100);
+    color: var(--indigo-700);
   }
 
   /* ── Who we work with ───────────────────────────────────────── */

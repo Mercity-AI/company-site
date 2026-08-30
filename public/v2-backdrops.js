@@ -1004,4 +1004,24 @@
     clearTimeout(t);
     t = setTimeout(() => canvases.forEach((cv) => cv.dataset.drawn === 'true' && draw(cv)), 200);
   });
+
+  /* ── Variant switchers ──────────────────────────────────────────
+     <div data-backdrop-switch="#someCanvas">
+       <button data-variant="evalBars">Bad number</button> ...
+     Swaps the generator on the target canvas and redraws in place. */
+  document.querySelectorAll('[data-backdrop-switch]').forEach((group) => {
+    const target = document.querySelector(group.dataset.backdropSwitch);
+    if (!target) return;
+    group.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-variant]');
+      if (!btn || !GEN[btn.dataset.variant]) return;
+      group.querySelectorAll('button[data-variant]').forEach((b) => {
+        const on = b === btn;
+        b.classList.toggle('is-on', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      target.dataset.backdrop = btn.dataset.variant;
+      draw(target);
+    });
+  });
 })();
