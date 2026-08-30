@@ -527,24 +527,23 @@
       const fbm = makeNoise(seed);
       ctx.fillStyle = css(hsl2rgb(240, 26, 98));
       ctx.fillRect(0, 0, w, h);
-      const n = 26, base = h * 0.86, pad = w * 0.08;
+      const n = 26;
+      const pad = w * 0.02;
+      const base = h * 0.97;
+      const peak = h * 0.86;
       const bw = (w - pad * 2) / n;
-      const target = (t) => Math.exp(-Math.pow((t - 0.46) * 2.5, 2)) * h * 0.6;
+      const target = (t) => Math.exp(-Math.pow((t - 0.46) * 2.5, 2)) * peak;
       for (let i = 0; i < n; i++) {
         const t = i / (n - 1);
         const hgt = target(t) * (0.86 + fbm(i / 3.5, 1.2, 2) * 0.3);
-        // Hue walks indigo -> teal across the chart, and each bar is lighter
-        // at the crown than at the base, so the block reads as depth.
-        const hue = 246 - t * 70;
-        const g = ctx.createLinearGradient(0, base - hgt, 0, base);
-        g.addColorStop(0, `hsl(${hue} 74% 64% / .95)`);
-        g.addColorStop(1, `hsl(${hue} 60% 38% / .5)`);
-        ctx.fillStyle = g;
+        ctx.fillStyle = `hsl(178 60% 40% / ${0.3 + (hgt / peak) * 0.5})`;
         ctx.fillRect(pad + i * bw + bw * 0.16, base - hgt, bw * 0.68, hgt);
       }
       ctx.beginPath();
       for (let i = 0; i <= 120; i++) {
-        const t = i / 120, x = pad + t * (w - pad * 2), y = base - target(t);
+        const t = i / 120;
+        const x = pad + t * (w - pad * 2);
+        const y = base - target(t);
         i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
       }
       ctx.setLineDash([Math.max(3, w / 130), Math.max(3, w / 130)]);
@@ -617,18 +616,22 @@
       const fbm = makeNoise(seed);
       ctx.fillStyle = css(hsl2rgb(240, 26, 98));
       ctx.fillRect(0, 0, w, h);
+      const x0 = w * 0.02;
+      const span = w * 0.96;
       ctx.strokeStyle = 'hsl(240 12% 74% / .5)';
       ctx.lineWidth = Math.max(0.8, w / 1600);
       for (let i = 1; i < 4; i++) {
         ctx.beginPath();
-        ctx.moveTo(w * 0.08, h * (0.15 + i * 0.2));
-        ctx.lineTo(w * 0.94, h * (0.15 + i * 0.2));
+        ctx.moveTo(x0, h * (0.08 + i * 0.23));
+        ctx.lineTo(x0 + span, h * (0.08 + i * 0.23));
         ctx.stroke();
       }
-      const yAt = (t) => h * 0.16 + Math.exp(-t * 3.1) * h * 0.62 + (fbm(t * 22, 2, 2) - 0.5) * h * 0.07;
+      const yAt = (t) =>
+        h * 0.07 + Math.exp(-t * 3.1) * h * 0.84 + (fbm(t * 22, 2, 2) - 0.5) * h * 0.07;
       ctx.beginPath();
       for (let i = 0; i <= 200; i++) {
-        const t = i / 200, x = w * 0.08 + t * w * 0.86;
+        const t = i / 200;
+        const x = x0 + t * span;
         i ? ctx.lineTo(x, yAt(t)) : ctx.moveTo(x, yAt(t));
       }
       ctx.strokeStyle = css(hsl2rgb(243, 66, 46));
@@ -636,9 +639,8 @@
       ctx.lineJoin = 'round';
       ctx.stroke();
       [0.22, 0.48, 0.74, 0.95].forEach((t, i) => {
-        const x = w * 0.08 + t * w * 0.86, y = yAt(t);
         ctx.beginPath();
-        ctx.arc(x, y, Math.max(2.86, w / 173), 0, 6.29);
+        ctx.arc(x0 + t * span, yAt(t), Math.max(3.15, w / 157), 0, 6.29);
         ctx.fillStyle = i === 3 ? css(hsl2rgb(34, 84, 50)) : css(hsl2rgb(178, 64, 36));
         ctx.fill();
       });
@@ -682,22 +684,22 @@
       const vary = 0.06;
       ctx.fillStyle = css(hsl2rgb(240, 26, 98));
       ctx.fillRect(0, 0, w, h);
-      const rows = 6, pad = h * 0.12;
+      const rows = 6, pad = h * 0.04;
       const rh = (h - pad * 2) / rows;
       const vals = [0.92, 0.78, 0.85, 0.34, 0.71, 0.63].map((v) => v + (r() - 0.5) * vary);
       vals.forEach((v, i) => {
         const y = pad + i * rh;
         ctx.fillStyle = 'hsl(240 12% 88% / .8)';
-        ctx.fillRect(w * 0.1, y + rh * 0.24, w * 0.82, rh * 0.46);
+        ctx.fillRect(w * 0.04, y + rh * 0.24, w * 0.92, rh * 0.46);
         const bad = i === 3;
         ctx.fillStyle = bad ? css(hsl2rgb(34, 84, 52)) : css(hsl2rgb(178, 62, 40));
-        ctx.fillRect(w * 0.1, y + rh * 0.24, w * 0.82 * v, rh * 0.46);
+        ctx.fillRect(w * 0.04, y + rh * 0.24, w * 0.92 * v, rh * 0.46);
         if (bad) {
           ctx.strokeStyle = css(hsl2rgb(34, 74, 40));
           ctx.lineWidth = Math.max(1.2, w / 600);
           ctx.beginPath();
-          ctx.moveTo(w * 0.1 + w * 0.82 * v, y + rh * 0.1);
-          ctx.lineTo(w * 0.1 + w * 0.82 * v, y + rh * 0.84);
+          ctx.moveTo(w * 0.04 + w * 0.92 * v, y + rh * 0.1);
+          ctx.lineTo(w * 0.04 + w * 0.92 * v, y + rh * 0.84);
           ctx.stroke();
         }
       });
