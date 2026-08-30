@@ -183,19 +183,19 @@
     blurlight(ctx, w, h, seed) {
       const r = rng(seed);
       const LIGHT = [
-        hsl2rgb(240, 40, 96),
-        hsl2rgb(243, 82, 71),
-        hsl2rgb(178, 70, 66),
-        hsl2rgb(34, 94, 69),
-        hsl2rgb(243, 74, 79),
+        hsl2rgb(240, 34, 97),
+        hsl2rgb(243, 60, 85),
+        hsl2rgb(178, 46, 84),
+        hsl2rgb(34, 62, 89),
+        hsl2rgb(243, 48, 91),
       ];
-      ctx.fillStyle = css(hsl2rgb(243, 58, 88));
+      ctx.fillStyle = css(hsl2rgb(243, 34, 95));
       ctx.fillRect(0, 0, w, h);
       ctx.filter = `blur(${Math.round(Math.min(w, h) * 0.17)}px)`;
-      for (let i = 0; i < 9; i++) {
+      for (let i = 0; i < 6; i++) {
         ctx.fillStyle = css(ramp(LIGHT, r()));
         ctx.beginPath();
-        ctx.ellipse(r() * w, r() * h, w * (0.1 + r() * 0.22), h * (0.22 + r() * 0.42), r() * 3.14, 0, 6.29);
+        ctx.ellipse(r() * w, r() * h, w * (0.18 + r() * 0.26), h * (0.3 + r() * 0.45), r() * 3.14, 0, 6.29);
         ctx.fill();
       }
       ctx.filter = 'none';
@@ -837,6 +837,28 @@
         ctx.stroke();
       }
       grain(ctx, w, h, 16, true);
+    },
+
+    // Curve family as a transparent overlay: no ground of its own, no
+    // grain, flipped vertically so the sweep rises. Drawn straight onto
+    // whatever is behind it, and masked by CSS so it has no edge.
+    curvesOverlay(ctx, w, h, seed) {
+      const r = rng(seed);
+      ctx.clearRect(0, 0, w, h);
+      ctx.save();
+      ctx.translate(0, h);
+      ctx.scale(1, -1);
+      ctx.lineWidth = Math.max(1.1, w / 780);
+      ctx.strokeStyle = 'hsl(243 60% 44% / .3)';
+      const ax = w * (0.78 + r() * 0.5);
+      const ay = h * (0.08 + r() * 0.3);
+      for (let i = 0; i < 13; i++) {
+        ctx.beginPath();
+        ctx.moveTo(-w * 0.05, h * (-0.15 + i * 0.115));
+        ctx.quadraticCurveTo(ax, ay + i * h * 0.075, w * 1.1, h * (0.55 + i * 0.06));
+        ctx.stroke();
+      }
+      ctx.restore();
     },
 
     contour(ctx, w, h, seed) {

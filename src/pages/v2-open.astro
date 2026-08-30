@@ -2,10 +2,12 @@
 import V2Layout from '@/layouts/V2Layout.astro';
 
 /**
- * Open-source section, vertical treatment.
- * One bordered object: a full-height block on the left carrying the
- * argument, and three panels stacked flush on the right sharing their
- * edges. Separate route so /v2 is untouched.
+ * Open-source section, two treatments on one page for comparison.
+ *
+ * A — sticky left column, panels stacked as separate cards with gaps.
+ * B — one bordered object, left block full height, panels flush.
+ *
+ * Separate route so /v2 is untouched. Both run the same content.
  */
 
 const shipped = [
@@ -31,230 +33,333 @@ const shipped = [
     copy: 'Long-form accounts of what worked, what did not, and the specific reason why — implementation detail included, because that is reliably the part every other post leaves out and the part you need in order to reproduce it.',
   },
 ];
+
+const heading = 'Most of what we learn on client work ends up public in some form.';
+const note =
+  'Datasets we had to build because nothing suitable existed, weights from runs worth reproducing, and write-ups detailed enough to follow end to end. Take it, fork it, and tell us where we got it wrong.';
 ---
 
-<V2Layout title="Mercity — Open source, vertical" description="Vertical treatment of the open-source section.">
+<V2Layout title="Mercity — Open source, two treatments" description="Two treatments of the open-source section.">
   <div class="note-bar">
     <div class="shell note-bar-in">
-      <span>Open-source section, vertical treatment. Full page at <a href="/v2">/v2</a>.</span>
-      <span>One object — panels stacked flush</span>
+      <span>Open-source section, two treatments. Full page at <a href="/v2">/v2</a>.</span>
+      <span>A — separate cards, sticky left · B — one flush object</span>
     </div>
   </div>
 
-  <section class="band osv">
-    <div class="shell osv-in">
-      <div class="osv-left">
-        <div>
-          <span class="osv-eyebrow rv" data-rv>Open source</span>
-          <h2 class="rv" data-rv style="--rv-delay:80ms">
-            Most of what we learn on client work ends up public in some form.
-          </h2>
-        </div>
-        <div class="osv-foot">
-          <p class="osv-note rv" data-rv style="--rv-delay:160ms">
-            Datasets we had to build because nothing suitable existed, weights from runs worth reproducing, and
-            write-ups detailed enough to follow end to end. Take it, fork it, and tell us where we got it wrong.
-          </p>
-          <a class="osv-cta rv" data-rv style="--rv-delay:240ms" href="/open-source/simula">
-            <span class="osv-cta-fill"></span>
-            <span class="osv-cta-label">Explore our open work</span>
-            <span class="osv-cta-label" aria-hidden="true">→</span>
+  <!-- ═══ A — sticky left, panels as separate cards ═══════════════ -->
+  <section class="band osA">
+    <div class="shell">
+      <p class="treat-label">Treatment A — sticky left column, panels as separate cards</p>
+      <div class="osA-in">
+        <div class="osA-left">
+          <span class="osA-eyebrow rv" data-rv>Open source</span>
+          <h2 class="rv" data-rv style="--rv-delay:80ms">{heading}</h2>
+          <p class="osA-note rv" data-rv style="--rv-delay:160ms">{note}</p>
+          <a class="osA-cta rv" data-rv style="--rv-delay:240ms" href="/open-source/simula">
+            <span class="osA-cta-fill"></span>
+            <span class="osA-cta-label">Explore our open work</span>
+            <span class="osA-cta-label" aria-hidden="true">→</span>
           </a>
         </div>
-      </div>
 
-      <div class="osv-right">
-        {
-          shipped.map((o, i) => (
-            <article class="osp rv" data-rv style={`--rv-delay:${100 + i * 90}ms`}>
-              <div class="osp-head">
+        <div class="osA-right">
+          {
+            shipped.map((o, i) => (
+              <article class="osAp rv" data-rv style={`--rv-delay:${100 + i * 90}ms`}>
                 <h3>{o.title}</h3>
-              </div>
-              <figure class="osp-art">
-                <canvas data-backdrop={o.backdrop} data-seed={o.seed} aria-hidden="true"></canvas>
-              </figure>
-              <p>{o.copy}</p>
-              <span class="osp-meta">{o.meta}</span>
-            </article>
-          ))
-        }
+                <figure class="osAp-art">
+                  <canvas data-backdrop={o.backdrop} data-seed={o.seed} aria-hidden="true"></canvas>
+                </figure>
+                <p>{o.copy}</p>
+                <span class="osAp-meta">{o.meta}</span>
+              </article>
+            ))
+          }
+        </div>
       </div>
     </div>
   </section>
 
-  <style is:global>
-    .note-bar {
-      background: var(--n-900);
-      color: hsl(240 18% 96% / 0.72);
-    }
-    .note-bar-in {
-      display: flex;
-      justify-content: space-between;
-      gap: 18px;
-      flex-wrap: wrap;
-      padding-block: 11px;
-      font-family: var(--mono);
-      font-size: 9.9px;
-      letter-spacing: 0.06em;
-    }
-    .note-bar a {
-      color: var(--teal-500);
-    }
-  
-    .osv {
-      background: var(--ground);
-    }
+  <!-- ═══ B — one bordered object, panels flush ═══════════════════ -->
+  <section class="band osB">
+    <div class="shell">
+      <p class="treat-label">Treatment B — one bordered object, panels flush</p>
+      <div class="osB-in">
+        <div class="osB-left">
+          <div>
+            <span class="osB-eyebrow rv" data-rv>Open source</span>
+            <h2 class="rv" data-rv style="--rv-delay:80ms">{heading}</h2>
+          </div>
+          <div class="osB-foot">
+            <p class="osB-note rv" data-rv style="--rv-delay:160ms">{note}</p>
+            <a class="osB-cta rv" data-rv style="--rv-delay:240ms" href="/open-source/simula">
+              <span class="osB-cta-fill"></span>
+              <span class="osB-cta-label">Explore our open work</span>
+              <span class="osB-cta-label" aria-hidden="true">→</span>
+            </a>
+          </div>
+        </div>
 
-    /* The whole thing is one bordered object; every internal edge is
-       shared rather than gapped. */
-    .osv-in {
-      display: grid;
-      grid-template-columns: 0.78fr 1.22fr;
-      align-items: stretch;
-      border: 1px solid var(--line-2);
-      background: var(--surface);
-    }
-    @media (max-width: 1000px) {
-      .osv-in {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .osv-left {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 38px 34px 36px;
-      background: var(--n-100);
-      border-right: 1px solid var(--line-2);
-    }
-    @media (max-width: 1000px) {
-      .osv-left {
-        border-right: 0;
-        border-bottom: 1px solid var(--line-2);
-      }
-    }
-    .osv-eyebrow {
-      display: inline-block;
-      align-self: flex-start;
-      padding-bottom: 5px;
-      border-bottom: 1px solid var(--line-2);
-      font-family: var(--mono);
-      font-size: 9.9px;
-      font-weight: 500;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--ink-3);
-    }
-    .osv-left h2 {
-      margin-top: 24px;
-      max-width: 17ch;
-      font-family: var(--hero-serif);
-      font-size: clamp(26px, 3.2vw, 38px);
-      font-weight: 400;
-      line-height: 1.14;
-      letter-spacing: -0.02em;
-      color: var(--ink);
-      text-wrap: balance;
-    }
-    .osv-foot {
-      margin-top: 44px;
-    }
-    .osv-note {
-      max-width: 42ch;
-      font-size: 14.4px;
-      line-height: 1.76;
-      color: var(--ink-3);
-    }
-    .osv-cta {
-      position: relative;
-      overflow: hidden;
-      display: inline-flex;
-      align-items: center;
-      gap: 9px;
-      margin-top: 26px;
-      padding: 14.5px 25.2px;
-      border: 1px solid var(--ink);
-      font-size: 11.2px;
-      font-weight: 500;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      transition: color 300ms var(--ease);
-    }
-    .osv-cta-fill {
-      position: absolute;
-      inset: 0;
-      background: var(--ink);
-      transform: translateX(-100%);
-      transition: transform 350ms var(--ease);
-    }
-    .osv-cta-label {
-      position: relative;
-      z-index: 1;
-    }
-    .osv-cta:hover {
-      color: var(--n-50);
-    }
-    .osv-cta:hover .osv-cta-fill {
-      transform: translateX(0);
-    }
-
-    .osv-right {
-      display: flex;
-      flex-direction: column;
-    }
-    /* Flush: each panel is divided by one shared hairline, not a gap. */
-    .osp {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      min-height: 300px;
-      padding: 28px 30px 30px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--line);
-      transition: background 500ms var(--ease);
-    }
-    .osp:last-child {
-      border-bottom: 0;
-    }
-    .osp:hover {
-      background: var(--n-50);
-    }
-    .osp-head {
-      display: flex;
-      align-items: flex-start;
-    }
-    .osp h3 {
-      max-width: 15ch;
-      font-family: var(--hero-serif);
-      font-size: clamp(20px, 2.1vw, 25px);
-      font-weight: 400;
-      line-height: 1.2;
-      letter-spacing: -0.014em;
-      color: var(--ink);
-    }
-    .osp-art {
-      flex: 1;
-      margin: 22px 0 0;
-      min-height: 96px;
-    }
-    .osp-art canvas {
-      width: 100%;
-      height: 100%;
-    }
-    .osp > p {
-      margin-top: 22px;
-      max-width: 62ch;
-      font-size: 13.5px;
-      line-height: 1.72;
-      color: var(--ink-2);
-    }
-    .osp-meta {
-      margin-top: 14px;
-      font-family: var(--mono);
-      font-size: 9.9px;
-      letter-spacing: 0.08em;
-      color: var(--n-400);
-    }
-  </style>
+        <div class="osB-right">
+          {
+            shipped.map((o, i) => (
+              <article class="osBp rv" data-rv style={`--rv-delay:${100 + i * 90}ms`}>
+                <h3>{o.title}</h3>
+                <figure class="osBp-art">
+                  <canvas data-backdrop={o.backdrop} data-seed={o.seed + 7} aria-hidden="true"></canvas>
+                </figure>
+                <p>{o.copy}</p>
+                <span class="osBp-meta">{o.meta}</span>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </section>
 </V2Layout>
+
+<style is:global>
+  .note-bar {
+    background: var(--n-900);
+    color: hsl(240 18% 96% / 0.72);
+  }
+  .note-bar-in {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+    padding-block: 11px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    letter-spacing: 0.06em;
+  }
+  .note-bar a {
+    color: var(--teal-500);
+  }
+  .treat-label {
+    margin-bottom: 30px;
+    padding-bottom: 9px;
+    border-bottom: 1px solid var(--line-2);
+    font-family: var(--mono);
+    font-size: 9.9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--indigo-600);
+  }
+
+  /* ── Shared by both treatments ──────────────────────────────── */
+  .osA-eyebrow,
+  .osB-eyebrow {
+    display: inline-block;
+    align-self: flex-start;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--line-2);
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .osA-left h2,
+  .osB-left h2 {
+    margin-top: 24px;
+    max-width: 17ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(26px, 3.2vw, 38px);
+    font-weight: 400;
+    line-height: 1.14;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+  .osA-note,
+  .osB-note {
+    max-width: 44ch;
+    font-size: 14.4px;
+    line-height: 1.76;
+    color: var(--ink-3);
+  }
+  .osA-cta,
+  .osB-cta {
+    position: relative;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 26px;
+    padding: 14.5px 25.2px;
+    border: 1px solid var(--ink);
+    font-size: 11.2px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transition: color 300ms var(--ease);
+  }
+  .osA-cta-fill,
+  .osB-cta-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--ink);
+    transform: translateX(-100%);
+    transition: transform 350ms var(--ease);
+  }
+  .osA-cta-label,
+  .osB-cta-label {
+    position: relative;
+    z-index: 1;
+  }
+  .osA-cta:hover,
+  .osB-cta:hover {
+    color: var(--n-50);
+  }
+  .osA-cta:hover .osA-cta-fill,
+  .osB-cta:hover .osB-cta-fill {
+    transform: translateX(0);
+  }
+  .osAp h3,
+  .osBp h3 {
+    max-width: 16ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(20px, 2.1vw, 25px);
+    font-weight: 400;
+    line-height: 1.2;
+    letter-spacing: -0.014em;
+    color: var(--ink);
+  }
+  .osAp-art,
+  .osBp-art {
+    flex: 1;
+    margin: 22px 0 0;
+    min-height: 96px;
+  }
+  .osAp-art canvas,
+  .osBp-art canvas {
+    width: 100%;
+    height: 100%;
+  }
+  .osAp > p,
+  .osBp > p {
+    margin-top: 22px;
+    max-width: 62ch;
+    font-size: 13.5px;
+    line-height: 1.72;
+    color: var(--ink-2);
+  }
+  .osAp-meta,
+  .osBp-meta {
+    margin-top: 14px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    letter-spacing: 0.08em;
+    color: var(--n-400);
+  }
+
+  /* ── A: sticky left, separate cards ─────────────────────────── */
+  .osA {
+    background: var(--n-100);
+  }
+  .osA-in {
+    display: grid;
+    grid-template-columns: 0.82fr 1.18fr;
+    gap: 56px;
+    align-items: start;
+  }
+  @media (max-width: 1000px) {
+    .osA-in {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+  }
+  .osA-left {
+    position: sticky;
+    top: 108px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  @media (max-width: 1000px) {
+    .osA-left {
+      position: static;
+    }
+  }
+  .osA-note {
+    margin-top: 22px;
+  }
+  .osA-right {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .osAp {
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
+    padding: 28px 30px 30px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    transition:
+      border-color 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  .osAp:hover {
+    border-color: var(--line-2);
+    box-shadow: 0 14px 34px -26px hsl(240 14% 10% / 0.26);
+  }
+
+  /* ── B: one object, flush panels ────────────────────────────── */
+  .osB {
+    background: var(--ground);
+  }
+  .osB-in {
+    display: grid;
+    grid-template-columns: 0.78fr 1.22fr;
+    align-items: stretch;
+    border: 1px solid var(--line-2);
+    background: var(--surface);
+  }
+  @media (max-width: 1000px) {
+    .osB-in {
+      grid-template-columns: 1fr;
+    }
+  }
+  .osB-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 38px 34px 36px;
+    background: var(--n-100);
+    border-right: 1px solid var(--line-2);
+  }
+  @media (max-width: 1000px) {
+    .osB-left {
+      border-right: 0;
+      border-bottom: 1px solid var(--line-2);
+    }
+  }
+  .osB-foot {
+    margin-top: 44px;
+  }
+  .osB-right {
+    display: flex;
+    flex-direction: column;
+  }
+  /* Flush: one shared hairline between panels, no gaps. */
+  .osBp {
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
+    padding: 28px 30px 30px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    transition: background 500ms var(--ease);
+  }
+  .osBp:last-child {
+    border-bottom: 0;
+  }
+  .osBp:hover {
+    background: var(--n-50);
+  }
+</style>
