@@ -853,8 +853,10 @@
         // The plate is the full hero now, so these are fractions of the
         // hero's own height. The lowest lines bleed past the bottom and
         // get clipped, which reads as the family continuing.
-        const y0 = h * (0.82 + t * 0.3);
-        const y1 = h * (0.64 + t * 0.26);
+        // 20% tighter than before, anchored at the bottom line, so the
+        // family closes up and its top edge drops with it.
+        const y0 = h * (0.88 + t * 0.24);
+        const y1 = h * (0.692 + t * 0.208);
         ctx.beginPath();
         ctx.moveTo(-w * 0.04, y0);
         ctx.bezierCurveTo(
