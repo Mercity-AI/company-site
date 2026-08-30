@@ -850,8 +850,10 @@
       const drift = 0.12 + r() * 0.1;
       for (let i = 0; i < N; i++) {
         const t = i / (N - 1);
-        const y0 = h * (0.34 + t * 0.6);
-        const y1 = h * (0.06 + t * 0.52);
+        // Sitting low in the frame; the last line bleeds off the bottom,
+        // which the hero clips, so the family reads as continuing.
+        const y0 = h * (0.6 + t * 0.46);
+        const y1 = h * (0.32 + t * 0.4);
         ctx.beginPath();
         ctx.moveTo(-w * 0.04, y0);
         ctx.bezierCurveTo(
