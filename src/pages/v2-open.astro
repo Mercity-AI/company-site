@@ -7,7 +7,7 @@ import V2Layout from '@/layouts/V2Layout.astro';
  * A — sticky left column, panels stacked as separate cards with gaps.
  * B — one bordered object, left block full height, panels flush.
  *
- * Separate route so /v2 is untouched. Both run the same content.
+ * Separate route so the home page is untouched. Both run the same content.
  */
 
 const shipped = [
@@ -39,10 +39,10 @@ const note =
   'Datasets we had to build because nothing suitable existed, weights from runs worth reproducing, and write-ups detailed enough to follow end to end. Take it, fork it, and tell us where we got it wrong.';
 ---
 
-<V2Layout title="Mercity — Open source, two treatments" description="Two treatments of the open-source section.">
+<V2Layout title="Open source, two treatments" description="Two treatments of the open-source section." noindex>
   <div class="note-bar">
     <div class="shell note-bar-in">
-      <span>Open-source section, two treatments. Full page at <a href="/v2">/v2</a>.</span>
+      <span>Open-source section, two treatments. Full page at <a href="/">/</a>.</span>
       <span>A — separate cards, sticky left · B — one flush object</span>
     </div>
   </div>
@@ -52,7 +52,7 @@ const note =
     <div class="shell">
       <p class="treat-label">Treatment A — sticky left column, panels as separate cards</p>
       <div class="osA-in">
-        <div class="osA-left">
+        <div class="osA-left" data-vsticky="108">
           <span class="osA-eyebrow rv" data-rv>Open source</span>
           <h2 class="rv" data-rv style="--rv-delay:80ms">{heading}</h2>
           <p class="osA-note rv" data-rv style="--rv-delay:160ms">{note}</p>
@@ -276,11 +276,18 @@ const note =
   .osA-left {
     position: sticky;
     top: 108px;
+    will-change: transform;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
   }
+  /* Under virtual scroll the layout script emulates the stick via
+     transform (see data-vsticky), so hand it a relative box. */
+  html[data-vscroll] .osA-left {
+    position: relative;
+  }
   @media (max-width: 1000px) {
+    html[data-vscroll] .osA-left,
     .osA-left {
       position: static;
     }
@@ -301,12 +308,14 @@ const note =
     background: var(--surface);
     border: 1px solid var(--line);
     transition:
+      transform 500ms var(--ease),
       border-color 500ms var(--ease),
       box-shadow 500ms var(--ease);
   }
   .osAp:hover {
-    border-color: var(--line-2);
-    box-shadow: 0 14px 34px -26px hsl(240 14% 10% / 0.26);
+    transform: translateY(-1.2px);
+    border-color: var(--ink-3);
+    box-shadow: 0 4px 9px -7px hsl(240 14% 10% / 0.07);
   }
 
   /* ── B: one object, flush panels ────────────────────────────── */
@@ -399,8 +408,5 @@ const note =
   }
   .osBp:last-child {
     border-bottom: 0;
-  }
-  .osBp:hover {
-    background: var(--n-50);
   }
 </style>

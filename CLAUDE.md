@@ -6,23 +6,25 @@ redesign work stands.
 
 ## Branch
 
-`redesign`, branched from `astro-migration`. The shipping site and the V2
-experiment live side by side; nothing on `/v2*` can affect `/`.
+`redesign`, branched from `astro-migration`. V2 is now the home page; the
+previous home is parked at `/legacy`. The inner pages still use
+`BaseLayout`, so the two shells live side by side.
 
 ## Routes
 
 | Route | What it is |
 |---|---|
-| `/` | The shipping landing page. Redesigned sections, original hero. |
-| `/v2` | Landing page V2. Standalone experiment, own layout and type stack. |
+| `/` | The landing page. Formerly `/v2`; `src/pages/index.astro` on `V2Layout`. |
+| `/legacy` | The previous home page, retired. `noindex`, kept for comparison. |
+| `/v2` | Redirects to `/`. |
 | `/v2-open` | Two treatments of the open-source section, A and B, for comparison. |
 | `/design.html` | Design lab. Static file in `public/`, no Astro layout. |
-| `/blog`, `/research`, `/about`, `/contact`, `/open-source/simula` | Unchanged. |
+| `/blog`, `/research`, `/about`, `/contact`, `/open-source/simula` | Unchanged, on `BaseLayout`. |
 
-`/v2*` and `/design.html` are `noindex`. They are working surfaces, not
-shipping pages.
+`/legacy`, `/v2-open` and `/design.html` are `noindex` and excluded from the
+sitemap. They are working surfaces, not shipping pages.
 
-## The shipping page (`/`)
+## The legacy page (`/legacy`)
 
 Sections in order: hero → what we work on → who we work with → we ship
 openly → tooling. `BentoGrid`, "Research to Enterprise", "Latest
@@ -43,10 +45,12 @@ delete that block and the hero scales with everything else.
 Media-query breakpoints resolve against the browser default and are
 deliberately unaffected by the root font-size.
 
-## V2 (`/v2`)
+## V2 (`/`)
 
 Standalone. `src/layouts/V2Layout.astro` does **not** extend `BaseLayout`,
-carries no `ClientRouter`, and scopes its own palette and fonts.
+carries no `ClientRouter`, and scopes its own palette and fonts. It carries
+its own copy of the SEO head (title/OG/canonical via `src/utils/seo.ts`),
+Clarity and gtag, and accepts `noindex` for working surfaces.
 
 **Palette** — three hues chosen off the wheel from the existing indigo,
 documented on `/design.html`:
@@ -71,7 +75,15 @@ sans did at the same size.
 collapses and re-forms as a centred 792px pill on the inner bar, which loses
 20% of its height. The bar's pill is the only rounded corner left; every
 button is square. Both hero buttons and both CTAs wipe black left to right
-on hover.
+on hover. Links are the site's real routes (Research, Blog, Open source,
+About, plus the Contact CTA), declared once as `navLinks` in the layout and
+reused by the mobile sheet. Below 900px the link row hides behind a square
+menu button; the sheet opens under the bar, pins the header back to its
+full-bleed state, and closes on link click, Escape, or resize past 900px.
+Below 480px the CTA hides too and "Contact us" lives in the sheet.
+
+**Footer** — three columns (brand, Site, Connect) over a copyright/legal
+strip. Same links as the `BaseLayout` footer.
 
 **Hero** — exactly one viewport. `min-height: calc(100vh - var(--nav-h))`,
 declared again in `svh` so mobile does not count the URL bar, with the content
@@ -108,7 +120,7 @@ A variant switcher is supported but currently unused:
 </div>
 ```
 
-**In use on `/v2`:**
+**In use on `/`:**
 
 | Generator | Where | What it says |
 |---|---|---|
@@ -178,5 +190,5 @@ silently.
 ## Still placeholder
 
 Assay, Sieve and Anvil are invented; only Simula is real. Every number on
-`/v2` is fabricated — "14 releases", "9 checkpoints", "30+ write-ups",
-"6–14 weeks". These need replacing before V2 could ship.
+`/` is fabricated — "14 releases", "9 checkpoints", "30+ write-ups",
+"6–14 weeks". These are now live on the home page and need replacing.

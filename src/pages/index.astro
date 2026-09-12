@@ -1,356 +1,878 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import HeroSection from '@/components/HeroSection';
-import Reveal from '@/components/Reveal.astro';
+import V2Layout from '@/layouts/V2Layout.astro';
+
+const capabilities = [
+  {
+    name: 'Synthetic Data Generation',
+    backdrop: 'sdTarget',
+    seed: 4021,
+    summary:
+      'We build pipelines that produce exactly the distribution your model is missing — curriculum-controlled, deduplicated, and verified against the real task rather than against a prompt template. Millions of samples, shipped with the generation code, the filter criteria and a coverage report, so you can audit what went into the run instead of trusting it.',
+  },
+  {
+    name: 'Custom Architecture & Training',
+    backdrop: 'archLoss',
+    seed: 9137,
+    summary:
+      'When the off-the-shelf model is the wrong shape, we design one that is not: modified attention, task-native tokenizers, reworked objectives, and the kernels to make them run fast. Continued pretraining through post-training, on your compute, with every checkpoint and hyperparameter decision documented and handed over.',
+  },
+  {
+    name: 'Evaluation & Benchmarking',
+    backdrop: 'evalBars',
+    seed: 2288,
+    summary:
+      'Public benchmarks rarely measure the thing you are actually paid for. We build the evaluation your problem needs — task-specific suites, adversarial probes and regression harnesses wired into CI — then run it honestly, including the results that argue against the model we just trained for you.',
+  },
+];
+
+const personas = [
+  {
+    label: 'For product teams',
+    title: 'Differentiation you cannot buy off a shelf.',
+    copy: 'Your model is the same endpoint your three closest competitors are calling, which means your moat is your interface. We build the layer that is not for sale.',
+    backdrop: 'divergence',
+    seed: 6104,
+    facts: ['6–14 weeks', 'You own the weights'],
+  },
+  {
+    label: 'For enterprises',
+    title: 'AI inside the systems the business runs on.',
+    copy: 'Past the pilot stage, where the demos have stopped being interesting. Data foundations, evaluation gates and serving architecture, built alongside your engineers.',
+    backdrop: 'structure',
+    seed: 1937,
+    facts: ['Embedded teams', 'Capability stays behind'],
+  },
+];
+
+const openWork = [
+  {
+    name: 'Datasets',
+    backdrop: 'strata',
+    seed: 771,
+    meta: '14 releases · HuggingFace',
+    href: '/open-source/simula',
+    summary:
+      'Curated and synthetic corpora released with the generation code, the filtering criteria and the failure modes we already know about — so you can judge whether a set fits your problem before you spend a training run finding out.',
+  },
+  {
+    name: 'Models',
+    backdrop: 'isoline',
+    seed: 5410,
+    meta: '9 checkpoints · Apache-2.0',
+    href: '/open-source/simula',
+    summary:
+      'Checkpoints, adapters and complete training recipes from experiments we think are worth reproducing — published with the evaluation numbers that convinced us to keep them, and the ablations that did not make the cut.',
+  },
+  {
+    name: 'Research',
+    backdrop: 'contour',
+    seed: 3364,
+    meta: '30+ write-ups · Updated weekly',
+    href: '/research',
+    summary:
+      'Long-form write-ups of what worked, what did not, and the specific reason why — implementation detail included, because that is reliably the part every other post leaves out and the part you need in order to reproduce it.',
+  },
+];
 
 const tooling = [
   {
     name: 'Simula',
     kind: 'Python',
-    link: '/open-source/simula',
+    href: '/open-source/simula',
     summary:
       'Deliberate synthetic data generation. Describe the distribution you want as a spec, and Simula plans, generates and verifies a corpus against it.',
   },
   {
     name: 'Assay',
     kind: 'Python',
-    link: '/open-source/simula',
+    href: '/open-source/simula',
     summary:
       'An evaluation harness for task-specific benchmarks. Define graders once, run them across models and checkpoints, and diff results across a training run.',
   },
   {
     name: 'Sieve',
     kind: 'Rust · Python',
-    link: '/open-source/simula',
+    href: '/open-source/simula',
     summary:
       'Corpus filtering and near-duplicate detection at billion-document scale, with every decision traceable back to the rule that made it.',
   },
   {
     name: 'Anvil',
     kind: 'CUDA · Triton',
-    link: '/open-source/simula',
+    href: '/open-source/simula',
     summary:
       'Fused kernels and training utilities for architectures that do not fit the standard stack, benchmarked against the reference implementation on every commit.',
   },
 ];
-
 ---
 
-<BaseLayout
+<V2Layout
   title="Mercity Research"
-  description="Research-grade, reality-ready. Shipping the research to production. Custom training, real optimization, genuine architecture."
   path="/"
-  showBlur={false}
+  description="Research-led capabilities for product and enterprise teams. Synthetic data, custom training, and evaluation that tells the truth."
 >
-  <div class="w-full overflow-hidden">
-    <HeroSection client:load />
-
-    <!-- What we work on -->
-    <section id="capabilities" class="py-32 bg-white/40 backdrop-blur-sm">
-      <div class="max-w-7xl mx-auto page-gutter">
-        <Reveal as="span" class="block text-[0.625rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
-          What we work on
-        </Reveal>
-        <Reveal delay={80}>
-          <h2 class="mt-4 max-w-[20ch] text-3xl md:text-[2.75rem] font-light leading-[1.14] tracking-tight text-slate-900 text-balance">
-            Three things, and we do <em class="font-serif italic text-slate-600">all three at depth.</em>
-          </h2>
-        </Reveal>
-        <Reveal delay={160}>
-          <p class="mt-6 max-w-[60ch] text-[1.0625rem] font-light leading-[1.72] text-slate-500">
-            Not a service menu. These are the three problems we have run at scale often enough to have opinions
-            about, and they compose into a single pipeline: generate the data nobody has, train the model nobody
-            sells, then prove it actually works.
-          </p>
-        </Reveal>
-
-        <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-px bg-slate-200 border border-slate-200">
-          <Reveal delay={100}>
-            <article class="group h-full bg-white p-10 lg:p-11 transition-colors duration-500 hover:bg-slate-50/70">
-              <svg class="w-8 h-8 text-slate-700" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.25">
-                <circle cx="8" cy="8" r="2.5" />
-                <circle cx="24" cy="8" r="2.5" />
-                <circle cx="16" cy="16" r="2.5" />
-                <circle cx="8" cy="24" r="2.5" />
-                <circle cx="24" cy="24" r="2.5" />
-                <path d="M10 9.6 14 14.4M22 9.6 18 14.4M10 22.4 14 17.6M22 22.4 18 17.6" />
-              </svg>
-              <h3 class="mt-7 text-xl font-medium tracking-tight text-slate-900">Synthetic Data Generation</h3>
-              <div class="mt-4 h-px w-7 bg-indigo-600/70 transition-all duration-500 group-hover:w-14"></div>
-              <p class="mt-5 text-[0.9375rem] font-light leading-[1.75] text-slate-500">
-                We build pipelines that produce exactly the distribution your model is missing —
-                curriculum-controlled, deduplicated, and verified against the real task rather than against a
-                prompt template. Millions of samples, shipped with the generation code, the filter criteria and a
-                coverage report, so you can audit what went into the run instead of trusting it.
-              </p>
-            </article>
-          </Reveal>
-
-          <Reveal delay={190}>
-            <article class="group h-full bg-white p-10 lg:p-11 transition-colors duration-500 hover:bg-slate-50/70">
-              <svg class="w-8 h-8 text-slate-700" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.25">
-                <rect x="4" y="4" width="24" height="24" rx="1.5" />
-                <path d="M4 12h24M4 20h24M12 4v24M20 4v24" />
-                <rect x="12" y="12" width="8" height="8" fill="currentColor" stroke="none" opacity="0.14" />
-              </svg>
-              <h3 class="mt-7 text-xl font-medium tracking-tight text-slate-900">Custom Architecture &amp; Training</h3>
-              <div class="mt-4 h-px w-7 bg-indigo-600/70 transition-all duration-500 group-hover:w-14"></div>
-              <p class="mt-5 text-[0.9375rem] font-light leading-[1.75] text-slate-500">
-                When the off-the-shelf model is the wrong shape, we design one that is not: modified attention,
-                task-native tokenizers, reworked objectives, and the kernels to make them run fast. Continued
-                pretraining through post-training, on your compute, with every checkpoint and hyperparameter
-                decision documented and handed over at the end.
-              </p>
-            </article>
-          </Reveal>
-
-          <Reveal delay={280}>
-            <article class="group h-full bg-white p-10 lg:p-11 transition-colors duration-500 hover:bg-slate-50/70">
-              <svg class="w-8 h-8 text-slate-700" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.25">
-                <path d="M4 26h24" />
-                <rect x="7" y="17" width="4.5" height="9" />
-                <rect x="14" y="10" width="4.5" height="16" />
-                <rect x="21" y="20" width="4.5" height="6" />
-                <path d="M6 7l5 4 6-5 8 3" stroke-dasharray="2 2" />
-              </svg>
-              <h3 class="mt-7 text-xl font-medium tracking-tight text-slate-900">Evaluation &amp; Benchmarking</h3>
-              <div class="mt-4 h-px w-7 bg-indigo-600/70 transition-all duration-500 group-hover:w-14"></div>
-              <p class="mt-5 text-[0.9375rem] font-light leading-[1.75] text-slate-500">
-                Public benchmarks rarely measure the thing you are actually paid for. We build the evaluation your
-                problem needs — task-specific suites, adversarial probes and regression harnesses wired into CI —
-                then run it honestly, including the results that argue against the model we just trained for you.
-              </p>
-            </article>
-          </Reveal>
-        </div>
+  <!-- ═══ HERO ═══════════════════════════════════════════════════ -->
+  <section class="hero">
+    <canvas class="hero-bg" data-backdrop="blurlight" data-seed="8812" data-dpr="1.2" aria-hidden="true"></canvas>
+    <div class="hero-scrim"></div>
+    <div class="shell hero-in">
+      <h1 class="rv" data-rv style="--rv-delay:120ms">
+        Building research led capabilities for product and enterprise teams.
+      </h1>
+      <p class="rv" data-rv style="--rv-delay:240ms">
+        We generate the data nobody has, train the model nobody sells, and then prove it actually works.
+        Custom training, real optimization and built-from-scratch architecture — anything that gives you an
+        edge the market cannot buy off a shelf.
+      </p>
+      <div class="hero-actions rv" data-rv style="--rv-delay:360ms">
+        <a class="btn-solid" href="#work">See what we do<span aria-hidden="true">→</span></a>
+        <a class="btn-quiet" href="/research">
+          <span class="btn-fill"></span>
+          <span class="btn-label">Read our research</span>
+        </a>
       </div>
-    </section>
+    </div>
+    <figure class="hero-plate" aria-hidden="true">
+      <canvas data-backdrop="heroCurves" data-seed="5521" data-dpr="1.3"></canvas>
+    </figure>
+  </section>
 
-    <!-- Who we work with -->
-    <section id="who-we-work-with" class="py-32 border-t border-slate-100 bg-slate-50/60">
-      <div class="max-w-7xl mx-auto page-gutter">
-        <Reveal as="span" class="block text-[0.625rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
-          Who we work with
-        </Reveal>
-        <Reveal delay={80}>
-          <h2 class="mt-4 max-w-[22ch] text-3xl md:text-[2.75rem] font-light leading-[1.14] tracking-tight text-slate-900 text-balance">
-            Two kinds of teams keep <em class="font-serif italic text-slate-600">finding their way to us.</em>
-          </h2>
-        </Reveal>
-        <Reveal delay={160}>
-          <p class="mt-6 max-w-[60ch] text-[1.0625rem] font-light leading-[1.72] text-slate-500">
-            They arrive with very different problems and leave with the same thing: a capability that belongs to
-            them, rather than a subscription that renews.
-          </p>
-        </Reveal>
+  <!-- ═══ WHAT WE WORK ON ════════════════════════════════════════ -->
+  <section class="band" id="work">
+    <div class="shell">
+      <span class="eyebrow rv" data-rv>What we work on</span>
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Three things, and we do all three at depth.</h2>
+      <p class="lede rv" data-rv style="--rv-delay:160ms">
+        Not a service menu. These are the three problems we have run at scale often enough to have opinions
+        about, and they compose into a single pipeline: generate the data nobody has, train the model nobody
+        sells, then prove it actually works.
+      </p>
 
-        <div class="mt-16 grid grid-cols-1 md:grid-cols-2 gap-5">
-          <Reveal delay={120} from="left">
-            <article class="h-full bg-white border border-slate-200 p-10 lg:p-12 transition-all duration-500 hover:-translate-y-1.5 hover:border-slate-300 hover:shadow-[0_18px_44px_-28px_rgba(15,23,42,0.3)]">
-              <span class="inline-block px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Product
-              </span>
-              <h3 class="mt-7 text-2xl md:text-[1.8rem] font-light leading-[1.22] tracking-tight text-slate-900 text-balance">
-                Product companies seeking <em class="font-serif italic text-indigo-600">real differentiation</em>
-              </h3>
-              <p class="mt-5 text-[0.96875rem] font-light leading-[1.78] text-slate-500">
-                Your product works, but the model behind it is the same endpoint your three closest competitors are
-                calling — which means your moat is your interface. We build the layer that cannot be replicated by
-                swapping an API key: trained on data only you have, shaped around the task your users actually
-                perform, and measurably better at it than anything general-purpose. You own the weights, the
-                pipeline and the evaluations that prove the gap.
-              </p>
-              <p class="mt-8 pt-6 border-t border-slate-100 text-[0.8125rem] text-slate-600">
-                Typically 6–14 weeks, from a working baseline to a deployed model.
-              </p>
+      <div class="cap-grid">
+        {
+          capabilities.map((c, i) => (
+            <article class="cap rv" data-rv style={`--rv-delay:${100 + i * 90}ms`}>
+              <div class="cap-art">
+                <canvas data-backdrop={c.backdrop} data-seed={c.seed} aria-hidden="true"></canvas>
+              </div>
+              <div class="cap-body">
+                <h3>{c.name}</h3>
+                <p>{c.summary}</p>
+              </div>
             </article>
-          </Reveal>
-
-          <Reveal delay={200} from="right">
-            <article class="h-full bg-white border border-slate-200 p-10 lg:p-12 transition-all duration-500 hover:-translate-y-1.5 hover:border-slate-300 hover:shadow-[0_18px_44px_-28px_rgba(15,23,42,0.3)]">
-              <span class="inline-block px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Enterprise
-              </span>
-              <h3 class="mt-7 text-2xl md:text-[1.8rem] font-light leading-[1.22] tracking-tight text-slate-900 text-balance">
-                Enterprises integrating AI <em class="font-serif italic text-indigo-600">structurally, not superficially</em>
-              </h3>
-              <p class="mt-5 text-[0.96875rem] font-light leading-[1.78] text-slate-500">
-                You are past the pilot stage and the demos have stopped being interesting. We work alongside your
-                existing teams to put AI into the systems the business genuinely runs on — data foundations,
-                evaluation gates, deployment and serving architecture, and the review process that keeps a model
-                honest after launch. We build the internal capability at the same time, so the thing still works
-                long after our engagement ends.
-              </p>
-              <p class="mt-8 pt-6 border-t border-slate-100 text-[0.8125rem] text-slate-600">
-                Embedded engagements, with your engineers in the room from week one.
-              </p>
-            </article>
-          </Reveal>
-        </div>
+          ))
+        }
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- We ship openly -->
-    <section id="open-source" class="py-32 border-t border-slate-100">
-      <div class="max-w-7xl mx-auto page-gutter">
-        <div class="flex flex-wrap items-end justify-between gap-10">
-          <div class="flex-1 basis-[28rem] min-w-0 max-w-3xl">
-            <Reveal as="span" class="block text-[0.625rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
-              Open source
-            </Reveal>
-            <Reveal delay={80}>
-              <h2 class="mt-4 text-3xl md:text-[2.75rem] font-light leading-[1.14] tracking-tight text-slate-900 text-balance">
-                We ship <em class="font-serif italic text-slate-600">openly,</em> and in public.
-              </h2>
-            </Reveal>
-            <Reveal delay={160}>
-              <p class="mt-6 max-w-[60ch] text-[1.0625rem] font-light leading-[1.72] text-slate-500">
-                Most of what we learn on client work ends up public in some form. Datasets we had to build because
-                nothing suitable existed, weights from runs worth reproducing, and write-ups detailed enough that
-                you could follow them end to end. Take it, fork it, and tell us where we got it wrong.
-              </p>
-            </Reveal>
-          </div>
-          <Reveal delay={240}>
-            <a
-              href="/open-source/simula"
-              class="group relative inline-flex items-center gap-2.5 overflow-hidden border border-slate-900 px-6 py-3.5 text-[0.6875rem] font-semibold uppercase tracking-[0.15em] text-slate-900 transition-colors duration-300 hover:text-white"
-              data-astro-prefetch
+  <!-- ═══ WHO WE WORK WITH ═══════════════════════════════════════ -->
+  <section class="band wws" id="who">
+    <div class="shell">
+      <span class="wws-eyebrow rv" data-rv>Who we work with</span>
+      <h2 class="wws-title rv" data-rv style="--rv-delay:80ms">
+        Two kinds of team.<br />One outcome: a capability you own.
+      </h2>
+      <p class="wws-sub rv" data-rv style="--rv-delay:160ms">
+        They arrive with very different problems and leave with the same thing — models, pipelines and
+        evaluations that belong to them, rather than a subscription that renews.
+      </p>
+
+      <div class="wws-grid">
+        {
+          personas.map((p, i) => (
+            <article
+              class="pcard rv"
+              data-rv
+              data-from={i === 0 ? 'left' : 'right'}
+              style={`--rv-delay:${120 + i * 80}ms`}
             >
-              <span class="absolute inset-0 bg-slate-900 -translate-x-full transition-transform duration-300 ease-out group-hover:translate-x-0"></span>
-              <span class="relative z-10">Explore our open work</span>
-              <span class="relative z-10" aria-hidden="true">→</span>
-            </a>
-          </Reveal>
-        </div>
-
-        <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Reveal delay={100}>
-            <a href="/open-source/simula" class="group flex h-full flex-col bg-white border border-slate-200 transition-all duration-500 hover:-translate-y-1.5 hover:border-slate-300 hover:shadow-[0_18px_44px_-28px_rgba(15,23,42,0.3)]" data-astro-prefetch>
-              <div class="aspect-[16/10] border-b border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100">
-                <svg class="w-full h-full text-indigo-600" viewBox="0 0 320 200" fill="none" aria-hidden="true">
-                  <defs>
-                    <pattern id="os-dots" width="18" height="18" patternUnits="userSpaceOnUse">
-                      <circle cx="9" cy="9" r="1.8" fill="currentColor" />
-                    </pattern>
-                    <radialGradient id="os-dots-fade" cx="60%" cy="45%">
-                      <stop offset="0%" stop-color="white" stop-opacity="0.55" />
-                      <stop offset="100%" stop-color="white" stop-opacity="0.05" />
-                    </radialGradient>
-                    <mask id="os-dots-mask"><rect width="320" height="200" fill="url(#os-dots-fade)" /></mask>
-                  </defs>
-                  <rect width="320" height="200" fill="url(#os-dots)" mask="url(#os-dots-mask)" />
-                </svg>
-              </div>
-              <div class="p-8">
-                <h3 class="text-lg font-medium tracking-tight text-slate-900">Datasets</h3>
-                <p class="mt-3.5 text-[0.90625rem] font-light leading-[1.74] text-slate-500">
-                  Curated and synthetic corpora released with the generation code, the filtering criteria and the
-                  failure modes we already know about — so you can judge whether a set fits your problem before you
-                  spend a training run finding out.
-                </p>
-                <p class="mt-5 font-mono text-[0.6875rem] text-slate-400">14 releases · HuggingFace</p>
-              </div>
-            </a>
-          </Reveal>
-
-          <Reveal delay={190}>
-            <a href="/open-source/simula" class="group flex h-full flex-col bg-white border border-slate-200 transition-all duration-500 hover:-translate-y-1.5 hover:border-slate-300 hover:shadow-[0_18px_44px_-28px_rgba(15,23,42,0.3)]" data-astro-prefetch>
-              <div class="aspect-[16/10] border-b border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100">
-                <svg class="w-full h-full text-indigo-600" viewBox="0 0 320 200" fill="none" stroke="currentColor" aria-hidden="true">
-                  <g opacity="0.45">
-                    <circle cx="160" cy="108" r="16" />
-                    <circle cx="160" cy="108" r="32" opacity="0.85" />
-                    <circle cx="160" cy="108" r="48" opacity="0.7" />
-                    <circle cx="160" cy="108" r="64" opacity="0.55" />
-                    <circle cx="160" cy="108" r="80" opacity="0.4" />
-                    <circle cx="160" cy="108" r="96" opacity="0.25" />
-                  </g>
-                  <circle cx="160" cy="108" r="3.5" fill="currentColor" stroke="none" opacity="0.8" />
-                </svg>
-              </div>
-              <div class="p-8">
-                <h3 class="text-lg font-medium tracking-tight text-slate-900">Models</h3>
-                <p class="mt-3.5 text-[0.90625rem] font-light leading-[1.74] text-slate-500">
-                  Checkpoints, adapters and complete training recipes from experiments we think are worth
-                  reproducing — published with the evaluation numbers that convinced us to keep them, and the
-                  ablations that did not make the cut.
-                </p>
-                <p class="mt-5 font-mono text-[0.6875rem] text-slate-400">9 checkpoints · Apache-2.0</p>
-              </div>
-            </a>
-          </Reveal>
-
-          <Reveal delay={280}>
-            <a href="/research" class="group flex h-full flex-col bg-white border border-slate-200 transition-all duration-500 hover:-translate-y-1.5 hover:border-slate-300 hover:shadow-[0_18px_44px_-28px_rgba(15,23,42,0.3)]" data-astro-prefetch>
-              <div class="aspect-[16/10] border-b border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100">
-                <svg class="w-full h-full text-indigo-600" viewBox="0 0 320 200" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                  <g opacity="0.5">
-                    <path d="M46 44h164" opacity="0.9" />
-                    <path d="M46 62h96" opacity="0.35" />
-                    <path d="M46 80h132" opacity="0.35" />
-                    <path d="M46 98h188" opacity="0.9" />
-                    <path d="M46 116h84" opacity="0.35" />
-                    <path d="M46 134h148" opacity="0.35" />
-                    <path d="M46 152h112" opacity="0.9" />
-                  </g>
-                </svg>
-              </div>
-              <div class="p-8">
-                <h3 class="text-lg font-medium tracking-tight text-slate-900">Research</h3>
-                <p class="mt-3.5 text-[0.90625rem] font-light leading-[1.74] text-slate-500">
-                  Long-form write-ups of what worked, what did not, and the specific reason why — implementation
-                  detail included, because that is reliably the part every other post leaves out and the part you
-                  need in order to reproduce it.
-                </p>
-                <p class="mt-5 font-mono text-[0.6875rem] text-slate-400">30+ write-ups · Updated weekly</p>
-              </div>
-            </a>
-          </Reveal>
-        </div>
+              <span class="pcard-label">
+                <i aria-hidden="true">[</i>{p.label}<i aria-hidden="true">]</i>
+              </span>
+              <h3>{p.title}</h3>
+              <p>{p.copy}</p>
+              <figure class="pcard-art">
+                <canvas data-backdrop={p.backdrop} data-seed={p.seed} aria-hidden="true"></canvas>
+              </figure>
+              <ul class="pcard-facts">
+                {p.facts.map((f) => <li>{f}</li>)}
+              </ul>
+            </article>
+          ))
+        }
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Tooling -->
-    <section id="tooling" class="py-32 border-t border-slate-100 bg-slate-50/60">
-      <div class="max-w-7xl mx-auto page-gutter">
-        <Reveal as="span" class="block text-[0.625rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
-          Tooling
-        </Reveal>
-        <Reveal delay={80}>
-          <h2 class="mt-4 max-w-[24ch] text-3xl md:text-[2.75rem] font-light leading-[1.14] tracking-tight text-slate-900 text-balance">
-            Alongside the data and the weights, we <em class="font-serif italic text-slate-600">open the tools.</em>
-          </h2>
-        </Reveal>
-        <Reveal delay={160}>
-          <p class="mt-6 max-w-[60ch] text-[1.0625rem] font-light leading-[1.72] text-slate-500">
-            Nearly all of this started as something we needed internally and got tired of rewriting for the next
-            engagement. It stays maintained because we run on it ourselves — the same libraries are in the loop on
-            client projects the week they ship.
+
+  <!-- ═══ WE SHIP OPENLY ═════════════════════════════════════════ -->
+  <section class="band" id="open">
+    <div class="shell">
+      <div class="open-head">
+        <div class="open-head-copy">
+          <span class="eyebrow rv" data-rv>Open source</span>
+          <h2 class="h2 rv" data-rv style="--rv-delay:80ms">We ship openly, and in public.</h2>
+          <p class="lede rv" data-rv style="--rv-delay:160ms">
+            Most of what we learn on client work ends up public in some form. Datasets we had to build because
+            nothing suitable existed, weights from runs worth reproducing, and write-ups detailed enough that
+            you could follow them end to end. Take it, fork it, and tell us where we got it wrong.
           </p>
-        </Reveal>
-
-        <div class="mt-14 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-          {tooling.map((tool, index) => (
-            <Reveal delay={80 + index * 80}>
-              <a
-                href={tool.link}
-                class="group flex h-full min-h-[17rem] flex-col justify-between bg-white border border-slate-200 p-7 transition-all duration-500 hover:-translate-y-1.5 hover:border-slate-300 hover:shadow-[0_18px_44px_-28px_rgba(15,23,42,0.3)]"
-              >
-                <div class="flex items-start justify-between gap-3">
-                  <span class="text-xl font-medium tracking-tight text-slate-900">{tool.name}</span>
-                  <span class="pt-1.5 font-mono text-[0.625rem] tracking-wide text-slate-400 whitespace-nowrap">{tool.kind}</span>
-                </div>
-                <div>
-                  <div class="mb-4 h-1.5 w-1.5 rounded-full bg-indigo-600/50 transition-all duration-500 group-hover:bg-indigo-600 group-hover:scale-150"></div>
-                  <p class="text-[0.875rem] font-light leading-[1.72] text-slate-500">{tool.summary}</p>
-                </div>
-              </a>
-            </Reveal>
-          ))}
         </div>
+        <a class="wipe rv" data-rv style="--rv-delay:240ms" href="/open-source/simula">
+          <span class="wipe-fill"></span>
+          <span class="wipe-label">Explore our open work</span>
+          <span class="wipe-label" aria-hidden="true">→</span>
+        </a>
       </div>
-    </section>
 
-  </div>
-</BaseLayout>
+      <div class="open-grid">
+        {
+          openWork.map((o, i) => (
+            <a class="open-card rv" data-rv style={`--rv-delay:${100 + i * 90}ms`} href={o.href}>
+              <div class="open-art">
+                <canvas data-backdrop={o.backdrop} data-seed={o.seed} aria-hidden="true"></canvas>
+              </div>
+              <div class="open-body">
+                <h3>{o.name}</h3>
+                <p>{o.summary}</p>
+                <span class="open-meta">{o.meta}</span>
+              </div>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ TOOLING ════════════════════════════════════════════════ -->
+  <section class="band band-tint" id="tooling">
+    <div class="shell">
+      <span class="eyebrow rv" data-rv>Tooling</span>
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">
+        Alongside the data and the weights, we open the tools.
+      </h2>
+      <p class="lede rv" data-rv style="--rv-delay:160ms">
+        Nearly all of this started as something we needed internally and got tired of rewriting for the next
+        engagement. It stays maintained because we run on it ourselves — the same libraries are in the loop on
+        client projects the week they ship.
+      </p>
+
+      <div class="tool-grid">
+        {
+          tooling.map((t, i) => (
+            <a class="tool rv" data-rv style={`--rv-delay:${80 + i * 80}ms`} href={t.href}>
+              <div class="tool-top">
+                <span class="tool-name">{t.name}</span>
+                <span class="tool-kind">{t.kind}</span>
+              </div>
+              <div>
+                <span class="tool-dot"></span>
+                <p>{t.summary}</p>
+              </div>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CLOSING ════════════════════════════════════════════════ -->
+  <section class="closer">
+    <canvas class="closer-bg" data-backdrop="strata" data-seed="4488" data-dpr="1.2" aria-hidden="true"></canvas>
+    <div class="shell closer-in">
+      <h2 class="rv" data-rv>Bring us the problem that does not fit the API.</h2>
+      <p class="rv" data-rv style="--rv-delay:120ms">
+        If an off-the-shelf model already solves it, you do not need us. If it nearly solves it and the last
+        fifteen percent is the whole business, that is the conversation we want.
+      </p>
+      <a class="btn-light rv" data-rv style="--rv-delay:240ms" href="/contact">
+        Start a conversation<span aria-hidden="true">→</span>
+      </a>
+    </div>
+  </section>
+</V2Layout>
+
+<style is:global>
+  /* ══════════════════════════════════════════════════════════════
+     V2 PAGE
+     ══════════════════════════════════════════════════════════════ */
+
+  /* ── Hero ───────────────────────────────────────────────────── */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    background: var(--n-50);
+    color: var(--ink);
+    /* Exactly one viewport once the sticky nav is accounted for. svh
+       keeps it honest on mobile, where 100vh includes the URL bar. */
+    min-height: calc(100vh - var(--nav-h));
+    min-height: calc(100svh - var(--nav-h));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  /* Lifts the left third toward paper so the headline always has a
+     quiet ground, whatever the generator lands on. */
+  .hero-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      hsl(240 30% 99% / 0.86) 0%,
+      hsl(240 30% 99% / 0.58) 44%,
+      hsl(240 30% 99% / 0.18) 100%
+    );
+  }
+  .hero-in {
+    position: relative;
+    z-index: 2;
+    padding-block: clamp(56px, 7vw, 92px);
+  }
+  .hero h1 {
+    margin-top: 0;
+    /* 36ch is a touch over half the headline, so it breaks into two rows,
+       and balance makes those two rows even. The size cap is what makes
+       two rows possible at all: the longer half has to fit the shell. */
+    max-width: 36ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(35.2px, 5.39vw, 63.8px);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.026em;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+  .hero p {
+    margin-top: 25.2px;
+    max-width: 54ch;
+    font-size: clamp(15.41px, 1.54vw, 17.82px);
+    font-weight: 400;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12.6px;
+    margin-top: 36px;
+  }
+  .btn-solid,
+  .btn-quiet,
+  .btn-light {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 14.5px 25.2px;
+    border-radius: 0;
+    font-size: 11.2px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transition:
+      transform 400ms var(--ease),
+      background 400ms var(--ease),
+      border-color 400ms var(--ease),
+      color 400ms var(--ease);
+  }
+  .btn-solid {
+    background: var(--ink);
+    color: var(--n-50);
+    border: 1px solid var(--ink);
+  }
+  .btn-solid:hover {
+    transform: translateY(-2px);
+    background: var(--n-800);
+  }
+  .btn-solid span,
+  .btn-light span {
+    transition: transform 400ms var(--ease);
+  }
+  .btn-solid:hover span,
+  .btn-light:hover span {
+    transform: translateX(4px);
+  }
+  .btn-quiet {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--line-2);
+    color: var(--ink-2);
+    background: hsl(240 30% 99% / 0.6);
+  }
+  .btn-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--ink);
+    transform: translateX(-100%);
+    transition: transform 350ms var(--ease);
+  }
+  .btn-label {
+    position: relative;
+    z-index: 1;
+  }
+  .btn-quiet:hover {
+    border-color: var(--ink);
+    color: var(--n-50);
+  }
+  .btn-quiet:hover .btn-fill {
+    transform: translateX(0);
+  }
+  /* Full-bleed across the hero: the lines enter at one edge and leave at
+     the other. Transparent, so there is no image to have an edge; the top
+     fade only keeps them off the paragraph. */
+  .hero-plate {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 38%, #000 62%);
+    mask-image: linear-gradient(to bottom, transparent 38%, #000 62%);
+  }
+  @media (max-width: 900px) {
+    .hero-plate {
+      display: none;
+    }
+  }
+  .hero-plate canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ── Bands ──────────────────────────────────────────────────── */
+  .band-tint {
+    background: var(--n-100);
+  }
+
+  /* ── Capabilities ───────────────────────────────────────────── */
+  .cap-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 19.8px;
+    margin-top: 52.2px;
+  }
+  @media (max-width: 940px) {
+    .cap-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .cap {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    transition:
+      transform 500ms var(--ease),
+      border-color 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  .cap:hover {
+    transform: translateY(-1.2px);
+    border-color: var(--ink-3);
+    box-shadow: 0 4px 9px -7px hsl(240 14% 10% / 0.07);
+  }
+  .cap-art {
+    height: 182.4px;
+    border-bottom: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .cap-art canvas {
+    width: 100%;
+    height: 100%;
+  }
+  .cap-body {
+    padding: 28.35px 26.46px 32.13px;
+  }
+  .cap h3 {
+    margin-top: 0;
+    font-family: var(--hero-serif);
+    font-size: 19.8px;
+    font-weight: 400;
+    letter-spacing: -0.014em;
+    line-height: 1.24;
+  }
+  .cap p {
+    margin-top: 13.5px;
+    font-size: 13.05px;
+    font-weight: 400;
+    line-height: 1.76;
+    color: var(--ink-3);
+  }
+
+  /* ── Who we work with ───────────────────────────────────────── */
+  .wws {
+    text-align: center;
+    background: var(--n-100);
+  }
+  .wws-eyebrow {
+    display: inline-block;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--line-2);
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .wws-title {
+    margin: 25px auto 0;
+    max-width: 20ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(28px, 3.7vw, 43px);
+    font-weight: 400;
+    line-height: 1.16;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+  .wws-sub {
+    margin: 20px auto 0;
+    max-width: 60ch;
+    font-size: 14.85px;
+    line-height: 1.76;
+    color: var(--ink-3);
+  }
+
+  .wws-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-top: 50px;
+    text-align: center;
+  }
+  @media (max-width: 940px) {
+    .wws-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Hairline card, lighter than the ground, deliberately no shadow. */
+  .pcard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 44px 40px 46px;
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+    transition:
+      transform 500ms var(--ease),
+      border-color 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  .pcard:hover {
+    transform: translateY(-1.2px);
+    border-color: var(--ink-3);
+    box-shadow: 0 4px 9px -7px hsl(240 14% 10% / 0.07);
+  }
+
+  /* Bracket device. Indigo, not amber -- amber means caution in this
+     palette and a label is not a warning. */
+  .pcard-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55em;
+    font-size: 13.5px;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    color: var(--ink-2);
+  }
+  .pcard-label i {
+    display: inline-block;
+    font-style: normal;
+    font-size: 1.5em;
+    line-height: 1;
+    color: var(--indigo-500);
+    transform: scaleY(1.15);
+  }
+
+  .pcard h3 {
+    margin-top: 30px;
+    max-width: 17ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(21px, 2.2vw, 26px);
+    font-weight: 400;
+    line-height: 1.24;
+    letter-spacing: -0.016em;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+  .pcard > p {
+    margin-top: 15px;
+    max-width: 44ch;
+    font-size: 13.95px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+
+  /* The graphic floats in the card's whitespace -- no frame, no bleed. */
+  .pcard-art {
+    width: 92%;
+    margin: 34px 0 0;
+    aspect-ratio: 16 / 11.7;
+  }
+  .pcard-art canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  .pcard-facts {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    width: 92%;
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 9.9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .pcard-facts li + li::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 3px;
+    margin-right: 16px;
+    border-radius: 50%;
+    background: var(--teal-500);
+    vertical-align: 2px;
+  }
+
+
+  /* ── Open source ────────────────────────────────────────────── */
+  .open-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 36px;
+    flex-wrap: wrap;
+  }
+  .open-head-copy {
+    flex: 1 1 30rem;
+    min-width: 0;
+  }
+  .wipe {
+    position: relative;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    flex: none;
+    padding: 13.5px 23.4px;
+    border: 1px solid var(--ink);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transition: color 300ms var(--ease);
+  }
+  .wipe-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--ink);
+    transform: translateX(-100%);
+    transition: transform 350ms var(--ease);
+  }
+  .wipe-label {
+    position: relative;
+    z-index: 1;
+  }
+  .wipe:hover {
+    color: var(--n-50);
+  }
+  .wipe:hover .wipe-fill {
+    transform: translateX(0);
+  }
+
+  .open-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 19.8px;
+    margin-top: 52.2px;
+  }
+  @media (max-width: 940px) {
+    .open-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .open-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    transition:
+      transform 500ms var(--ease),
+      border-color 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  .open-card:hover {
+    transform: translateY(-1.2px);
+    border-color: var(--ink-3);
+    box-shadow: 0 4px 9px -7px hsl(240 14% 10% / 0.07);
+  }
+  .open-art {
+    aspect-ratio: 4 / 3.51;
+    border-bottom: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .open-art canvas {
+    width: 100%;
+    height: 100%;
+  }
+  .open-body {
+    padding: 28.8px 27px 32.4px;
+  }
+  .open-body h3 {
+    font-family: var(--hero-serif);
+    font-size: 18.5px;
+    font-weight: 400;
+    letter-spacing: -0.012em;
+  }
+  .open-body p {
+    margin-top: 11.7px;
+    font-size: 13.05px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+  .open-meta {
+    display: block;
+    margin-top: 18px;
+    font-family: var(--mono);
+    font-size: 9.45px;
+    color: var(--n-400);
+  }
+
+  /* ── Tooling ────────────────────────────────────────────────── */
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16.2px;
+    margin-top: 46.8px;
+  }
+  @media (max-width: 1080px) {
+    .tool-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 620px) {
+    .tool-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .tool {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 39.6px;
+    min-height: 15.3rem;
+    padding: 23.4px 21.6px 25.2px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    transition:
+      transform 500ms var(--ease),
+      border-color 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  .tool:hover {
+    transform: translateY(-1.2px);
+    border-color: var(--ink-3);
+    box-shadow: 0 4px 9px -7px hsl(240 14% 10% / 0.07);
+  }
+  .tool-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10.8px;
+  }
+  .tool-name {
+    font-family: var(--hero-serif);
+    font-size: 19px;
+    font-weight: 400;
+    letter-spacing: -0.014em;
+  }
+  .tool-kind {
+    padding-top: 6.3px;
+    font-family: var(--mono);
+    font-size: 8.55px;
+    color: var(--n-400);
+    white-space: nowrap;
+  }
+  .tool-dot {
+    display: block;
+    width: 5.4px;
+    height: 5.4px;
+    margin-bottom: 13.5px;
+    border-radius: 50%;
+    background: var(--indigo-500);
+    opacity: 0.5;
+  }
+  .tool p {
+    font-size: 12.6px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+
+  /* ── Closer ─────────────────────────────────────────────────── */
+  .closer {
+    position: relative;
+    overflow: hidden;
+    border-top: 1px solid var(--line);
+    background: var(--n-900);
+    color: var(--n-50);
+  }
+  .closer-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.55;
+  }
+  .closer-in {
+    position: relative;
+    z-index: 2;
+    padding-block: clamp(79.2px, 9.9vw, 131.4px);
+    text-align: center;
+  }
+  .closer h2 {
+    margin-inline: auto;
+    max-width: 19ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(27px, 3.96vw, 47.7px);
+    font-weight: 400;
+    line-height: 1.12;
+    letter-spacing: -0.022em;
+    text-wrap: balance;
+  }
+  .closer p {
+    margin: 21.6px auto 0;
+    max-width: 56ch;
+    font-size: 14.85px;
+    font-weight: 300;
+    line-height: 1.76;
+    color: hsl(240 18% 96% / 0.76);
+  }
+  .btn-light {
+    margin-top: 34.2px;
+    background: var(--n-50);
+    color: var(--n-900);
+    border: 1px solid var(--n-50);
+  }
+  .btn-light:hover {
+    transform: translateY(-2px);
+    background: #fff;
+  }
+</style>

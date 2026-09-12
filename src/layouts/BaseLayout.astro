@@ -19,6 +19,7 @@ interface Props {
   showFooter?: boolean;
   mainPaddedTop?: boolean;
   hideNavOnScroll?: boolean;
+  noindex?: boolean;
 }
 
 const {
@@ -35,6 +36,7 @@ const {
   showFooter = true,
   mainPaddedTop = true,
   hideNavOnScroll = false,
+  noindex = false,
 } = Astro.props;
 
 const fullPageTitle = fullTitle(title);
@@ -73,7 +75,7 @@ const year = new Date().getFullYear();
     {type === 'article' && author && <meta property="article:author" content={author} />}
     {type === 'article' && tags.map((tag) => <meta property="article:tag" content={tag} />)}
 
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
     <meta name="language" content="English" />
     <link rel="canonical" href={canonicalUrl} />
 

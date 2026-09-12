@@ -1,18 +1,42 @@
 ---
 /**
- * Standalone shell for the landing page V2 experiment.
+ * Shell for the landing page (formerly the V2 experiment, now shipping at `/`).
  *
- * Deliberately does not extend BaseLayout: V2 runs its own type stack
- * (Inter Tight / Inter / JetBrains Mono) and its own palette, and must not
- * be able to disturb the shipping site. No ClientRouter here either, so
- * the backdrop generators run on a plain page load.
+ * Deliberately does not extend BaseLayout: this page runs its own type stack
+ * (Fraunces / Inter / JetBrains Mono) and its own palette, and the inner
+ * pages keep the original shell. No ClientRouter here either, so the
+ * backdrop generators run on a plain page load.
  */
+import { DEFAULT_OG_IMAGE, SITE_DESCRIPTION, SITE_NAME, SITE_URL, absoluteImage, fullTitle } from '@/utils/seo';
+
 interface Props {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
+  path?: string;
+  image?: string;
+  noindex?: boolean;
 }
 
-const { title, description }: Props = Astro.props;
+const {
+  title,
+  description = SITE_DESCRIPTION,
+  path = Astro.url.pathname,
+  image = DEFAULT_OG_IMAGE,
+  noindex = false,
+}: Props = Astro.props;
+
+const fullPageTitle = fullTitle(title);
+const canonicalRaw = new URL(path, SITE_URL).toString();
+const canonicalUrl = canonicalRaw.endsWith('/') ? canonicalRaw : canonicalRaw + '/';
+const ogImage = absoluteImage(image);
+const year = new Date().getFullYear();
+
+const navLinks = [
+  { href: '/research', label: 'Research' },
+  { href: '/blog', label: 'Blog' },
+  { href: '/open-source/simula', label: 'Open source' },
+  { href: '/about', label: 'About' },
+];
 ---
 
 <!doctype html>
@@ -20,16 +44,53 @@ const { title, description }: Props = Astro.props;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex, nofollow" />
-    <title>{title}</title>
-    <meta name="description" content={description} />
     <link rel="icon" href="/favicon.ico" />
+
+    <title>{fullPageTitle}</title>
+    <meta name="title" content={fullPageTitle} />
+    <meta name="description" content={description} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={fullPageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:site_name" content={SITE_NAME} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={canonicalUrl} />
+    <meta name="twitter:title" content={fullPageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
+    <meta name="language" content="English" />
+    <link rel="canonical" href={canonicalUrl} />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Inter+Tight:wght@300..700&family=Inter:wght@300..600&family=JetBrains+Mono:wght@400;500&display=swap"
     />
+
+    <!-- Microsoft Clarity -->
+    <script is:inline>
+      (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+      })(window, document, "clarity", "script", "h82rwlwyjb");
+    </script>
+
+    <!-- Google tag (gtag.js) -->
+    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-MR3DEJ9G83"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-MR3DEJ9G83');
+    </script>
 
     <style is:global>
       /* ══════════════════════════════════════════════════════════════
@@ -201,37 +262,101 @@ const { title, description }: Props = Astro.props;
   </head>
 
   <body>
-    <header class="v2-nav" data-nav>
+    <header class="v2-nav" data-nav data-menu-open="false">
       <div class="v2-bar">
-        <a href="/v2" class="v2-mark">Mercity<i>v2</i></a>
-        <nav class="v2-links">
-          <a href="#work">What we do</a>
-          <a href="#who">Who we serve</a>
-          <a href="#open">Open source</a>
-          <a href="#tooling">Tooling</a>
+        <a href="/" class="v2-mark" aria-label="Mercity home">Mercity</a>
+        <nav class="v2-links" aria-label="Primary">
+          {navLinks.map((l) => <a href={l.href}>{l.label}</a>)}
         </nav>
-        <a href="/contact" class="v2-cta">Start a conversation</a>
+        <div class="v2-bar-end">
+          <a href="/contact" class="v2-cta">Start a conversation</a>
+          <button
+            type="button"
+            class="v2-menu-btn"
+            data-menu-toggle
+            aria-expanded="false"
+            aria-controls="v2-menu"
+            aria-label="Open menu"
+          >
+            <span></span><span></span>
+          </button>
+        </div>
+      </div>
+      <div class="v2-menu" id="v2-menu" data-menu hidden>
+        <nav class="shell v2-menu-in" aria-label="Primary, mobile">
+          {navLinks.map((l) => <a href={l.href}>{l.label}</a>)}
+          <a href="/contact" class="v2-menu-contact">Contact us</a>
+        </nav>
       </div>
     </header>
 
-    <main>
-      <slot />
-    </main>
+    <div class="v2-scroll" data-scroll>
+      <main>
+        <slot />
+      </main>
 
-    <footer class="v2-foot">
-      <div class="shell v2-foot-in">
-        <span>Mercity Research — landing V2, experimental. The shipping page is at <a href="/">/</a>.</span>
-        <span>Design system: <a href="/design.html">/design.html</a></span>
-      </div>
-    </footer>
+      <footer class="v2-foot">
+        <div class="shell v2-foot-in">
+          <div class="v2-foot-brand">
+            <a href="/" class="v2-foot-mark">Mercity</a>
+            <p>
+              A research lab building custom data, models and evaluation for teams whose edge cannot be bought
+              off a shelf.
+            </p>
+          </div>
+          <div class="v2-foot-col">
+            <span class="v2-foot-h">Site</span>
+            <a href="/">Home</a>
+            <a href="/research">Research</a>
+            <a href="/blog">Blog</a>
+            <a href="/open-source/simula">Open source</a>
+            <a href="/about">About</a>
+            <a href="/contact">Contact</a>
+            <a href="https://www.linkedin.com/company/mercity-ai/jobs/" target="_blank" rel="noopener noreferrer">Careers</a>
+          </div>
+          <div class="v2-foot-col">
+            <span class="v2-foot-h">Connect</span>
+            <a href="https://x.com/Pranav2278" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+            <a href="https://www.linkedin.com/company/mercity-ai/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+            <a href="https://github.com/Mercity-AI/" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="mailto:pranav@mercity.io">pranav@mercity.io</a>
+          </div>
+        </div>
+        <div class="shell v2-foot-base">
+          <span>&copy; {year} Mercity Research Labs. All rights reserved.</span>
+          <span class="v2-foot-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a></span>
+        </div>
+      </footer>
+    </div>
 
     <style is:global>
+      /* Virtual scroll. The nav is fixed and the content wrapper reserves
+         its height, so hero + nav still equals one screen. With the
+         wrapper active the body is only a spacer whose height is set by
+         script to match the wrapper; the native scrollbar drives a target
+         and the wrapper is translated toward it every frame. */
+      .v2-scroll {
+        padding-top: var(--nav-h);
+      }
+      html[data-vscroll] .v2-scroll {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        will-change: transform;
+      }
+      html[data-vscroll] {
+        scroll-behavior: auto;
+      }
+
       /* Full-bleed bar at rest. Past the trigger the background collapses
          out of the header and re-forms as a centred pill on the inner bar,
          which also loses 20% of its height. One transition, both states. */
       .v2-nav {
-        position: sticky;
+        position: fixed;
         top: 0;
+        left: 0;
+        right: 0;
         z-index: 60;
         padding-block: 0;
         background: hsl(240 30% 99% / 0.94);
@@ -293,17 +418,6 @@ const { title, description }: Props = Astro.props;
       .v2-nav[data-scrolled='true'] .v2-mark {
         font-size: 15.3px;
       }
-      .v2-mark i {
-        font-family: var(--mono);
-        font-style: normal;
-        font-size: 8.55px;
-        font-weight: 500;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: var(--indigo-600);
-        margin-left: 9px;
-        vertical-align: 3px;
-      }
 
       .v2-links {
         display: flex;
@@ -355,8 +469,96 @@ const { title, description }: Props = Astro.props;
         border-color: var(--indigo-700);
         color: #fff;
       }
+      .v2-bar-end {
+        display: flex;
+        align-items: center;
+        gap: 10.8px;
+      }
+
+      /* ── Mobile menu ────────────────────────────────────────────
+         Below 900px the link row hides and a square button opens a
+         full-width sheet under the bar. The sheet lives inside the
+         fixed header so it sits above the translated scroll wrapper. */
+      .v2-menu-btn {
+        display: none;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border: 1px solid var(--line-2);
+        background: var(--n-0);
+        cursor: pointer;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        transition: border-color 300ms var(--ease);
+      }
+      .v2-menu-btn span {
+        display: block;
+        width: 14px;
+        height: 1.5px;
+        background: var(--ink);
+        transition: transform 300ms var(--ease);
+      }
+      .v2-nav[data-menu-open='true'] .v2-menu-btn span:first-child {
+        transform: translateY(3.25px) rotate(45deg);
+      }
+      .v2-nav[data-menu-open='true'] .v2-menu-btn span:last-child {
+        transform: translateY(-3.25px) rotate(-45deg);
+      }
+      .v2-menu {
+        display: none;
+        border-top: 1px solid var(--line);
+        background: hsl(240 30% 99% / 0.98);
+        backdrop-filter: blur(16px) saturate(1.4);
+      }
+      .v2-menu .v2-menu-in {
+        display: flex;
+        flex-direction: column;
+        /* Match the bar's gutter, not the shell's; the extra specificity
+           beats the shell's own mobile padding rule. */
+        padding: 10.8px 18.59px 18px;
+      }
+      .v2-menu-in a {
+        padding-block: 12.6px;
+        border-bottom: 1px solid var(--line);
+        font-size: 14.4px;
+        color: var(--ink-2);
+      }
+      .v2-menu-in a:last-child {
+        border-bottom: 0;
+      }
+      .v2-menu-in .v2-menu-contact {
+        color: var(--ink);
+        font-weight: 500;
+      }
       @media (max-width: 900px) {
         .v2-links {
+          display: none;
+        }
+        .v2-menu-btn {
+          display: flex;
+        }
+        .v2-nav[data-menu-open='true'] {
+          padding-block: 0;
+          background: hsl(240 30% 99% / 0.98);
+          border-bottom-color: var(--line-2);
+        }
+        .v2-nav[data-menu-open='true'] .v2-bar {
+          height: calc(var(--nav-h) - 1px);
+          max-width: var(--shell);
+          padding-inline: 18.59px;
+          border-radius: 0;
+          border-color: transparent;
+          background: transparent;
+          box-shadow: none;
+        }
+        .v2-nav[data-menu-open='true'] .v2-menu {
+          display: block;
+        }
+      }
+      @media (max-width: 480px) {
+        .v2-cta {
           display: none;
         }
       }
@@ -366,17 +568,75 @@ const { title, description }: Props = Astro.props;
         background: var(--surface);
       }
       .v2-foot-in {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+        gap: 36px;
+        padding-block: 54px 43.2px;
+      }
+      .v2-foot-brand p {
+        margin-top: 12.6px;
+        max-width: 34ch;
+        font-size: 12.6px;
+        line-height: 1.7;
+        color: var(--ink-3);
+      }
+      .v2-foot-mark {
+        font-family: var(--display);
+        font-size: 18.9px;
+        font-weight: 500;
+        letter-spacing: -0.03em;
+      }
+      .v2-foot-col {
+        display: flex;
+        flex-direction: column;
+        gap: 9.9px;
+      }
+      .v2-foot-h {
+        margin-bottom: 5.4px;
+        font-family: var(--mono);
+        font-size: 9px;
+        font-weight: 500;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--ink);
+      }
+      .v2-foot-col a {
+        font-size: 12.15px;
+        color: var(--ink-3);
+        transition: color 300ms var(--ease);
+      }
+      .v2-foot-col a:hover {
+        color: var(--ink);
+      }
+      .v2-foot-base {
         display: flex;
         justify-content: space-between;
         gap: 18px;
         flex-wrap: wrap;
-        padding-block: 36px;
+        padding-block: 21.6px;
+        border-top: 1px solid var(--line);
         font-family: var(--mono);
         font-size: 9.45px;
         color: var(--n-400);
       }
-      .v2-foot a {
-        color: var(--indigo-600);
+      .v2-foot-legal {
+        display: flex;
+        gap: 18px;
+      }
+      .v2-foot-base a {
+        color: var(--n-400);
+        transition: color 300ms var(--ease);
+      }
+      .v2-foot-base a:hover {
+        color: var(--ink);
+      }
+      @media (max-width: 640px) {
+        .v2-foot-in {
+          grid-template-columns: 1fr 1fr;
+        }
+        .v2-foot-brand {
+          grid-column: 1 / -1;
+        }
       }
     </style>
 
@@ -404,13 +664,124 @@ const { title, description }: Props = Astro.props;
     </script>
 
     <script is:inline>
+      /* ── Virtual scroll ───────────────────────────────────────────
+         Lerp-based smooth scroll. Native wheel/scrollbar input still
+         moves window.scrollY, which becomes the target; the wrapper
+         chases it with `y += (target - y) * DAMPING` per 60Hz frame,
+         made frame-rate independent. Off for coarse pointers and
+         reduced-motion, where native scrolling stays untouched. */
+      (() => {
+        const DAMPING = 0.085;
+        const wrap = document.querySelector('[data-scroll]');
+        if (!wrap) return;
+        const coarse = matchMedia('(pointer: coarse)').matches;
+        const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (coarse || reduced) return;
+
+        const root = document.documentElement;
+        root.dataset.vscroll = 'true';
+
+        let y = window.scrollY;
+        let target = y;
+        let raf = 0;
+        let lastT = 0;
+        const stickies = [...document.querySelectorAll('[data-vsticky]')];
+
+        const setHeight = () => {
+          document.body.style.height = wrap.scrollHeight + 'px';
+        };
+        const stick = () => {
+          for (const el of stickies) {
+            const top = parseFloat(el.dataset.vsticky) || 0;
+            const parent = el.parentElement;
+            if (getComputedStyle(el).position === 'static') {
+              el.style.transform = '';
+              continue;
+            }
+            el.style.transform = '';
+            const pr = parent.getBoundingClientRect();
+            const er = el.getBoundingClientRect();
+            const max = Math.max(0, pr.bottom - er.bottom);
+            const off = Math.min(max, Math.max(0, top - er.top));
+            el.style.transform = off ? `translate3d(0, ${off}px, 0)` : '';
+          }
+        };
+        const paint = () => {
+          wrap.style.transform = `translate3d(0, ${-y}px, 0)`;
+          if (stickies.length) stick();
+          window.v2Scroll.y = y;
+          window.dispatchEvent(new CustomEvent('v2scroll', { detail: { y } }));
+        };
+        const frame = (t) => {
+          const dt = lastT ? Math.min(t - lastT, 100) : 16.67;
+          lastT = t;
+          const k = 1 - Math.pow(1 - DAMPING, dt / 16.67);
+          y += (target - y) * k;
+          if (Math.abs(target - y) < 0.05) {
+            y = target;
+            paint();
+            raf = 0;
+            lastT = 0;
+            return;
+          }
+          paint();
+          raf = requestAnimationFrame(frame);
+        };
+        const wake = () => {
+          target = window.scrollY;
+          if (!raf) raf = requestAnimationFrame(frame);
+        };
+
+        window.v2Scroll = { y, damping: DAMPING };
+        window.addEventListener('scroll', wake, { passive: true });
+
+        if ('ResizeObserver' in window) {
+          new ResizeObserver(setHeight).observe(wrap);
+        } else {
+          window.addEventListener('resize', setHeight);
+        }
+        setHeight();
+
+        /* In-page anchors: the browser measures a fixed, translated target
+           against its current visual spot, so aim by the wrapper's own
+           offset instead and let the lerp carry it. */
+        document.addEventListener('click', (e) => {
+          const a = e.target.closest('a[href^="#"]');
+          if (!a) return;
+          const id = a.getAttribute('href').slice(1);
+          const el = id && document.getElementById(id);
+          if (!el) return;
+          e.preventDefault();
+          const nav = parseFloat(getComputedStyle(root).getPropertyValue('--nav-h')) || 0;
+          const top = el.getBoundingClientRect().top + y - nav;
+          window.scrollTo(0, Math.max(0, top));
+          history.pushState(null, '', '#' + id);
+        });
+
+        if (location.hash) {
+          const el = document.getElementById(location.hash.slice(1));
+          if (el) {
+            requestAnimationFrame(() => {
+              const top = el.getBoundingClientRect().top + y;
+              y = target = Math.max(0, top);
+              window.scrollTo(0, y);
+              paint();
+            });
+          }
+        }
+        paint();
+      })();
+    </script>
+
+    <script is:inline>
       /* ── Nav morph trigger ────────────────────────────────────── */
       (() => {
         const nav = document.querySelector('[data-nav]');
         if (!nav) return;
         let last = null;
         const update = () => {
-          const on = window.scrollY > 28;
+          const cur = window.v2Scroll ? window.v2Scroll.y : window.scrollY;
+          const on = cur > 28;
           if (on !== last) {
             last = on;
             nav.dataset.scrolled = on ? 'true' : 'false';
@@ -418,6 +789,28 @@ const { title, description }: Props = Astro.props;
         };
         update();
         window.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('v2scroll', update);
+
+        /* Mobile menu */
+        const btn = nav.querySelector('[data-menu-toggle]');
+        const menu = nav.querySelector('[data-menu]');
+        if (!btn || !menu) return;
+        const setOpen = (open) => {
+          nav.dataset.menuOpen = open ? 'true' : 'false';
+          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+          btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+          menu.hidden = !open;
+        };
+        btn.addEventListener('click', () => setOpen(nav.dataset.menuOpen !== 'true'));
+        menu.addEventListener('click', (e) => {
+          if (e.target.closest('a')) setOpen(false);
+        });
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && nav.dataset.menuOpen === 'true') setOpen(false);
+        });
+        matchMedia('(min-width: 901px)').addEventListener('change', (e) => {
+          if (e.matches) setOpen(false);
+        });
       })();
     </script>
 
