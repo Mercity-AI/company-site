@@ -31,10 +31,25 @@ const canonicalUrl = canonicalRaw.endsWith('/') ? canonicalRaw : canonicalRaw + 
 const ogImage = absoluteImage(image);
 const year = new Date().getFullYear();
 
-const navLinks = [
+interface NavChild {
+  href: string;
+  label: string;
+  note: string;
+}
+interface NavLink {
+  href: string;
+  label: string;
+  children?: NavChild[];
+}
+
+const navLinks: NavLink[] = [
   { href: '/research', label: 'Research' },
   { href: '/blog', label: 'Blog' },
-  { href: '/open-source/simula', label: 'Open source' },
+  {
+    href: '/open-source/simula',
+    label: 'Open source',
+    children: [{ href: '/open-source/simula', label: 'Simula', note: 'Deliberate synthetic data generation' }],
+  },
   { href: '/about', label: 'About' },
 ];
 ---
@@ -125,6 +140,8 @@ const navLinks = [
         --n-700: hsl(240 10% 27%);
         --n-800: hsl(240 12% 17%);
         --n-900: hsl(240 14% 10%);
+        /* The logo's navy. Hover state for the black CTAs. */
+        --navy: hsl(228 44% 18%);
 
         --ground: var(--n-50);
         --surface: var(--n-0);
@@ -264,9 +281,36 @@ const navLinks = [
   <body>
     <header class="v2-nav" data-nav data-menu-open="false">
       <div class="v2-bar">
-        <a href="/" class="v2-mark" aria-label="Mercity home">Mercity</a>
+        <a href="/" class="v2-mark" aria-label="Mercity home">
+          <img src="/no-background-logo.png" alt="Mercity" width="855" height="292" />
+        </a>
         <nav class="v2-links" aria-label="Primary">
-          {navLinks.map((l) => <a href={l.href}>{l.label}</a>)}
+          {
+            navLinks.map((l) =>
+              l.children ? (
+                <div class="v2-drop">
+                  <a href={l.href} class="v2-drop-trigger" aria-haspopup="true">
+                    {l.label}
+                    <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                      <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </a>
+                  <div class="v2-drop-panel">
+                    <div class="v2-drop-card">
+                      {l.children.map((c) => (
+                        <a href={c.href}>
+                          <span class="v2-drop-name">{c.label}</span>
+                          <span class="v2-drop-note">{c.note}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <a href={l.href}>{l.label}</a>
+              )
+            )
+          }
         </nav>
         <div class="v2-bar-end">
           <a href="/contact" class="v2-cta">Start a conversation</a>
@@ -284,7 +328,19 @@ const navLinks = [
       </div>
       <div class="v2-menu" id="v2-menu" data-menu hidden>
         <nav class="shell v2-menu-in" aria-label="Primary, mobile">
-          {navLinks.map((l) => <a href={l.href}>{l.label}</a>)}
+          {
+            navLinks.map((l) => (
+              <>
+                <a href={l.href}>{l.label}</a>
+                {l.children?.map((c) => (
+                  <a href={c.href} class="v2-menu-sub">
+                    {c.label}
+                    <span>{c.note}</span>
+                  </a>
+                ))}
+              </>
+            ))
+          }
           <a href="/contact" class="v2-menu-contact">Contact us</a>
         </nav>
       </div>
@@ -408,38 +464,144 @@ const navLinks = [
           0 2px 7px -2px hsl(240 14% 10% / 0.09);
       }
 
+      /* Logo lockup (mark + serif wordmark). Height is the lever; the
+         image keeps its own aspect. Shrinks with the bar. */
       .v2-mark {
-        font-family: var(--display);
-        font-size: 18.9px;
-        font-weight: 500;
-        letter-spacing: -0.03em;
-        transition: font-size 550ms var(--ease);
+        display: flex;
+        align-items: center;
+        height: 38px;
+        transition: height 550ms var(--ease);
+      }
+      .v2-mark img {
+        display: block;
+        height: 100%;
+        width: auto;
       }
       .v2-nav[data-scrolled='true'] .v2-mark {
-        font-size: 15.3px;
+        height: 30px;
       }
 
+      /* Links sit on the right, beside the CTA; the logo holds the left. */
       .v2-links {
         display: flex;
         gap: 30.6px;
-        transition: gap 550ms var(--ease);
+        margin-left: auto;
+        margin-right: 14.4px;
+        transition:
+          gap 550ms var(--ease),
+          margin-right 550ms var(--ease);
       }
       .v2-nav[data-scrolled='true'] .v2-links {
         gap: 23.4px;
+        margin-right: 7.2px;
       }
-      .v2-links a {
-        font-size: 12.15px;
-        font-weight: 400;
-        color: var(--ink-3);
+      .v2-links > a,
+      .v2-drop-trigger {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 5.4px;
+        font-size: 14.4px;
+        font-weight: 500;
+        letter-spacing: -0.005em;
+        color: var(--ink-2);
         transition:
           color 300ms var(--ease),
           font-size 550ms var(--ease);
       }
-      .v2-nav[data-scrolled='true'] .v2-links a {
-        font-size: 11.25px;
+      .v2-nav[data-scrolled='true'] .v2-links > a,
+      .v2-nav[data-scrolled='true'] .v2-drop-trigger {
+        font-size: 13.05px;
       }
-      .v2-links a:hover {
+      .v2-links > a::after,
+      .v2-drop-trigger::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -5px;
+        height: 1px;
+        background: var(--ink);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 300ms var(--ease);
+      }
+      .v2-links > a:hover,
+      .v2-drop:hover .v2-drop-trigger,
+      .v2-drop:focus-within .v2-drop-trigger {
         color: var(--ink);
+      }
+      .v2-links > a:hover::after,
+      .v2-drop:hover .v2-drop-trigger::after,
+      .v2-drop:focus-within .v2-drop-trigger::after {
+        transform: scaleX(1);
+      }
+
+      /* ── Open source dropdown ───────────────────────────────────
+         Hover or keyboard focus opens it. The panel carries the gap
+         as padding so the pointer never leaves the hover area. Square
+         corners: the pill is the only rounded thing in the nav. */
+      .v2-drop {
+        position: relative;
+      }
+      .v2-drop-trigger svg {
+        width: 11px;
+        height: 11px;
+        margin-top: 1px;
+        transition: transform 300ms var(--ease);
+      }
+      .v2-drop:hover .v2-drop-trigger svg,
+      .v2-drop:focus-within .v2-drop-trigger svg {
+        transform: rotate(180deg);
+      }
+      .v2-drop-panel {
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        padding-top: 16.2px;
+        transform: translate(-50%, 6px);
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 220ms var(--ease),
+          transform 220ms var(--ease),
+          visibility 0s linear 220ms;
+      }
+      .v2-drop:hover .v2-drop-panel,
+      .v2-drop:focus-within .v2-drop-panel {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(-50%, 0);
+        transition-delay: 0s;
+      }
+      .v2-drop-card {
+        width: 252px;
+        padding: 5.4px;
+        background: var(--n-0);
+        border: 1px solid var(--line-2);
+        box-shadow:
+          0 18px 48px -20px hsl(240 14% 10% / 0.3),
+          0 2px 7px -2px hsl(240 14% 10% / 0.09);
+      }
+      .v2-drop-card a {
+        display: block;
+        padding: 10.8px 12.6px;
+        transition: background 200ms var(--ease);
+      }
+      .v2-drop-card a:hover {
+        background: var(--n-100);
+      }
+      .v2-drop-name {
+        display: block;
+        font-size: 13.5px;
+        font-weight: 500;
+        color: var(--ink);
+      }
+      .v2-drop-note {
+        display: block;
+        margin-top: 2px;
+        font-size: 11.7px;
+        color: var(--ink-3);
       }
 
       .v2-cta {
@@ -448,8 +610,8 @@ const navLinks = [
         background: var(--ink);
         color: var(--n-50);
         border-radius: 0;
-        font-size: 9.9px;
-        font-weight: 500;
+        font-size: 10.35px;
+        font-weight: 600;
         letter-spacing: 0.08em;
         text-transform: uppercase;
         white-space: nowrap;
@@ -465,8 +627,8 @@ const navLinks = [
         font-size: 9px;
       }
       .v2-cta:hover {
-        background: var(--indigo-700);
-        border-color: var(--indigo-700);
+        background: var(--navy);
+        border-color: var(--navy);
         color: #fff;
       }
       .v2-bar-end {
@@ -531,6 +693,17 @@ const navLinks = [
       .v2-menu-in .v2-menu-contact {
         color: var(--ink);
         font-weight: 500;
+      }
+      .v2-menu-in .v2-menu-sub {
+        display: flex;
+        align-items: baseline;
+        gap: 9px;
+        padding-left: 18px;
+        font-size: 13.05px;
+      }
+      .v2-menu-in .v2-menu-sub span {
+        font-size: 11.25px;
+        color: var(--ink-3);
       }
       @media (max-width: 900px) {
         .v2-links {

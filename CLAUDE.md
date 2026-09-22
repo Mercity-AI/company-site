@@ -75,12 +75,19 @@ sans did at the same size.
 collapses and re-forms as a centred 792px pill on the inner bar, which loses
 20% of its height. The bar's pill is the only rounded corner left; every
 button is square. Both hero buttons and both CTAs wipe black left to right
-on hover. Links are the site's real routes (Research, Blog, Open source,
-About, plus the Contact CTA), declared once as `navLinks` in the layout and
-reused by the mobile sheet. Below 900px the link row hides behind a square
-menu button; the sheet opens under the bar, pins the header back to its
-full-bleed state, and closes on link click, Escape, or resize past 900px.
-Below 480px the CTA hides too and "Contact us" lives in the sheet.
+on hover. The wordmark is the logo lockup (`/no-background-logo.png`),
+38px tall at rest and 30px in the pill; the PNG carries its own padding, so
+it reads smaller than its box. Links are the site's real routes (Research,
+Blog, Open source, About, plus the Contact CTA), declared once as
+`navLinks` in the layout and reused by the mobile sheet. They sit at
+14.4px / weight 500 with a 1px underline that grows on hover. "Open source"
+is a dropdown (hover or focus-within) whose children come from
+`navLinks[].children`; the panel is square-cornered with the pill's shadow.
+Below 900px the link row hides behind a square menu button; the sheet opens
+under the bar, pins the header back to its full-bleed state, lists dropdown
+children as indented sub-rows, and closes on link click, Escape, or resize
+past 900px. Below 480px the CTA hides too and "Contact us" lives in the
+sheet.
 
 **Footer** — three columns (brand, Site, Connect) over a copyright/legal
 strip. Same links as the `BaseLayout` footer.
