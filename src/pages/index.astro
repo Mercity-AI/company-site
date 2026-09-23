@@ -82,6 +82,17 @@ const openWork = [
     name: 'Research',
     backdrop: 'contour',
     seed: 3364,
+    // Solved from the PNG itself: page 1's top-left corner sits at px
+    // (203, 629) of the 3300×4080 file, which these offsets land at about
+    // 13% in and 25% down, near the anchor the other two cards share.
+    image: {
+      src: '/open-research.png',
+      alt: 'A Mercity research paper',
+      left: '4.9%',
+      top: '6%',
+      width: '125.9%',
+      bakedShadow: true,
+    },
     meta: '30+ write-ups · Updated weekly',
     href: '/research',
     summary:
