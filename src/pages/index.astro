@@ -109,23 +109,23 @@ const tooling = [
       'Deliberate synthetic data generation. Describe the distribution you want as a spec, and Simula plans, generates and verifies a corpus against it.',
   },
   {
-    name: 'Assay',
+    name: 'PromptKeep',
     kind: 'Python',
-    href: '/open-source/simula',
+    href: 'https://github.com/Mercity-AI/promptkeep',
     summary:
-      'An evaluation harness for task-specific benchmarks. Define graders once, run them across models and checkpoints, and diff results across a training run.',
+      'Prompts as first-class objects. Versioned templates with lineage in SQLite, and a drop-in OpenAI wrapper that records every run: prompt version, variables, output and usage.',
   },
   {
     name: 'Sieve',
     kind: 'Rust · Python',
-    href: '/open-source/simula',
+    soon: true,
     summary:
       'Corpus filtering and near-duplicate detection at billion-document scale, with every decision traceable back to the rule that made it.',
   },
   {
     name: 'Anvil',
     kind: 'CUDA · Triton',
-    href: '/open-source/simula',
+    soon: true,
     summary:
       'Fused kernels and training utilities for architectures that do not fit the standard stack, benchmarked against the reference implementation on every commit.',
   },
@@ -295,18 +295,34 @@ const tooling = [
 
       <div class="tool-grid">
         {
-          tooling.map((t, i) => (
-            <a class="tool rv" data-rv style={`--rv-delay:${80 + i * 80}ms`} href={t.href}>
-              <div class="tool-top">
-                <span class="tool-name">{t.name}</span>
-                <span class="tool-kind">{t.kind}</span>
+          tooling.map((t, i) =>
+            t.soon ? (
+              <div class="tool tool-soon rv" data-rv style={`--rv-delay:${80 + i * 80}ms`}>
+                <div class="tool-veil" aria-hidden="true">
+                  <div class="tool-top">
+                    <span class="tool-name">{t.name}</span>
+                    <span class="tool-kind">{t.kind}</span>
+                  </div>
+                  <div>
+                    <span class="tool-dot"></span>
+                    <p>{t.summary}</p>
+                  </div>
+                </div>
+                <span class="tool-soon-label">Coming soon</span>
               </div>
-              <div>
-                <span class="tool-dot"></span>
-                <p>{t.summary}</p>
-              </div>
-            </a>
-          ))
+            ) : (
+              <a class="tool rv" data-rv style={`--rv-delay:${80 + i * 80}ms`} href={t.href}>
+                <div class="tool-top">
+                  <span class="tool-name">{t.name}</span>
+                  <span class="tool-kind">{t.kind}</span>
+                </div>
+                <div>
+                  <span class="tool-dot"></span>
+                  <p>{t.summary}</p>
+                </div>
+              </a>
+            ),
+          )
         }
       </div>
     </div>
@@ -878,6 +894,36 @@ const tooling = [
     font-size: 12.6px;
     line-height: 1.74;
     color: var(--ink-3);
+  }
+  .tool-soon {
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+  }
+  .tool-soon:hover {
+    transform: none;
+    border-color: var(--line);
+    box-shadow: none;
+  }
+  .tool-veil {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 39.6px;
+    filter: blur(5px);
+    opacity: 0.55;
+  }
+  .tool-soon-label {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-family: var(--mono);
+    font-size: 10.8px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-2);
   }
 
   /* ── Closer ─────────────────────────────────────────────────── */

@@ -10,6 +10,15 @@ redesign work stands.
 previous home is parked at `/legacy`. The inner pages still use
 `BaseLayout`, so the two shells live side by side.
 
+## Status — landing page design is done
+
+As of 2026-09-24 the design of `/` is **finished and stable**. Layout,
+palette, type, motion, nav, backdrops and section structure are settled —
+do not reopen them without being asked. What remains is **copy work**:
+replacing placeholder numbers, tightening section text, and swapping in real
+tools as they ship (see *Still placeholder* below). Treat design changes on
+`/` as regressions unless the request is explicitly about design.
+
 ## Routes
 
 | Route | What it is |
@@ -194,8 +203,17 @@ silently.
   `.css` chunk. Grepping only `dist/_astro/*.css` will make a page's CSS look
   missing when it is present.
 
-## Still placeholder
+## Still placeholder — the copy to-do list
 
-Assay, Sieve and Anvil are invented; only Simula is real. Every number on
-`/` is fabricated — "14 releases", "9 checkpoints", "30+ write-ups",
-"6–14 weeks". These are now live on the home page and need replacing.
+The design is done; this is what the remaining work is about.
+
+- **Numbers.** Every number on `/` is fabricated and live: "6–14 weeks",
+  "14 releases", "9 checkpoints", "30+ write-ups". All in the data arrays at
+  the top of `src/pages/index.astro`.
+- **Tooling.** Four cards. Simula and PromptKeep are real and link out
+  (PromptKeep to github.com/Mercity-AI/promptkeep, since there is no
+  `/open-source/promptkeep` page). Sieve and Anvil are invented and render as
+  blurred "Coming soon" cards via `soon: true` in the `tooling` array — swap
+  in a real tool by giving it an `href` and dropping `soon`. Assay was
+  removed.
+- **Section copy** in general has not had a final edit pass.
