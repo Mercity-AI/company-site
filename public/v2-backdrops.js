@@ -1001,6 +1001,83 @@
       ctx.putImageData(img, 0, 0);
       grain(ctx, w, h, 22, true);
     },
+
+    /* ── Simula (/open-source/simula) ───────────────────────────── */
+
+    // PLATE — the library's identity. The repo's own hero is white
+    // italic type on a grained indigo cloth; this draws that ground
+    // on-system (indigo 243, fbm weave, a darker pool where the
+    // wordmark sits) and leaves the wordmark to HTML so it stays crisp.
+    plate(ctx, w, h, seed) {
+      const fbm = makeNoise(seed);
+      const base = hsl2rgb(243, 74, 49);
+      const deep = hsl2rgb(243, 80, 34);
+      const lift = hsl2rgb(240, 72, 61);
+      const img = ctx.createImageData(w, h);
+      const d = img.data;
+      const k = 900 / Math.max(w, h);
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const weave = fbm(x * k * 0.11, y * k * 0.11, 3) - 0.5;
+          const drift = fbm(x * k * 0.004, y * k * 0.004, 2) - 0.5;
+          const dx = x / w - 0.5;
+          const dy = y / h - 0.56;
+          const pool = Math.exp(-(dx * dx * 4.2 + dy * dy * 9));
+          let t = 0.5 + drift * 0.9 + weave * 0.34;
+          t = t < 0 ? 0 : t > 1 ? 1 : t;
+          let c = mix(base, lift, t);
+          c = mix(c, deep, pool * 0.6);
+          const i = (y * w + x) * 4;
+          d[i] = c[0];
+          d[i + 1] = c[1];
+          d[i + 2] = c[2];
+          d[i + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      grain(ctx, w, h, 26, true);
+    },
+
+    // LEAFGRID — coverage with a denominator. Every leaf of the
+    // taxonomy is a cell, one band per factor, and a sampled leaf
+    // fills. The hollow cells are the ones the run never reached;
+    // the short bands are factors with fewer leaves.
+    leafgrid(ctx, w, h, seed) {
+      const r = rng(seed);
+      ctx.fillStyle = css(hsl2rgb(240, 26, 98));
+      ctx.fillRect(0, 0, w, h);
+      const padX = w * 0.03;
+      const padY = h * 0.04;
+      const bands = 4;
+      const gap = h * 0.04;
+      const bandH = (h - padY * 2 - gap * (bands - 1)) / bands;
+      const cols = 28;
+      const cw = (w - padX * 2) / cols;
+      const rows = Math.max(2, Math.round(bandH / cw));
+      const ch = bandH / rows;
+      const size = Math.min(cw, ch) * 0.7;
+      const used = [1, 0.82, 0.93, 0.68];
+      const fill = [1, 0.97, 0.9, 0.85];
+      ctx.lineWidth = Math.max(1, w / 900);
+      ctx.strokeStyle = css(hsl2rgb(240, 10, 78));
+      for (let b = 0; b < bands; b++) {
+        const y0 = padY + b * (bandH + gap);
+        for (let row = 0; row < rows; row++) {
+          for (let c = 0; c < cols; c++) {
+            if ((c + 0.5) / cols > used[b]) continue;
+            const x = padX + c * cw + (cw - size) / 2;
+            const y = y0 + row * ch + (ch - size) / 2;
+            if (r() < fill[b]) {
+              ctx.fillStyle = `hsl(178 60% 40% / ${0.32 + r() * 0.52})`;
+              ctx.fillRect(x, y, size, size);
+            } else {
+              ctx.strokeRect(x + 0.5, y + 0.5, size - 1, size - 1);
+            }
+          }
+        }
+      }
+      grain(ctx, w, h, 10, true);
+    },
   };
 
   /* ── Wiring ─────────────────────────────────────────────────────── */

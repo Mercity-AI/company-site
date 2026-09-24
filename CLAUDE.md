@@ -7,9 +7,9 @@ redesign work stands.
 ## Branch
 
 `redesign`, branched from `astro-migration`. V2 is now the home page; the
-previous home is parked at `/legacy`. Research and Blog (listings and
-posts) are on the V2 shell too. About, Contact and Simula still use
-`BaseLayout`, so the two shells live side by side.
+previous home is parked at `/legacy`. Research, Blog, Simula and About
+are on the V2 shell too. Only Contact still uses `BaseLayout`, so the
+two shells live side by side until it moves.
 
 ## Status — landing page design is done
 
@@ -31,7 +31,9 @@ tools as they ship (see *Still placeholder* below). Treat design changes on
 | `/design.html` | Design lab. Static file in `public/`, no Astro layout. |
 | `/research`, `/research/[slug]` | Listing and logs, on `V2Layout`. See *Research and Blog*. |
 | `/blog`, `/blog-post/[slug]` | Listing and posts, on `V2Layout`. Same components. |
-| `/about`, `/contact`, `/open-source/simula` | Unchanged, on `BaseLayout`. |
+| `/open-source/simula` | The Simula product page, on `V2Layout`. See *Simula*. |
+| `/about` | On `V2Layout`. Quiet page; every figure computed from the collections. See *About*. |
+| `/contact` | Unchanged, on `BaseLayout`. The last page on the old shell. |
 
 `/legacy`, `/v2-open` and `/design.html` are `noindex` and excluded from the
 sitemap. They are working surfaces, not shipping pages.
@@ -170,6 +172,57 @@ the listing pages use them too.
 and every `data-rv` element stays at opacity 0 while screenshots return
 stale frames. That is the pane, not the site. Check with the pane open.
 
+## Simula (`/open-source/simula`)
+
+The library's product page, on `V2Layout`. Its one loud element is the
+hero plate (`plate` generator + the wordmark in Fraunces italic); after
+that the page is type, rules and two teal data figures. Nine sections,
+alternating ground and tint: hero → premise (three ideas + `leafgrid`)
+→ pipeline (five stages as one flush bordered object, numbered because
+order matters, each ending in its artifact filename in teal) → one data
+point (a five-step trace with a 1px rail: mix → meta-prompt → record →
+critic → lineage) → three model roles (cards with a serif figure) →
+running it (install, the five CLI commands, the demo video in a plain
+dark frame, the minimum viable YAML) → evaluation (2×2 with rules) →
+numbers from the 1K run (a bordered stat grid, teal serif numerals) plus
+limits → closer.
+
+**Every number and artifact is real**, taken from the research log's
+1,000-row job-posting run and 10K e-commerce run, and from the README.
+The one illustrative line is the meta-prompt text in the trace; the row
+it produces is the actual row from the log. Simula is **not on PyPI**
+(the `simula` package there is unrelated) — install is from the repo.
+
+The demo video is the CDN copy of `public/simula-demo.mp4` (a terminal
+running `simula run`), with `public/simula-demo-poster.jpg` extracted at
+14s. It is muted, looped, `preload="none"`, and only plays while ≥35%
+in view; reduced-motion leaves it on the poster.
+
+Code samples are pre-tokenised HTML strings (`tok-k` keys indigo,
+`tok-s`/`tok-n` values teal, `tok-c` quiet) on the same `--n-900` ground
+as the research log's code blocks. The page's `<ol>`s carry their own
+numbering, so they reset `list-style` themselves — the layout only
+resets `ul`.
+
+## About (`/about`)
+
+Type-only, no backdrop: `ListHead` → "How we work" (four principles,
+2×2 with rules, unnumbered because order does not matter; the copy is
+lifted from the home page so the two never disagree) → "In numbers" (a
+stat grid **computed at build** from the `research` and `posts`
+collections: log count, post count, first year, author count; the
+open-source count is the hardcoded pair Simula + PromptKeep) → "Who
+writes here" (every author name from both collections with write-up
+count and year span, as one flush grid) → two closer cards (contact,
+careers).
+
+There are no team photos, bios or titles in the repo and the page
+invents none. Authors sign inconsistently across three years, so an
+`ALIAS` map in the page frontmatter folds `Pranav` → `Pranav Patel`,
+`Juhi` → `Juhi Singh` and the `Sonawale` typo → `Sonawane`; a bare
+`Yash` (one 2024 post) is ambiguous and is left as written. Fix the
+frontmatter in `content/` and the map can shrink.
+
 ## Backdrop generators
 
 `public/v2-backdrops.js`. Seeded, deterministic, drawn once on entering view
@@ -199,6 +252,13 @@ A variant switcher is supported but currently unused:
 | `divergence` | Product teams | A bundle converging while one line departs — differentiation. |
 | `structure` | Enterprises | Columns driven through every layer — structural integration. |
 | `strata`, `isoline`, `contour` | Open-source cards | Ambient. |
+
+**In use on `/open-source/simula`:**
+
+| Generator | Where | What it says |
+|---|---|---|
+| `plate` | Hero | The repo's own identity — white italic type on grained indigo cloth — drawn on-system. Per-pixel fbm weave, a darker pool where the wordmark sits, heavy mono grain. The wordmark is HTML on top. |
+| `leafgrid` | Premise | Coverage with a denominator: every taxonomy leaf is a cell, one band per factor, sampled leaves fill teal, hollow cells were never reached. |
 
 Also available, currently unused: `blurfield`, `convergence`, `facets`,
 `curves`, `ridgeline`, `halftone`, `sdGap`, `sdCurriculum`, `sdFanout`,

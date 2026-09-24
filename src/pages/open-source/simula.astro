@@ -1,650 +1,1162 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
+/**
+ * Simula — the open-source synthetic data library, on the V2 shell.
+ *
+ * Every number on this page is from the runs written up in the research
+ * log (the 1,000-row job-posting run and the 10K e-commerce run); the
+ * config, CLI and artifact names are from the README. Nothing is invented.
+ */
+import V2Layout from '@/layouts/V2Layout.astro';
 
 const GITHUB_URL = 'https://github.com/Mercity-AI/Simula';
-const RESEARCH_LOG_URL = '/research/building-simula-our-synthetic-data-generation-library';
+const PAPER_URL = 'https://arxiv.org/abs/2603.29791';
+const LOG_URL = '/research/building-simula-our-synthetic-data-generation-library';
+const DEMO_URL = 'https://blog-cdn.mercity.ai/blog/open-source-simula/simula-demo.mp4';
 
-const pipeline = [
+const facts = ['v0.1.0', 'MIT', 'Python ≥ 3.11', 'arXiv 2603.29791', 'Status: pilot'];
+
+const ideas = [
   {
-    step: '01',
-    title: 'Map the space',
-    detail: 'Turn an open-ended brief into a taxonomy of the factors that actually matter.',
-    artifact: 'taxonomy.json',
-    accent: 'text-indigo-500',
+    title: 'Taxonomies as coverage maps',
+    body: 'Decompose the brief into its factors of variation, expand each into a tree of a chosen depth. The leaves are a discrete, enumerable approximation of the concept space — and a denominator.',
   },
   {
-    step: '02',
-    title: 'Design the mix',
-    detail: 'Weight the combinations that belong together before a model generates a word.',
-    artifact: 'strategies.json',
-    accent: 'text-sky-500',
+    title: 'Generation as sampling over the map',
+    body: 'Every row starts as a sampled mix of nodes, one per factor, drawn under weighted strategies that say which combinations belong together. Diversity is fixed before the model sees a prompt.',
   },
   {
-    step: '03',
-    title: 'Generate with intent',
-    detail: 'Sample the map, write a local meta-prompt, and produce schema-safe records.',
-    artifact: 'dataset.raw.jsonl',
-    accent: 'text-emerald-500',
+    title: 'Quality through generator–critic loops',
+    body: 'Models judge better than they produce on the first try. The pipeline leans on that gap twice: refining taxonomy nodes during expansion, and critiquing every record before acceptance.',
   },
-  {
-    step: '04',
-    title: 'Critique & refine',
-    detail: 'Put every record through validation, criticism, repair, and acceptance.',
-    artifact: 'dataset.final.jsonl',
-    accent: 'text-fuchsia-500',
-  },
-  {
-    step: '05',
-    title: 'Prove the result',
-    detail: 'Dedupe, measure coverage, and keep the lineage that explains every row.',
-    artifact: 'eval_report.json',
-    accent: 'text-amber-500',
-  },
+];
+
+const stages = [
+  { n: '01', title: 'Map the space', body: 'Discover 3–6 factors of variation, or pin your own, then expand each breadth-first to depth.', artifact: 'taxonomy.json' },
+  { n: '02', title: 'Design the mix', body: 'Write 2–5 weighted strategies over the tree: which branches combine, and how often.', artifact: 'strategies.json' },
+  { n: '03', title: 'Generate with intent', body: 'Sample a mix, draft meta-prompts, complexify some, generate a schema-checked record.', artifact: 'dataset.raw.jsonl' },
+  { n: '04', title: 'Critique and refine', body: 'A separate critic accepts or rejects with a reason; rejections feed refinement, up to a cap.', artifact: 'dataset.final.jsonl' },
+  { n: '05', title: 'Prove the result', body: 'Dedupe, decontaminate, measure coverage and diversity. Written to its own file, never the dataset.', artifact: 'eval_report.json' },
 ];
 
 const roles = [
   {
     name: 'strategic',
-    color: 'text-indigo-600',
     label: 'The thinker',
-    calls: '~65 calls per run',
-    detail:
-      'Factor discovery, taxonomy expansion, strategy generation. Called rarely, so it can afford to be an expensive reasoning model — its decisions amortize across every row.',
+    figure: '~65 calls',
+    unit: 'per taxonomy build',
+    body: 'Factor discovery, taxonomy expansion, strategy generation. Called rarely, so it can afford to be an expensive reasoning model: its decisions amortize across every row.',
   },
   {
     name: 'bulk',
-    color: 'text-sky-600',
     label: 'The workhorse',
-    calls: 'Thousands of calls',
-    detail:
-      'Meta-prompts, complexification, record generation, repairs, refinements. Called constantly, so it should be fast and cheap. This is where volume lives.',
+    figure: 'Thousands',
+    unit: 'of calls per run',
+    body: 'Meta-prompts, complexification, record generation, JSON repair, refinement. Called constantly, so it should be fast and cheap. This is where volume lives.',
   },
   {
     name: 'critic',
-    color: 'text-emerald-600',
     label: 'The judge',
-    calls: 'One verdict per record',
-    detail:
-      'Semantic critique, complexity scoring, coverage reassignment. Runs at low temperature for consistent, strict verdicts. Models judge better than they generate — the pipeline leans on that gap.',
+    figure: '1 verdict',
+    unit: 'per record, plus scoring',
+    body: 'Semantic critique, optional complexity ranking, optional coverage reassignment. Low temperature for strict, consistent verdicts.',
   },
+];
+
+const cli = [
+  { cmd: 'validate', body: 'Config, schema subset, roles, prompt module, output path. No model calls.' },
+  { cmd: 'taxonomy', body: 'Builds taxonomy.json; auto-accept, write-then-edit, or confirm in the terminal.' },
+  { cmd: 'generate', body: 'Taxonomy → strategies → meta-prompts → records. --stop-after halts at any artifact.' },
+  { cmd: 'evaluate', body: 'Dedupe, decontaminate, coverage, diversity, complexity. Writes eval_report.json.' },
+  { cmd: 'run', body: 'All of the above, end to end.' },
 ];
 
 const evalSuite = [
   {
-    title: 'Dedupe & decontamination',
-    detail:
-      '13-gram Jaccard overlap against kept rows and against your test set. If your domain has a benchmark, decontamination is not optional.',
+    title: 'Dedupe and decontamination',
+    body: '13-gram sets, Jaccard overlap at 0.8. Dedupe compares against kept rows; decontamination against your test set. If your domain has a benchmark, this is not optional.',
   },
   {
     title: 'Coverage, two ways',
-    detail:
-      'Lineage-based coverage is free and trusts the generator. LLM reassignment costs a call per row and trusts nothing — and it works on datasets you didn’t generate.',
+    body: 'Lineage coverage walks every row’s taxonomy mix and is free. Reassignment asks the critic to place each row on the tree independently — it audits the generator, and works on data you did not generate.',
   },
   {
     title: 'Embedding diversity',
-    detail:
-      'Global diversity asks whether the dataset spans the space. Local diversity asks whether nearby records are actually different. The two disagree in instructive ways.',
+    body: 'Global: mean pairwise distance, did the set span the space. Local: mean distance to the ten nearest neighbours, are nearby rows actually different. The two disagree in instructive ways.',
   },
   {
-    title: 'Complexity via calibrated Elo',
-    detail:
-      'Models are better at comparing than scoring, so records are ranked through batched comparisons stitched into one global rating — the chess system, applied to data.',
+    title: 'Complexity by calibrated Elo',
+    body: 'Rated alone, everything is a 7. So the critic only ever compares — five records at a time — and Elo stitches thousands of local verdicts into one global ranking.',
   },
 ];
 
-const heroYaml = `<span class="tok-c"># one config, one command</span>
-<span class="tok-k">description</span>: <span class="tok-s">&gt;</span>
-<span class="tok-s">  E-commerce search queries paired with</span>
-<span class="tok-s">  their parsed, structured extractions.</span>
+const stats = [
+  { figure: '1,206', label: 'attempts', note: 'of 1,400 planned; tail killed in a rate-limit storm' },
+  { figure: '96%', label: 'accept rate', note: '1,157 accepted, trimmed to 1,000' },
+  { figure: '100%', label: 'leaf coverage', note: '16/16 · 28/28 · 29/29 · 20/20' },
+  { figure: '0', label: 'duplicates', note: 'and 0 rows with empty lineage' },
+  { figure: '841', label: 'distinct key-sets', note: 'across 1,000 rows, 6.7 fields avg' },
+  { figure: '~4,440', label: 'model calls', note: '3.43M tokens in · 5.57M out' },
+  { figure: '84 min', label: 'wall time', note: 'concurrency 25, one rate-limit storm' },
+  { figure: '≈ $2.60', label: 'total cost', note: 'including the taxonomy build' },
+];
 
-<span class="tok-k">models</span>:
-  <span class="tok-k">strategic</span>: <span class="tok-s">"deepseek-v4-pro"</span>   <span class="tok-c"># thinks once</span>
-  <span class="tok-k">bulk</span>:      <span class="tok-s">"deepseek-v4-flash"</span> <span class="tok-c"># the workhorse</span>
-  <span class="tok-k">critic</span>:    <span class="tok-s">"deepseek-v4-flash"</span> <span class="tok-c"># the judge</span>
+const limits = [
+  'Single-process concurrency, not distributed workers.',
+  'A single-pass binary critic, not the paper’s double critic.',
+  'Lineage coverage by default; independent reassignment is opt-in.',
+  'Complexity Elo is measured but not yet consumed by any shaping step.',
+];
 
-<span class="tok-k">generation</span>:
-  <span class="tok-k">target_size</span>: <span class="tok-n">10000</span>
-  <span class="tok-k">complexity_ratio</span>: <span class="tok-n">0.3</span>  <span class="tok-c"># fraction pushed harder</span>
-  <span class="tok-k">concurrency</span>: <span class="tok-n">48</span>`;
+/* Code samples, pre-tokenised. Keys indigo, values teal, comments quiet —
+   the same rule the research log's code blocks follow. */
+const mixCode = `<span class="tok-k">product_vertical</span>   footwear <span class="tok-c">→</span> athletic <span class="tok-c">→</span> <span class="tok-s">trail_running</span>
+<span class="tok-k">shopper_intent</span>     <span class="tok-s">known_item_hunt</span>
+<span class="tok-k">attribute_focus</span>    <span class="tok-s">price_and_availability</span>
+<span class="tok-k">query_complexity</span>   <span class="tok-s">terse_multi_constraint_with_negation</span>`;
 
-const yamlConfig = `<span class="tok-c"># One YAML per run. Bad config fails at load, not mid-run.</span>
-<span class="tok-k">description</span>: <span class="tok-s">"E-commerce search-query extraction"</span>
-
-<span class="tok-k">schema</span>:
-  <span class="tok-k">type</span>: <span class="tok-s">object</span>
-  <span class="tok-k">required</span>: [<span class="tok-s">"query"</span>, <span class="tok-s">"extraction"</span>]
-
-<span class="tok-k">generation</span>:
-  <span class="tok-k">target_size</span>: <span class="tok-n">10000</span>
-  <span class="tok-k">scenarios_per_mix</span>: <span class="tok-n">3</span>    <span class="tok-c"># local diversity</span>
-  <span class="tok-k">complexity_ratio</span>: <span class="tok-n">0.3</span>  <span class="tok-c"># fraction pushed harder</span>
-  <span class="tok-k">concurrency</span>: <span class="tok-n">48</span>`;
-
-const lineageJson = `{
-  <span class="tok-k">"record"</span>: {
-    <span class="tok-k">"query"</span>: <span class="tok-s">"waterproof trail shoes size 9 under $80, no neon"</span>,
-    <span class="tok-k">"extraction"</span>: { <span class="tok-k">"category"</span>: <span class="tok-s">"trail running shoes"</span>, <span class="tok-s">…</span> }
-  },
-  <span class="tok-k">"taxonomy_mix"</span>: [<span class="tok-s">"footwear &rarr; athletic &rarr; trail_running"</span>, <span class="tok-s">"..."</span>],
-  <span class="tok-k">"strategy_id"</span>: <span class="tok-s">"mainstream_purchase"</span>,
-  <span class="tok-k">"meta_prompt"</span>: <span class="tok-s">"Race-week replacement search: brand + ..."</span>,
-  <span class="tok-k">"complexified"</span>: <span class="tok-n">true</span>,
-  <span class="tok-k">"critic_verdicts"</span>: [{ <span class="tok-k">"verdict"</span>: <span class="tok-s">"accept"</span> }],
-  <span class="tok-k">"accepted"</span>: <span class="tok-n">true</span>
+const recordCode = `<span class="tok-k">"query"</span>: <span class="tok-s">"waterproof trail running shoes size 9 under $80, nothing neon"</span>
+<span class="tok-k">"extraction"</span>: {
+  <span class="tok-k">"category"</span>: <span class="tok-s">"trail running shoes"</span>,
+  <span class="tok-k">"waterproof"</span>: <span class="tok-n">true</span>,
+  <span class="tok-k">"size"</span>: <span class="tok-s">"9"</span>,
+  <span class="tok-k">"price_max"</span>: <span class="tok-n">80</span>,
+  <span class="tok-k">"color_excluded"</span>: [<span class="tok-s">"neon"</span>]
 }`;
 
-const recordJson = `<span class="text-slate-800">"waterproof trail running shoes size 9 under $80, nothing neon"</span>
-<span class="tok-c">&#123; <span class="tok-k">"category"</span>: <span class="tok-s">"trail running shoes"</span>, <span class="tok-k">"waterproof"</span>: <span class="tok-n">true</span>, <span class="tok-k">"size"</span>: <span class="tok-s">"9"</span>,
-  <span class="tok-k">"price_max"</span>: <span class="tok-n">80</span>, <span class="tok-k">"color_excluded"</span>: [<span class="tok-s">"neon"</span>] &#125;</span>`;
+const lineageCode = `<span class="tok-k">"taxonomy_mix"</span>:    [<span class="tok-s">"product_vertical.footwear.athletic.trail_running"</span>, <span class="tok-c">…</span>]
+<span class="tok-k">"strategy_id"</span>:     <span class="tok-s">"mainstream_purchase"</span>
+<span class="tok-k">"meta_prompt"</span>:     <span class="tok-s">"Race-week replacement search: …"</span>
+<span class="tok-k">"complexified"</span>:    <span class="tok-n">true</span>
+<span class="tok-k">"critic_verdicts"</span>: [{ <span class="tok-k">"verdict"</span>: <span class="tok-s">"accept"</span> }]
+<span class="tok-k">"schema_valid"</span>:    <span class="tok-n">true</span>
+<span class="tok-k">"accepted"</span>:        <span class="tok-n">true</span>`;
+
+const yamlCode = `<span class="tok-c"># The minimum viable config. Everything else has a default.</span>
+<span class="tok-k">description</span>: <span class="tok-s">"Describe the dataset to generate."</span>
+
+<span class="tok-k">schema</span>:                       <span class="tok-c"># null → free-text mode</span>
+  <span class="tok-k">type</span>: <span class="tok-s">object</span>
+  <span class="tok-k">required</span>: [<span class="tok-s">"input"</span>, <span class="tok-s">"output"</span>]
+  <span class="tok-k">properties</span>:
+    <span class="tok-k">input</span>:  { <span class="tok-k">type</span>: <span class="tok-s">string</span> }
+    <span class="tok-k">output</span>: { <span class="tok-k">type</span>: <span class="tok-s">string</span> }
+
+<span class="tok-k">provider</span>:
+  <span class="tok-k">base_url</span>: <span class="tok-s">"https://openrouter.ai/api/v1"</span>
+  <span class="tok-k">api_key_env</span>: <span class="tok-s">"OPENROUTER_API_KEY"</span>   <span class="tok-c"># from .env</span>
+
+<span class="tok-k">models</span>:
+  <span class="tok-k">strategic</span>: { <span class="tok-k">model</span>: <span class="tok-s">"google/gemini-3-flash-preview"</span> }
+  <span class="tok-k">bulk</span>:      { <span class="tok-k">model</span>: <span class="tok-s">"google/gemini-3-flash-preview"</span> }
+  <span class="tok-k">critic</span>:    { <span class="tok-k">model</span>: <span class="tok-s">"google/gemini-3-flash-preview"</span> }`;
+
+const installCode = `<span class="tok-c">$</span> git clone https://github.com/Mercity-AI/Simula
+<span class="tok-c">$</span> cd Simula &amp;&amp; python -m pip install -e <span class="tok-s">".[dev]"</span>
+<span class="tok-c">$</span> python -m simula.cli run examples/basic_qa.yaml
+<span class="tok-c">  # fake model: runs offline, no API key needed</span>`;
 ---
 
-<BaseLayout
-  title="Simula — Deliberate Synthetic Data Generation"
-  description="Simula is a compact, CLI-first Python library for schema-shaped and free-text synthetic data. Map the concept space first, then sample it on purpose. MIT licensed."
+<V2Layout
+  title="Simula — Deliberate synthetic data generation"
+  description="Simula is a small, CLI-first Python library for schema-shaped and free-text synthetic data. It maps the concept space as a taxonomy before generating a row, critiques every record, and keeps the lineage. MIT licensed."
   path="/open-source/simula"
   image="/simula-og.jpg"
-  hideNavOnScroll
 >
-  <div class="max-w-[92rem] mx-auto page-gutter lg:px-[3.25rem] py-12">
-    <!-- Hero -->
-    <header class="relative isolate grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center mb-28 pt-8 lg:min-h-[calc(100svh-16rem)]">
-      <!-- frosted glow orbs -->
-      <div class="absolute inset-0 -z-10 pointer-events-none" aria-hidden="true">
-        <div class="hero-orb absolute -top-64 right-[16%] w-[36rem] h-[36rem] rounded-full bg-indigo-400/[0.225] blur-[110px] motion-safe:animate-[orb-drift-a_22s_ease-in-out_infinite]"></div>
-        <div class="hero-orb absolute top-[58%] left-[34%] w-[26rem] h-[26rem] rounded-full bg-sky-300/[0.27] blur-[100px] motion-safe:animate-[orb-drift-b_26s_ease-in-out_infinite]"></div>
-        <div class="hero-orb absolute top-[22%] -left-32 w-80 h-80 rounded-full bg-fuchsia-300/[0.18] blur-[90px]"></div>
-      </div>
-      <div>
-        <p class="font-mono text-xs text-slate-500 mb-10">Python&ensp;·&ensp;MIT License&ensp;·&ensp;pip install simula</p>
-        <h1 class="text-[clamp(2rem,8.4vw,3rem)] sm:text-[3.2rem] md:text-[3.75rem] lg:text-[clamp(2.6rem,4.2vw,4.05rem)] font-serif italic font-light text-slate-900 leading-[1.05] tracking-tight mb-8">
-          High-quality synthetic data<br />
-          <span class="whitespace-nowrap">with measurable coverage.</span>
-        </h1>
-        <p class="text-slate-500 font-light text-lg leading-relaxed max-w-md mb-10">
-          Simula is a CLI-first Python library that turns a written brief into a schema-validated, critic-reviewed
-          dataset.
+  <!-- ═══ HERO ═══════════════════════════════════════════════════ -->
+  <section class="hero">
+    <div class="shell hero-in">
+      <div class="hero-copy">
+        <span class="eyebrow rv" data-rv>Open source <i aria-hidden="true">·</i> Python <i aria-hidden="true">·</i> MIT</span>
+        <h1 class="rv" data-rv style="--rv-delay:80ms">Synthetic data with a denominator.</h1>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          Simula is a small, CLI-first Python library for schema-shaped and free-text datasets. It maps the concept
+          space as a taxonomy before it generates a row, samples that map on purpose, critiques every record, and
+          keeps the lineage — so coverage is a number you can check, not a feeling.
         </p>
-        <div class="flex flex-wrap items-center gap-4 mb-8">
-          <a
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center gap-2.5 px-6 py-3 text-xs font-semibold uppercase tracking-wider bg-slate-900 text-white rounded-full hover:bg-indigo-900 transition-all duration-300"
-          >
-            <svg class="w-4 h-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
-            </svg>
-            View on GitHub
+        <div class="hero-actions rv" data-rv style="--rv-delay:240ms">
+          <a class="wipe" href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
+            <span class="wipe-fill"></span>
+            <span class="wipe-label">View on GitHub</span>
+            <span class="wipe-label" aria-hidden="true">↗</span>
           </a>
-          <a
-            href={RESEARCH_LOG_URL}
-            class="inline-flex items-center px-6 py-3 text-xs font-semibold uppercase tracking-wider bg-slate-900 text-white rounded-full hover:bg-indigo-900 transition-all duration-300"
-            data-astro-prefetch
-          >
-            Read the Research Log
-          </a>
+          <a class="quiet" href={LOG_URL}>Read the research log<span aria-hidden="true">→</span></a>
         </div>
+        <ul class="facts rv" data-rv style="--rv-delay:320ms">
+          {facts.map((f) => <li>{f}</li>)}
+        </ul>
       </div>
+      <figure class="plate rv" data-rv data-from="right" style="--rv-delay:200ms">
+        <canvas data-backdrop="plate" data-seed="7731" data-dpr="1.3" aria-hidden="true"></canvas>
+        <span class="plate-word" aria-hidden="true">Simula</span>
+      </figure>
+    </div>
+  </section>
 
-      <!-- config.yaml card -->
-      <div class="hidden lg:block">
-        <div class="code-paper rounded-xl overflow-hidden shadow-lg shadow-indigo-900/5 max-w-xl ml-auto" data-demo-card>
-          <div class="flex items-center justify-between px-5 py-3 border-b border-[#e8e4d8]">
-            <span class="font-mono text-xs text-slate-500">config.yaml</span>
-            <span class="font-mono text-xs text-slate-400" data-demo-label>the whole interface</span>
-          </div>
-          <div class="relative overflow-hidden transition-[height] duration-300 ease-out" data-demo-body>
-            <pre class="p-6 overflow-x-auto text-[0.8125rem] leading-relaxed transition-opacity duration-200" data-demo-config><code set:html={heroYaml} /></pre>
-            <video
-              class="hidden absolute inset-0 w-full h-full object-cover bg-[#0a1020]"
-              data-demo-video
-              src="https://blog-cdn.mercity.ai/blog/open-source-simula/simula-demo.mp4"
-              muted
-              loop
-              playsinline
-              preload="metadata"
-              aria-label="Recorded terminal session of simula run generating a dataset"
-            ></video>
-          </div>
-          <button
-            type="button"
-            class="w-full flex items-center justify-between gap-4 px-5 py-2.5 border-t border-[#e8e4d8] cursor-pointer hover:bg-[#f3efe3] transition-colors duration-200"
-            data-demo-toggle
-            aria-pressed="false"
-          >
-            <span class="font-mono text-xs text-slate-600">$ simula run config.yaml</span>
-            <span
-              class="inline-flex items-center rounded-full bg-indigo-600 px-3.5 py-1.5 font-mono text-xs text-white"
-              data-demo-glyph
-            >⏎ run</span>
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <!-- The premise -->
-    <section class="border-t border-slate-200 pt-16 mb-28">
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
-        <div class="md:col-span-5">
-          <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">The premise</p>
-          <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight">
-            Random prompting samples what the model finds probable. That's not your dataset.
-          </h2>
-        </div>
-        <div class="md:col-span-6 md:col-start-7">
-          <p class="text-slate-500 font-light text-lg leading-relaxed mb-6">
-            Prompt a model in a loop and it clusters around semantic modes: four hundred variations of "cheap wireless
-            earbuds," zero queries about warranty transfers or regional sizing. The edges of the space — the cases your
-            model will actually fail on — never show up.
-          </p>
-          <p class="text-slate-500 font-light text-lg leading-relaxed">
-            Simula's fix is structural. Decompose the domain into factors of variation, expand each into a taxonomy,
-            and sample data points as deliberate mixes of taxonomy nodes. Diversity stops being a hope and becomes a
-            number: combinations covered over combinations that exist.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- See it run -->
-    <section class="mb-28">
-      <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-8">See it run</p>
-      <video
-        class="block w-full max-w-4xl mx-auto h-auto rounded-xl shadow-xl shadow-slate-900/10"
-        data-demo-strip
-        src="https://blog-cdn.mercity.ai/blog/open-source-simula/simula-demo.mp4"
-        muted
-        loop
-        playsinline
-        preload="metadata"
-        aria-label="Recorded terminal session: simula run generating and evaluating a dataset"
-      ></video>
-    </section>
-
-    <!-- Pipeline -->
-    <section class="mb-28">
-      <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-8">The pipeline</p>
-      <div class="grid grid-cols-1 md:grid-cols-5 border-y border-slate-200 md:divide-x divide-slate-200">
-        {
-          pipeline.map((stage) => (
-            <div class="py-10 md:px-6 first:md:pl-0 last:md:pr-0 flex flex-col border-t border-slate-200 first:border-t-0 md:border-t-0">
-              <span class="font-mono text-xs text-slate-400 mb-12">{stage.step}</span>
-              <h3 class="text-lg font-medium text-slate-900 mb-3">{stage.title}</h3>
-              <p class="text-sm text-slate-500 font-light leading-relaxed mb-10 flex-grow">{stage.detail}</p>
-              <div class="flex items-center gap-2.5">
-                <svg class={`w-3.5 h-3.5 ${stage.accent}`} viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                  <path d="M3 3l9 9M12 5.5V12H5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-                <span class="font-mono text-xs text-slate-400">{stage.artifact}</span>
-              </div>
-            </div>
-          ))
-        }
-      </div>
-      <p class="text-sm text-slate-400 font-light mt-6 max-w-2xl">
-        Every stage writes a human-inspectable artifact. Edit <span class="font-mono text-slate-500">taxonomy.json</span>
-        by hand and the pipeline reuses it — thirty seconds of expert review beats any amount of downstream filtering.
-      </p>
-    </section>
-
-    <!-- One data point, end to end -->
-    <section class="pt-8 mb-28">
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-8 mb-12">
-        <div class="md:col-span-5">
-          <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Anatomy of a data point</p>
-          <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight">From sampled mix to accepted record.</h2>
-        </div>
-        <div class="md:col-span-6 md:col-start-7">
-          <p class="text-slate-500 font-light text-lg leading-relaxed">
-            No record goes straight from requirements to output. Each sampled mix fans out into multiple meta-prompt
-            scenarios — one picked at random — so identical requirements still produce genuinely different records.
-            That indirection is what keeps nearby rows from being near-duplicates.
-          </p>
-        </div>
-      </div>
-
-      <div class="bg-white/70 border border-slate-200 rounded-2xl p-6 md:p-12">
-        <div class="max-w-4xl">
-          <!-- Mix -->
-          <div>
-            <p class="font-mono text-xs uppercase tracking-widest text-slate-400 mb-4">
-              <span class="text-indigo-500 font-medium">1</span> · Sampled mix — one node per factor
-            </p>
-            <div class="flex flex-wrap gap-2">
-              <span class="font-mono text-xs bg-sky-50 text-sky-800 border border-sky-100 px-3 py-1.5 rounded-full">
-                product_vertical: footwear → trail_running
-              </span>
-              <span class="font-mono text-xs bg-indigo-50 text-indigo-800 border border-indigo-100 px-3 py-1.5 rounded-full">
-                shopper_intent: known_item_hunt
-              </span>
-              <span class="font-mono text-xs bg-emerald-50 text-emerald-800 border border-emerald-100 px-3 py-1.5 rounded-full">
-                attribute_focus: price_and_availability
-              </span>
-              <span class="font-mono text-xs bg-fuchsia-50 text-fuchsia-800 border border-fuchsia-100 px-3 py-1.5 rounded-full">
-                query_complexity: terse_with_negation
-              </span>
-            </div>
-          </div>
-
-          <div class="text-slate-300 py-4 pl-1" aria-hidden="true">↓</div>
-
-          <!-- Meta-prompts -->
-          <div>
-            <p class="font-mono text-xs uppercase tracking-widest text-slate-400 mb-4">
-              <span class="text-sky-500 font-medium">2</span> · Meta-prompts — 3 drafted, 1 picked at random
-            </p>
-            <div class="space-y-3 max-w-2xl">
-              <p class="text-sm text-slate-400 font-light border-l-2 border-slate-200 pl-4 leading-relaxed">
-                "A runner hunting a specific shoe model they already know, with a hard price cap and one excluded
-                color."
-              </p>
-              <div class="border-l-2 border-indigo-500 pl-4">
-                <p class="text-slate-800 font-light leading-relaxed">
-                  "Race-week replacement search: brand + waterproof + size, under $80, typed as bare keywords with a
-                  negation."
-                  <span class="ml-2 inline-block align-middle font-mono text-[0.625rem] uppercase tracking-wider bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">
-                    picked
-                  </span>
-                </p>
-              </div>
-              <p class="text-sm text-slate-400 font-light border-l-2 border-slate-200 pl-4 leading-relaxed">
-                "A bargain-hunter comparing two named brands on waterproofing and grip, budget-capped."
-              </p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-3 py-4 pl-1" aria-hidden="true">
-            <span class="text-slate-300">↓</span>
-            <span class="font-mono text-xs text-amber-600/80">complexified at p = 0.3 — more constraints, same requirements</span>
-          </div>
-
-          <!-- Record -->
-          <div>
-            <p class="font-mono text-xs uppercase tracking-widest text-slate-400 mb-4">
-              <span class="text-amber-500 font-medium">3</span> · Generated record — schema-validated
-            </p>
-            <div class="code-paper rounded-lg overflow-x-auto max-w-2xl">
-              <pre class="p-4 text-[0.8125rem] leading-relaxed"><code set:html={recordJson} /></pre>
-            </div>
-          </div>
-
-          <div class="text-slate-300 py-4 pl-1" aria-hidden="true">↓</div>
-
-          <!-- Critic -->
-          <div>
-            <p class="font-mono text-xs uppercase tracking-widest text-slate-400 mb-4">
-              <span class="text-emerald-500 font-medium">4</span> · Critic verdict
-            </p>
-            <div class="flex flex-wrap items-center gap-3">
-              <span class="font-mono text-xs bg-emerald-50 text-emerald-800 border border-emerald-100 px-3 py-1.5 rounded-full">
-                accept ✓
-              </span>
-              <span class="text-sm text-slate-500 font-light">
-                Rejections feed up to <span class="font-mono text-xs">max_refine_attempts</span> revisions — or the row
-                dies with its reason recorded.
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Model roles -->
-    <section class="mb-28">
-      <div class="mb-10">
-        <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Three model roles</p>
-        <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight max-w-3xl">
-          Expensive intelligence where it amortizes. Cheap throughput where volume lives.
-        </h2>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 border-y border-slate-200 md:divide-x divide-slate-200">
-        {
-          roles.map((role) => (
-            <div class="py-10 md:px-8 first:md:pl-0 last:md:pr-0 border-t border-slate-200 first:border-t-0 md:border-t-0">
-              <div class="flex items-baseline justify-between mb-6">
-                <span class={`font-mono text-sm font-medium ${role.color}`}>{role.name}</span>
-                <span class="font-mono text-xs text-slate-400">{role.calls}</span>
-              </div>
-              <h3 class="text-lg font-medium text-slate-900 mb-3">{role.label}</h3>
-              <p class="text-sm text-slate-500 font-light leading-relaxed">{role.detail}</p>
-            </div>
-          ))
-        }
-      </div>
-    </section>
-
-    <!-- Config -->
-    <section class="pt-4 mb-20">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-        <div class="lg:col-span-5 lg:-translate-y-[25%]">
-          <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Configuration</p>
-          <h2 class="text-2xl md:text-3xl font-light text-slate-900 leading-tight mb-4">One YAML per run.</h2>
-          <p class="text-slate-500 font-light text-base leading-relaxed mb-4">
-            Defaults and validation live in one place — a bad <span class="font-mono text-sm">target_size</span> fails
-            loudly at load, never as a silent zero-row run. Smoke-test at 20 attempts for thirty cents, then bump the
-            target.
-          </p>
-          <p class="text-slate-500 font-light text-base leading-relaxed">
-            Resume reuses every artifact, guarded by a config fingerprint — rows from two different configs can never
-            blend silently into one dataset.
-          </p>
-        </div>
-        <div class="lg:col-span-7">
-          <div class="code-paper rounded-xl overflow-hidden shadow-sm lg:w-[85%] lg:ml-auto">
-            <div class="flex items-center justify-between px-5 py-2 border-b border-[#e8e4d8]">
-              <span class="font-mono text-xs text-slate-500">config.yaml</span>
-              <span class="font-mono text-xs text-slate-400">abridged</span>
-            </div>
-            <pre class="p-4 overflow-x-auto text-[0.75rem] leading-relaxed"><code set:html={yamlConfig} /></pre>
-            <div class="flex items-center justify-between px-5 py-2 border-t border-[#e8e4d8]">
-              <span class="font-mono text-xs text-slate-500">$ simula run config.yaml</span>
-              <span class="font-mono text-xs text-slate-400">⏎</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Lineage -->
-    <section class="mb-28">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-        <div class="lg:col-span-7 order-2 lg:order-1">
-          <div class="code-paper rounded-xl overflow-hidden shadow-sm lg:w-[85%]">
-            <div class="flex items-center justify-between px-5 py-2 border-b border-[#e8e4d8]">
-              <span class="font-mono text-xs text-slate-500">dataset.final.jsonl — one row</span>
-              <span class="font-mono text-xs text-slate-400">abridged</span>
-            </div>
-            <pre class="p-4 overflow-x-auto text-[0.75rem] leading-relaxed"><code set:html={lineageJson} /></pre>
-            <div class="flex items-center justify-between px-5 py-2 border-t border-[#e8e4d8]">
-              <span class="font-mono text-xs text-slate-500">$ simula evaluate config.yaml</span>
-              <span class="font-mono text-xs text-slate-400">⏎</span>
-            </div>
-          </div>
-        </div>
-        <div class="lg:col-span-5 order-1 lg:order-2 lg:-translate-y-[25%]">
-          <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Lineage</p>
-          <h2 class="text-2xl md:text-3xl font-light text-slate-900 leading-tight mb-4">Every row can explain itself.</h2>
-          <p class="text-slate-500 font-light text-base leading-relaxed mb-4">
-            Taxonomy mix, strategy, meta-prompt, and critic verdicts travel with every record — coverage math reads
-            from it, and per-row debugging starts here, not in a log archaeology session.
-          </p>
-          <p class="text-slate-500 font-light text-base leading-relaxed">
-            Rejected rows keep their reason attached, so when quality drifts the diagnosis is one filter away — and the
-            coverage-aware trimmer reads the same trail.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Evaluation suite -->
-    <section class="border-t border-slate-200 pt-16 mb-28">
-      <div class="mb-10">
-        <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">The evaluation suite</p>
-        <h2 class="text-3xl md:text-4xl font-light text-slate-900 leading-tight max-w-3xl">
-          Generation never writes eval reports. Evaluation never mutates datasets.
-        </h2>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {
-          evalSuite.map((item) => (
-            <div class="bg-white/70 border border-slate-200 rounded-xl p-8">
-              <h3 class="text-lg font-medium text-slate-900 mb-2">{item.title}</h3>
-              <p class="text-sm text-slate-500 font-light leading-relaxed">{item.detail}</p>
-            </div>
-          ))
-        }
-      </div>
-    </section>
-
-    <!-- Closing CTA -->
-    <section class="border-t border-slate-200 pt-16 pb-8">
-      <h2 class="text-3xl md:text-5xl font-light text-slate-900 leading-tight mb-6">
-        Intentionally small.
-        <span class="whitespace-nowrap"><span class="font-serif italic">Unapologetically</span> boring.</span>
-      </h2>
-      <div class="max-w-3xl">
-        <p class="text-slate-500 font-light text-lg leading-relaxed mb-10">
-          About ten modules of clear Python, one YAML per run, MIT licensed, with runnable offline examples and the
-          real configs from our production runs. If you're building fine-tuning or evaluation datasets and want this
-          pipeline applied to your domain — that's exactly the work we do.
+  <!-- ═══ PREMISE ════════════════════════════════════════════════ -->
+  <section class="band" id="premise">
+    <div class="shell premise">
+      <div class="premise-copy">
+        <span class="eyebrow rv" data-rv>The premise</span>
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Map the space before you sample it.</h2>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          Prompt a model in a loop and you get whatever region of the space it finds most probable: dense at the
+          modes, thin at the edges, and no way to say what you missed. Simula makes the space explicit first. Three
+          ideas do the work.
         </p>
-        <div class="flex flex-wrap items-center gap-4">
-          <a
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="px-6 py-3 text-xs font-semibold uppercase tracking-wider bg-slate-900 text-white rounded-full hover:bg-indigo-900 transition-all duration-300"
-          >
-            View on GitHub
-          </a>
-          <a
-            href="/contact"
-            class="px-6 py-3 text-xs font-semibold uppercase tracking-wider border border-slate-200 rounded-full hover:bg-slate-900 hover:text-white transition-all duration-300"
-            data-astro-prefetch
-          >
-            Work With Us
-          </a>
-        </div>
-      </div>
-    </section>
-  </div>
-</BaseLayout>
-
-<script>
-  function initSimulaDemos() {
-    const card = document.querySelector<HTMLElement>('[data-demo-card]');
-    if (card && !card.dataset.bound) {
-      card.dataset.bound = 'true';
-      const body = card.querySelector<HTMLElement>('[data-demo-body]')!;
-      const pre = card.querySelector<HTMLElement>('[data-demo-config]')!;
-      const video = card.querySelector<HTMLVideoElement>('[data-demo-video]')!;
-      const toggle = card.querySelector<HTMLButtonElement>('[data-demo-toggle]')!;
-      const glyph = card.querySelector<HTMLElement>('[data-demo-glyph]')!;
-      const label = card.querySelector<HTMLElement>('[data-demo-label]');
-      let open = false;
-      let settle: ReturnType<typeof setTimeout>;
-
-      toggle.addEventListener('click', () => {
-        open = !open;
-        clearTimeout(settle);
-        body.style.height = `${body.offsetHeight}px`;
-        requestAnimationFrame(() => {
-          if (open) {
-            body.style.height = `${Math.round((body.clientWidth * 830) / 1010)}px`;
-            pre.classList.add('opacity-0');
-            video.classList.remove('hidden');
-            video.muted = true;
-            video.currentTime = 0;
-            video.play().catch(() => {});
-          } else {
-            body.style.height = `${pre.offsetHeight}px`;
-            pre.classList.remove('opacity-0');
-            video.pause();
-            settle = setTimeout(() => {
-              video.classList.add('hidden');
-              body.style.height = '';
-            }, 320);
+        <ol class="ideas">
+          {
+            ideas.map((it, i) => (
+              <li class="rv" data-rv style={`--rv-delay:${200 + i * 80}ms`}>
+                <h3>{it.title}</h3>
+                <p>{it.body}</p>
+              </li>
+            ))
           }
+        </ol>
+      </div>
+      <figure class="premise-art rv" data-rv data-from="right" style="--rv-delay:160ms">
+        <canvas data-backdrop="leafgrid" data-seed="1187" data-dpr="1.4" aria-hidden="true"></canvas>
+        <figcaption>
+          Every leaf of the taxonomy is a cell, one band per factor. A sampled leaf fills. Coverage is filled cells
+          over all cells — a sentence a prompt-in-a-loop pipeline cannot utter, because it has no denominator.
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ═══ PIPELINE ═══════════════════════════════════════════════ -->
+  <section class="band band-tint" id="pipeline">
+    <div class="shell">
+      <span class="eyebrow rv" data-rv>The pipeline</span>
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Five stages. Each one writes a file you can read.</h2>
+      <p class="lede rv" data-rv style="--rv-delay:160ms">
+        Every stage produces a human-inspectable JSON or JSONL artifact, and an artifact on disk is reused rather than
+        rebuilt. Stop after the taxonomy, edit it by hand, rerun: thirty seconds of expert review is worth more than any
+        amount of downstream filtering.
+      </p>
+      <ol class="stages rv" data-rv style="--rv-delay:200ms">
+        {
+          stages.map((s) => (
+            <li class="stage">
+              <span class="stage-n">{s.n}</span>
+              <h3>{s.title}</h3>
+              <p>{s.body}</p>
+              <span class="stage-artifact">{s.artifact}</span>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </section>
+
+  <!-- ═══ ONE DATA POINT ═════════════════════════════════════════ -->
+  <section class="band" id="trace">
+    <div class="shell">
+      <span class="eyebrow rv" data-rv>One data point</span>
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">From sampled mix to accepted row.</h2>
+      <p class="lede rv" data-rv style="--rv-delay:160ms">
+        No record goes straight from requirements to output. This is a row from the 10K e-commerce run — shopper
+        searches paired with atomic, database-queryable extractions — with every step that produced it.
+      </p>
+
+      <ol class="trace">
+        <li class="trace-step rv" data-rv>
+          <span class="trace-n">1</span>
+          <div class="trace-body">
+            <h3>Sampled mix <span>one node per factor, drawn under a weighted strategy</span></h3>
+            <pre class="code"><code set:html={mixCode} /></pre>
+          </div>
+        </li>
+        <li class="trace-step rv" data-rv style="--rv-delay:60ms">
+          <span class="trace-n">2</span>
+          <div class="trace-body">
+            <h3>Meta-prompt <span>three drafted, one picked at random</span></h3>
+            <p class="trace-text">
+              A runner replacing worn trail shoes before a race weekend: known size, a hard price ceiling, wants
+              waterproofing, explicitly rules out neon colourways. Terse, search-bar phrasing.
+            </p>
+            <p class="trace-note">
+              The indirection is what buys local diversity. Hand the requirements straight to the generator and every
+              “footwear + known item + negation” row becomes the same query with a brand swapped. This one also drew
+              heads at <code>complexity_ratio: 0.3</code> and was rewritten harder.
+            </p>
+          </div>
+        </li>
+        <li class="trace-step rv" data-rv style="--rv-delay:120ms">
+          <span class="trace-n">3</span>
+          <div class="trace-body">
+            <h3>Record <span>generated, then validated against the schema before any further call</span></h3>
+            <pre class="code"><code set:html={recordCode} /></pre>
+          </div>
+        </li>
+        <li class="trace-step rv" data-rv style="--rv-delay:180ms">
+          <span class="trace-n">4</span>
+          <div class="trace-body">
+            <h3>Critic <span>accept</span></h3>
+            <p class="trace-note">
+              A separate call, at low temperature, against a seven-point rejection checklist from the prompt module:
+              compound values, wrong types, deep nesting, hallucinated constraints, omitted constraints, unnatural
+              queries, and the specific trap of inventing a price when the shopper only said “cheap”. Rejections
+              feed a refinement call; a refinement that breaks the schema rejects the row outright.
+            </p>
+          </div>
+        </li>
+        <li class="trace-step rv" data-rv style="--rv-delay:240ms">
+          <span class="trace-n">5</span>
+          <div class="trace-body">
+            <h3>Lineage <span>travels with the row, and everything downstream reads from it</span></h3>
+            <pre class="code"><code set:html={lineageCode} /></pre>
+            <p class="trace-note">
+              Coverage math, the coverage-aware trimmer and per-row debugging all read this one field. Every row can
+              answer where it came from and who approved it.
+            </p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ═══ ROLES ══════════════════════════════════════════════════ -->
+  <section class="band band-tint" id="roles">
+    <div class="shell">
+      <span class="eyebrow rv" data-rv>Model roles</span>
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Three roles, one budget.</h2>
+      <p class="lede rv" data-rv style="--rv-delay:160ms">
+        Expensive intelligence goes where its decisions amortize across the whole dataset; cheap throughput goes where
+        volume lives. Each role picks its own model and decoding, and any of the thirteen task types can override
+        them.
+      </p>
+      <div class="roles">
+        {
+          roles.map((r, i) => (
+            <article class="role rv" data-rv style={`--rv-delay:${120 + i * 80}ms`}>
+              <span class="role-name">{r.name}</span>
+              <span class="role-figure">{r.figure}</span>
+              <span class="role-unit">{r.unit}</span>
+              <h3>{r.label}</h3>
+              <p>{r.body}</p>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ RUN ════════════════════════════════════════════════════ -->
+  <section class="band" id="run">
+    <div class="shell run">
+      <div class="run-copy">
+        <span class="eyebrow rv" data-rv>Running it</span>
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">One YAML per run. Five commands.</h2>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          Only two things are required: a description and a model per role. Everything else has a default and fails
+          loudly at load time, not as a silent zero-row run. Smoke-test at twenty rows first; resume reuses everything.
+        </p>
+        <pre class="code rv" data-rv style="--rv-delay:220ms"><code set:html={installCode} /></pre>
+        <ol class="cli rv" data-rv style="--rv-delay:280ms">
+          {
+            cli.map((c) => (
+              <li>
+                <code>simula {c.cmd}</code>
+                <span>{c.body}</span>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+      <div class="run-side">
+        <figure class="term rv" data-rv data-from="right" style="--rv-delay:160ms">
+          <video
+            data-demo
+            src={DEMO_URL}
+            poster="/simula-demo-poster.jpg"
+            muted
+            loop
+            playsinline
+            preload="none"
+            width="1010"
+            height="830"
+          ></video>
+          <figcaption>
+            <code>simula run</code> on the 10K e-commerce config, building the taxonomy. 53 seconds, muted.
+          </figcaption>
+        </figure>
+        <pre class="code rv" data-rv data-from="right" style="--rv-delay:240ms"><code set:html={yamlCode} /></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ EVALUATION ═════════════════════════════════════════════ -->
+  <section class="band band-tint" id="evaluation">
+    <div class="shell">
+      <span class="eyebrow rv" data-rv>Evaluation</span>
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Evaluation reads the dataset. It never writes to it.</h2>
+      <p class="lede rv" data-rv style="--rv-delay:160ms">
+        <code>evaluate</code> reads <code>dataset.final.jsonl</code> and writes <code>dataset.evaluated.jsonl</code>
+        and <code>eval_report.json</code>. The boundary exists because an evaluation bug that rewrites a shipped
+        dataset is the failure you discover three weeks later.
+      </p>
+      <div class="suite">
+        {
+          evalSuite.map((e, i) => (
+            <div class="suite-item rv" data-rv style={`--rv-delay:${120 + i * 70}ms`}>
+              <h3>{e.title}</h3>
+              <p>{e.body}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ NUMBERS ════════════════════════════════════════════════ -->
+  <section class="band" id="numbers">
+    <div class="shell">
+      <span class="eyebrow rv" data-rv>From a real run</span>
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">A thousand rows, logged in full.</h2>
+      <p class="lede rv" data-rv style="--rv-delay:160ms">
+        The library’s first production test: job-posting extraction with a varying-key schema and atomic fields.
+        The tail was killed during a rate-limit storm and the trimmer finished the job — overgeneration is the shock
+        absorber for everything.
+      </p>
+      <dl class="stats rv" data-rv style="--rv-delay:200ms">
+        {
+          stats.map((s) => (
+            <div class="stat">
+              <dt>{s.label}</dt>
+              <dd>
+                <span class="stat-figure">{s.figure}</span>
+                <span class="stat-note">{s.note}</span>
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+      <div class="limits rv" data-rv style="--rv-delay:260ms">
+        <h3>Pilot-scale, on purpose.</h3>
+        <ul>
+          {limits.map((l) => <li>{l}</li>)}
+        </ul>
+        <p>
+          The roadmap follows friction from real runs; batched, multi-turn generation is next. The full log — every
+          stage, what worked and what did not — is in <a href={LOG_URL}>the research post</a>, and the paper that
+          scales the same ideas past 100M tokens is <a href={PAPER_URL} target="_blank" rel="noopener noreferrer">arXiv:2603.29791</a>.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CLOSER ═════════════════════════════════════════════════ -->
+  <section class="band band-tint closer">
+    <div class="shell closer-in">
+      <div>
+        <h2 class="rv" data-rv>Run it on your problem.</h2>
+        <p class="rv" data-rv style="--rv-delay:100ms">
+          MIT-licensed, with runnable offline examples and the real configs from the runs described here. If you want
+          this pipeline applied to your domain, that is exactly the work we do.
+        </p>
+      </div>
+      <div class="closer-actions rv" data-rv style="--rv-delay:200ms">
+        <a class="wipe" href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
+          <span class="wipe-fill"></span>
+          <span class="wipe-label">View on GitHub</span>
+          <span class="wipe-label" aria-hidden="true">↗</span>
+        </a>
+        <a class="quiet" href="/contact">Talk to us<span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </section>
+</V2Layout>
+
+<script is:inline>
+  /* The demo plays only while it is on screen. */
+  (() => {
+    const v = document.querySelector('[data-demo]');
+    if (!v || !('IntersectionObserver' in window)) return;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) v.play().catch(() => {});
+          else v.pause();
         });
-        glyph.textContent = open ? '✕ close' : '⏎ run';
-        if (label) label.textContent = open ? 'recorded demo' : 'the whole interface';
-        toggle.setAttribute('aria-pressed', String(open));
-      });
-    }
-
-    const strip = document.querySelector<HTMLVideoElement>('[data-demo-strip]');
-    if (strip && !strip.dataset.bound) {
-      strip.dataset.bound = 'true';
-      strip.muted = true;
-      const io = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              strip.play().catch(() => {});
-            } else {
-              strip.pause();
-            }
-          });
-        },
-        { threshold: 0.35 }
-      );
-      io.observe(strip);
-    }
-  }
-
-  document.addEventListener('astro:page-load', initSimulaDemos);
+      },
+      { threshold: 0.35 }
+    );
+    io.observe(v);
+  })();
 </script>
 
 <style>
-  @keyframes orb-drift-a {
-    0%,
-    100% {
-      transform: translate3d(0, 0, 0) scale(1);
+  /* ── Shared bits ───────────────────────────────────────────── */
+  .eyebrow i {
+    margin-inline: 5.4px;
+    font-style: normal;
+    color: var(--n-300);
+  }
+  .quiet {
+    display: inline-flex;
+    align-items: center;
+    gap: 7.2px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    transition: color 300ms var(--ease);
+  }
+  .quiet span {
+    transition: transform 400ms var(--ease);
+  }
+  .quiet:hover {
+    color: var(--ink);
+  }
+  .quiet:hover span {
+    transform: translateX(4px);
+  }
+  code {
+    font-family: var(--mono);
+  }
+  /* The layout resets ul, not ol. These carry their own numbering. */
+  .ideas,
+  .stages,
+  .trace,
+  .cli {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .lede code,
+  .trace-note code,
+  .cli code,
+  figcaption code {
+    padding: 1px 5.4px;
+    font-size: 0.86em;
+    color: var(--ink);
+    background: var(--n-100);
+    border: 1px solid var(--line);
+  }
+  /* Dark code on the same ground as the research log's blocks. */
+  .code {
+    margin: 0;
+    padding: 16.2px 19.8px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 12.15px;
+    line-height: 1.7;
+    color: var(--n-100);
+    background: var(--n-900);
+    border: 1px solid var(--n-800);
+  }
+  .code :global(.tok-k) {
+    color: hsl(243 90% 82%);
+  }
+  .code :global(.tok-s),
+  .code :global(.tok-n) {
+    color: hsl(178 58% 66%);
+  }
+  .code :global(.tok-c) {
+    color: var(--n-400);
+  }
+
+  /* ── Hero ──────────────────────────────────────────────────── */
+  .hero {
+    padding-block: clamp(50.4px, 6vw, 82.8px) clamp(54px, 6.5vw, 90px);
+  }
+  .hero-in {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: clamp(36px, 5vw, 72px);
+    align-items: center;
+  }
+  .hero h1 {
+    margin-top: 14.4px;
+    max-width: 14ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(36px, 4.9vw, 58.5px);
+    font-weight: 400;
+    line-height: 1.06;
+    letter-spacing: -0.026em;
+    text-wrap: balance;
+  }
+  .hero .lede {
+    max-width: 52ch;
+    font-size: 15.75px;
+  }
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 27px;
+    margin-top: 32.4px;
+  }
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px 0;
+    margin-top: 36px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    letter-spacing: 0.06em;
+    color: var(--n-400);
+  }
+  .facts li + li::before {
+    content: '·';
+    margin-inline: 10.8px;
+    color: var(--n-300);
+  }
+  /* The plate: the page's one loud element. Square corners, 1px line,
+     the wordmark in the same serif as every heading on the site. */
+  .plate {
+    position: relative;
+    margin: 0;
+    aspect-ratio: 5 / 4;
+    overflow: hidden;
+    border: 1px solid var(--line-2);
+    background: var(--indigo-600);
+  }
+  .plate canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .plate-word {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-family: var(--hero-serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(54px, 7.5vw, 99px);
+    letter-spacing: -0.02em;
+    color: #fff;
+    text-shadow: 0 10px 36px hsl(243 80% 20% / 0.55);
+    padding-bottom: 0.08em;
+  }
+  @media (max-width: 860px) {
+    .hero-in {
+      grid-template-columns: minmax(0, 1fr);
     }
-    50% {
-      transform: translate3d(-31.5px, 25.2px, 0) scale(1.06);
+    .plate {
+      aspect-ratio: 16 / 10;
     }
   }
 
-  @keyframes orb-drift-b {
-    0%,
-    100% {
-      transform: translate3d(0, 0, 0) scale(1);
+  /* ── Premise ───────────────────────────────────────────────── */
+  .premise {
+    display: grid;
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+    gap: clamp(36px, 5vw, 72px);
+    align-items: start;
+  }
+  .ideas {
+    margin-top: 32.4px;
+    counter-reset: idea;
+  }
+  .ideas li {
+    position: relative;
+    padding: 19.8px 0 19.8px 41.4px;
+    border-top: 1px solid var(--line);
+    counter-increment: idea;
+  }
+  .ideas li:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+  .ideas li::before {
+    content: counter(idea, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: 22.5px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    color: var(--indigo-600);
+  }
+  .ideas h3 {
+    font-family: var(--hero-serif);
+    font-size: 18.9px;
+    font-weight: 400;
+    letter-spacing: -0.014em;
+    line-height: 1.25;
+  }
+  .ideas p {
+    margin-top: 7.2px;
+    max-width: 56ch;
+    font-size: 13.05px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+  .premise-art {
+    position: sticky;
+    top: calc(var(--nav-h) + 27px);
+    margin: 0;
+    margin-top: 27px;
+  }
+  .premise-art canvas {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border: 1px solid var(--line);
+  }
+  .premise-art figcaption {
+    margin-top: 12.6px;
+    font-family: var(--mono);
+    font-size: 10.35px;
+    line-height: 1.65;
+    color: var(--n-400);
+  }
+  @media (max-width: 860px) {
+    .premise {
+      grid-template-columns: minmax(0, 1fr);
     }
-    50% {
-      transform: translate3d(29.4px, -21px, 0) scale(0.95);
+    .premise-art {
+      position: static;
     }
   }
 
-  .code-paper {
-    background-color: #fbfaf5;
-    border: 1px solid #e8e4d8;
+  /* ── Pipeline: one bordered object, every internal edge shared ── */
+  .stages {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    margin-top: 46.8px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .stage {
+    display: flex;
+    flex-direction: column;
+    min-height: 15.3rem;
+    padding: 21.6px 19.8px 23.4px;
+    border-right: 1px solid var(--line);
+    transition: background 400ms var(--ease);
+  }
+  .stage:last-child {
+    border-right: 0;
+  }
+  .stage:hover {
+    background: var(--n-50);
+  }
+  .stage-n {
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    color: var(--indigo-600);
+  }
+  .stage h3 {
+    margin-top: 27px;
+    font-family: var(--hero-serif);
+    font-size: 18.9px;
+    font-weight: 400;
+    letter-spacing: -0.014em;
+    line-height: 1.22;
+  }
+  .stage p {
+    margin-top: 9.9px;
+    font-size: 12.6px;
+    line-height: 1.7;
+    color: var(--ink-3);
+  }
+  .stage-artifact {
+    margin-top: auto;
+    padding-top: 21.6px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    color: var(--teal-700);
+  }
+  @media (max-width: 1000px) {
+    .stages {
+      grid-template-columns: 1fr;
+    }
+    .stage {
+      min-height: 0;
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .stage:last-child {
+      border-bottom: 0;
+    }
+    .stage h3 {
+      margin-top: 9px;
+    }
+    .stage-artifact {
+      padding-top: 12.6px;
+    }
   }
 
-  .code-paper pre {
+  /* ── Trace ─────────────────────────────────────────────────── */
+  .trace {
+    max-width: 792px;
+    margin-top: 46.8px;
+  }
+  .trace-step {
+    position: relative;
+    display: grid;
+    grid-template-columns: 41.4px minmax(0, 1fr);
+    padding-bottom: 36px;
+  }
+  /* The rail: a 1px line joining the numbers, stopping at the last. */
+  .trace-step::before {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 27px;
+    bottom: 0;
+    width: 1px;
+    background: var(--line);
+  }
+  .trace-step:last-child::before {
+    display: none;
+  }
+  .trace-step:last-child {
+    padding-bottom: 0;
+  }
+  .trace-n {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 23.4px;
+    height: 23.4px;
+    border: 1px solid var(--line-2);
+    background: var(--ground);
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    color: var(--indigo-600);
+  }
+  .trace-body h3 {
+    padding-top: 2.7px;
+    font-family: var(--hero-serif);
+    font-size: 18.9px;
+    font-weight: 400;
+    letter-spacing: -0.014em;
+    line-height: 1.25;
+  }
+  .trace-body h3 span {
+    display: block;
+    margin-top: 3.6px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    letter-spacing: 0.04em;
+    color: var(--n-400);
+  }
+  .trace-body .code {
+    margin-top: 14.4px;
+  }
+  .trace-text {
+    margin-top: 14.4px;
+    padding: 14.4px 18px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    font-family: var(--hero-serif);
+    font-size: 16.2px;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+  .trace-note {
+    margin-top: 12.6px;
+    max-width: 62ch;
+    font-size: 13.05px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+
+  /* ── Roles ─────────────────────────────────────────────────── */
+  .roles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 19.8px;
+    margin-top: 46.8px;
+  }
+  .role {
+    display: flex;
+    flex-direction: column;
+    padding: 25.2px 23.4px 27px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    transition:
+      transform 500ms var(--ease),
+      border-color 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  .role:hover {
+    transform: translateY(-1.2px);
+    border-color: var(--ink-3);
+    box-shadow: 0 4px 9px -7px hsl(240 14% 10% / 0.07);
+  }
+  .role-name {
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--indigo-600);
+  }
+  .role-figure {
+    margin-top: 23.4px;
+    font-family: var(--hero-serif);
+    font-size: 30.6px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--teal-700);
+  }
+  .role-unit {
+    margin-top: 5.4px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    color: var(--n-400);
+  }
+  .role h3 {
+    margin-top: 23.4px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    font-family: var(--hero-serif);
+    font-size: 17.1px;
+    font-weight: 400;
+    letter-spacing: -0.012em;
+  }
+  .role p {
+    margin-top: 9px;
+    font-size: 12.6px;
+    line-height: 1.72;
+    color: var(--ink-3);
+  }
+  @media (max-width: 900px) {
+    .roles {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ── Run ───────────────────────────────────────────────────── */
+  .run {
+    display: grid;
+    grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
+    gap: clamp(36px, 5vw, 64.8px);
+    align-items: start;
+  }
+  .run-copy .code {
+    margin-top: 28.8px;
+  }
+  .cli {
+    margin-top: 27px;
+  }
+  .cli li {
+    display: grid;
+    grid-template-columns: 138px minmax(0, 1fr);
+    gap: 18px;
+    padding-block: 12.6px;
+    border-top: 1px solid var(--line);
+    font-size: 12.6px;
+    line-height: 1.6;
+    color: var(--ink-3);
+  }
+  .cli li:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+  .cli code {
+    align-self: start;
+    justify-self: start;
+    white-space: nowrap;
+  }
+  .run-side {
+    display: flex;
+    flex-direction: column;
+    gap: 19.8px;
+  }
+  .term {
     margin: 0;
   }
-
-  .code-paper code {
-    font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
-    color: #44403c;
+  .term video {
     display: block;
-    white-space: pre;
+    width: 100%;
+    height: auto;
+    background: var(--n-900);
+    border: 1px solid var(--n-800);
+  }
+  .term figcaption {
+    margin-top: 9.9px;
+    font-family: var(--mono);
+    font-size: 10.35px;
+    line-height: 1.6;
+    color: var(--n-400);
+  }
+  @media (max-width: 900px) {
+    /* minmax(0, …), not 1fr: the code blocks' min-content width would
+       otherwise push the column past the viewport. */
+    .run {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .cli li {
+      grid-template-columns: 1fr;
+      gap: 3.6px;
+    }
   }
 
-  .code-paper :global(.tok-k) {
-    color: #1d4ed8;
+  /* ── Evaluation ────────────────────────────────────────────── */
+  .suite {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 46.8px;
+    margin-top: 36px;
+  }
+  .suite-item {
+    padding: 23.4px 0 25.2px;
+    border-top: 1px solid var(--line);
+  }
+  .suite-item h3 {
+    font-family: var(--hero-serif);
+    font-size: 18.9px;
+    font-weight: 400;
+    letter-spacing: -0.014em;
+    line-height: 1.25;
+  }
+  .suite-item p {
+    margin-top: 9px;
+    max-width: 52ch;
+    font-size: 13.05px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+  @media (max-width: 760px) {
+    .suite {
+      grid-template-columns: 1fr;
+    }
   }
 
-  .code-paper :global(.tok-s) {
-    color: #9a3412;
+  /* ── Numbers ───────────────────────────────────────────────── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin: 46.8px 0 0;
+    border-top: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+  }
+  .stat {
+    padding: 21.6px 19.8px 23.4px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .stat dt {
+    font-family: var(--mono);
+    font-size: 9.9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .stat dd {
+    margin: 12.6px 0 0;
+  }
+  .stat-figure {
+    display: block;
+    font-family: var(--hero-serif);
+    font-size: 32.4px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--teal-700);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-note {
+    display: block;
+    margin-top: 9px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    line-height: 1.5;
+    color: var(--n-400);
+  }
+  @media (max-width: 900px) {
+    .stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 480px) {
+    .stats {
+      grid-template-columns: 1fr;
+    }
+  }
+  .limits {
+    max-width: 62ch;
+    margin-top: 46.8px;
+  }
+  .limits h3 {
+    font-family: var(--hero-serif);
+    font-size: 21.6px;
+    font-weight: 400;
+    letter-spacing: -0.016em;
+  }
+  .limits ul {
+    margin-top: 12.6px;
+  }
+  .limits li {
+    position: relative;
+    padding: 6.3px 0 6.3px 18px;
+    font-size: 13.05px;
+    line-height: 1.6;
+    color: var(--ink-3);
+  }
+  .limits li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 14.4px;
+    width: 5.4px;
+    height: 5.4px;
+    border-radius: 50%;
+    background: var(--indigo-500);
+    opacity: 0.5;
+  }
+  .limits p {
+    margin-top: 16.2px;
+    font-size: 13.05px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+  .limits a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--n-300);
+    transition: text-decoration-color 300ms var(--ease);
+  }
+  .limits a:hover {
+    text-decoration-color: currentColor;
   }
 
-  .code-paper :global(.tok-n) {
-    color: #b45309;
+  /* ── Closer ────────────────────────────────────────────────── */
+  .closer-in {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 36px;
+    flex-wrap: wrap;
   }
-
-  .code-paper :global(.tok-c) {
-    color: #a8a29e;
+  .closer h2 {
+    max-width: 18ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(27px, 3.4vw, 40.5px);
+    font-weight: 400;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+  .closer p {
+    margin-top: 14.4px;
+    max-width: 54ch;
+    font-size: 13.95px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+  .closer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 27px;
+    flex: none;
   }
 </style>

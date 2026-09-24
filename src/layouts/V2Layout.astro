@@ -915,7 +915,7 @@ const current = (href: string) => (root(href) === section ? 'page' : undefined);
          made frame-rate independent. Off for coarse pointers and
          reduced-motion, where native scrolling stays untouched. */
       (() => {
-        const DAMPING = 0.085;
+        const DAMPING = 0.0935;
         const wrap = document.querySelector('[data-scroll]');
         if (!wrap) return;
         const coarse = matchMedia('(pointer: coarse)').matches;

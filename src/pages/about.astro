@@ -1,43 +1,417 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
+/**
+ * About, on the V2 shell. Quiet: type, rules and one stat grid.
+ *
+ * There are no team assets and no bios in the repo, so the page invents
+ * none. What it can say honestly it computes: how much has been written
+ * here, since when, and by whom — straight from the content collections.
+ */
+import { getCollection } from 'astro:content';
+import V2Layout from '@/layouts/V2Layout.astro';
+import ListHead from '@/components/v2/ListHead.astro';
+
+const FOUNDED = 2023;
+const JOBS_URL = 'https://www.linkedin.com/company/mercity-ai/jobs/';
+const GITHUB_URL = 'https://github.com/Mercity-AI/';
+
+const research = await getCollection('research');
+const posts = await getCollection('posts');
+
+/* The same people sign differently across three years of posts. Map the
+   short and misspelt forms onto the full name; anything ambiguous stays
+   as written. */
+const ALIAS: Record<string, string> = {
+  Pranav: 'Pranav Patel',
+  Juhi: 'Juhi Singh',
+  'Yash Sonawale': 'Yash Sonawane',
+};
+
+interface Author {
+  name: string;
+  count: number;
+  first: Date;
+  last: Date;
+}
+const byName = new Map<string, Author>();
+for (const e of [...research, ...posts]) {
+  for (const a of e.data.authors) {
+    const name = ALIAS[a.name] ?? a.name;
+    const d = e.data.publishedAt;
+    const cur = byName.get(name);
+    if (cur) {
+      cur.count += 1;
+      if (d < cur.first) cur.first = d;
+      if (d > cur.last) cur.last = d;
+    } else {
+      byName.set(name, { name, count: 1, first: d, last: d });
+    }
+  }
+}
+const authors = [...byName.values()].sort((a, b) => b.count - a.count || a.last.getTime() - b.last.getTime());
+
+const firstYear = Math.min(...posts.map((p) => p.data.publishedAt.getFullYear()), FOUNDED);
+const tools = ['Simula', 'PromptKeep'];
+
+const principles = [
+  {
+    title: 'We ship openly',
+    body: 'Most of what we learn on client work ends up public: datasets we had to build because nothing suitable existed, weights from runs worth reproducing, and write-ups detailed enough to follow end to end. The tools are MIT-licensed.',
+  },
+  {
+    title: 'Evaluation that tells the truth',
+    body: 'Public benchmarks rarely measure the thing you are paid for. We build the evaluation your problem needs, then run it honestly — including the results that argue against the model we just trained for you.',
+  },
+  {
+    title: 'You own what we build',
+    body: 'Models, pipelines and evaluations belong to you rather than a subscription that renews. Every checkpoint and hyperparameter decision is documented and handed over; the capability stays behind when we leave.',
+  },
+  {
+    title: 'Implementation detail included',
+    body: 'Our research logs cover what worked, what did not, and the specific reason why — because that is reliably the part every other post leaves out and the part you need in order to reproduce it.',
+  },
+];
+
+const stats = [
+  { figure: String(research.length), label: 'research logs', note: 'long-form, reproducible' },
+  { figure: String(posts.length), label: 'blog posts', note: `since ${firstYear}` },
+  { figure: String(tools.length), label: 'open-source tools', note: tools.join(' · ') },
+  { figure: String(authors.length), label: 'people who write here', note: 'research logs and blog' },
+];
+
+const fmtYear = (d: Date) => d.getFullYear();
 ---
 
-<BaseLayout
-  title="About Us"
-  description="We are a collective of scientists, engineers, and dreamers. Founded in 2023, Mercity emerged from a simple question: How do we build intelligence that is robust, transparent, and aligned with human values?"
+<V2Layout
+  title="About"
+  description={`Mercity is a research lab founded in ${FOUNDED}. We generate the data nobody has, train the model nobody sells, and prove it works — for product and enterprise teams whose edge cannot be bought off a shelf.`}
   path="/about"
 >
-  <div class="max-w-7xl mx-auto page-gutter py-12">
-    <div class="mb-32 max-w-3xl">
-      <span class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 block">About Mercity</span>
-      <h1 class="text-5xl md:text-6xl font-light tracking-tight text-slate-900 mb-8">
-        We are a collective of scientists, engineers, and dreamers.
-      </h1>
-      <p class="text-xl text-slate-500 font-light leading-relaxed">
-        Founded in 2023, Mercity emerged from a simple question: How do we build intelligence that is robust,
-        transparent, and aligned with human values? We believe the answer lies in a multidisciplinary approach,
-        blending computer science, neuroscience, and philosophy.
-      </p>
-    </div>
+  <ListHead
+    eyebrow="About"
+    title="The part of the work that does not fit an API call."
+    lede={`Mercity is a research lab founded in ${FOUNDED}. We generate the data nobody has, train the model nobody sells, and then prove it actually works — for product and enterprise teams whose edge cannot be bought off a shelf.`}
+    count={`Founded ${FOUNDED} · Research lab · Research-grade, reality-ready`}
+  />
 
-    <section class="mt-40 bg-slate-50 p-12 rounded-3xl relative overflow-hidden">
-      <div class="relative z-10 text-center max-w-2xl mx-auto">
-        <h2 class="text-3xl font-light text-slate-900 mb-6">Join our research</h2>
-        <p class="text-slate-500 font-light mb-8">
-          We are always looking for exceptional talent to join our team. If you are obsessed with solving
-          intelligence, we want to hear from you.
+  <!-- ═══ HOW WE WORK ════════════════════════════════════════════ -->
+  <section class="band" id="how">
+    <div class="shell">
+      <span class="eyebrow rv" data-rv>How we work</span>
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Four things we would rather be held to than talk about.</h2>
+      <div class="principles">
+        {
+          principles.map((p, i) => (
+            <div class="principle rv" data-rv style={`--rv-delay:${120 + i * 70}ms`}>
+              <h3>{p.title}</h3>
+              <p>{p.body}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ IN NUMBERS ═════════════════════════════════════════════ -->
+  <section class="band band-tint" id="numbers">
+    <div class="shell">
+      <span class="eyebrow rv" data-rv>In numbers</span>
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Counted from this site, not claimed.</h2>
+      <p class="lede rv" data-rv style="--rv-delay:160ms">
+        These are computed from the research logs and blog posts published here, every time the site builds.
+      </p>
+      <dl class="stats rv" data-rv style="--rv-delay:200ms">
+        {
+          stats.map((s) => (
+            <div class="stat">
+              <dt>{s.label}</dt>
+              <dd>
+                <span class="stat-figure">{s.figure}</span>
+                <span class="stat-note">{s.note}</span>
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </section>
+
+  <!-- ═══ WHO WRITES HERE ════════════════════════════════════════ -->
+  <section class="band" id="people">
+    <div class="shell">
+      <span class="eyebrow rv" data-rv>Who writes here</span>
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">The people behind the write-ups.</h2>
+      <p class="lede rv" data-rv style="--rv-delay:160ms">
+        Everyone who has put their name on a research log or a post, ordered by how much they have written.
+      </p>
+      <ul class="people rv" data-rv style="--rv-delay:200ms">
+        {
+          authors.map((a) => (
+            <li class="person">
+              <span class="person-name">{a.name}</span>
+              <span class="person-meta">
+                {a.count} {a.count === 1 ? 'write-up' : 'write-ups'}
+                <i aria-hidden="true">·</i>
+                {fmtYear(a.first) === fmtYear(a.last) ? fmtYear(a.last) : `${fmtYear(a.first)}–${fmtYear(a.last)}`}
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- ═══ CLOSER ═════════════════════════════════════════════════ -->
+  <section class="band band-tint closer">
+    <div class="shell closer-grid">
+      <div class="closer-card rv" data-rv>
+        <span class="eyebrow">Work with us</span>
+        <h2>Bring us the problem that does not fit the API.</h2>
+        <p>
+          Tell us what you are building and where the pipeline is stuck. We will come back with the right next
+          step, not a deck.
         </p>
-        <a
-          href="https://www.linkedin.com/company/mercity-ai/jobs/"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="inline-flex px-8 py-3 bg-white border border-slate-200 text-slate-900 rounded-full hover:bg-slate-900 hover:text-white transition-all duration-300 shadow-sm hover:shadow-md"
-        >
-          View Open Positions
+        <a class="wipe" href="/contact">
+          <span class="wipe-fill"></span>
+          <span class="wipe-label">Start a conversation</span>
+          <span class="wipe-label" aria-hidden="true">→</span>
         </a>
       </div>
-      <div class="absolute -top-24 -left-24 w-64 h-64 bg-blue-100/50 rounded-full blur-[80px]" />
-      <div class="absolute -bottom-24 -right-24 w-64 h-64 bg-purple-100/50 rounded-full blur-[80px]" />
-    </section>
-  </div>
-</BaseLayout>
+      <div class="closer-card rv" data-rv style="--rv-delay:100ms">
+        <span class="eyebrow">Join the lab</span>
+        <h2>Come do the work in the open.</h2>
+        <p>
+          We are a small team and everything we learn ends up public. If you would rather write the research log
+          than read it, we want to hear from you.
+        </p>
+        <div class="closer-links">
+          <a class="quiet" href={JOBS_URL} target="_blank" rel="noopener noreferrer">
+            Open positions<span aria-hidden="true">↗</span>
+          </a>
+          <a class="quiet" href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
+            Our GitHub<span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</V2Layout>
+
+<style>
+  .quiet {
+    display: inline-flex;
+    align-items: center;
+    gap: 7.2px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    transition: color 300ms var(--ease);
+  }
+  .quiet span {
+    transition: transform 400ms var(--ease);
+  }
+  .quiet:hover {
+    color: var(--ink);
+  }
+  .quiet:hover span {
+    transform: translateX(4px);
+  }
+
+  /* ── Principles: 2×2 with rules, unnumbered — order does not matter ── */
+  .principles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 46.8px;
+    margin-top: 36px;
+  }
+  .principle {
+    padding: 23.4px 0 25.2px;
+    border-top: 1px solid var(--line);
+  }
+  .principle h3 {
+    font-family: var(--hero-serif);
+    font-size: 19.8px;
+    font-weight: 400;
+    letter-spacing: -0.014em;
+    line-height: 1.25;
+  }
+  .principle p {
+    margin-top: 9.9px;
+    max-width: 54ch;
+    font-size: 13.05px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+  @media (max-width: 760px) {
+    .principles {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ── Stats: the Simula grid, four across ────────────────────── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin: 46.8px 0 0;
+    border-top: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+  }
+  .stat {
+    padding: 21.6px 19.8px 23.4px;
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .stat dt {
+    font-family: var(--mono);
+    font-size: 9.9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .stat dd {
+    margin: 12.6px 0 0;
+  }
+  .stat-figure {
+    display: block;
+    font-family: var(--hero-serif);
+    font-size: 32.4px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--teal-700);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-note {
+    display: block;
+    margin-top: 9px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    line-height: 1.5;
+    color: var(--n-400);
+  }
+  @media (max-width: 900px) {
+    .stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 480px) {
+    .stats {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ── People: one flush object, shared edges ─────────────────── */
+  .people {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 46.8px;
+    border-top: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+  }
+  .person {
+    display: flex;
+    flex-direction: column;
+    gap: 5.4px;
+    padding: 18px 19.8px 19.8px;
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    transition: background 400ms var(--ease);
+  }
+  .person:hover {
+    background: var(--n-50);
+  }
+  /* The count is whatever the collections say, so the last row may be
+     short. Stretch the final cell so the object stays a rectangle. */
+  .person:last-child:nth-child(3n - 1) {
+    grid-column: span 2;
+  }
+  .person:last-child:nth-child(3n - 2) {
+    grid-column: 1 / -1;
+  }
+  @media (max-width: 900px) {
+    .person:last-child:nth-child(3n - 1),
+    .person:last-child:nth-child(3n - 2) {
+      grid-column: auto;
+    }
+    .person:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+    }
+  }
+  .person-name {
+    font-family: var(--hero-serif);
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: -0.012em;
+  }
+  .person-meta {
+    font-family: var(--mono);
+    font-size: 9.9px;
+    color: var(--n-400);
+  }
+  .person-meta i {
+    margin-inline: 5.4px;
+    font-style: normal;
+    color: var(--n-300);
+  }
+  @media (max-width: 900px) {
+    .people {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 480px) {
+    .people {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ── Closer: two cards ──────────────────────────────────────── */
+  .closer-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 19.8px;
+  }
+  .closer-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 28.8px 27px 30.6px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .closer-card h2 {
+    margin-top: 12.6px;
+    max-width: 18ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(23.4px, 2.6vw, 30.6px);
+    font-weight: 400;
+    line-height: 1.16;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+  .closer-card p {
+    margin-top: 12.6px;
+    max-width: 46ch;
+    font-size: 13.05px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+  .closer-card .wipe,
+  .closer-links {
+    margin-top: auto;
+    padding-top: 27px;
+  }
+  .closer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 27px;
+  }
+  @media (max-width: 760px) {
+    .closer-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
