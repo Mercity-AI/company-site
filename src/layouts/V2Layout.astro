@@ -14,6 +14,11 @@ interface Props {
   description?: string;
   path?: string;
   image?: string;
+  type?: 'website' | 'article';
+  publishedTime?: string;
+  modifiedTime?: string;
+  author?: string;
+  tags?: string[];
   noindex?: boolean;
 }
 
@@ -22,6 +27,11 @@ const {
   description = SITE_DESCRIPTION,
   path = Astro.url.pathname,
   image = DEFAULT_OG_IMAGE,
+  type = 'website',
+  publishedTime,
+  modifiedTime,
+  author,
+  tags = [],
   noindex = false,
 }: Props = Astro.props;
 
@@ -52,6 +62,13 @@ const navLinks: NavLink[] = [
   },
   { href: '/about', label: 'About' },
 ];
+
+/* Which top-level link owns the current page. Posts live under
+   /blog-post/, so they light up Blog; anything under /open-source/
+   lights up the dropdown trigger. */
+const root = (p: string) => '/' + (p.split('/')[1] ?? '');
+const section = root(path === '/blog-post' || path.startsWith('/blog-post/') ? '/blog' : path);
+const current = (href: string) => (root(href) === section ? 'page' : undefined);
 ---
 
 <!doctype html>
@@ -65,7 +82,7 @@ const navLinks: NavLink[] = [
     <meta name="title" content={fullPageTitle} />
     <meta name="description" content={description} />
 
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={type} />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:title" content={fullPageTitle} />
     <meta property="og:description" content={description} />
@@ -77,6 +94,11 @@ const navLinks: NavLink[] = [
     <meta name="twitter:title" content={fullPageTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
+
+    {type === 'article' && publishedTime && <meta property="article:published_time" content={publishedTime} />}
+    {type === 'article' && modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+    {type === 'article' && author && <meta property="article:author" content={author} />}
+    {type === 'article' && tags.map((tag) => <meta property="article:tag" content={tag} />)}
 
     <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
     <meta name="language" content="English" />
@@ -275,6 +297,44 @@ const navLinks: NavLink[] = [
         border-top: 1px solid var(--line);
         padding-block: clamp(57.83px, 6.89vw, 90.88px);
       }
+      .band-tint {
+        background: var(--n-100);
+      }
+
+      /* ── Wipe button — the square link with the black left-to-right
+         fill. Shared by the home page and the listing pages. ──────── */
+      .wipe {
+        position: relative;
+        overflow: hidden;
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        flex: none;
+        padding: 13.5px 23.4px;
+        border: 1px solid var(--ink);
+        font-size: 9.9px;
+        font-weight: 500;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        transition: color 300ms var(--ease);
+      }
+      .wipe-fill {
+        position: absolute;
+        inset: 0;
+        background: var(--ink);
+        transform: translateX(-100%);
+        transition: transform 350ms var(--ease);
+      }
+      .wipe-label {
+        position: relative;
+        z-index: 1;
+      }
+      .wipe:hover {
+        color: var(--n-50);
+      }
+      .wipe:hover .wipe-fill {
+        transform: translateX(0);
+      }
     </style>
   </head>
 
@@ -289,7 +349,7 @@ const navLinks: NavLink[] = [
             navLinks.map((l) =>
               l.children ? (
                 <div class="v2-drop">
-                  <a href={l.href} class="v2-drop-trigger" aria-haspopup="true">
+                  <a href={l.href} class="v2-drop-trigger" aria-haspopup="true" aria-current={current(l.href)}>
                     {l.label}
                     <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
                       <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
@@ -307,7 +367,9 @@ const navLinks: NavLink[] = [
                   </div>
                 </div>
               ) : (
-                <a href={l.href}>{l.label}</a>
+                <a href={l.href} aria-current={current(l.href)}>
+                  {l.label}
+                </a>
               )
             )
           }
@@ -534,6 +596,15 @@ const navLinks: NavLink[] = [
       .v2-links > a:hover::after,
       .v2-drop:hover .v2-drop-trigger::after,
       .v2-drop:focus-within .v2-drop-trigger::after {
+        transform: scaleX(1);
+      }
+      /* The section you are in keeps its underline at rest. */
+      .v2-links > a[aria-current='page'],
+      .v2-drop-trigger[aria-current='page'] {
+        color: var(--ink);
+      }
+      .v2-links > a[aria-current='page']::after,
+      .v2-drop-trigger[aria-current='page']::after {
         transform: scaleX(1);
       }
 

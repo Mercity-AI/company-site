@@ -1,0 +1,233 @@
+---
+/**
+ * A single post or research log on the V2 shell: header, body, tags,
+ * then a strip of related entries. The page renders the markdown and
+ * passes it through the slot; this component owns everything around it.
+ */
+import type { CollectionEntry } from 'astro:content';
+import EntryRow from '@/components/v2/EntryRow.astro';
+import { estimateReadingTime, formatDate } from '@/utils/blog';
+import type { EntryRowData } from '@/utils/blog';
+import 'katex/dist/katex.min.css';
+import '@/styles/v2-article.css';
+
+interface Props {
+  entry: CollectionEntry<'posts'> | CollectionEntry<'research'>;
+  /** Where "back" goes and what the section is called: /research, "Research". */
+  backHref: string;
+  section: string;
+  more?: EntryRowData[];
+}
+
+const { entry, backHref, section, more = [] }: Props = Astro.props;
+const { title, summary, category, publishedAt, updatedAt, authors, tags, image } = entry.data;
+const body = entry.body ?? '';
+const readTime = estimateReadingTime(body || summary);
+const updated = updatedAt && updatedAt.getTime() > publishedAt.getTime() ? updatedAt : undefined;
+/* The research logs already open with their cover figure in the body;
+   most blog posts do not. Show it up top only when the body will not. */
+const showCover = Boolean(image && !body.includes(image));
+---
+
+<article class="art">
+  <header class="shell art-head">
+    <a class="art-back rv" data-rv href={backHref}>
+      <span aria-hidden="true">←</span>
+      {section}
+    </a>
+    <span class="eyebrow rv" data-rv style="--rv-delay:60ms">{category}</span>
+    <h1 class="rv" data-rv style="--rv-delay:120ms">{title}</h1>
+    <p class="art-lede rv" data-rv style="--rv-delay:180ms">{summary}</p>
+    <div class="art-meta rv" data-rv style="--rv-delay:240ms">
+      <span class="art-authors">
+        {authors.map((a, i) => (
+          <>
+            <span class="art-author">{a.name}</span>
+            {a.role && <span class="art-role">{a.role}</span>}
+            {i < authors.length - 1 && <span aria-hidden="true">, </span>}
+          </>
+        ))}
+      </span>
+      <span class="art-facts">
+        <time datetime={publishedAt.toISOString()}>{formatDate(publishedAt)}</time>
+        {updated && <span>Updated {formatDate(updated)}</span>}
+        <span>{readTime}</span>
+      </span>
+    </div>
+    {
+      showCover && (
+        <figure class="art-cover rv" data-rv style="--rv-delay:300ms">
+          <img src={image} alt="" loading="eager" decoding="async" />
+        </figure>
+      )
+    }
+  </header>
+
+  <div class="shell art-body v2-prose">
+    <slot />
+  </div>
+
+  {
+    tags.length > 0 && (
+      <div class="shell art-tags">
+        <span class="art-tags-h">Tagged</span>
+        {tags.map((t) => (
+          <span class="art-tag">{t}</span>
+        ))}
+      </div>
+    )
+  }
+</article>
+
+{
+  more.length > 0 && (
+    <section class="band band-tint">
+      <div class="shell">
+        <div class="more-head">
+          <div>
+            <span class="eyebrow rv" data-rv>
+              More from {section}
+            </span>
+          </div>
+          <a class="wipe rv" data-rv style="--rv-delay:80ms" href={backHref}>
+            <span class="wipe-fill" />
+            <span class="wipe-label">All {section.toLowerCase()}</span>
+            <span class="wipe-label" aria-hidden="true">
+              →
+            </span>
+          </a>
+        </div>
+        <div class="more-rows">
+          {more.map((m, i) => (
+            <EntryRow {...m} delay={80 + i * 70} />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  /* The reading measure. Header and body share it so the rules line up. */
+  .art-head,
+  .art-body,
+  .art-tags {
+    max-width: calc(744px + 2 * 18.59px);
+  }
+  .art-head {
+    padding-top: clamp(39.6px, 4.5vw, 61.2px);
+  }
+  .art-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 7.2px;
+    margin-bottom: 36px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    transition: color 300ms var(--ease);
+  }
+  .art-back span {
+    transition: transform 400ms var(--ease);
+  }
+  .art-back:hover {
+    color: var(--ink);
+  }
+  .art-back:hover span {
+    transform: translateX(-4px);
+  }
+  .art-head h1 {
+    margin-top: 14.4px;
+    font-family: var(--hero-serif);
+    font-size: clamp(30px, 4vw, 46.8px);
+    font-weight: 400;
+    line-height: 1.12;
+    letter-spacing: -0.024em;
+    text-wrap: balance;
+  }
+  .art-lede {
+    margin-top: 21.6px;
+    font-size: 16.2px;
+    line-height: 1.7;
+    color: var(--ink-3);
+    text-wrap: pretty;
+  }
+  .art-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 9px 27px;
+    margin-top: 32.4px;
+    padding-block: 16.2px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    font-size: 12.6px;
+  }
+  .art-author {
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .art-role {
+    margin-left: 6.3px;
+    color: var(--ink-3);
+  }
+  .art-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    color: var(--n-400);
+  }
+  .art-cover {
+    margin: 39.6px 0 0;
+    border: 1px solid var(--line);
+    background: var(--n-100);
+    overflow: hidden;
+  }
+  .art-cover img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .art-body {
+    padding-top: 43.2px;
+    padding-bottom: clamp(50.4px, 6vw, 79.2px);
+  }
+
+  .art-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7.2px;
+    padding-bottom: clamp(50.4px, 6vw, 79.2px);
+    font-family: var(--mono);
+    font-size: 9.9px;
+  }
+  .art-tags-h {
+    margin-right: 7.2px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--n-400);
+  }
+  .art-tag {
+    padding: 4.5px 9px;
+    border: 1px solid var(--line-2);
+    color: var(--ink-2);
+  }
+
+  .more-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 27px;
+    flex-wrap: wrap;
+  }
+  .more-rows {
+    margin-top: 27px;
+  }
+</style>

@@ -7,7 +7,8 @@ redesign work stands.
 ## Branch
 
 `redesign`, branched from `astro-migration`. V2 is now the home page; the
-previous home is parked at `/legacy`. The inner pages still use
+previous home is parked at `/legacy`. Research and Blog (listings and
+posts) are on the V2 shell too. About, Contact and Simula still use
 `BaseLayout`, so the two shells live side by side.
 
 ## Status — landing page design is done
@@ -28,7 +29,9 @@ tools as they ship (see *Still placeholder* below). Treat design changes on
 | `/v2` | Redirects to `/`. |
 | `/v2-open` | Two treatments of the open-source section, A and B, for comparison. |
 | `/design.html` | Design lab. Static file in `public/`, no Astro layout. |
-| `/blog`, `/research`, `/about`, `/contact`, `/open-source/simula` | Unchanged, on `BaseLayout`. |
+| `/research`, `/research/[slug]` | Listing and logs, on `V2Layout`. See *Research and Blog*. |
+| `/blog`, `/blog-post/[slug]` | Listing and posts, on `V2Layout`. Same components. |
+| `/about`, `/contact`, `/open-source/simula` | Unchanged, on `BaseLayout`. |
 
 `/legacy`, `/v2-open` and `/design.html` are `noindex` and excluded from the
 sitemap. They are working surfaces, not shipping pages.
@@ -118,6 +121,54 @@ not two. The size cap is what makes two rows possible — at the current
 roughly 1079px of available width, so it is close. If it tips to three lines,
 either drop the cap a few px or let the hero break out of `--shell` to a wider
 measure.
+
+## Research and Blog (V2)
+
+Both sections run on `V2Layout` with the home page's tokens, type and
+motion, built from three components in `src/components/v2/`:
+
+- **`ListHead`** — eyebrow, serif h1, lede, mono count line. No backdrop:
+  the home hero spends the boldness, inner pages open on type.
+- **`EntryRow`** — one entry: mono meta column (category, date), serif
+  title, two-line clamped summary, author · read time, 4:3 thumbnail.
+  Hover is the nav's 1px underline drawn as `text-decoration` so it
+  follows a wrapped title, plus a mono "Read →" that slides in. Rows draw
+  their own top rule; `:last-child` closes with a bottom rule. Below 900px
+  the meta goes inline above the title; below 560px the thumbnail hides.
+- **`Article`** — post header (back link, category eyebrow, h1, summary
+  as lede, author/date/read-time rule row), the body in `.v2-prose`, a tag
+  strip, then a tinted "More from …" band of `EntryRow`s with a `.wipe`
+  link back to the listing. The cover image shows in the header **only
+  when the body does not already contain it** (`body.includes(image)`):
+  the research logs open with their cover figure, most blog posts don't.
+
+`/research` leads with the newest log as a two-column card (image left,
+copy right) and lists the rest under "Earlier". `/blog` groups by year
+with a serif year label and mono count.
+
+`entryToRow()` in `src/utils/blog.ts` maps a collection entry to
+`EntryRow` props so the four pages share one shape.
+
+**Prose** lives in `src/styles/v2-article.css`, imported by `Article`.
+It has to cover two kinds of body: markdown rendered by Astro (research)
+and webflow-era HTML pasted into markdown (most of the blog), so
+selectors are element-level with a few `.w-embed` cases. Notably webflow
+exported whole scripts as a bare `<code class="language-py">` inside
+`.w-embed` with no `<pre>`; the stylesheet renders those as blocks.
+Code blocks sit on `--n-900` with a highlight.js palette that keeps the
+colour rule: indigo for keywords, teal for values, neutrals otherwise.
+KaTeX CSS is imported alongside.
+
+`V2Layout` now takes the article meta props (`type`, `publishedTime`,
+`modifiedTime`, `author`, `tags`) and marks the current section's nav
+link with `aria-current="page"`, which keeps its underline at rest.
+`.wipe` and `.band-tint` moved from `index.astro` into the layout since
+the listing pages use them too.
+
+**Verifying reveals in the Browser pane:** if the pane is collapsed,
+`document.visibilityState` is `hidden`, IntersectionObserver never fires,
+and every `data-rv` element stays at opacity 0 while screenshots return
+stale frames. That is the pane, not the site. Check with the pane open.
 
 ## Backdrop generators
 

@@ -1,94 +1,216 @@
 ---
 import { getCollection } from 'astro:content';
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import { estimateReadingTime, formatDate, getResearchUrl, sortPostsByPublishedDate } from '@/utils/blog';
+import V2Layout from '@/layouts/V2Layout.astro';
+import ListHead from '@/components/v2/ListHead.astro';
+import EntryRow from '@/components/v2/EntryRow.astro';
+import { entryToRow, estimateReadingTime, formatShortDate, getResearchUrl, sortPostsByPublishedDate } from '@/utils/blog';
 
 const entries = sortPostsByPublishedDate(await getCollection('research'));
+const [lead, ...rest] = entries;
+
+const years = entries.length
+  ? [...new Set([entries.at(-1)!.data.publishedAt.getFullYear(), entries[0].data.publishedAt.getFullYear()])].join('–')
+  : '';
+const count = entries.length ? `${entries.length} ${entries.length === 1 ? 'log' : 'logs'} · ${years}` : undefined;
 ---
 
-<BaseLayout
+<V2Layout
   title="Research"
-  description="Original research from Mercity — custom training, real optimization, genuine architecture."
+  description="Research logs from Mercity: what we tried, what held up, and the specific reason why, with the implementation detail included."
   path="/research"
-  hideNavOnScroll
 >
-  <div class="max-w-[73rem] mx-auto page-gutter py-12">
-    <div class="mb-24 pt-12">
-      <h1 class="text-6xl md:text-8xl font-serif italic text-slate-900 mb-6 opacity-90">Research</h1>
-      <p class="text-slate-500 max-w-xl text-lg font-light">
-        Original research from Mercity — custom training, real optimization, genuine architecture.
-      </p>
-    </div>
+  <ListHead
+    eyebrow="Research"
+    title="What we tried, what held up, and why."
+    lede="Long-form logs of our own experiments, implementation detail included, because that is reliably the part every other write-up leaves out and the part you need in order to reproduce it."
+    count={count}
+  />
 
-    {
-      entries.length === 0 ? (
-        <div class="border-t border-slate-200 pt-12">
-          <p class="text-slate-500 font-light text-lg">
-            Publications are on the way. In the meantime, explore our
-            <a href="/blog" class="text-slate-900 underline underline-offset-4 hover:text-indigo-900 transition-colors" data-astro-prefetch>
-              blog
-            </a>
-            .
+  {
+    lead ? (
+      <section class="band">
+        <div class="shell">
+          <a class="lead rv" data-rv href={getResearchUrl(lead)}>
+            <figure class="lead-art">
+              <img src={lead.data.image} alt="" loading="eager" decoding="async" />
+            </figure>
+            <div class="lead-body">
+              <span class="lead-kicker">
+                Latest <i aria-hidden="true">·</i> {lead.data.category}
+              </span>
+              <h2>{lead.data.title}</h2>
+              <p>{lead.data.summary}</p>
+              <span class="lead-meta">
+                {lead.data.authors.map((a) => a.name).join(', ')} · {formatShortDate(lead.data.publishedAt)} ·{' '}
+                {estimateReadingTime(lead.body ?? lead.data.summary)}
+              </span>
+              <span class="lead-go">
+                Read the log<span aria-hidden="true">→</span>
+              </span>
+            </div>
+          </a>
+
+          {rest.length > 0 && (
+            <div class="rows">
+              <span class="rows-h rv" data-rv>
+                Earlier
+              </span>
+              {rest.map((e, i) => (
+                <EntryRow {...entryToRow(e, getResearchUrl(e))} delay={60 + Math.min(i, 5) * 60} />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+    ) : (
+      <section class="band">
+        <div class="shell">
+          <p class="lede rv" data-rv>
+            The first logs are being written up. In the meantime, the <a class="inline-link" href="/blog">blog</a> has
+            the guides.
           </p>
         </div>
-      ) : (
-        <div class="space-y-20">
-          {entries.map((entry) => (
-            <article class="group block border-t border-slate-200 pt-12 article-reveal" data-article-reveal>
-              <a href={getResearchUrl(entry)} class="grid grid-cols-1 md:grid-cols-12 gap-6" data-astro-prefetch>
-                <div class="md:col-span-3 text-sm text-slate-400 font-mono flex flex-col gap-2">
-                  <span>{formatDate(entry.data.publishedAt)}</span>
-                  <span class="text-slate-800 font-medium">{entry.data.category}</span>
-                </div>
-                <div class="md:col-span-9">
-                  <h2
-                    class="text-2xl md:text-4xl font-light text-slate-900 mb-4 group-hover:text-indigo-900 transition-colors leading-tight"
-                    transition:name={`research-title-${entry.data.slug}`}
-                  >
-                    {entry.data.title}
-                  </h2>
-                  <p class="text-slate-500 font-light text-lg leading-relaxed max-w-3xl mb-6">{entry.data.summary}</p>
-                  <div class="flex items-center gap-4 text-sm text-slate-400">
-                    <span>{entry.data.authors[0]?.name}</span>
-                    <span>·</span>
-                    <span>{estimateReadingTime(entry.body ?? entry.data.summary)}</span>
-                  </div>
-                  <div class="flex items-center gap-2 text-sm font-medium uppercase tracking-widest text-slate-900 opacity-0 transform -translate-x-4 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 mt-4">
-                    Read Paper <span class="text-lg">→</span>
-                  </div>
-                </div>
-              </a>
-            </article>
-          ))}
-        </div>
-      )
+      </section>
+    )
+  }
+</V2Layout>
+
+<style>
+  /* ── Lead card: the latest log, image beside copy ───────────── */
+  .lead {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    transition:
+      transform 500ms var(--ease),
+      border-color 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  .lead:hover {
+    transform: translateY(-1.2px);
+    border-color: var(--ink-3);
+    box-shadow: 0 4px 9px -7px hsl(240 14% 10% / 0.07);
+  }
+  .lead-art {
+    margin: 0;
+    min-height: 100%;
+    border-right: 1px solid var(--line);
+    background: var(--n-100);
+    overflow: hidden;
+  }
+  .lead-art img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 700ms var(--ease);
+  }
+  .lead:hover .lead-art img {
+    transform: scale(1.025);
+  }
+  .lead-body {
+    display: flex;
+    flex-direction: column;
+    padding: 36px 39.6px 37.8px;
+  }
+  .lead-kicker {
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--indigo-600);
+  }
+  .lead-kicker i {
+    margin-inline: 5.4px;
+    font-style: normal;
+    color: var(--n-300);
+  }
+  .lead h2 {
+    margin-top: 14.4px;
+    max-width: 24ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(25.2px, 2.7vw, 32.4px);
+    font-weight: 400;
+    line-height: 1.16;
+    letter-spacing: -0.02em;
+    text-wrap: pretty;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 6px;
+    text-decoration-color: transparent;
+    transition: text-decoration-color 300ms var(--ease);
+  }
+  .lead:hover h2 {
+    text-decoration-color: currentColor;
+  }
+  .lead p {
+    margin-top: 14.4px;
+    max-width: 60ch;
+    font-size: 13.95px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+  .lead-meta {
+    display: block;
+    margin-top: auto;
+    padding-top: 27px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    color: var(--n-400);
+  }
+  .lead-go {
+    display: inline-flex;
+    align-items: center;
+    gap: 7.2px;
+    margin-top: 14.4px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .lead-go span {
+    transition: transform 400ms var(--ease);
+  }
+  .lead:hover .lead-go span {
+    transform: translateX(4px);
+  }
+  @media (max-width: 820px) {
+    .lead {
+      grid-template-columns: 1fr;
     }
-  </div>
+    .lead-art {
+      aspect-ratio: 16 / 9;
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .lead-body {
+      padding: 27px 25.2px 28.8px;
+    }
+  }
 
-  <script is:inline data-astro-rerun>
-    (() => {
-      if (window.__mercityBlogRevealCleanup) {
-        window.__mercityBlogRevealCleanup();
-      }
-
-      const items = document.querySelectorAll('[data-article-reveal]');
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.setAttribute('data-visible', 'true');
-              observer.unobserve(entry.target);
-            }
-          });
-        },
-        { rootMargin: '-50px' },
-      );
-
-      items.forEach((item) => observer.observe(item));
-
-      window.__mercityBlogRevealCleanup = () => {
-        observer.disconnect();
-      };
-    })();
-  </script>
-</BaseLayout>
+  /* ── The rest ───────────────────────────────────────────────── */
+  .rows {
+    margin-top: 54px;
+  }
+  .rows-h {
+    display: block;
+    margin-bottom: 14.4px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--n-400);
+  }
+  .inline-link {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+</style>

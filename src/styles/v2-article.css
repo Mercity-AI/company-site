@@ -1,0 +1,311 @@
+/* ══════════════════════════════════════════════════════════════════
+   Article body on the V2 shell.
+
+   Two kinds of content land here: markdown rendered by Astro (the
+   research logs) and webflow-era HTML pasted into markdown (most of the
+   blog). So selectors are element-level, with a few `.w-*` cases for
+   the webflow leftovers. Tokens come from V2Layout.
+   ══════════════════════════════════════════════════════════════════ */
+
+.v2-prose {
+  font-size: 16.2px;
+  line-height: 1.76;
+  color: var(--ink-2);
+}
+.v2-prose > :first-child,
+.v2-prose > .rich-text > :first-child {
+  margin-top: 0;
+}
+
+/* ── Text ─────────────────────────────────────────────────────────── */
+.v2-prose p {
+  margin: 0 0 1.35em;
+}
+.v2-prose strong,
+.v2-prose b {
+  font-weight: 600;
+  color: var(--ink);
+}
+.v2-prose a {
+  color: var(--indigo-700);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--indigo-300);
+  transition: text-decoration-color 300ms var(--ease);
+}
+.v2-prose a:hover {
+  text-decoration-color: currentColor;
+}
+.v2-prose sub,
+.v2-prose sup {
+  font-size: 0.75em;
+  line-height: 0;
+}
+
+/* ── Headings ─────────────────────────────────────────────────────── */
+.v2-prose h1,
+.v2-prose h2,
+.v2-prose h3,
+.v2-prose h4 {
+  margin: 2.3em 0 0.65em;
+  font-family: var(--hero-serif);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.018em;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+.v2-prose h1,
+.v2-prose h2 {
+  font-size: 28.8px;
+}
+.v2-prose h3 {
+  margin-top: 1.9em;
+  font-size: 22.5px;
+}
+.v2-prose h4 {
+  margin-top: 1.7em;
+  font-size: 18px;
+}
+/* rehype-autolink wraps heading text in an anchor. Keep it looking like
+   a heading; the hash only appears on hover. */
+.v2-prose h1 a,
+.v2-prose h2 a,
+.v2-prose h3 a,
+.v2-prose h4 a {
+  color: inherit;
+  text-decoration: none;
+}
+.v2-prose h2 a:hover::after,
+.v2-prose h3 a:hover::after,
+.v2-prose h4 a:hover::after {
+  content: ' #';
+  font-family: var(--mono);
+  font-size: 0.6em;
+  color: var(--n-300);
+}
+
+/* ── Lists ────────────────────────────────────────────────────────── */
+.v2-prose ul,
+.v2-prose ol {
+  margin: 0 0 1.35em;
+  padding-left: 1.5em;
+}
+.v2-prose ul {
+  list-style: disc;
+}
+.v2-prose ol {
+  list-style: decimal;
+}
+.v2-prose li {
+  margin: 0.4em 0;
+  padding-left: 0.2em;
+}
+.v2-prose li::marker {
+  color: var(--n-400);
+}
+.v2-prose li > p {
+  margin-bottom: 0.6em;
+}
+
+/* ── Quotes and rules ─────────────────────────────────────────────── */
+.v2-prose blockquote {
+  margin: 1.9em 0;
+  padding: 0.25em 0 0.25em 1.4em;
+  border-left: 2px solid var(--indigo-500);
+  font-family: var(--hero-serif);
+  font-size: 19.8px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.v2-prose blockquote p:last-child {
+  margin-bottom: 0;
+}
+.v2-prose hr {
+  margin: 3em 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+/* ── Figures and media ────────────────────────────────────────────── */
+.v2-prose img,
+.v2-prose video {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.9em auto;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.v2-prose figure {
+  margin: 2.2em auto;
+}
+.v2-prose figure > div {
+  width: 100%;
+}
+.v2-prose figure img,
+.v2-prose figure video {
+  margin: 0 auto;
+}
+.v2-prose figcaption,
+.v2-prose p[align='center'] {
+  margin-top: 9px;
+  font-family: var(--mono);
+  font-size: 10.35px;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--n-400);
+}
+.v2-prose iframe {
+  max-width: 100%;
+  border: 0;
+}
+/* webflow embeds: iframes come wrapped in a padded, position:relative
+   box that carries its own inline sizing; only the outer margin is ours. */
+.v2-prose .w-embed {
+  margin: 1.9em 0;
+}
+
+/* ── Code ─────────────────────────────────────────────────────────── */
+.v2-prose :not(pre) > code {
+  padding: 1px 5.4px;
+  font-family: var(--mono);
+  font-size: 0.84em;
+  color: var(--ink);
+  background: var(--n-100);
+  border: 1px solid var(--line);
+}
+.v2-prose pre,
+/* webflow exported whole scripts as a bare <code> in an embed block. */
+.v2-prose .w-embed > code {
+  display: block;
+  margin: 1.9em 0;
+  padding: 18px 21.6px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 12.6px;
+  line-height: 1.7;
+  white-space: pre;
+  color: var(--n-100);
+  background: var(--n-900);
+  border: 1px solid var(--n-800);
+}
+.v2-prose pre code {
+  display: block;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+}
+.v2-prose .w-embed > code {
+  border-color: var(--n-800);
+}
+
+/* highlight.js tokens on the dark ground. Indigo for structure, teal
+   for values, neutrals for everything else — same rule as the charts. */
+.hljs-comment,
+.hljs-quote {
+  color: var(--n-400);
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-built_in,
+.hljs-name,
+.hljs-tag,
+.hljs-meta,
+.hljs-doctag {
+  color: hsl(243 90% 82%);
+}
+.hljs-string,
+.hljs-number,
+.hljs-literal,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-link,
+.hljs-regexp,
+.hljs-addition,
+.hljs-attribute,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-type,
+.hljs-section {
+  color: hsl(178 58% 66%);
+}
+.hljs-title,
+.hljs-title.function_,
+.hljs-title.class_ {
+  color: var(--n-0);
+}
+.hljs-attr,
+.hljs-variable,
+.hljs-params,
+.hljs-property,
+.hljs-punctuation,
+.hljs-operator {
+  color: var(--n-200);
+}
+.hljs-deletion {
+  color: hsl(34 84% 72%);
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: 600;
+}
+
+/* ── Tables ───────────────────────────────────────────────────────── */
+.v2-prose table {
+  width: 100%;
+  margin: 1.9em 0;
+  border-collapse: collapse;
+  font-size: 13.95px;
+  line-height: 1.5;
+}
+.v2-prose th {
+  padding: 9px 12.6px;
+  border-bottom: 1px solid var(--line-2);
+  font-family: var(--mono);
+  font-size: 9.9px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--ink-3);
+}
+.v2-prose td {
+  padding: 10.8px 12.6px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+/* ── Maths ────────────────────────────────────────────────────────── */
+.v2-prose .katex-display {
+  margin: 1.6em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.v2-prose .katex {
+  font-size: 1.06em;
+}
+
+@media (max-width: 640px) {
+  .v2-prose {
+    font-size: 15.3px;
+  }
+  .v2-prose h1,
+  .v2-prose h2 {
+    font-size: 25.2px;
+  }
+  .v2-prose h3 {
+    font-size: 20.7px;
+  }
+  .v2-prose pre,
+  .v2-prose .w-embed > code {
+    padding: 14.4px 16.2px;
+    font-size: 11.7px;
+  }
+}

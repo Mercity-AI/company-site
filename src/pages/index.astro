@@ -498,11 +498,6 @@ const tooling = [
     height: 100%;
   }
 
-  /* ── Bands ──────────────────────────────────────────────────── */
-  .band-tint {
-    background: var(--n-100);
-  }
-
   /* ── Capabilities ───────────────────────────────────────────── */
   .cap-grid {
     display: grid;
@@ -715,39 +710,6 @@ const tooling = [
     flex: 1 1 30rem;
     min-width: 0;
   }
-  .wipe {
-    position: relative;
-    overflow: hidden;
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    flex: none;
-    padding: 13.5px 23.4px;
-    border: 1px solid var(--ink);
-    font-size: 9.9px;
-    font-weight: 500;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    transition: color 300ms var(--ease);
-  }
-  .wipe-fill {
-    position: absolute;
-    inset: 0;
-    background: var(--ink);
-    transform: translateX(-100%);
-    transition: transform 350ms var(--ease);
-  }
-  .wipe-label {
-    position: relative;
-    z-index: 1;
-  }
-  .wipe:hover {
-    color: var(--n-50);
-  }
-  .wipe:hover .wipe-fill {
-    transform: translateX(0);
-  }
-
   .open-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);

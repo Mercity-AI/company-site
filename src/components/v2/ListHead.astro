@@ -1,0 +1,53 @@
+---
+/**
+ * Header for a listing page. Quiet on purpose: the home hero spends the
+ * site's boldness, so the inner pages open on type alone.
+ */
+interface Props {
+  eyebrow: string;
+  title: string;
+  lede: string;
+  count?: string;
+}
+
+const { eyebrow, title, lede, count }: Props = Astro.props;
+---
+
+<section class="list-head">
+  <div class="shell">
+    <span class="eyebrow rv" data-rv>{eyebrow}</span>
+    <h1 class="rv" data-rv style="--rv-delay:80ms">{title}</h1>
+    <p class="lede rv" data-rv style="--rv-delay:160ms">{lede}</p>
+    {
+      count && (
+        <span class="list-count rv" data-rv style="--rv-delay:240ms">
+          {count}
+        </span>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  .list-head {
+    padding-block: clamp(50.4px, 6.3vw, 86.4px) clamp(43.2px, 5.4vw, 68.4px);
+  }
+  .list-head h1 {
+    margin-top: 14.4px;
+    max-width: 22ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(33px, 4.4vw, 52.8px);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.024em;
+    text-wrap: balance;
+  }
+  .list-count {
+    display: block;
+    margin-top: 25.2px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    letter-spacing: 0.04em;
+    color: var(--n-400);
+  }
+</style>
