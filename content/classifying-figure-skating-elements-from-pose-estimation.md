@@ -10,7 +10,7 @@ summary: >-
   has no keypoint below the ankle. Which class you predict matters roughly three
   times more than which model predicts it.
 authors:
-  - name: Rishikesh
+  - name: Rishikesh Mallagundla
   - name: Pranav Patel
 tags:
   - Computer Vision
