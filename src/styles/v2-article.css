@@ -161,6 +161,26 @@
   max-width: 100%;
   border: 0;
 }
+/* an interactive figure that needs more than the prose measure: it breaks
+   out of the column, centred on it, so the viewer keeps its sidebar. */
+.v2-prose figure.runs-viewer {
+  position: relative;
+  left: 50%;
+  width: min(972px, 100vw - 40px);
+  margin: 2.2em 0 0;
+  transform: translateX(-50%);
+}
+.v2-prose figure.runs-viewer iframe {
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: 540px;
+}
+@media (max-width: 760px) {
+  .v2-prose figure.runs-viewer iframe {
+    height: 612px;
+  }
+}
 /* webflow embeds: iframes come wrapped in a padded, position:relative
    box that carries its own inline sizing; only the outer margin is ours. */
 .v2-prose .w-embed {
