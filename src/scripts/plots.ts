@@ -23,6 +23,8 @@ async function draw(el: HTMLElement) {
       return res.json();
     }),
   ]);
+  // On a phone the chart title runs off the edge; the caption under the chart says the same.
+  if (el.clientWidth < 640) spec.layout.title = { text: '' };
   await Plotly.newPlot(el, spec.data, spec.layout, CONFIG);
 }
 
