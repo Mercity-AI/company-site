@@ -8,7 +8,7 @@ summary: >-
   model's internal activations instead of running a second model over its output
   text.
 authors:
-  - name: Rishikesh
+  - name: Rishikesh Mallagundla
   - name: Pranav Patel
 tags:
   - Interpretability
