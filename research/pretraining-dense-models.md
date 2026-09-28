@@ -217,7 +217,7 @@ We score every checkpoint zero-shot (no in-context examples) through the [Eleuth
 | | | [SciQ](https://arxiv.org/abs/1707.06209) | Answer science exam questions | acc_norm |
 
 <figure class="runs-viewer">
-  <iframe src="/research/pretraining-dense-models/runs_viewer.html?embed" title="Interactive viewer for the training runs: loss and gradient norm for each checkpoint" loading="lazy"></iframe>
+  <iframe src="/research/assets/runs-viewer/index.html?embed" title="Interactive viewer for the training runs: loss and gradient norm for each checkpoint" loading="lazy"></iframe>
 </figure>
 
 *Explore the training runs. Toggle checkpoints on the left, switch metrics along the top, and scroll the plot area for more charts.*
