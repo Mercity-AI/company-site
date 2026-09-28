@@ -161,9 +161,11 @@
   max-width: 100%;
   border: 0;
 }
-/* an interactive figure that needs more than the prose measure: it breaks
-   out of the column, centred on it, so the viewer keeps its sidebar. */
-.v2-prose figure.runs-viewer {
+/* interactive figures need more than the prose measure: they break out
+   of the column, centred on it, so the runs viewer keeps its sidebar and
+   multi-panel plots stay readable. */
+.v2-prose figure.runs-viewer,
+.v2-prose .plot {
   position: relative;
   left: 50%;
   width: min(972px, 100vw - 40px);
@@ -180,6 +182,14 @@
   .v2-prose figure.runs-viewer iframe {
     height: 612px;
   }
+}
+/* Plotly figures (src/scripts/plots.ts): the PNG shows until the plot
+   replaces it. Modebar buttons are links; keep prose link styling off them. */
+.v2-prose .plot > img {
+  margin: 0 auto;
+}
+.v2-prose .plot a {
+  text-decoration: none;
 }
 /* webflow embeds: iframes come wrapped in a padded, position:relative
    box that carries its own inline sizing; only the outer margin is ours. */
