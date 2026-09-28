@@ -7,7 +7,7 @@ summary: >-
   test Kimi Delta Attention and LongCat n-gram embeddings, then compared
   grafting, pruning, 4-bit quantization, and downstream NER fine-tuning.
 authors:
-  - name: Rishikesh
+  - name: Rishikesh Mallagundla
 tags:
   - Language Models
   - Pretraining
