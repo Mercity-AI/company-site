@@ -30,7 +30,7 @@ We pretrained a set of dense **1-billion-parameter** checkpoints from scratch on
 
 *Final train loss is cross-entropy at the last step (lower is better). Shared-9 is the unweighted mean of nine zero-shot benchmarks, in BF16 and after 4-bit quantization.*
 
-<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig01_headline_results.json"><img src="/research/pretraining-dense-models/fig01_headline_results.png" alt="Figure 1. Final zero-shot scores for the four checkpoints on all nine benchmarks, with the Shared-9 average on the far right."></div>
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig01_headline_results.json" role="img" aria-label="Figure 1. Final zero-shot scores for the four checkpoints on all nine benchmarks, with the Shared-9 average on the far right."></div>
 
 *Figure 1. Final zero-shot scores for the four checkpoints on all nine benchmarks, with the Shared-9 average on the far right.*
 
@@ -228,7 +228,7 @@ We score every checkpoint zero-shot (no in-context examples) through the [Eleuth
 
 At the final checkpoint the four models cluster within about **1.8** Shared-9 points of each other. The benchmark average climbs steadily through training and is still rising for every run at 6B tokens, which is the clearest single sign these checkpoints are undertrained rather than converged. The baseline in all of these numbers is the QK-normalized rerun; the QK-norm section below explains why we added it.
 
-<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig07_shared9_progression.json"><img src="/research/pretraining-dense-models/fig07_shared9_progression.png" alt="Figure 7. Shared-9 benchmark average against tokens seen. Every run climbs steadily and is still rising at 6B tokens."></div>
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig07_shared9_progression.json" role="img" aria-label="Figure 7. Shared-9 benchmark average against tokens seen. Every run climbs steadily and is still rising at 6B tokens."></div>
 
 *Figure 7. Shared-9 benchmark average against tokens seen. Every run climbs steadily and is still rising at 6B tokens.*
 
@@ -241,7 +241,7 @@ At the final checkpoint the four models cluster within about **1.8** Shared-9 po
 
 The same climb holds task by task, but the shapes differ. LAMBADA and HellaSwag rise fastest and are still climbing at 6B tokens; SciQ, PIQA, and ARC-Easy bend toward a plateau; and CommonsenseQA and WinoGrande stay noisy near chance for every model.
 
-<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig08_benchmark_progression.json"><img src="/research/pretraining-dense-models/fig08_benchmark_progression.png" alt="Figure 8. Per-benchmark accuracy against tokens for the four checkpoints. LAMBADA and HellaSwag climb steadily, the knowledge tasks bend toward a plateau, and CommonsenseQA and WinoGrande wobble near their random floors throughout."></div>
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig08_benchmark_progression.json" role="img" aria-label="Figure 8. Per-benchmark accuracy against tokens for the four checkpoints. LAMBADA and HellaSwag climb steadily, the knowledge tasks bend toward a plateau, and CommonsenseQA and WinoGrande wobble near their random floors throughout."></div>
 
 *Figure 8. Per-benchmark accuracy against tokens for the four checkpoints. LAMBADA and HellaSwag climb steadily, the knowledge tasks bend toward a plateau, and CommonsenseQA and WinoGrande wobble near their random floors throughout.*
 
@@ -268,7 +268,7 @@ Two patterns run through every trajectory. LAMBADA is the largest mover in every
 
 KDA edges the baseline on the Shared-9 average by **+0.14** (**41.37** against **41.23**), which is inside per-benchmark noise for a single seed at 6B tokens. The hypothesis holds, but only in its weak form: KDA matches the baseline rather than beating it.
 
-<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig09_kda_vs_baseline.json"><img src="/research/pretraining-dense-models/fig09_kda_vs_baseline.png" alt="Figure 9. KDA against the baseline on each benchmark. Left: final zero-shot scores. Right: KDA minus the baseline; bars above zero are tasks where KDA is ahead."></div>
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig09_kda_vs_baseline.json" role="img" aria-label="Figure 9. KDA against the baseline on each benchmark. Left: final zero-shot scores. Right: KDA minus the baseline; bars above zero are tasks where KDA is ahead."></div>
 
 *Figure 9. KDA against the baseline on each benchmark. Left: final zero-shot scores. Right: KDA minus the baseline; bars above zero are tasks where KDA is ahead.*
 
@@ -289,7 +289,7 @@ Per benchmark, KDA is ahead on **6** of the nine tasks and behind on **3**, and 
 
 KDA is also slightly cheaper per token. Its 8 KDA layers skip softmax attention's length-dependent cost, which is large at **8,192**-token sequences, so the KDA model spends about **8.03 GFLOP** per token against the baseline's **8.62**, roughly **7%** less. Against compute, KDA's loss sits just below the baseline's for the whole run and finishes at **2.563** after **48.2 EFLOP**, against **2.570** after **51.7 EFLOP**.
 
-<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig10_kda_loss_vs_flops.json"><img src="/research/pretraining-dense-models/fig10_kda_loss_vs_flops.png" alt="Figure 10. Training loss against cumulative compute for KDA and the baseline. KDA's FLOPs are estimated by replacing the 8 KDA layers' softmax-attention cost with the cost of their state updates. The loss axis is cropped to 2.4 to 4.2."></div>
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig10_kda_loss_vs_flops.json" role="img" aria-label="Figure 10. Training loss against cumulative compute for KDA and the baseline. KDA's FLOPs are estimated by replacing the 8 KDA layers' softmax-attention cost with the cost of their state updates. The loss axis is cropped to 2.4 to 4.2."></div>
 
 *Figure 10. Training loss against cumulative compute for KDA and the baseline. KDA's FLOPs are estimated by replacing the 8 KDA layers' softmax-attention cost with the cost of their state updates. The loss axis is cropped to 2.4 to 4.2.*
 
@@ -301,11 +301,11 @@ That saving did not show up on the clock. KDA was our slowest run (about **18 ho
 
 The LongCat paper's large-model gains did not reproduce on our 1B dense models. The 50% n-gram model finishes **1.70** Shared-9 points behind the baseline, and the 25% model **0.67** behind (**40.56** against **41.23**). Halving the table share from **48%** to **25%** recovered most of the gap, about **1.0** of the **1.70** points, which pins the cause: the tables cost transformer depth, and depth is what the benchmarks wanted.
 
-<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig11_ngram_budget.json"><img src="/research/pretraining-dense-models/fig11_ngram_budget.png" alt="Figure 11. Shared-9 (left) and NER micro-F1 (right) against the share of the parameter budget spent on n-gram tables, with the baseline as the 0% point. Each label gives the score and the transformer layers left."></div>
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig11_ngram_budget.json" role="img" aria-label="Figure 11. Shared-9 (left) and NER micro-F1 (right) against the share of the parameter budget spent on n-gram tables, with the baseline as the 0% point. Each label gives the score and the transformer layers left."></div>
 
 *Figure 11. Shared-9 (left) and NER micro-F1 (right) against the share of the parameter budget spent on n-gram tables, with the baseline as the 0% point. Each label gives the score and the transformer layers left.*
 
-<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig12_ngram_vs_baseline.json"><img src="/research/pretraining-dense-models/fig12_ngram_vs_baseline.png" alt="Figure 12. The n-gram models against the baseline on each benchmark. Left: final zero-shot scores. Right: each n-gram model minus the baseline; bars above zero are tasks where the n-gram model is ahead."></div>
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig12_ngram_vs_baseline.json" role="img" aria-label="Figure 12. The n-gram models against the baseline on each benchmark. Left: final zero-shot scores. Right: each n-gram model minus the baseline; bars above zero are tasks where the n-gram model is ahead."></div>
 
 *Figure 12. The n-gram models against the baseline on each benchmark. Left: final zero-shot scores. Right: each n-gram model minus the baseline; bars above zero are tasks where the n-gram model is ahead.*
 
@@ -330,7 +330,7 @@ Per benchmark, the 25% model does not clearly beat the QK-normalized baseline on
 
 There is an efficiency angle in the deficit, clearest against compute rather than tokens. The 25% model runs **23** transformer layers instead of **32**, so it spends about a quarter fewer FLOPs per token (**6.28** against **8.62 GFLOP**), and the 50% model roughly half. Plotting loss against cumulative compute rather than tokens, both n-gram runs sit *below* the baseline for most of training: per FLOP spent, the tables are ahead. The baseline only pulls level at the very end because it spends more total compute to get there (**51.7 EFLOP** against **37.7** for the 25% run).
 
-<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig13_loss_vs_flops.json"><img src="/research/pretraining-dense-models/fig13_loss_vs_flops.png" alt="Figure 13. Training loss against cumulative compute (EFLOP) rather than tokens. Per FLOP, both n-gram runs lead the baseline for most of training; the baseline only catches up by spending more total compute. The loss axis is cropped to 2.4 to 4.2, so the higher early-training loss runs off the top."></div>
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig13_loss_vs_flops.json" role="img" aria-label="Figure 13. Training loss against cumulative compute (EFLOP) rather than tokens. Per FLOP, both n-gram runs lead the baseline for most of training; the baseline only catches up by spending more total compute. The loss axis is cropped to 2.4 to 4.2, so the higher early-training loss runs off the top."></div>
 
 *Figure 13. Training loss against cumulative compute (EFLOP) rather than tokens. Per FLOP, both n-gram runs lead the baseline for most of training; the baseline only catches up by spending more total compute. The loss axis is cropped to 2.4 to 4.2, so the higher early-training loss runs off the top.*
 
@@ -342,7 +342,7 @@ We took the Llama 3 architecture as TorchTitan ships it, and [Llama 3](https://a
 
 The original baseline converged, but its gradient norm never settled: it stayed high and wavy for the whole run, humping up again through the middle of training. QK normalization (RMSNorm on the query and key vectors before the attention dot-product, which bounds the attention-score scale) fixed it. We added it, changed nothing else, and reran. The two runs follow nearly the same loss path, but the gradient tells them apart: with QK-norm it dropped and stayed flat right after warmup, and its mean over the run fell from **0.58** to **0.20**.
 
-<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig14_gradnorm_stability.json"><img src="/research/pretraining-dense-models/fig14_gradnorm_stability.png" alt="Figure 14. The original baseline (gray, dashed) against the QK-norm rerun (blue). Left: training loss follows nearly the same path, finishing at 2.621 and 2.570. Right: the gradient norm tells them apart. Without QK-norm it stays high and wavy; with it, it drops low and flat after warmup, cutting the mean from 0.58 to 0.20. Faint lines are per-step values, bold lines a running mean."></div>
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig14_gradnorm_stability.json" role="img" aria-label="Figure 14. The original baseline (gray, dashed) against the QK-norm rerun (blue). Left: training loss follows nearly the same path, finishing at 2.621 and 2.570. Right: the gradient norm tells them apart. Without QK-norm it stays high and wavy; with it, it drops low and flat after warmup, cutting the mean from 0.58 to 0.20. Faint lines are per-step values, bold lines a running mean."></div>
 
 *Figure 14. The original baseline (gray, dashed) against the QK-norm rerun (blue). Left: training loss follows nearly the same path, finishing at 2.621 and 2.570. Right: the gradient norm tells them apart. Without QK-norm it stays high and wavy; with it, it drops low and flat after warmup, cutting the mean from 0.58 to 0.20. Faint lines are per-step values, bold lines a running mean.*
 
@@ -356,7 +356,7 @@ The stability fix showed up directly in the loss. The original baseline's final 
 | N-gram 25% | 2.63564 | +0.066 |
 | N-gram 50% | 2.68229 | +0.112 |
 
-<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig15_loss_curves.json"><img src="/research/pretraining-dense-models/fig15_loss_curves.png" alt="Figure 15. Training loss over the full run: from random initialization on the left to the final 2B tokens zoomed on the right. The n-gram runs start higher, since their embedding tables begin untrained, but converge into budget order; baseline and KDA overlap throughout and finish 0.006 apart. The dashed gray line is the original baseline without QK-norm, which finishes at 2.621."></div>
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig15_loss_curves.json" role="img" aria-label="Figure 15. Training loss over the full run: from random initialization on the left to the final 2B tokens zoomed on the right. The n-gram runs start higher, since their embedding tables begin untrained, but converge into budget order; baseline and KDA overlap throughout and finish 0.006 apart. The dashed gray line is the original baseline without QK-norm, which finishes at 2.621."></div>
 
 *Figure 15. Training loss over the full run: from random initialization on the left to the final 2B tokens zoomed on the right. The n-gram runs start higher, since their embedding tables begin untrained, but converge into budget order; baseline and KDA overlap throughout and finish 0.006 apart. The dashed gray line is the original baseline without QK-norm, which finishes at 2.621.*
 
@@ -391,7 +391,7 @@ The two directions of attention grafting collapse almost identically, and the in
 | KDA → baseline | 27.21 | 41.23 | 66.0% |
 | GQA → KDA | 27.30 | 41.37 | 66.0% |
 
-<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig16_grafting_retention.json"><img src="/research/pretraining-dense-models/fig16_grafting_retention.png" alt="Figure 16. Shared-9 of each zero-shot graft against its native reference (black line). The input-side n-gram module keeps most of its score, while both directions of attention grafting collapse to about 66%."></div>
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig16_grafting_retention.json" role="img" aria-label="Figure 16. Shared-9 of each zero-shot graft against its native reference (black line). The input-side n-gram module keeps most of its score, while both directions of attention grafting collapse to about 66%."></div>
 
 *Figure 16. Shared-9 of each zero-shot graft against its native reference (black line). The input-side n-gram module keeps most of its score, while both directions of attention grafting collapse to about 66%.*
 
@@ -410,7 +410,7 @@ Two things stand out. First, the attention grafts fail symmetrically: dropping K
 | LAMBADA | 37.75 | 38.29 | 0.00 | 0.00 | 13.55 | 23.69 |
 | **Shared-9 average** | **41.23** | **41.37** | **27.21** | **27.30** | **35.31** | **38.86** |
 
-<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig17_grafting_by_benchmark.json"><img src="/research/pretraining-dense-models/fig17_grafting_by_benchmark.png" alt="Figure 17. Change per benchmark for each graft, against the recipient's native score (the baseline, or native KDA for GQA → KDA). Red is a loss, blue a gain."></div>
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig17_grafting_by_benchmark.json" role="img" aria-label="Figure 17. Change per benchmark for each graft, against the recipient's native score (the baseline, or native KDA for GQA → KDA). Red is a loss, blue a gain."></div>
 
 *Figure 17. Change per benchmark for each graft, against the recipient's native score (the baseline, or native KDA for GQA → KDA). Red is a loss, blue a gain.*
 
@@ -440,7 +440,7 @@ Against the intact KDA model (**41.37**), most of the depth turns out to be redu
 | All eight (0, 4, …, 28) | 25.57 | 48.38 | 26.73 | 27.22 | 50.22 | 25.40 | 20.64 | 20.60 | 0.00 | 27.20 | −14.17 |
 | All eight, dense baseline (matched control) | 26.72 | 51.14 | 25.84 | 28.24 | 49.95 | 25.00 | 17.44 | 22.50 | 0.00 | 27.43 | −13.80 vs intact baseline (41.23) |
 
-<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig18_layer_removal.json"><img src="/research/pretraining-dense-models/fig18_layer_removal.png" alt="Figure 18. Change in Shared-9 from removing one KDA-containing block. Layer 0 is catastrophic and layer 4 costs a few points; from layer 8 on removal is close to free, and a few blocks are slightly better gone. The two bars on the right remove all eight blocks at once, from KDA and from the dense baseline (matched control)."></div>
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig18_layer_removal.json" role="img" aria-label="Figure 18. Change in Shared-9 from removing one KDA-containing block. Layer 0 is catastrophic and layer 4 costs a few points; from layer 8 on removal is close to free, and a few blocks are slightly better gone. The two bars on the right remove all eight blocks at once, from KDA and from the dense baseline (matched control)."></div>
 
 *Figure 18. Change in Shared-9 from removing one KDA-containing block. Layer 0 is catastrophic and layer 4 costs a few points; from layer 8 on removal is close to free, and a few blocks are slightly better gone. The two bars on the right remove all eight blocks at once, from KDA and from the dense baseline (matched control).*
 
@@ -448,7 +448,7 @@ Layer 0 is critical: removing it cuts the average by a third and zeroes LAMBADA.
 
 Per benchmark, removing layer 0 looks like the attention grafts: LAMBADA goes to **0.00**, SciQ falls from **63.80** to **21.10**, PIQA to **50.60**, and HellaSwag and ARC-Easy to about **26**, while OpenBookQA and CommonsenseQA stay close to where they were. Removing layer 4 mostly hits LAMBADA (**38.29** to **15.93**) and HellaSwag (**39.65** to **34.50**), and leaves the knowledge tasks close to intact. From layer 8 on, LAMBADA is the task that moves: it still drops for layers 8 and 12 (**29.87** and **33.51**) and rises above the intact model for layers 16, 20, and 24 (**40.50**, **42.32**, and **41.06**). SciQ sits above the intact **63.80** for every removal after layer 0, and together with LAMBADA it accounts for most of the small gains in the average.
 
-<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig19_pruning_by_benchmark.json"><img src="/research/pretraining-dense-models/fig19_pruning_by_benchmark.png" alt="Figure 19. Change per benchmark for each block removal, against the intact model (native KDA, or the baseline for the dense control). Red is a loss, blue a gain."></div>
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig19_pruning_by_benchmark.json" role="img" aria-label="Figure 19. Change per benchmark for each block removal, against the intact model (native KDA, or the baseline for the dense control). Red is a loss, blue a gain."></div>
 
 *Figure 19. Change per benchmark for each block removal, against the intact model (native KDA, or the baseline for the dense control). Red is a loss, blue a gain.*
 
@@ -469,7 +469,7 @@ How much quality does 4-bit compression cost? We compressed each model to 4-bit 
 | N-gram 25% | 40.56 | 40.00 | −0.56 | 2.1× |
 | N-gram 50% | 39.54 | 38.44 | −1.10 | 1.5× |
 
-<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig20_quantization.json"><img src="/research/pretraining-dense-models/fig20_quantization.png" alt="Figure 20. Shared-9 at BF16 versus 4-bit (hatched). Every model loses under a point, with the n-gram 50% model taking the largest hit at 1.10. Labels give the change and how much smaller the 4-bit checkpoint is."></div>
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig20_quantization.json" role="img" aria-label="Figure 20. Shared-9 at BF16 versus 4-bit (hatched). Every model loses under a point, with the n-gram 50% model taking the largest hit at 1.10. Labels give the change and how much smaller the 4-bit checkpoint is."></div>
 
 *Figure 20. Shared-9 at BF16 versus 4-bit (hatched). Every model loses under a point, with the n-gram 50% model taking the largest hit at 1.10. Labels give the change and how much smaller the 4-bit checkpoint is.*
 
@@ -477,7 +477,7 @@ How much quality does 4-bit compression cost? We compressed each model to 4-bit 
 
 Broken out by task, 4-bit barely touches anything except LAMBADA, which drops **1.4** to **5.6** points across the four models while most other tasks move by well under a point (SciQ even improves for both n-gram models, which is quantization noise rather than a real gain).
 
-<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig21_quantization_by_benchmark.json"><img src="/research/pretraining-dense-models/fig21_quantization_by_benchmark.png" alt="Figure 21. Per-benchmark accuracy change from 4-bit quantization (4-bit minus BF16). LAMBADA absorbs almost all of the loss in every model; the other eight tasks stay within about a point of zero."></div>
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig21_quantization_by_benchmark.json" role="img" aria-label="Figure 21. Per-benchmark accuracy change from 4-bit quantization (4-bit minus BF16). LAMBADA absorbs almost all of the loss in every model; the other eight tasks stay within about a point of zero."></div>
 
 *Figure 21. Per-benchmark accuracy change from 4-bit quantization (4-bit minus BF16). LAMBADA absorbs almost all of the loss in every model; the other eight tasks stay within about a point of zero.*
 
@@ -539,7 +539,7 @@ Fine-tuning turns the pretraining tie into a clear, statistically significant ga
 | Sentence accuracy | **42.2%** | 39.3% | 37.5% |
 | Parse failures | **10** | 19 | 33 |
 
-<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig22_ner_overall.json"><img src="/research/pretraining-dense-models/fig22_ner_overall.png" alt="Figure 22. Few-NERD overall scores after LoRA fine-tuning. The baseline leads on every metric, and the two n-gram models fall below it in budget order. The right panel counts answers that did not parse as JSON."></div>
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig22_ner_overall.json" role="img" aria-label="Figure 22. Few-NERD overall scores after LoRA fine-tuning. The baseline leads on every metric, and the two n-gram models fall below it in budget order. The right panel counts answers that did not parse as JSON."></div>
 
 *Figure 22. Few-NERD overall scores after LoRA fine-tuning. The baseline leads on every metric, and the two n-gram models fall below it in budget order. The right panel counts answers that did not parse as JSON.*
 
@@ -558,7 +558,7 @@ The ordering holds on every entity type, not just the aggregate. The baseline le
 | Event | **0.494** | 0.469 | 0.428 |
 | Building | **0.486** | 0.453 | 0.442 |
 
-<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig23_ner_pr_f1.json"><img src="/research/pretraining-dense-models/fig23_ner_pr_f1.png" alt="Figure 23. Per-type precision (top), recall (middle), and F1 (bottom) across Few-NERD's eight entity types. The baseline leads on all three on every type; the n-gram models lose more on recall than precision, which is why they miss more entities than they mislabel."></div>
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig23_ner_pr_f1.json" role="img" aria-label="Figure 23. Per-type precision (top), recall (middle), and F1 (bottom) across Few-NERD's eight entity types. The baseline leads on all three on every type; the n-gram models lose more on recall than precision, which is why they miss more entities than they mislabel."></div>
 
 *Figure 23. Per-type precision (top), recall (middle), and F1 (bottom) across Few-NERD's eight entity types. The baseline leads on all three on every type; the n-gram models lose more on recall than precision, which is why they miss more entities than they mislabel.*
 

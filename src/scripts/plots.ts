@@ -1,8 +1,7 @@
-/* Interactive figures in an article. The markdown places
-     <div class="plot" data-plot="/research/assets/figures/…/name.json"><img …></div>
-   and the image stays as the fallback (feeds, no JS, load errors) until
-   Plotly draws the spec over it. Plotly is ~1.4 MB, so it loads once and
-   only when the first figure comes near the viewport. */
+/* Interactive figures in an article. The markdown places an empty
+     <div class="plot" data-plot="/research/assets/figures/…/name.json"></div>
+   and Plotly draws the spec into it. Plotly is ~1.4 MB, so it loads once
+   and only when the first figure comes near the viewport. */
 type Plotly = (typeof import('plotly.js-cartesian-dist-min'))['default'];
 
 const CONFIG = {
@@ -24,10 +23,7 @@ async function draw(el: HTMLElement) {
       return res.json();
     }),
   ]);
-  const host = document.createElement('div');
-  el.append(host);
-  await Plotly.newPlot(host, spec.data, spec.layout, CONFIG);
-  el.querySelector(':scope > img')?.remove();
+  await Plotly.newPlot(el, spec.data, spec.layout, CONFIG);
 }
 
 const figures = document.querySelectorAll<HTMLElement>('.v2-prose [data-plot]');
@@ -36,8 +32,16 @@ if (figures.length) {
     (entries) => {
       for (const e of entries) {
         if (!e.isIntersecting) continue;
-        io.unobserve(e.target);
-        draw(e.target as HTMLElement).catch((err) => console.error('plot failed', err));
+        const el = e.target as HTMLElement;
+        io.unobserve(el);
+        draw(el).catch((err) => {
+          console.error('plot failed', el.dataset.plot, err);
+          // one retry: a failed load (e.g. a flaky network) must not leave the figure blank for good
+          if (el.dataset.retried) return;
+          el.dataset.retried = '1';
+          plotly = undefined;
+          io.observe(el);
+        });
       }
     },
     { rootMargin: '600px 0px' },

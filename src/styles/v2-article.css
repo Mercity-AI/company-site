@@ -183,10 +183,11 @@
     height: 612px;
   }
 }
-/* Plotly figures (src/scripts/plots.ts): the PNG shows until the plot
-   replaces it. Modebar buttons are links; keep prose link styling off them. */
-.v2-prose .plot > img {
-  margin: 0 auto;
+/* Plotly figures (src/scripts/plots.ts): hold roughly a plot's height
+   while empty so the page does not jump when it draws. Modebar buttons
+   are links; keep prose link styling off them. */
+.v2-prose .plot:empty {
+  min-height: 440px;
 }
 .v2-prose .plot a {
   text-decoration: none;

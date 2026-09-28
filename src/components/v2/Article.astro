@@ -25,8 +25,13 @@ const body = entry.body ?? '';
 const readTime = estimateReadingTime(body || summary);
 const updated = updatedAt && updatedAt.getTime() > publishedAt.getTime() ? updatedAt : undefined;
 /* The research logs already open with their cover figure in the body;
-   most blog posts do not. Show it up top only when the body will not. */
-const showCover = Boolean(image && !body.includes(image));
+   most blog posts do not. Show it up top only when the body will not,
+   counting an interactive version of it (a plot spec with the same file
+   name, e.g. fig01_headline_results.json for fig01_headline_results.png). */
+const coverStem = image?.split('/').pop()?.replace(/\.\w+$/, '');
+const showCover = Boolean(
+  image && !body.includes(image) && !(coverStem && body.includes(`/${coverStem}.json`)),
+);
 ---
 
 <article class="art">
