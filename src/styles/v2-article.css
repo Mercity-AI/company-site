@@ -161,6 +161,78 @@
   max-width: 100%;
   border: 0;
 }
+/* Explicit research captions use the body font at 80% of its size. */
+.v2-prose .article-figure > figcaption {
+  margin: 12px 0 0;
+  font-family: var(--sans);
+  font-size: 0.8em;
+  font-style: normal;
+  line-height: 1.6;
+  text-align: left;
+  color: var(--ink-3);
+}
+.v2-prose .article-figure > p,
+.v2-prose .article-figure > figcaption p {
+  margin: 0;
+}
+.v2-prose .article-figure > figcaption a {
+  color: inherit;
+}
+.v2-prose .article-figure .plot {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* interactive figures need more than the prose measure: they break out
+   of the column, centred on it, so the runs viewer keeps its sidebar and
+   multi-panel plots stay readable. */
+.v2-prose .runs-viewer,
+.v2-prose .plot {
+  position: relative;
+  left: 50%;
+  width: min(972px, 100vw - 40px);
+  margin: 2.2em 0 0;
+  transform: translateX(-50%);
+}
+/* Plotly figures (src/scripts/plots.ts): hold roughly a plot's height
+   while empty so the page does not jump when it draws. Modebar buttons
+   are links; keep prose link styling off them. */
+.v2-prose .plot {
+  width: min(874.8px, 90vw - 36px);
+  min-height: var(--plot-height, 440px);
+  margin-bottom: 24px;
+}
+.v2-prose .plot[data-plot-state='rendering'] .scatterlayer,
+.v2-prose .plot[data-plot-state='rendering'] .barlayer,
+.v2-prose .plot[data-plot-state='rendering'] .heatmaplayer,
+.v2-prose .plot[data-plot-state='ready'] .scatterlayer,
+.v2-prose .plot[data-plot-state='ready'] .barlayer,
+.v2-prose .plot[data-plot-state='ready'] .heatmaplayer {
+  opacity: 0;
+}
+.v2-prose .plot[data-plot-state='error'] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.v2-prose .plot[data-plot-state='error'] p {
+  margin: 0;
+}
+.v2-prose .plot[data-plot-state='error'] button {
+  padding: 8px 16px;
+  border: 1px solid var(--ink);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.v2-prose .plot a {
+  text-decoration: none;
+}
 /* webflow embeds: iframes come wrapped in a padded, position:relative
    box that carries its own inline sizing; only the outer margin is ours. */
 .v2-prose .w-embed {
@@ -258,6 +330,19 @@
 }
 
 /* ── Tables ───────────────────────────────────────────────────────── */
+.v2-prose .table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  margin: 1.9em 0;
+}
+.v2-prose .table-scroll:focus-visible {
+  outline: 2px solid var(--indigo-600);
+  outline-offset: 4px;
+}
+.v2-prose .table-scroll table {
+  margin: 0;
+}
 .v2-prose table {
   width: 100%;
   margin: 1.9em 0;
@@ -309,3 +394,7 @@
     font-size: 11.7px;
   }
 }
+
+/* Signed comparisons retain their sign; color denotes the metric outcome. */
+.v2-prose .delta-better { color: #15803d; }
+.v2-prose .delta-worse { color: #b91c1c; }

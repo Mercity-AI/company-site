@@ -28,7 +28,7 @@ const posts = defineCollection({
 });
 
 const research = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './research' }),
+  loader: glob({ pattern: '**/*.{md,mdx}', base: './research' }),
   schema: postSchema,
 });
 
