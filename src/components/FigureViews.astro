@@ -1,0 +1,161 @@
+---
+interface Props { label: string; title: string }
+const { label, title } = Astro.props;
+const id = `figure-${crypto.randomUUID()}`;
+---
+
+<figure-views>
+  <figure class="article-figure">
+    <div class="figure-view-shell">
+      <div class="figure-view-toolbar">
+        <span class="figure-view-label">{title}</span>
+        <div class="figure-view-controls" role="group" aria-label={`${label} view`}>
+          <button type="button" data-view="graph" aria-pressed="true" aria-controls={`${id}-graph`}>Graph</button>
+          <button type="button" data-view="table" aria-pressed="false" aria-controls={`${id}-table`}>Table</button>
+        </div>
+      </div>
+      <div class="figure-view-body">
+        <div id={`${id}-graph`} data-view-panel="graph"><slot name="graph" /></div>
+        <div id={`${id}-table`} data-view-panel="table" hidden tabindex="0" role="region" aria-label={`${label} table`}><slot name="table" /></div>
+      </div>
+    </div>
+    <slot />
+  </figure>
+</figure-views>
+
+<noscript>
+  <style is:global>
+    .v2-prose figure-views [data-view-panel='table'][hidden] { display: block !important; }
+    .v2-prose figure-views .figure-view-body { height: auto; }
+    figure-views .figure-view-controls { display: none; }
+  </style>
+</noscript>
+
+<script>
+  class FigureViews extends HTMLElement {
+    private controller?: AbortController;
+    private observer?: ResizeObserver;
+
+    connectedCallback() {
+      this.controller?.abort();
+      this.observer?.disconnect();
+      this.controller = new AbortController();
+      const graph = this.querySelector<HTMLElement>('[data-view-panel="graph"]')!;
+      const body = this.querySelector<HTMLElement>('.figure-view-body')!;
+      const table = this.querySelector<HTMLElement>('[data-view-panel="table"]')!;
+      // Measure natural content height; the surrounding body eases to it.
+      const measure = () => {
+        const panel = graph.hidden ? table : graph;
+        const height = panel.getBoundingClientRect().height;
+        if (height > 0) body.style.setProperty('--figure-view-height', `${height}px`);
+      };
+      measure();
+      this.observer = new ResizeObserver(measure);
+      this.observer.observe(graph);
+      this.observer.observe(table);
+      this.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const view = button.dataset.view;
+          this.querySelectorAll<HTMLElement>('[data-view-panel]').forEach((panel) => {
+            panel.hidden = panel.dataset.viewPanel !== view;
+          });
+          this.querySelectorAll('[data-view]').forEach((control) => {
+            control.setAttribute('aria-pressed', String((control as HTMLElement).dataset.view === view));
+          });
+          measure();
+          if (view === 'graph') requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+        }, { signal: this.controller!.signal });
+      });
+    }
+
+    disconnectedCallback() {
+      this.controller?.abort();
+      this.observer?.disconnect();
+    }
+  }
+  if (!customElements.get('figure-views')) customElements.define('figure-views', FigureViews);
+</script>
+
+<style is:global>
+  figure-views { display: block; }
+  .v2-prose figure-views [hidden] { display: none !important; }
+  .v2-prose .figure-view-shell {
+    position: relative;
+    left: 50%;
+    width: min(874.8px, 90vw - 36px);
+    transform: translateX(-50%);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--n-0, #fff);
+  }
+  .v2-prose .figure-view-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .v2-prose .figure-view-label {
+    font-family: var(--sans);
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--ink);
+  }
+  .v2-prose .figure-view-controls {
+    display: flex;
+    flex-shrink: 0;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 7px;
+    background: var(--n-100);
+  }
+  .v2-prose .figure-view-controls button {
+    padding: 5px 12px;
+    border: 0;
+    background: transparent;
+    border-radius: 4px;
+    font-family: var(--sans);
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ink-3);
+    cursor: pointer;
+  }
+  .v2-prose .figure-view-controls button[aria-pressed='true'] {
+    background: var(--ink, #171719);
+    color: white;
+  }
+  .v2-prose .figure-view-controls button:focus-visible,
+  .v2-prose figure-views [data-view-panel='table']:focus-visible {
+    outline: 2px solid var(--ink, #171719);
+    outline-offset: -2px;
+  }
+  .v2-prose .figure-view-body {
+    height: var(--figure-view-height, auto);
+    overflow: hidden;
+    transition: height 280ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .v2-prose figure-views [data-view-panel] { padding: 12px; box-sizing: border-box; }
+  .v2-prose figure-views [data-view-panel]:not([hidden]) { animation: figure-view-enter 220ms ease-out; }
+  @keyframes figure-view-enter { from { opacity: 0; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .v2-prose .figure-view-body { transition: none; }
+    .v2-prose figure-views [data-view-panel] { animation: none !important; }
+  }
+  .v2-prose figure-views .plot {
+    left: auto;
+    width: 100%;
+    transform: none;
+    margin: 0;
+  }
+  .v2-prose figure-views [data-view-panel='table'] .table-scroll { margin: 0; }
+  .v2-prose figure-views [data-view-panel='table'] .table-scroll + .table-scroll { margin-top: 20px; }
+  .v2-prose figure-views [data-view-panel='table'] p { font-size: 12px; color: var(--ink-3); }
+  @media (max-width: 600px) {
+    .v2-prose .figure-view-toolbar { padding: 8px 10px; }
+    .v2-prose figure-views [data-view-panel] { padding: 8px; }
+  }
+</style>

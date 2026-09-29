@@ -23,14 +23,14 @@ function parseCSV(text) {
 
 const num = v => (v === "" || v == null ? null : +v);
 
-async function fetchCSV(name) {
-  const res = await fetch(new URL(`data/${name}`, import.meta.url));
+async function fetchCSV(name, signal) {
+  const res = await fetch(`/research/assets/runs-viewer/data/${name}`, { signal });
   if (!res.ok) throw new Error(`${name}: ${res.status}`);
   return parseCSV(await res.text());
 }
 
-export async function loadRuns() {
-  const [runs, train, evals] = await Promise.all(["runs.csv", "train.csv", "eval.csv"].map(fetchCSV));
+export async function loadRuns(signal) {
+  const [runs, train, evals] = await Promise.all(["runs.csv", "train.csv", "eval.csv"].map(name => fetchCSV(name, signal)));
   const byKey = new Map(runs.map(r => [r.key, {
     key: r.key, label: r.label, desc: r.description, url: r.wandb_url,
     step: [], tokens: [], loss: [], grad: [],

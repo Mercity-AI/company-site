@@ -71,6 +71,9 @@ const showCover = Boolean(
   </header>
 
   <div class="shell art-body v2-prose">
+    {body.includes('data-plot=') && (
+      <noscript><p>Enable JavaScript to view the interactive charts in this article.</p></noscript>
+    )}
     <slot />
   </div>
 
@@ -115,7 +118,9 @@ const showCover = Boolean(
 }
 
 <script>
-  import '@/scripts/plots';
+  import { init_article_plots } from '@/scripts/plots';
+
+  init_article_plots();
 </script>
 
 <style>

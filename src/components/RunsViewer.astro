@@ -1,0 +1,91 @@
+---
+import '@/styles/runs-viewer.css';
+const id = `runs-${crypto.randomUUID()}`;
+const smoothId = `${id}-smooth`;
+---
+
+<runs-viewer id={id} class="runs-viewer" aria-label="Interactive training experiments">
+  <div class="frame">
+    <div class="viz">
+      <aside class="side" aria-label="Experiments">
+        <div class="side-hd"><h2>Experiments</h2></div>
+        <div class="run-list" data-viewer="runs" role="group" aria-label="Show or hide experiments"></div>
+          <div class="ctls">
+            <div class="ctl"><span class="ctl-lbl">X-axis</span><div class="seg" data-k="xaxis">
+              <button type="button" data-v="step">Step</button><button type="button" data-v="tokens">Tokens</button>
+            </div></div>
+            <div class="ctl"><span class="ctl-lbl">Range</span><div class="seg" data-k="range">
+              <button type="button" data-v="all">All</button><button type="button" data-v="warm">After warmup</button><button type="button" data-v="tail">Last 1B</button>
+            </div></div>
+            <div class="ctl ctl-smooth">
+              <label class="ctl-lbl" for={smoothId}>Smooth</label>
+              <input id={smoothId} data-viewer="smooth" type="range" min="0" max="0.99" step="0.01">
+              <span class="num" data-viewer="smooth-v"></span>
+            </div>
+            <label class="check"><input data-viewer="log" type="checkbox"><span>Log y</span></label>
+            <label class="check"><input data-viewer="delta" type="checkbox"><span>Δ vs QK norm</span></label>
+          </div>
+      </aside>
+
+      <div class="main">
+        <div class="bar">
+          <div class="tabs" data-viewer="tabs" role="tablist" aria-label="Metric"></div>
+
+        </div>
+
+        <div id={`${id}-graph`} class="stage" data-viewer="graph-stage">
+          <div class="carousel" data-viewer="carousel"></div>
+          <nav class="pager" data-viewer="pager" aria-label="Plots"></nav>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <p class="viewer-status" role="status">Loading training runs…</p>
+  <noscript>Enable JavaScript to explore the training runs.</noscript>
+</runs-viewer>
+
+<script>
+  class RunsViewer extends HTMLElement {
+    private observer?: IntersectionObserver;
+    private controller?: AbortController;
+
+    connectedCallback() {
+      this.observer = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          this.observer?.disconnect();
+          void this.load();
+        }
+      }, { rootMargin: '400px' });
+      this.observer.observe(this);
+    }
+
+    private async load() {
+      this.controller?.abort();
+      this.controller = new AbortController();
+      const signal = this.controller.signal;
+      const status = this.querySelector<HTMLElement>('.viewer-status')!;
+      status.hidden = false;
+      status.textContent = 'Loading training runs…';
+      try {
+        const { init_runs_viewer } = await import('@/scripts/runs-viewer.js');
+        await init_runs_viewer(this, signal);
+        status.hidden = true;
+      } catch {
+        if (signal.aborted) return;
+        status.textContent = 'Training runs could not be loaded. ';
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.textContent = 'Retry';
+        retry.addEventListener('click', () => void this.load(), { once: true });
+        status.append(retry);
+      }
+    }
+
+    disconnectedCallback() {
+      this.observer?.disconnect();
+      this.controller?.abort();
+    }
+  }
+  if (!customElements.get('runs-viewer')) customElements.define('runs-viewer', RunsViewer);
+</script>

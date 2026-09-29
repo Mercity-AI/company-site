@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
+import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import rehypeSlug from 'rehype-slug';
@@ -7,6 +8,7 @@ import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypeHighlight from 'rehype-highlight';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import rehypeScrollableTables from './src/utils/rehype-scrollable-tables.mjs';
 
 function normalizeAllowedHostsBoolean(allowedHosts) {
   return Array.isArray(allowedHosts) && allowedHosts.length === 1 && allowedHosts[0] === true
@@ -39,6 +41,7 @@ export default defineConfig({
   },
   integrations: [
     react(),
+    mdx(),
     sitemap({
       filter: (page) => !/\/(legacy|v2-open|simula-v2)\/?$/.test(page),
     }),
@@ -56,6 +59,7 @@ export default defineConfig({
       rehypeSlug,
       rehypeHighlight,
       rehypeKatex,
+      rehypeScrollableTables,
       [
         rehypeAutolinkHeadings,
         {
