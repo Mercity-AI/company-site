@@ -1,6 +1,6 @@
 key,label,description,wandb_url
-baseline_qknorm,Baseline + QK-norm,"Llama 1B rerun with QK-norm, the reference run",https://wandb.ai/storm-dpo/llama-1b-6b-torchtitan/runs/j628m4gr
-baseline_noqk,Baseline,"Original Llama 1B baseline, no QK-norm",https://wandb.ai/storm-dpo/llama-1b-6b-torchtitan/runs/7mxxf4wt
-kda,KDA 3:1,3 GQA layers : 1 Kimi Delta Attention layer,https://wandb.ai/storm-dpo/llama-1b-6b-torchtitan/runs/yeyim8hx
-ngram50,N-gram 50%,"LongCat n-gram embeddings, ~48% of param budget",https://wandb.ai/storm-dpo/llama-1b-6b-torchtitan/runs/0ps3r5gr
+baseline_qknorm,Baseline (QK-norm),"Llama 1B rerun with QK-norm, the reference run",https://wandb.ai/storm-dpo/llama-1b-6b-torchtitan/runs/j628m4gr
+kda,KDA,3 GQA layers : 1 Kimi Delta Attention layer,https://wandb.ai/storm-dpo/llama-1b-6b-torchtitan/runs/yeyim8hx
 ngram25,N-gram 25%,"LongCat n-gram embeddings, ~25% of param budget",https://wandb.ai/storm-dpo/llama-1b-6b-torchtitan/runs/i3ok3mjk
+ngram50,N-gram 50%,"LongCat n-gram embeddings, ~48% of param budget",https://wandb.ai/storm-dpo/llama-1b-6b-torchtitan/runs/0ps3r5gr
+baseline_noqk,Baseline (no QK-norm),"Original Llama 1B baseline, no QK-norm",https://wandb.ai/storm-dpo/llama-1b-6b-torchtitan/runs/7mxxf4wt

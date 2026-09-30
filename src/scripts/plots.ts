@@ -114,7 +114,9 @@ export function init_article_plots(root: ParentNode = document) {
         el.replaceChildren();
         const data = el.dataset.deltaDirection
           ? colorPlotDeltas(spec.data, el.dataset.deltaDirection) : spec.data;
-        await Plotly.newPlot(el, data, layout, CONFIG);
+        // The modebar crowds a phone-width chart and has nothing touch needs.
+        const config = el.clientWidth < 640 ? { ...CONFIG, displayModeBar: false } : CONFIG;
+        await Plotly.newPlot(el, data, layout, config);
         el.dataset.plotState = 'ready';
         if (visible) {
           animatePlot(el);

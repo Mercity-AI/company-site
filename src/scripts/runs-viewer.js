@@ -4,13 +4,16 @@ import { loadRuns } from "../utils/runs-data.js";
 export async function init_runs_viewer(root, signal) {
   const find = key => root.querySelector(`[data-viewer="${key}"]`);
 
-  // Row order in data/runs.csv sets each run's colour slot.
+  // Row order in data/runs.csv sets each run's colour slot; it follows the
+  // legend order of the article's Plotly figures so a model keeps its colour.
   const RUN_DATA = await loadRuns(signal);
   signal.throwIfAborted();
   find("carousel").replaceChildren();
 
   const COLORS = ["--s1", "--s2", "--s3", "--s4", "--s5"];
   const REF = "baseline_qknorm";
+  // Drawn dashed, as in the article's figures.
+  const DASHED = new Set(["baseline_noqk"]);
 
   const METRICS = {
     loss: { title: "Train loss", smooth: true, delta: true, zeroFloor: false },
@@ -189,7 +192,7 @@ export async function init_runs_viewer(root, signal) {
       const m = this.m, mk = this.mk;
       const useDelta = this.useDelta = state.delta && m.delta;
       const logY = this.logY = state.log && !useDelta;
-      this.el.querySelector(".slide-hd em").textContent = useDelta ? "Δ vs QK norm" : "";
+      this.el.querySelector(".slide-hd em").textContent = useDelta ? "Δ vs QK-norm baseline" : "";
       const series = this.series = buildSeries(mk);
       const W = Math.max(280, this.svg.clientWidth || 900), H = Math.max(200, this.svg.clientHeight || 480);
 
@@ -277,12 +280,12 @@ export async function init_runs_viewer(root, signal) {
           pen = true; last = [px, py];
           if (isEval) dots += `<circle cx="${px}" cy="${py}" r="3.5" fill="${se.color}" stroke="var(--panel)" stroke-width="2"/>`;
         }
-        paths += `<path d="${d}" fill="none" stroke="${se.color}" stroke-width="${isEval ? 2 : 1.75}" stroke-linejoin="round" stroke-linecap="round"/>`;
+        paths += `<path d="${d}" fill="none" stroke="${se.color}" stroke-width="${isEval ? 2 : 1.75}"${DASHED.has(se.run.key) ? ' stroke-dasharray="5 4"' : ""} stroke-linejoin="round" stroke-linecap="round"/>`;
         if (last && !isEval) dots += `<circle cx="${last[0]}" cy="${last[1]}" r="3.5" fill="${se.color}" stroke="var(--panel)" stroke-width="2"/>`;
       }
       const cid = root.id + "-clip-" + mk;
       this.svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-      this.svg.setAttribute("aria-label", `${m.title}${useDelta ? ", difference from QK norm," : ""} by ${state.xaxis}`);
+      this.svg.setAttribute("aria-label", `${m.title}${useDelta ? ", difference from the QK-norm baseline," : ""} by ${state.xaxis}`);
       this.svg.innerHTML = `<defs><clipPath id="${cid}"><rect x="${P.l}" y="${P.t - 6}" width="${iw + 6}" height="${ih + 12}"/></clipPath></defs>
         ${g}<g clip-path="url(#${cid})">${paths}${dots}</g>
         ${empty ? `<text x="${P.l + iw / 2}" y="${P.t + ih / 2}" text-anchor="middle">No runs selected</text>` : ""}
@@ -354,7 +357,7 @@ export async function init_runs_viewer(root, signal) {
     find("runs").innerHTML = RUN_DATA.runs.map((r, i) => `
       <button type="button" class="run" data-k="${r.key}" aria-pressed="${!state.hidden.has(r.key)}" style="--c:var(${COLORS[i]})" title="${r.desc}">
         <span class="box"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 5.2 4.1 7.3 8 3" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-        <span class="name">${r.key === REF ? "QK norm" : r.label}</span><span class="val"></span>
+        <span class="name">${r.label}</span><span class="val"></span>
       </button>`).join("");
   }
 

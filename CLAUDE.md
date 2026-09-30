@@ -29,7 +29,7 @@ tools as they ship (see *Still placeholder* below). Treat design changes on
 | `/v2` | Redirects to `/`. |
 | `/v2-open` | Two treatments of the open-source section, A and B, for comparison. |
 | `/design.html` | Design lab. Static file in `public/`, no Astro layout. |
-| `/research`, `/research/[slug]` | Listing and logs, on `V2Layout`. See *Research and Blog*. |
+| `/research`, `/research/[slug]` | Listing and logs, on `V2Layout`. Logs are `.md` or `.mdx`. See *Research and Blog*. |
 | `/blog`, `/blog-post/[slug]` | Listing and posts, on `V2Layout`. Same components. |
 | `/open-source/simula` | The Simula product page, on `V2Layout`. See *Simula*. |
 | `/open-source/simula-v2` | A rewrite of the Simula page, told as why and how we built it. `noindex`, for comparison until it replaces `/open-source/simula`. See *Simula v2*. |
@@ -144,8 +144,10 @@ motion, built from three components in `src/components/v2/`:
   as lede, author/date/read-time rule row), the body in `.v2-prose`, a tag
   strip, then a tinted "More from …" band of `EntryRow`s with a `.wipe`
   link back to the listing. The cover image shows in the header **only
-  when the body does not already contain it** (`body.includes(image)`):
-  the research logs open with their cover figure, most blog posts don't.
+  when the body does not already contain it** (`body.includes(image)`,
+  or a plot spec with the same file stem, e.g. `fig01_x.json` for
+  `fig01_x.png`): the research logs open with their cover figure, most
+  blog posts don't.
 
 `/research` leads with the newest log as a two-column card (image left
 at `5.5fr`, copy right at `6.5fr`) and lists the rest under "Earlier".
@@ -192,6 +194,39 @@ KaTeX CSS is imported alongside.
 link with `aria-current="page"`, which keeps its underline at rest.
 `.wipe` and `.band-tint` moved from `index.astro` into the layout since
 the listing pages use them too.
+
+**Interactive figures.** The `research` collection also loads `.mdx`
+(`@astrojs/mdx`), so a log can import components. The first to use it is
+`research/pretraining-dense-models.mdx`, Rishikesh's dense 1B
+pretraining log (merged 2026-09-30, PR #6):
+
+- **Plotly charts.** A `<div class="plot" data-plot="…json">` in the body
+  is drawn by `src/scripts/plots.ts`, which `Article` loads on every
+  article. Plotly (`plotly.js-cartesian-dist-min`, ~1.4 MB) is a lazy
+  chunk fetched only when a chart comes within 600px of the viewport.
+  Specs live in `public/research/assets/figures/<slug>/`. On charts
+  under 640px wide the title and the modebar are dropped.
+  `data-delta-direction="higher|lower"` recolours signed-delta bars and
+  heatmaps green for better, red for worse (`src/utils/plot-deltas.js`);
+  captions must say green, not blue.
+- **`FigureViews`** wraps a chart in a bordered frame with a Graph/Table
+  toggle; the table slot holds the same numbers as a markdown table.
+- **`RunsViewer`** is the train loss / eval loss / grad norm explorer. It
+  reads `public/research/assets/runs-viewer/data/*.csv`. Row order in
+  `runs.csv` sets each run's colour and follows the Plotly legend order
+  (Okabe-Ito: baseline blue, KDA orange, n-gram 25% green, n-gram 50%
+  pink, the no-QK-norm baseline grey and dashed), so a model keeps one
+  colour and one name across the whole log. Its plots sit in a vertical
+  scroll-snap carousel that captures the wheel; Pranav is fine with that.
+- **`rehype-scrollable-tables`** wraps every markdown table in a
+  keyboard-scrollable `.table-scroll` region.
+
+These figures keep their own look (rounded frames, pill toggles, the
+Okabe-Ito palette) rather than the V2 square-cornered indigo/teal/amber
+system. Pranav has accepted that for this log.
+
+`pnpm test` runs the Node tests in `tests/` (delta colours, the runs
+viewer's log-axis ticks).
 
 **Verifying reveals in the Browser pane:** if the pane is collapsed,
 `document.visibilityState` is `hidden`, IntersectionObserver never fires,
@@ -431,6 +466,11 @@ silently.
   process holding 4321 so the "restarted" server quietly comes up on 4322 and
   the open tab keeps talking to the stale one. Kill by port
   (`lsof -ti :4321 | xargs kill -9`) and confirm the log says 4321.
+- **`pnpm build` breaks a running dev server's Plotly.** The build
+  invalidates Vite's optimized-deps cache, the dev server then answers the
+  Plotly chunk with a 504, and every chart on the dense pretraining log
+  shows "This chart could not load." The built site is fine. Restart the
+  dev server after building.
 - **Astro inlines small stylesheets** into the HTML instead of emitting a
   `.css` chunk. Grepping only `dist/_astro/*.css` will make a page's CSS look
   missing when it is present.

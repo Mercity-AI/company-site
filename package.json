@@ -8,6 +8,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
+    "test": "node --test tests/*.test.mjs",
     "import:notion": "node scripts/import-notion.js",
     "upload:images": "node scripts/upload-images-to-r2.js",
     "check:images": "node scripts/check-images.js"

@@ -15,7 +15,8 @@
   --on-ink: #fcfcfd;
   --good: #1d7a3e;
   --bad: #b3372f;
-  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4;
+  /* The Plotly figures' colours, in runs.csv row order. */
+  --s1: #0072B2; --s2: #D55E00; --s3: #009E73; --s4: #CC79A7; --s5: #999999;
   --serif: var(--hero-serif);
 }
 .v2-prose .runs-viewer * { box-sizing: border-box; }
@@ -39,7 +40,7 @@
 .v2-prose .runs-viewer .run .box { width: 14px; height: 14px; border-radius: 3px; border: 1.5px solid var(--c); background: var(--c); display: grid; place-items: center; }
 .v2-prose .runs-viewer .run[aria-pressed="false"] .box { background: transparent; }
 .v2-prose .runs-viewer .run[aria-pressed="false"] .box svg { visibility: hidden; }
-.v2-prose .runs-viewer .run .name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v2-prose .runs-viewer .run .name { font-size: 12px; font-weight: 500; line-height: 1.3; overflow-wrap: anywhere; }
 .v2-prose .runs-viewer .run[aria-pressed="false"] .name { color: var(--ink-3); }
 .v2-prose .runs-viewer .run .val { text-align: right; display: grid; justify-items: end; line-height: 1.2; }
 .v2-prose .runs-viewer .run .val b { font-family: var(--mono); font-weight: 500; font-size: 11px; font-variant-numeric: tabular-nums; }
@@ -95,6 +96,7 @@
   .v2-prose .runs-viewer .ctls { grid-row: 4; margin: 0; padding: 12px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 12px; overflow: visible; background: var(--side); }
   .v2-prose .runs-viewer .ctl-smooth { grid-column: 1 / -1; }
   .v2-prose .runs-viewer .seg button { padding-inline: 5px; font-size: 10.5px; }
+  .v2-prose .runs-viewer .run .name { white-space: nowrap; }
   .v2-prose .runs-viewer .run { flex: none; grid-template-columns: 14px auto auto; padding: 6px 10px; background: var(--panel); border: 1px solid var(--rule); border-radius: 999px; }
   .v2-prose .runs-viewer .bar { padding: 10px 12px; }
   .v2-prose .runs-viewer .slide { padding: 12px 30px 8px 10px; }
