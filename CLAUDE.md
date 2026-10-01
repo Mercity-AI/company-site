@@ -7,9 +7,9 @@ redesign work stands.
 ## Branch
 
 `redesign`, branched from `astro-migration`. V2 is now the home page; the
-previous home is parked at `/legacy`. Research, Blog, Simula and About
-are on the V2 shell too. Only Contact still uses `BaseLayout`, so the
-two shells live side by side until it moves.
+previous home is parked at `/legacy`. Every live page is on the V2
+shell, Contact included (2026-10-02); only `/legacy` still uses
+`BaseLayout`.
 
 ## Status — landing page design is done
 
@@ -34,8 +34,9 @@ tools as they ship (see *Still placeholder* below). Treat design changes on
 | `/open-source/simula` | The Simula product page, on `V2Layout`. See *Simula*. |
 | `/open-source/simula-v2` | A rewrite of the Simula page, told as why and how we built it. `noindex`, for comparison until it replaces `/open-source/simula`. See *Simula v2*. |
 | `/services/synthetic-data` | The synthetic data service page, on `V2Layout`, under the nav's Services dropdown. See *Synthetic data service*. |
+| (unpublished) | Harsh's LLM guardrails and security page, kept at `src/pages/services/_llm-guardrails.astro`. The underscore keeps it out of the build and it is out of the nav (2026-10-02, Pranav: "it does not look good"). To publish, rename it to `llm-guardrails.astro` and restore its entry in the Services dropdown (commented in `V2Layout`). |
 | `/about` | On `V2Layout`. Quiet page; every figure computed from the collections. See *About*. |
-| `/contact` | Unchanged, on `BaseLayout`. The last page on the old shell. |
+| `/contact` | On `V2Layout`. Form plus a Calendly band. See *Contact*. |
 
 `/legacy`, `/v2-open`, `/open-source/simula-v2` and `/design.html` are
 `noindex` and excluded from the sitemap. They are working surfaces, not shipping pages.
@@ -382,8 +383,11 @@ lower, as in Harsh's reference (Hugging Face's own open-source grid).
 The column count is chosen so the datasets divide evenly: `DS_COLS = 5`
 for ten, two cards a column. **The whole page runs at
 `section { --shell: 1300px }`** (nav and footer keep 1150px) so the
-tiles get room while every section's edges line up; card width is
-(shell − 37 − 4 × 14) ÷ 5, about 241px. An earlier 1560px shell on
+tiles get room while every section's edges line up. **The datasets
+band itself runs at 1452px** (Pranav asked for the cards 12% bigger,
+2026-10-01): card width is (shell − 37 − 4 × 16) ÷ 5, about 270px, and
+type, padding, gaps and the stagger inside the cards are all 12% up.
+Its heading sits in the same wider shell, on one line. An earlier 1560px shell on
 the datasets section alone was dropped because it stuck out past the
 other sections. Below
 1100px the column wrappers go `display: contents` and the cards fall
@@ -418,22 +422,54 @@ is "Large-scale synthetic data, engineered for model training." with
 three sentences (years of specialising, 100B+ tokens, clients trained
 state-of-the-art models, fewer retraining cycles; the SOTA claim is
 from Harsh's note, confirm before launch). The problems section is
-white; the hub reads "All six, one answer / An engineered dataset",
-each node adds a teal line with our fix, and the pulses run inward.
-Failure modes are headed "We engineer against known failures in data
-generation." and stay the two-column table (failure | how we prevent
+white; the hub reads only "A Mercity-engineered dataset" and the
+pulses run inward. Failure modes are headed "We engineer against the
+hardest failures in data generation." and stay the two-column table (failure | how we prevent
 it), in agency wording with no Simula context; a version with a
 failure → prevented picture per card was tried and reverted.
 "You have some data" is the scatter with a hatched missing column and a
 "no data" corner (the per-case histogram was cut); "domain expertise" is
-expert notes → spec → colour-tagged samples. The loop is vertical, with
-a sticky `tranche.csv` beside it (`data-stage` -1 to 3, set from which
-step has passed 66% of the screen): rows generate → review marks O/X
-with two flags → flagged values struck through and replaced, X turns to
-a tick → every row ticks and ghost rows arrive. The last step keeps a
-36vh min-height: the CSV grows on that step, and without the room the
-end of the section pushed it up under the nav. The proof strip's
+expert notes → spec → colour-tagged samples. The loop is a **pinned
+stage**: the heading and lede plus `sample.csv` are one `.loop-stage`
+(100vh, `data-vsticky="0"`) sharing a grid cell with the steps'
+`.loop-track`, so the heading and CSV pin together at the top, the
+steps scroll up under the heading (it carries `--ground` and a fade),
+and everything lets go together after phase 4 holds. The script
+measures the heading into `--loop-head-h`. Pinned, the CSV's lowest
+point on its last state is about 815px, so it fits an 820px-tall
+screen; below 780px tall the rows tighten. Below 900px wide nothing
+pins. The CSV has 12 rows (`data-stage` -1 to 3):
+rows generate → review marks O/X with three flags (wrong label, near
+duplicate, too easy) → flagged values struck through and replaced, X
+turns to a tick → every row ticks and three more written-out rows
+arrive. Nothing is current until step one passes 66% of the screen;
+after that the current step is the one whose text sits nearest the
+CSV's middle, so the step being read is level with the state shown.
+Stacked below 900px, the 66% line decides alone. Steps are 50vh apart;
+the last runs on long enough to hold phase 4 a while before the stage
+lets go. "What you receive" moves up into the empty stage left under
+the CSV, by 15vh at most and never more than that space
+(`--loop-slack`, measured by the script), so it follows the CSV on
+tall screens and cannot overlap it on short ones. The hero's "Scroll"
+cue was removed (2026-10-01). Each step has two
+paragraphs, which fill the gap the scroll spacing leaves. The proof strip's
 fourth cell is now a contact link. "Telecom" is out of the marquee.
+
+**Review pass (2026-10-01, Pranav's Loom review of Harsh's page).**
+The hero headline breaks at its comma, one clause per line (`span`s,
+`nowrap` from 720px, size capped at 64px so the longer clause fits),
+and the hero copy is two paragraphs. No word "tranche" anywhere; it
+reads "sample". "Plan" was cut back to one mention (the FAQ), because
+he found it said everywhere. The domains band is shorter and its
+marquee 25% smaller; the problems hub lost its eyebrow, its
+"Planned · Generated · Verified" note and the teal fix line on every
+node, all of it read as clutter. "What we generate" cards sit on the
+section's ground rather than white. Split-head ledes run to 54ch so
+short ledes do not leave one word on a line. The "Two ways to start"
+heading carries the old lede and runs on one line; card A's scatter is
+480 wide and both figures are 10% taller. The closer is "Tell us where
+your model breaks, / and we will build the data that fixes it." in a
+900px card, one clause per line like the hero.
 
 Colour comes from `sdWashWarm` (apricot, sand, blush and a warm
 lavender on ivory; `sdWash` is the cooler indigo/teal variant, kept
@@ -496,6 +532,24 @@ invents none. Authors sign inconsistently across three years, so an
 `Juhi` → `Juhi Singh` and the `Sonawale` typo → `Sonawane`; a bare
 `Yash` (one 2024 post) is ambiguous and is left as written. Fix the
 frontmatter in `content/` and the map can shrink.
+
+## Contact (`/contact`)
+
+Quiet, like About: `ListHead` with no eyebrow ("Tell us what you are
+building.") → a band with the form beside two matching blocks on rules
+("Prefer email?" and "Prefer to talk?", the second linking down to the
+calendar). Every field has an example placeholder; what to put in a
+message lives in the message placeholder, not a separate list. → a
+tinted band with Calendly's inline widget, unframed since Calendly
+draws its own card. The form is one flush bordered object, a cell per
+field with mono labels; focus draws the nav's 1px indigo underline
+along the field's bottom edge, and a field left invalid turns its
+label amber. It posts `{ name, email, company, message }` to
+`${PUBLIC_CONTACT_API_BASE_URL}/api/contact` (`backend/main.py`); the
+local `.env` points that at production, so a test submit from dev
+sends a real email. Stub `fetch` to test the states. Calendly's script
+loads only when its band is within a screen of view. `ListHead`'s
+`eyebrow` is optional now for this page; the others still pass one.
 
 ## Backdrop generators
 
