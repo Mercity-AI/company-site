@@ -4,7 +4,8 @@
  * site's boldness, so the inner pages open on type alone.
  */
 interface Props {
-  eyebrow: string;
+  /** Optional: newer pages (Contact) open on the heading alone. */
+  eyebrow?: string;
   title: string;
   /** An array puts each sentence on its own line, as on the home page. */
   lede: string | string[];
@@ -16,7 +17,7 @@ const { eyebrow, title, lede, count }: Props = Astro.props;
 
 <section class="list-head">
   <div class="shell">
-    <span class="eyebrow rv" data-rv>{eyebrow}</span>
+    {eyebrow && <span class="eyebrow rv" data-rv>{eyebrow}</span>}
     <h1 class="rv" data-rv style="--rv-delay:80ms">{title}</h1>
     {
       Array.isArray(lede) ? (
