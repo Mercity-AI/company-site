@@ -1,0 +1,361 @@
+---
+/**
+ * The previous home page, retired when V2 moved to `/`. Kept at /legacy
+ * (noindex) for comparison only.
+ */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import HeroSection from '@/components/HeroSection';
+import Reveal from '@/components/Reveal.astro';
+
+const tooling = [
+  {
+    name: 'Simula',
+    kind: 'Python',
+    link: '/open-source/simula',
+    summary:
+      'Deliberate synthetic data generation. Describe the distribution you want as a spec, and Simula plans, generates and verifies a corpus against it.',
+  },
+  {
+    name: 'Assay',
+    kind: 'Python',
+    link: '/open-source/simula',
+    summary:
+      'An evaluation harness for task-specific benchmarks. Define graders once, run them across models and checkpoints, and diff results across a training run.',
+  },
+  {
+    name: 'Sieve',
+    kind: 'Rust · Python',
+    link: '/open-source/simula',
+    summary:
+      'Corpus filtering and near-duplicate detection at billion-document scale, with every decision traceable back to the rule that made it.',
+  },
+  {
+    name: 'Anvil',
+    kind: 'CUDA · Triton',
+    link: '/open-source/simula',
+    summary:
+      'Fused kernels and training utilities for architectures that do not fit the standard stack, benchmarked against the reference implementation on every commit.',
+  },
+];
+
+---
+
+<BaseLayout
+  title="Mercity Research"
+  description="Research-grade, reality-ready. Shipping the research to production. Custom training, real optimization, genuine architecture."
+  path="/legacy"
+  noindex
+  showBlur={false}
+>
+  <div class="w-full overflow-hidden">
+    <HeroSection client:load />
+
+    <!-- What we work on -->
+    <section id="capabilities" class="py-32 bg-white/40 backdrop-blur-sm">
+      <div class="max-w-7xl mx-auto page-gutter">
+        <Reveal as="span" class="block text-[0.625rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
+          What we work on
+        </Reveal>
+        <Reveal delay={80}>
+          <h2 class="mt-4 max-w-[20ch] text-3xl md:text-[2.75rem] font-light leading-[1.14] tracking-tight text-slate-900 text-balance">
+            Three things, and we do <em class="font-serif italic text-slate-600">all three at depth.</em>
+          </h2>
+        </Reveal>
+        <Reveal delay={160}>
+          <p class="mt-6 max-w-[60ch] text-[1.0625rem] font-light leading-[1.72] text-slate-500">
+            Not a service menu. These are the three problems we have run at scale often enough to have opinions
+            about, and they compose into a single pipeline: generate the data nobody has, train the model nobody
+            sells, then prove it actually works.
+          </p>
+        </Reveal>
+
+        <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-px bg-slate-200 border border-slate-200">
+          <Reveal delay={100}>
+            <article class="group h-full bg-white p-10 lg:p-11 transition-colors duration-500 hover:bg-slate-50/70">
+              <svg class="w-8 h-8 text-slate-700" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.25">
+                <circle cx="8" cy="8" r="2.5" />
+                <circle cx="24" cy="8" r="2.5" />
+                <circle cx="16" cy="16" r="2.5" />
+                <circle cx="8" cy="24" r="2.5" />
+                <circle cx="24" cy="24" r="2.5" />
+                <path d="M10 9.6 14 14.4M22 9.6 18 14.4M10 22.4 14 17.6M22 22.4 18 17.6" />
+              </svg>
+              <h3 class="mt-7 text-xl font-medium tracking-tight text-slate-900">Synthetic Data Generation</h3>
+              <div class="mt-4 h-px w-7 bg-indigo-600/70 transition-all duration-500 group-hover:w-14"></div>
+              <p class="mt-5 text-[0.9375rem] font-light leading-[1.75] text-slate-500">
+                We build pipelines that produce exactly the distribution your model is missing —
+                curriculum-controlled, deduplicated, and verified against the real task rather than against a
+                prompt template. Millions of samples, shipped with the generation code, the filter criteria and a
+                coverage report, so you can audit what went into the run instead of trusting it.
+              </p>
+            </article>
+          </Reveal>
+
+          <Reveal delay={190}>
+            <article class="group h-full bg-white p-10 lg:p-11 transition-colors duration-500 hover:bg-slate-50/70">
+              <svg class="w-8 h-8 text-slate-700" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.25">
+                <rect x="4" y="4" width="24" height="24" rx="1.5" />
+                <path d="M4 12h24M4 20h24M12 4v24M20 4v24" />
+                <rect x="12" y="12" width="8" height="8" fill="currentColor" stroke="none" opacity="0.14" />
+              </svg>
+              <h3 class="mt-7 text-xl font-medium tracking-tight text-slate-900">Custom Architecture &amp; Training</h3>
+              <div class="mt-4 h-px w-7 bg-indigo-600/70 transition-all duration-500 group-hover:w-14"></div>
+              <p class="mt-5 text-[0.9375rem] font-light leading-[1.75] text-slate-500">
+                When the off-the-shelf model is the wrong shape, we design one that is not: modified attention,
+                task-native tokenizers, reworked objectives, and the kernels to make them run fast. Continued
+                pretraining through post-training, on your compute, with every checkpoint and hyperparameter
+                decision documented and handed over at the end.
+              </p>
+            </article>
+          </Reveal>
+
+          <Reveal delay={280}>
+            <article class="group h-full bg-white p-10 lg:p-11 transition-colors duration-500 hover:bg-slate-50/70">
+              <svg class="w-8 h-8 text-slate-700" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.25">
+                <path d="M4 26h24" />
+                <rect x="7" y="17" width="4.5" height="9" />
+                <rect x="14" y="10" width="4.5" height="16" />
+                <rect x="21" y="20" width="4.5" height="6" />
+                <path d="M6 7l5 4 6-5 8 3" stroke-dasharray="2 2" />
+              </svg>
+              <h3 class="mt-7 text-xl font-medium tracking-tight text-slate-900">Evaluation &amp; Benchmarking</h3>
+              <div class="mt-4 h-px w-7 bg-indigo-600/70 transition-all duration-500 group-hover:w-14"></div>
+              <p class="mt-5 text-[0.9375rem] font-light leading-[1.75] text-slate-500">
+                Public benchmarks rarely measure the thing you are actually paid for. We build the evaluation your
+                problem needs — task-specific suites, adversarial probes and regression harnesses wired into CI —
+                then run it honestly, including the results that argue against the model we just trained for you.
+              </p>
+            </article>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+
+    <!-- Who we work with -->
+    <section id="who-we-work-with" class="py-32 border-t border-slate-100 bg-slate-50/60">
+      <div class="max-w-7xl mx-auto page-gutter">
+        <Reveal as="span" class="block text-[0.625rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
+          Who we work with
+        </Reveal>
+        <Reveal delay={80}>
+          <h2 class="mt-4 max-w-[22ch] text-3xl md:text-[2.75rem] font-light leading-[1.14] tracking-tight text-slate-900 text-balance">
+            Two kinds of teams keep <em class="font-serif italic text-slate-600">finding their way to us.</em>
+          </h2>
+        </Reveal>
+        <Reveal delay={160}>
+          <p class="mt-6 max-w-[60ch] text-[1.0625rem] font-light leading-[1.72] text-slate-500">
+            They arrive with very different problems and leave with the same thing: a capability that belongs to
+            them, rather than a subscription that renews.
+          </p>
+        </Reveal>
+
+        <div class="mt-16 grid grid-cols-1 md:grid-cols-2 gap-5">
+          <Reveal delay={120} from="left">
+            <article class="h-full bg-white border border-slate-200 p-10 lg:p-12 transition-all duration-500 hover:-translate-y-1.5 hover:border-slate-300 hover:shadow-[0_18px_44px_-28px_rgba(15,23,42,0.3)]">
+              <span class="inline-block px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Product
+              </span>
+              <h3 class="mt-7 text-2xl md:text-[1.8rem] font-light leading-[1.22] tracking-tight text-slate-900 text-balance">
+                Product companies seeking <em class="font-serif italic text-indigo-600">real differentiation</em>
+              </h3>
+              <p class="mt-5 text-[0.96875rem] font-light leading-[1.78] text-slate-500">
+                Your product works, but the model behind it is the same endpoint your three closest competitors are
+                calling — which means your moat is your interface. We build the layer that cannot be replicated by
+                swapping an API key: trained on data only you have, shaped around the task your users actually
+                perform, and measurably better at it than anything general-purpose. You own the weights, the
+                pipeline and the evaluations that prove the gap.
+              </p>
+              <p class="mt-8 pt-6 border-t border-slate-100 text-[0.8125rem] text-slate-600">
+                Typically 6–14 weeks, from a working baseline to a deployed model.
+              </p>
+            </article>
+          </Reveal>
+
+          <Reveal delay={200} from="right">
+            <article class="h-full bg-white border border-slate-200 p-10 lg:p-12 transition-all duration-500 hover:-translate-y-1.5 hover:border-slate-300 hover:shadow-[0_18px_44px_-28px_rgba(15,23,42,0.3)]">
+              <span class="inline-block px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Enterprise
+              </span>
+              <h3 class="mt-7 text-2xl md:text-[1.8rem] font-light leading-[1.22] tracking-tight text-slate-900 text-balance">
+                Enterprises integrating AI <em class="font-serif italic text-indigo-600">structurally, not superficially</em>
+              </h3>
+              <p class="mt-5 text-[0.96875rem] font-light leading-[1.78] text-slate-500">
+                You are past the pilot stage and the demos have stopped being interesting. We work alongside your
+                existing teams to put AI into the systems the business genuinely runs on — data foundations,
+                evaluation gates, deployment and serving architecture, and the review process that keeps a model
+                honest after launch. We build the internal capability at the same time, so the thing still works
+                long after our engagement ends.
+              </p>
+              <p class="mt-8 pt-6 border-t border-slate-100 text-[0.8125rem] text-slate-600">
+                Embedded engagements, with your engineers in the room from week one.
+              </p>
+            </article>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+
+    <!-- We ship openly -->
+    <section id="open-source" class="py-32 border-t border-slate-100">
+      <div class="max-w-7xl mx-auto page-gutter">
+        <div class="flex flex-wrap items-end justify-between gap-10">
+          <div class="flex-1 basis-[28rem] min-w-0 max-w-3xl">
+            <Reveal as="span" class="block text-[0.625rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
+              Open source
+            </Reveal>
+            <Reveal delay={80}>
+              <h2 class="mt-4 text-3xl md:text-[2.75rem] font-light leading-[1.14] tracking-tight text-slate-900 text-balance">
+                We ship <em class="font-serif italic text-slate-600">openly,</em> and in public.
+              </h2>
+            </Reveal>
+            <Reveal delay={160}>
+              <p class="mt-6 max-w-[60ch] text-[1.0625rem] font-light leading-[1.72] text-slate-500">
+                Most of what we learn on client work ends up public in some form. Datasets we had to build because
+                nothing suitable existed, weights from runs worth reproducing, and write-ups detailed enough that
+                you could follow them end to end. Take it, fork it, and tell us where we got it wrong.
+              </p>
+            </Reveal>
+          </div>
+          <Reveal delay={240}>
+            <a
+              href="/open-source/simula"
+              class="group relative inline-flex items-center gap-2.5 overflow-hidden border border-slate-900 px-6 py-3.5 text-[0.6875rem] font-semibold uppercase tracking-[0.15em] text-slate-900 transition-colors duration-300 hover:text-white"
+              data-astro-prefetch
+            >
+              <span class="absolute inset-0 bg-slate-900 -translate-x-full transition-transform duration-300 ease-out group-hover:translate-x-0"></span>
+              <span class="relative z-10">Explore our open work</span>
+              <span class="relative z-10" aria-hidden="true">→</span>
+            </a>
+          </Reveal>
+        </div>
+
+        <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Reveal delay={100}>
+            <a href="/open-source/simula" class="group flex h-full flex-col bg-white border border-slate-200 transition-all duration-500 hover:-translate-y-1.5 hover:border-slate-300 hover:shadow-[0_18px_44px_-28px_rgba(15,23,42,0.3)]" data-astro-prefetch>
+              <div class="aspect-[16/10] border-b border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100">
+                <svg class="w-full h-full text-indigo-600" viewBox="0 0 320 200" fill="none" aria-hidden="true">
+                  <defs>
+                    <pattern id="os-dots" width="18" height="18" patternUnits="userSpaceOnUse">
+                      <circle cx="9" cy="9" r="1.8" fill="currentColor" />
+                    </pattern>
+                    <radialGradient id="os-dots-fade" cx="60%" cy="45%">
+                      <stop offset="0%" stop-color="white" stop-opacity="0.55" />
+                      <stop offset="100%" stop-color="white" stop-opacity="0.05" />
+                    </radialGradient>
+                    <mask id="os-dots-mask"><rect width="320" height="200" fill="url(#os-dots-fade)" /></mask>
+                  </defs>
+                  <rect width="320" height="200" fill="url(#os-dots)" mask="url(#os-dots-mask)" />
+                </svg>
+              </div>
+              <div class="p-8">
+                <h3 class="text-lg font-medium tracking-tight text-slate-900">Datasets</h3>
+                <p class="mt-3.5 text-[0.90625rem] font-light leading-[1.74] text-slate-500">
+                  Curated and synthetic corpora released with the generation code, the filtering criteria and the
+                  failure modes we already know about — so you can judge whether a set fits your problem before you
+                  spend a training run finding out.
+                </p>
+                <p class="mt-5 font-mono text-[0.6875rem] text-slate-400">14 releases · HuggingFace</p>
+              </div>
+            </a>
+          </Reveal>
+
+          <Reveal delay={190}>
+            <a href="/open-source/simula" class="group flex h-full flex-col bg-white border border-slate-200 transition-all duration-500 hover:-translate-y-1.5 hover:border-slate-300 hover:shadow-[0_18px_44px_-28px_rgba(15,23,42,0.3)]" data-astro-prefetch>
+              <div class="aspect-[16/10] border-b border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100">
+                <svg class="w-full h-full text-indigo-600" viewBox="0 0 320 200" fill="none" stroke="currentColor" aria-hidden="true">
+                  <g opacity="0.45">
+                    <circle cx="160" cy="108" r="16" />
+                    <circle cx="160" cy="108" r="32" opacity="0.85" />
+                    <circle cx="160" cy="108" r="48" opacity="0.7" />
+                    <circle cx="160" cy="108" r="64" opacity="0.55" />
+                    <circle cx="160" cy="108" r="80" opacity="0.4" />
+                    <circle cx="160" cy="108" r="96" opacity="0.25" />
+                  </g>
+                  <circle cx="160" cy="108" r="3.5" fill="currentColor" stroke="none" opacity="0.8" />
+                </svg>
+              </div>
+              <div class="p-8">
+                <h3 class="text-lg font-medium tracking-tight text-slate-900">Models</h3>
+                <p class="mt-3.5 text-[0.90625rem] font-light leading-[1.74] text-slate-500">
+                  Checkpoints, adapters and complete training recipes from experiments we think are worth
+                  reproducing — published with the evaluation numbers that convinced us to keep them, and the
+                  ablations that did not make the cut.
+                </p>
+                <p class="mt-5 font-mono text-[0.6875rem] text-slate-400">9 checkpoints · Apache-2.0</p>
+              </div>
+            </a>
+          </Reveal>
+
+          <Reveal delay={280}>
+            <a href="/research" class="group flex h-full flex-col bg-white border border-slate-200 transition-all duration-500 hover:-translate-y-1.5 hover:border-slate-300 hover:shadow-[0_18px_44px_-28px_rgba(15,23,42,0.3)]" data-astro-prefetch>
+              <div class="aspect-[16/10] border-b border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100">
+                <svg class="w-full h-full text-indigo-600" viewBox="0 0 320 200" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <g opacity="0.5">
+                    <path d="M46 44h164" opacity="0.9" />
+                    <path d="M46 62h96" opacity="0.35" />
+                    <path d="M46 80h132" opacity="0.35" />
+                    <path d="M46 98h188" opacity="0.9" />
+                    <path d="M46 116h84" opacity="0.35" />
+                    <path d="M46 134h148" opacity="0.35" />
+                    <path d="M46 152h112" opacity="0.9" />
+                  </g>
+                </svg>
+              </div>
+              <div class="p-8">
+                <h3 class="text-lg font-medium tracking-tight text-slate-900">Research</h3>
+                <p class="mt-3.5 text-[0.90625rem] font-light leading-[1.74] text-slate-500">
+                  Long-form write-ups of what worked, what did not, and the specific reason why — implementation
+                  detail included, because that is reliably the part every other post leaves out and the part you
+                  need in order to reproduce it.
+                </p>
+                <p class="mt-5 font-mono text-[0.6875rem] text-slate-400">30+ write-ups · Updated weekly</p>
+              </div>
+            </a>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tooling -->
+    <section id="tooling" class="py-32 border-t border-slate-100 bg-slate-50/60">
+      <div class="max-w-7xl mx-auto page-gutter">
+        <Reveal as="span" class="block text-[0.625rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
+          Tooling
+        </Reveal>
+        <Reveal delay={80}>
+          <h2 class="mt-4 max-w-[24ch] text-3xl md:text-[2.75rem] font-light leading-[1.14] tracking-tight text-slate-900 text-balance">
+            Alongside the data and the weights, we <em class="font-serif italic text-slate-600">open the tools.</em>
+          </h2>
+        </Reveal>
+        <Reveal delay={160}>
+          <p class="mt-6 max-w-[60ch] text-[1.0625rem] font-light leading-[1.72] text-slate-500">
+            Nearly all of this started as something we needed internally and got tired of rewriting for the next
+            engagement. It stays maintained because we run on it ourselves — the same libraries are in the loop on
+            client projects the week they ship.
+          </p>
+        </Reveal>
+
+        <div class="mt-14 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+          {tooling.map((tool, index) => (
+            <Reveal delay={80 + index * 80}>
+              <a
+                href={tool.link}
+                class="group flex h-full min-h-[17rem] flex-col justify-between bg-white border border-slate-200 p-7 transition-all duration-500 hover:-translate-y-1.5 hover:border-slate-300 hover:shadow-[0_18px_44px_-28px_rgba(15,23,42,0.3)]"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <span class="text-xl font-medium tracking-tight text-slate-900">{tool.name}</span>
+                  <span class="pt-1.5 font-mono text-[0.625rem] tracking-wide text-slate-400 whitespace-nowrap">{tool.kind}</span>
+                </div>
+                <div>
+                  <div class="mb-4 h-1.5 w-1.5 rounded-full bg-indigo-600/50 transition-all duration-500 group-hover:bg-indigo-600 group-hover:scale-150"></div>
+                  <p class="text-[0.875rem] font-light leading-[1.72] text-slate-500">{tool.summary}</p>
+                </div>
+              </a>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+
+  </div>
+</BaseLayout>

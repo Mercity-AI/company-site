@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
+import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import rehypeSlug from 'rehype-slug';
@@ -7,6 +8,7 @@ import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypeHighlight from 'rehype-highlight';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import rehypeScrollableTables from './src/utils/rehype-scrollable-tables.mjs';
 
 function normalizeAllowedHostsBoolean(allowedHosts) {
   return Array.isArray(allowedHosts) && allowedHosts.length === 1 && allowedHosts[0] === true
@@ -25,12 +27,25 @@ const forceAllowAllHostsPlugin = {
 export default defineConfig({
   site: 'https://www.mercity.ai',
   redirects: {
+    '/v2': '/',
     '/blog-post/laco-layer-pruning-for-qwen3-8b-our-research-log':
       '/research/laco-layer-pruning-for-qwen3-8b-our-research-log',
     '/blog-post/lcm-lora-distillation-training-fast-diffusion-models':
       '/research/lcm-lora-distillation-training-fast-diffusion-models',
   },
-  integrations: [react(), sitemap()],
+  // Astro's static preview server reads `server.allowedHosts` (see
+  // core/preview/static-preview-server.js), not `vite.server`/`vite.preview`,
+  // so tunnelled hosts must be listed here to preview a build over ngrok.
+  server: {
+    allowedHosts: ['.ngrok-free.app', '.ngrok.app', '.ngrok.io'],
+  },
+  integrations: [
+    react(),
+    mdx(),
+    sitemap({
+      filter: (page) => !/\/(legacy|v2-open|simula-v2)\/?$/.test(page),
+    }),
+  ],
   vite: {
     plugins: [tailwindcss(), forceAllowAllHostsPlugin],
     server: {
@@ -44,6 +59,7 @@ export default defineConfig({
       rehypeSlug,
       rehypeHighlight,
       rehypeKatex,
+      rehypeScrollableTables,
       [
         rehypeAutolinkHeadings,
         {

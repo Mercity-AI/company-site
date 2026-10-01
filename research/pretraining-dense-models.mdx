@@ -1,0 +1,893 @@
+---
+title: 'Pretraining Dense Models: A Research Log'
+slug: pretraining-dense-models
+publishedAt: '2026-09-28'
+summary: >-
+  We pretrained four dense 1B-parameter checkpoints on 6B FineWeb tokens to
+  test Kimi Delta Attention and LongCat n-gram embeddings, then compared
+  grafting, pruning, 4-bit quantization, and downstream NER fine-tuning.
+authors:
+  - name: Rishikesh Mallagundla
+tags:
+  - Language Models
+  - Pretraining
+  - Model Architecture
+category: Research
+isTopPick: false
+image: /research/pretraining-dense-models/fig01_headline_results.png
+---
+
+import FigureViews from "../src/components/FigureViews.astro";
+import RunsViewer from "../src/components/RunsViewer.astro";
+
+We pretrained a set of dense **1-billion-parameter** checkpoints from scratch on **6B** [FineWeb](https://huggingface.co/datasets/HuggingFaceFW/fineweb) tokens, then used them to test ideas that were validated on larger-scale sparse MoE models: Kimi Delta Attention (KDA) from [Kimi K3](https://arxiv.org/abs/2607.24653), and the [LongCat n-gram embedding module](https://arxiv.org/abs/2601.21204). Each went in as a single-variable ablation against a shared baseline. We then grafted modules between checkpoints, pruned whole layers, quantized each model to 4-bit, and fine-tuned the baseline and n-gram checkpoints on a downstream NER task.
+
+**Results at a glance:** We found that a well-tuned dense baseline is the model to beat at this scale, and neither imported idea clearly beats it. KDA matches it (**41.37** vs **41.23** Shared-9, within single-seed noise). The n-gram tables give up transformer depth for embedding capacity and lose on both fronts: **0.7** and **1.7** Shared-9 points behind on the benchmarks, and **3** and **6** points of NER micro-F1 behind after fine-tuning. Adding QK normalization to the baseline erased KDA's earlier lead.
+
+<FigureViews label="Figure 1" title="Final zero-shot scores on all nine benchmarks (6B tokens)">
+
+<div slot="graph">
+
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig01_headline_results.json" style="--plot-height: 460px" role="img" aria-label="Figure 1. Final zero-shot scores for the four checkpoints on all nine benchmarks, with the Shared-9 average on the far right."></div>
+
+</div>
+
+<div slot="table">
+
+| Model | Total params | Tokens / steps | Final train loss | Shared-9 avg | Shared-9 avg (4-bit) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Baseline (QK-norm) | 1.031B | 6B / 3,053 | 2.570 | 41.23 | **40.82** |
+| KDA | 1.03B | 6B / 3,053 | **2.563** | **41.37** | 40.64 |
+| N-gram 25% | 1.006B | 6B / 3,053 | 2.636 | 40.56 | 40.00 |
+| N-gram 50% | 1.037B | 6B / 3,053 | 2.682 | 39.54 | 38.44 |
+
+| Benchmark | Baseline | KDA | N-gram 25% | N-gram 50% |
+| --- | ---: | ---: | ---: | ---: |
+| HellaSwag | 38.98 | 39.65 | 37.38 | 35.22 |
+| WinoGrande | 51.62 | 51.46 | 52.64 | 49.25 |
+| ARC-Easy | 40.15 | 39.60 | 38.89 | 38.47 |
+| ARC-Challenge | 23.63 | 24.06 | 24.66 | 22.87 |
+| PIQA | 66.59 | 67.79 | 65.89 | 65.07 |
+| OpenBookQA | 29.00 | 27.60 | 28.20 | 28.20 |
+| CommonsenseQA | 19.82 | 20.07 | 19.82 | 19.90 |
+| SciQ | 63.50 | 63.80 | 62.50 | 63.30 |
+| LAMBADA | 37.75 | 38.29 | 35.07 | 33.57 |
+| **Shared-9 average** | **41.23** | **41.37** | **40.56** | **39.54** |
+
+*Final train loss is cross-entropy at the last step (lower is better). Shared-9 is the unweighted mean of nine zero-shot benchmarks, in BF16 and after 4-bit quantization.*
+
+</div>
+
+<figcaption>
+
+Figure 1. Final zero-shot scores for the four checkpoints on all nine benchmarks, with the Shared-9 average on the far right.
+
+</figcaption>
+
+</FigureViews>
+
+The sections below follow the order we ran the experiments: pretraining first, then the downstream and diagnostic experiments.
+
+## Why do this?
+
+New architecture ideas keep arriving from frontier labs, and they are almost always validated on very large models: wide, sparse, and trained on tens of billions of tokens or more. We wanted to know how these state-of-the-art techniques behave when you train a small language model instead, with an academic token budget and a single GPU. To test that, we picked two recent examples: Kimi Delta Attention (KDA), a linear-attention layer introduced in [Kimi Linear](https://arxiv.org/abs/2510.26692) and used in the [Kimi K3](https://arxiv.org/abs/2607.24653) mixture-of-experts model, and the [LongCat n-gram embedding tables](https://arxiv.org/abs/2601.21204), reported on **20B to 60B** parameter models. We have not found published results for either on a dense model near 1B parameters, so these runs report new numbers.
+
+## What did we do?
+
+> **TL;DR:** Our four checkpoints share a common Llama 3 + QK-norm backbone, each trained on **6B** FineWeb tokens with Muon and AdamW, on **8,192**-token sequences packed from FineWeb documents. For the training stack we used a single NVIDIA B200 with FlashAttention 4 and Liger kernels (SwiGLU, RMSNorm, and fused linear cross-entropy), with TorchTitan running the training loop.
+
+All four models share the same backbone: a Llama3-style dense decoder with grouped-query attention, RMSNorm, SwiGLU MLPs, and tied embeddings. We use the [Llama 2 tokenizer](https://huggingface.co/meta-llama/Llama-2-7b-hf) with a **32,000**-token vocabulary to keep the models English-only. The four pretrained checkpoints differ only in the one component under test, so any benchmark gap traces back to that component and not to a change in width, tokenizer, or data.
+
+The four checkpoints are:
+
+1. **Baseline**, the plain dense backbone with QK normalization on.
+2. **KDA**, which swaps a quarter of the attention layers for Kimi Delta Attention.
+3. **N-gram 25%**, which spends about a quarter of its parameter budget on LongCat n-gram tables.
+4. **N-gram 50%**, which spends about half its budget on those tables.
+
+All four land near **1.03B** total parameters. That equal-budget framing is what makes the comparison fair. The n-gram models buy embedding tables by giving up transformer depth, and KDA replaces attention layers rather than adding parameters, so every model spends the same budget a different way.
+
+### The variants
+
+Both ideas change a part of the transformer most readers already know well: KDA changes attention, and the n-gram tables change the input embedding. For each one, we first explain what it is and the extra vocabulary it brings, then how we set it up in our models.
+
+#### Kimi Delta Attention (KDA)
+
+Softmax attention compares every token against every earlier token. That is what makes it powerful, but its cost grows quadratically with sequence length, and the KV cache it reads from grows with every token generated. *Linear attention* swaps the ever-growing KV cache for a fixed-size memory, so cost grows linearly with length and memory stays flat. The catch is that a fixed-size memory fills up, so a linear-attention layer lives or dies by how it writes to that memory and what it forgets. KDA, from Moonshot's [Kimi Linear](https://arxiv.org/abs/2510.26692) work, is a recent answer to that question, and Kimi's models interleave it with a few full-attention layers: three KDA layers for every full-attention layer, so the cheap layers carry most of the depth and the occasional full-attention layer handles exact long-range lookups.
+
+<figure class="article-figure">
+
+![Figure 2. A standard transformer block (left) and a KDA block (right). The MLP, norms, and residual connections are identical; only the attention sublayer changes. Softmax attention keeps a KV cache that grows with every token, while KDA keeps a fixed-size state that it updates in the four numbered steps. The step names match the terms in the text; the α and β gates are the same ones shown in the Kimi K3 module figure.](../public/research/pretraining-dense-models/fig02_attention_vs_kda.png)
+
+<figcaption>
+
+Figure 2. A standard transformer block (left) and a KDA block (right). The MLP, norms, and residual connections are identical; only the attention sublayer changes. Softmax attention keeps a KV cache that grows with every token, while KDA keeps a fixed-size state that it updates in the four numbered steps. The step names match the terms in the text; the α and β gates are the same ones shown in the [Kimi K3](https://arxiv.org/abs/2607.24653) module figure.
+
+</figcaption>
+
+</figure>
+
+Figure 2 puts the two blocks side by side. Everything outside the attention box is the same; what changes is how each one remembers the past. On the left, softmax attention keeps a KV cache, one key and value per past token, and compares each new query against every entry in it. On the right, KDA replaces the cache with a **state**: a fixed-size matrix, drawn as the grid, that holds a compressed summary of everything seen so far. Each new token updates the state in the four numbered steps, and each step is one of the terms KDA is built from:
+
+- **Short convolution (step 1).** The token's query, key, and value are first mixed with those of the previous few tokens (4 in our models), which gives the layer cheap access to very local context before anything touches the state.
+- **Delta rule (steps 2 and 3).** Instead of piling every new key-value association on top of the old ones, the layer first reads what the state already returns for the current key, then writes only the difference, the "delta". A learned **write strength**, β, sets how much of that correction goes in. This is the idea behind [DeltaNet](https://arxiv.org/abs/2406.06484).
+- **Forget gate (step 4).** The state also fades a little at every step, so stale information does not pile up. [Gated DeltaNet](https://arxiv.org/abs/2412.06464) uses one fade rate for the whole state; KDA's main change is to give every feature channel its own learned rate, α. That is why each column of the grid is shaded differently: some channels hold on to information for a long time while others turn over quickly.
+
+The query then reads the layer's output from the updated state. Because the state never grows, the cost of each token stays the same however long the sequence gets.
+
+**How we set it up.** Kimi's three-to-one layout makes the network mostly linear, but a mostly-KDA model at 1B and our token budget projected to around **30 hours** on a B200, more than we wanted to spend on a single ablation. So we inverted the ratio and made KDA the *sparse* type. The model is one block of four layers repeated eight times, and a KDA layer opens each block (`kda_every=4`), so **8 of the 32** layers are KDA (layers 0, 4, 8, …, 28) and the other **24** stay GQA (Figure 3). That still answers the question we cared about, how a handful of KDA layers behave inside an otherwise standard dense model, at a cost we could afford. Each KDA layer uses head dimension **128** and a short-convolution window of **4**, as in Kimi's recipe, and we scaled the head count down from the **96** heads Kimi K3 uses to **12**, which keeps the KDA model's total parameters at the baseline's **~1.03B** so the comparison stays budget-fair. The layers run on the chunk-mode kernels from [`flash-linear-attention`](https://github.com/fla-org/flash-linear-attention), which process the sequence in parallel chunks instead of one token at a time, and they L2-normalize their own queries and keys, so the QK normalization discussed below applies only to the softmax layers.
+
+<figure class="article-figure">
+
+![Figure 3. Where the KDA layers sit. Each model is one block of four layers repeated eight times. The baseline is all GQA; Kimi's models use three KDA layers per full-attention layer; we inverted that, so one KDA layer opens each block and 8 of our 32 layers are KDA.](../public/research/pretraining-dense-models/fig03_kda_layout.png)
+
+<figcaption>
+
+Figure 3. Where the KDA layers sit. Each model is one block of four layers repeated eight times. The baseline is all GQA; Kimi's models use three KDA layers per full-attention layer; we inverted that, so one KDA layer opens each block and 8 of our 32 layers are KDA.
+
+</figcaption>
+
+</figure>
+
+#### LongCat n-gram embedding tables
+
+In a standard transformer, the input embedding looks up one row per token from a table with a row for every entry in the tokenizer's vocabulary (**32,000** rows for us). That row knows nothing about the tokens around it, so working out which words form a phrase is left entirely to the transformer layers. The [LongCat n-gram embedding tables](https://arxiv.org/abs/2601.21204) add a second lookup that does depend on the neighbors. LongCat showed that spending a large share of a big sparse model's parameters on these tables beats spending them on more experts, and because the lookups are cheap and happen only at the input, the tables add parameters without adding meaningful compute per token.
+
+<figure class="article-figure">
+
+![Figure 4. The same sentence entering two models. Left, a standard transformer looks up only the token embedding for "mat". Right, LongCat also hashes the bigram and trigram ending at "mat" into two tables each; the four rows are projected, summed, normalized, and added to that token embedding before the first layer.](../public/research/pretraining-dense-models/fig04_ngram_lookup.png)
+
+<figcaption>
+
+Figure 4. The same sentence entering two models. Left, a standard transformer looks up only the token embedding for "mat". Right, LongCat also hashes the bigram and trigram ending at "mat" into two tables each; the four rows are projected, summed, normalized, and added to that token embedding before the first layer.
+
+</figcaption>
+
+</figure>
+
+Figure 4 follows one sentence, *"the cat slept on the mat"* (one word per token, for simplicity), into both kinds of model at the moment the model reaches *"mat"*. On the left, a standard model looks up the row for *"mat"* and nothing else. On the right, LongCat makes the same lookup and, in parallel, reads the words around it. Reading the right half from left to right introduces each term:
+
+- **N-grams (the brackets).** An n-gram is a window of the last *n* tokens, and *n* is its *order*. Ending at *"mat"*, the 2-gram (bigram) is *"the mat"* and the 3-gram (trigram) is *"on the mat"*.
+- **Hashing (the hash boxes).** There are far too many possible n-grams to give each its own row: with a 32,000-token vocabulary there are about a billion possible bigrams alone. So each n-gram is hashed to a row number. Two different n-grams can land on the same row (a *collision*), so the module sends each n-gram through two different hashes into two tables, which makes it unlikely that two n-grams collide in both.
+- **N-gram tables (the tall columns).** Each hash picks one row, the highlighted stripe, and that row's vector is what the model learns about the phrases that land there. The number of rows in a table is its **table vocabulary size**: a bigger table means fewer collisions but more parameters.
+- **Projection and LayerNorm (the right edge).** The four looked-up vectors are each projected to the model's hidden size, summed, and scaled by a LayerNorm so the sum sits on the same scale as the token embedding, then added to it.
+
+So before any attention layer runs, the model already sees "mat, as in *on the mat*" rather than "mat" on its own. A model with order-4 tables would also look up *"slept on the mat"*.
+
+<figure class="article-figure">
+
+![Figure 5. The n-gram embedding layer, from the LongCat paper. Each token's base embedding is combined with embeddings looked up from hashed 2-gram, 3-gram, and higher-order sub-tables, each with its own projection.](../public/research/pretraining-dense-models/fig05_longcat_ngram_embedding.png)
+
+<figcaption>
+
+Figure 5. The n-gram embedding layer, from the LongCat paper. Each token's base embedding is combined with embeddings looked up from hashed 2-gram, 3-gram, and higher-order sub-tables, each with its own projection.
+
+</figcaption>
+
+</figure>
+
+**How we set it up.** LongCat's n-gram embedding tables were already shown to help large sparse MoEs, so the open question was where a *dense* 1B model sits on that curve. We put down two points on it. Both variants pay for their tables in transformer depth, and both use two hash tables per n-gram order.
+
+- **N-gram 50%** 6 tables over orders 2, 3, and 4, about **48%** of the parameter budget in tables, **16** transformer layers left (table vocabulary sizes [267003, 367007, 305011, 341013, 345017, 308962]). This reproduces the paper's own setting as closely as a dense model allows, close to the **~46–48%** table share it reports.
+- **N-gram 25%** 4 tables over orders 2 and 3 only, about **25%** of the budget, **23** transformer layers left (table vocabulary sizes [144563, 147481, 176677, 180247]). We moved *down* rather than up on purpose: the paper finds the benefit fades past roughly **50%**, so for a small dense model we tested whether a lighter table budget trains more stably, and whether the 50% run's regression was about the depth it gave up.
+
+The second ablation also dropped the order-4 tables, and that was a deliberate call. At 6B tokens the model is heavily undertrained, and a corpus holds far more distinct 4-grams than 2- or 3-grams, so the order-4 tables would see too few examples per row to learn anything useful. That budget buys more when it sharpens the lower orders the model does see enough of. The table sizes and the per-table hash multipliers follow the LongCat paper's recommendations; the full sizing procedure, including the per-order split, is in our internal n-gram sizing report.
+
+| | N-gram 50% (ablation 1) | N-gram 25% (ablation 2) |
+| --- | --- | --- |
+| N-gram orders | 2, 3, 4 | 2, 3 |
+| Hash tables | 6 (2 per order) | 4 (2 per order) |
+| Budget in tables | ~48% | ~25% |
+| Transformer layers | 16 | 23 |
+| Total parameters | 1.037B | 1.006B |
+
+<figure class="article-figure">
+
+![Figure 6. The same text under both n-gram setups. The 25% model makes 4 lookups per token (orders 2 and 3) and keeps 23 transformer layers; the 50% model adds a 4-gram window for 6 lookups per token but keeps only 16 layers.](../public/research/pretraining-dense-models/fig06_ngram_25_vs_50.png)
+
+<figcaption>
+
+Figure 6. The same text under both n-gram setups. The 25% model makes 4 lookups per token (orders 2 and 3) and keeps 23 transformer layers; the 50% model adds a 4-gram window for 6 lookups per token but keeps only 16 layers.
+
+</figcaption>
+
+</figure>
+
+### Configurations
+
+Each ablation has its own config. The shared rows come first, then the rows where the models actually differ.
+
+| Setting | Baseline | KDA | N-gram 25% | N-gram 50% |
+| --- | --- | --- | --- | --- |
+| Backbone | Llama3 dense | Llama3 dense | Llama3 dense | Llama3 dense |
+| Hidden size | 1,536 | 1,536 | 1,536 | 1,536 |
+| Intermediate size | 5,120 | 5,120 | 5,120 | 5,120 |
+| Attention heads | 12 | 12 | 12 | 12 |
+| KV heads (GQA) | 6 | 6 | 6 | 6 |
+| Vocab size | 32,000 | 32,000 | 32,000 | 32,000 |
+| Max sequence length | 8,192 | 8,192 | 8,192 | 8,192 |
+| QK normalization | on | on | on | on |
+| Transformer layers | 32 | 32 (24 GQA + 8 KDA) | 23 | 16 |
+| Special module | none | KDA every 4th layer | 4 n-gram tables (order 3) | 6 n-gram tables (order 4) |
+| Budget in tables | 0% | 0% | ~25% | ~48% |
+| Total parameters | 1.031B | 1.03B | 1.006B | 1.037B |
+| Per-device batch size | 10 | 10 | 12 | 12 |
+| Gradient accumulation | 24 | 24 | 20 | 20 |
+| Optimizer | Muon + AdamW | Muon + AdamW | Muon + AdamW | Muon + AdamW |
+| Muon LR / momentum | 0.02 / 0.95 | 0.02 / 0.95 | 0.02 / 0.95 | 0.02 / 0.95 |
+| Muon Newton-Schulz steps | 5 (Nesterov) | 5 (Nesterov) | 5 (Nesterov) | 5 (Nesterov) |
+| Muon weight decay | 0.1 | 0.1 | 0.1 | 0.1 |
+| AdamW LR | 3e-4 | 3e-4 | 3e-4 | 3e-4 |
+| AdamW β₁ / β₂ / ε | 0.9 / 0.95 / 1e-8 | 0.9 / 0.95 / 1e-8 | 0.9 / 0.95 / 1e-8 | 0.9 / 0.95 / 1e-8 |
+| AdamW weight decay | 0.1 | 0.1 | 0.1 | 0.1 |
+| LR schedule | Cosine, 150 warmup | Cosine, 150 warmup | Cosine, 150 warmup | Cosine, 150 warmup |
+| Tokens / steps | 6B / 3,053 | 6B / 3,053 | 6B / 3,053 | 6B / 3,053 |
+| Training time (B200) | ~14.5 h | ~18 h | ~13 h | ~10.5 h |
+
+A few choices in that table:
+
+- **Tokenizer.** We use the Llama 2 tokenizer and its **32,000**-token vocabulary. It is small and predominantly English, which is what we want. A compact vocabulary spends fewer parameters on the embedding table and keeps the comparison focused on English text rather than multilingual coverage.
+- **Near-equal parameter budget.** All four models land within **31M** parameters of each other (**1.006B** to **1.037B**). That is deliberate. The n-gram models pay for their tables by dropping transformer layers, down to **23** and **16** against the baseline's **32**, and KDA swaps attention type without changing the layer count. Any benchmark gap therefore reflects how each model spent the same budget.
+- **Training time varies more than the parameter count.** KDA is the slowest at about **18 hours**, because the linear-attention kernels cost more per step than plain attention at this scale. The n-gram models are the fastest, at **10.5** and **13 hours**, because they run fewer transformer layers. The baseline sits in between at **14.5 hours**.
+- **Token budget.** We fixed **6B** tokens for every run in this first round. That is about a third of the Chinchilla-optimal **20B** tokens for a 1B model, so every checkpoint is deliberately undertrained. The budget is identical across models, so it does not bias the comparison, but it caps what any single number here can claim, a point we return to in the conclusion.
+
+### Infrastructure and training stack
+
+Every run trained on a single GPU. For each part of the stack we used the newest well-supported tool that was easy to integrate and cut either wall-clock time or memory:
+
+- **[TorchTitan](https://github.com/pytorch/torchtitan)** for the training loop. We wanted the baseline to sit as close to Llama 3.2 1B as possible, and TorchTitan gives that architecture out of the box with strong performance and far less setup friction than DeepSpeed or NeMo. It also kept multi-GPU (FSDP / tensor parallel) available if we ever needed it; we didn't, but the option was free.
+- **[Liger kernels](https://github.com/linkedin/Liger-Kernel)**, LinkedIn's open-source Triton kernels for LLM training. Liger provides drop-in fused replacements for the common transformer building blocks (RMSNorm, RoPE, SwiGLU, cross-entropy, and a fused linear cross-entropy that never materializes the full logits tensor), and it is known for cutting training memory sharply while also raising throughput. We used its SwiGLU, RMSNorm, and fused linear cross-entropy (FLCE) kernels. With the freed memory we were able to push the batch size and sequence length up, so every run finished faster on the same token budget.
+- **[FlashAttention 4](https://github.com/Dao-AILab/flash-attention)** for the softmax-attention layers. We chose FlashAttention 4 because it is tuned for Blackwell GPUs and for softmax attention layers, which is exactly what our GQA layers are. It matched our hardware (H100 for early tests, B200 for the real runs), gave us a real speedup, and was straightforward to wire in. Its one wrinkle was its GQA packing mode, which broke on our GPUs, so every run trains with it turned off.
+- **[flash-linear-attention](https://github.com/fla-org/flash-linear-attention)** for the KDA chunk-mode kernels.
+- **NVIDIA B200:** We first ran this exact stack on an H100, and the ETAs came out at multiple days per run. A theoretical throughput analysis showed that a single **180 GB** B200 roughly matches the ETA of a multi-H100 setup at a similar total price, so we moved every pretraining run to one B200. That let us finish the runs faster without setting up distributed training.
+
+Optimizers:
+
+- **[Muon](https://kellerjordan.github.io/posts/muon/)** as the main optimizer for the matrix parameters, chiefly the MLPs. Muon orthogonalizes each momentum update, which conditions the step better for 2D weight matrices and has shown [strong token-efficiency in recent LLM pretraining](https://arxiv.org/abs/2502.16982).
+- **[AdamW](https://arxiv.org/abs/1711.05101)** as the auxiliary optimizer for the parameters Muon does not apply cleanly to (embeddings, norms, and biases).
+
+The settings for both optimizers are in the Configurations table above.
+
+> **Regarding torch compile:** We tried `torch.compile` in its various modes, but it kept clashing with the Liger kernels and crashing runs. Most memorably, compiling the fused cross-entropy kernel silently corrupted gradients rather than erroring outright. Even in the configurations we could coax into running, the speedup was marginal, so we left it off.
+
+### Datasets
+
+#### Pretraining data: FineWeb
+
+[FineWeb](https://huggingface.co/datasets/HuggingFaceFW/fineweb) is Hugging Face's large, filtered, deduplicated English web corpus built from Common Crawl. We stream its [`sample-10BT`](https://huggingface.co/datasets/HuggingFaceFW/fineweb/tree/main/sample/10BT) shard, the smallest widely-used FineWeb slice, which is enough to iterate quickly without standing up a heavy data pipeline. We train on **6B** of the shard's roughly **10B** tokens. This was a compute-constraint decision, and we also wanted to understand how these architectures behave at the smallest scale that still gives usable results.
+
+> **Why we pack sequences:** The model trains on fixed **8,192**-token blocks, but most FineWeb documents are far shorter. Putting one document per block would fill most of each block with padding and waste compute on it. Instead we append an end-of-sequence token to each document, concatenate them into one stream, and cut that stream into 8,192-token blocks, so every position is a real token.
+
+Order is randomized with a **10,000**-document streaming shuffle seeded for one epoch. A small, fixed fraction of documents is held out for validation by a stable hash of each document's id, so the train/eval split is deterministic and leak-free.
+
+#### Downstream data: Few-NERD
+
+For the NER fine-tune we use [Few-NERD](https://github.com/thunlp/Few-NERD) ([paper](https://arxiv.org/abs/2105.07464)), a named-entity recognition dataset of about **188,000** Wikipedia sentences, hand-annotated with **8** coarse and **66** fine-grained entity types. It is one of the largest human-annotated NER datasets and a standard reference point in the NER literature. We train and evaluate on its full training and validation splits with random shuffling; more details are in the Downstream NER fine-tuning section below.
+
+## Results
+
+We evaluate the checkpoints in three ways:
+
+- **Base-checkpoint benchmarks.** Nine zero-shot tasks scored on the frozen pretrained weights, our main measure of what pretraining alone wrote into each model.
+- **Modifying the checkpoints.** Grafting modules between models, pruning whole layers, and 4-bit quantization: cheap surgeries that probe what the trained weights contain and how they hold up under compression.
+- **Downstream NER fine-tuning.** A LoRA fine-tune on named-entity recognition, to see whether the n-gram checkpoints learned anything that carries into a task people actually run.
+
+### The base benchmarks
+
+We score every checkpoint zero-shot (no in-context examples) through the [EleutherAI LM Evaluation Harness](https://github.com/EleutherAI/lm-evaluation-harness) (`lm-eval`), on the full test or validation split of each task with no example cap. Zero-shot keeps the comparison about the weights rather than about prompting, and running the full split removes sampling noise. We report normalized accuracy where the harness computes it (dividing each answer's log-likelihood by its token length, so longer answers are not penalized for length) and raw accuracy otherwise. The headline number is the **Shared-9 average**, the unweighted mean of the nine task scores; since every checkpoint runs the identical suite at the same token budget, these are directly comparable. The nine tasks fall into three groups, by what they probe:
+
+| Group | What the group records | Benchmark | What the model has to do | Metric |
+| --- | --- | --- | --- | --- |
+| Language modeling and surface statistics | How well the model captures local next-token structure; these move earliest at a small token budget | [LAMBADA](https://arxiv.org/abs/1606.06031) | Predict the exact final word of a passage from its full context | acc |
+| | | [HellaSwag](https://arxiv.org/abs/1905.07830) | Pick the natural continuation of a short scene | acc_norm |
+| Physical and social commonsense | Whether the model has picked up commonsense relations rather than surface cues | [PIQA](https://arxiv.org/abs/1911.11641) | Choose which of two solutions to an everyday goal is physically sensible | acc_norm |
+| | | [WinoGrande](https://arxiv.org/abs/1907.10641) | Resolve which person or thing an ambiguous pronoun refers to | acc |
+| | | [CommonsenseQA](https://arxiv.org/abs/1811.00937) | Answer multiple-choice questions about everyday concept relationships | acc |
+| School-level knowledge and reasoning | Stored factual and reasoning knowledge, which depends more on transformer depth | [ARC-Easy](https://arxiv.org/abs/1803.05457) | Answer grade-school science questions (easier split) | acc_norm |
+| | | [ARC-Challenge](https://arxiv.org/abs/1803.05457) | Answer grade-school science questions that simple retrieval gets wrong | acc_norm |
+| | | [OpenBookQA](https://arxiv.org/abs/1809.02789) | Apply elementary science facts to new questions | acc_norm |
+| | | [SciQ](https://arxiv.org/abs/1707.06209) | Answer science exam questions | acc_norm |
+
+<figure class="article-figure">
+
+<RunsViewer />
+
+<figcaption>
+
+Explore the training runs. Toggle checkpoints on the left, switch metrics along the top, and scroll the plot area for more charts.
+
+</figcaption>
+
+</figure>
+
+### The four checkpoints are close, and depth decides the gaps
+
+> **Hypothesis:** At 6B tokens every checkpoint is still undertrained, so the benchmark average should still be climbing at the end of every run. Because all four spend the same parameter budget, the gaps between them should be small.
+
+At the final checkpoint the four models cluster within about **1.8** Shared-9 points of each other. The benchmark average climbs steadily through training and is still rising for every run at 6B tokens, which is the clearest single sign these checkpoints are undertrained rather than converged. The baseline in all of these numbers is the QK-normalized rerun; the QK-norm section below explains why we added it.
+
+<FigureViews label="Figure 7" title="Benchmark average climbs through training, still rising at 6B">
+
+<div slot="graph">
+
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig07_shared9_progression.json" style="--plot-height: 460px" role="img" aria-label="Figure 7. Shared-9 benchmark average against tokens seen. Every run climbs steadily and is still rising at 6B tokens."></div>
+
+</div>
+
+<div slot="table">
+
+| Shared-9 by step | 500 | 1,000 | 1,500 | 2,000 | 2,500 | 3,000 | 3,053 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Baseline | 36.66 | 39.12 | 39.92 | 40.74 | 41.10 | 41.38 | 41.23 |
+| KDA | 36.27 | n/a | 39.74 | 40.85 | 41.33 | 41.35 | 41.37 |
+| N-gram 25% | 35.57 | 37.88 | 38.60 | 39.81 | 40.62 | 40.53 | 40.56 |
+| N-gram 50% | 34.90 | 37.53 | 38.19 | 39.04 | 39.22 | 39.42 | 39.54 |
+
+</div>
+
+<figcaption>
+
+Figure 7. Shared-9 benchmark average against tokens seen. Every run climbs steadily and is still rising at 6B tokens.
+
+</figcaption>
+
+</FigureViews>
+
+
+The same climb holds task by task, but the shapes differ. LAMBADA and HellaSwag rise fastest and are still climbing at 6B tokens; SciQ, PIQA, and ARC-Easy bend toward a plateau; and CommonsenseQA and WinoGrande stay noisy near chance for every model.
+
+<figure class="article-figure">
+
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig08_benchmark_progression.json" style="--plot-height: 820px" role="img" aria-label="Figure 8. Per-benchmark accuracy against tokens for the four checkpoints. LAMBADA and HellaSwag climb steadily, the knowledge tasks bend toward a plateau, and CommonsenseQA and WinoGrande wobble near their random floors throughout."></div>
+
+<figcaption>
+
+Figure 8. Per-benchmark accuracy against tokens for the four checkpoints. LAMBADA and HellaSwag climb steadily, the knowledge tasks bend toward a plateau, and CommonsenseQA and WinoGrande wobble near their random floors throughout.
+
+</figcaption>
+
+</figure>
+
+The final scores line up baseline ≈ KDA > n-gram 25% > n-gram 50%, and the per-task view in Figure 1 shows the gaps are small and concentrated in a few tasks, mainly LAMBADA and the knowledge tasks, rather than spread evenly.
+
+
+Two patterns run through every trajectory. LAMBADA is the largest mover in every run, climbing by more than half over the 6B tokens (the baseline from **23.89** to **37.75**, KDA from **22.05** to **38.29**). CommonsenseQA does the opposite, sitting dead on its **20%** random floor in every model for the entire run.
+
+### KDA matches the baseline
+
+> **Hypothesis:** Kimi reports that KDA matches or beats full attention at its scale. If that carries down to a dense 1B model, swapping a quarter of the baseline's attention layers for KDA should at least match the baseline.
+
+KDA edges the baseline on the Shared-9 average by **<span class="delta-better" title="Improvement">+0.14</span>** (**41.37** against **41.23**), which is inside per-benchmark noise for a single seed at 6B tokens. The hypothesis holds, but only in its weak form: KDA matches the baseline rather than beating it.
+
+<FigureViews label="Figure 9" title="KDA against the baseline, per benchmark">
+
+<div slot="graph">
+
+<div class="plot" data-delta-direction="higher" data-plot="/research/assets/figures/pretraining-dense-models/fig09_kda_vs_baseline.json" style="--plot-height: 760px" role="img" aria-label="Figure 9. KDA against the baseline on each benchmark. Left: final zero-shot scores. Right: KDA minus the baseline; bars above zero are tasks where KDA is ahead."></div>
+
+</div>
+
+<div slot="table">
+
+| Benchmark | Baseline | KDA | Δ (KDA − baseline) |
+| --- | ---: | ---: | ---: |
+| HellaSwag | 38.98 | 39.65 | <span class="delta-better" title="Improvement">+0.67</span> |
+| WinoGrande | 51.62 | 51.46 | <span class="delta-worse" title="Regression">−0.16</span> |
+| ARC-Easy | 40.15 | 39.60 | <span class="delta-worse" title="Regression">−0.55</span> |
+| ARC-Challenge | 23.63 | 24.06 | <span class="delta-better" title="Improvement">+0.43</span> |
+| PIQA | 66.59 | 67.79 | **<span class="delta-better" title="Improvement">+1.20</span>** |
+| OpenBookQA | 29.00 | 27.60 | **<span class="delta-worse" title="Regression">−1.40</span>** |
+| CommonsenseQA | 19.82 | 20.07 | <span class="delta-better" title="Improvement">+0.25</span> |
+| SciQ | 63.50 | 63.80 | <span class="delta-better" title="Improvement">+0.30</span> |
+| LAMBADA | 37.75 | 38.29 | <span class="delta-better" title="Improvement">+0.54</span> |
+| **Shared-9 average** | **41.23** | **41.37** | **<span class="delta-better" title="Improvement">+0.14</span>** |
+
+</div>
+
+<figcaption>
+
+Figure 9. KDA against the baseline on each benchmark. Left: final zero-shot scores. Right: KDA minus the baseline; bars above zero are tasks where KDA is ahead.
+
+</figcaption>
+
+</FigureViews>
+
+
+Per benchmark, KDA is ahead on **6** of the nine tasks and behind on **3**, and every gap is under **1.5** points. Its clearest gains are PIQA (**<span class="delta-better" title="Improvement">+1.20</span>**), HellaSwag (**<span class="delta-better" title="Improvement">+0.67</span>**), and LAMBADA (**<span class="delta-better" title="Improvement">+0.54</span>**); its one clear cost is OpenBookQA (**<span class="delta-worse" title="Regression">−1.40</span>**), with small losses on ARC-Easy (**<span class="delta-worse" title="Regression">−0.55</span>**) and WinoGrande (**<span class="delta-worse" title="Regression">−0.16</span>**). Unlike the n-gram models, it no longer trails on SciQ once the baseline is trained properly. Against the old pre-QK-norm baseline the margin looked larger at **<span class="delta-better" title="Improvement">+0.76</span>**, and erasing that gap is most of the QK-norm story below.
+
+KDA is also slightly cheaper per token. Its 8 KDA layers skip softmax attention's length-dependent cost, which is large at **8,192**-token sequences, so the KDA model spends about **8.03 GFLOP** per token against the baseline's **8.62**, roughly **7%** less. Against compute, KDA's loss sits just below the baseline's for the whole run and finishes at **2.563** after **48.2 EFLOP**, against **2.570** after **51.7 EFLOP**.
+
+<figure class="article-figure">
+
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig10_kda_loss_vs_flops.json" style="--plot-height: 440px" role="img" aria-label="Figure 10. Training loss against cumulative compute for KDA and the baseline. KDA's FLOPs are estimated by replacing the 8 KDA layers' softmax-attention cost with the cost of their state updates. The loss axis is cropped to 2.4 to 4.2."></div>
+
+<figcaption>
+
+Figure 10. Training loss against cumulative compute for KDA and the baseline. KDA's FLOPs are estimated by replacing the 8 KDA layers' softmax-attention cost with the cost of their state updates. The loss axis is cropped to 2.4 to 4.2.
+
+</figcaption>
+
+</figure>
+
+That saving did not show up on the clock. KDA was our slowest run (about **18 hours** against the baseline's **14.5**), because the linear-attention kernels do less work per token but run less efficiently on the GPU than FlashAttention 4 does at this size. With **8** KDA layers out of **32**, the model matches the baseline. Whether more KDA layers would change that is untested here.
+
+### LongCat n-grams did not reproduce: depth beats tables
+
+> **Hypothesis:** LongCat's n-gram tables improved 20B to 60B parameter sparse models. If the effect carries down to a dense 1B model, the tables should beat the baseline, most of all on local, surface-statistics tasks like LAMBADA, and the 50% model should gain more than the 25% model.
+
+The LongCat paper's large-model gains did not reproduce on our 1B dense models. The 50% n-gram model finishes **1.70** Shared-9 points behind the baseline, and the 25% model **0.67** behind (**40.56** against **41.23**). Halving the table share from **48%** to **25%** recovered most of the gap, about **1.0** of the **1.70** points, which pins the cause: the tables cost transformer depth, and depth is what the benchmarks wanted.
+
+<figure class="article-figure">
+
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig11_ngram_budget.json" style="--plot-height: 420px" role="img" aria-label="Figure 11. Shared-9 (left) and NER micro-F1 (right) against the share of the parameter budget spent on n-gram tables, with the baseline as the 0% point. Each label gives the score and the transformer layers left."></div>
+
+<figcaption>
+
+Figure 11. Shared-9 (left) and NER micro-F1 (right) against the share of the parameter budget spent on n-gram tables, with the baseline as the 0% point. Each label gives the score and the transformer layers left.
+
+</figcaption>
+
+</figure>
+
+<FigureViews label="Figure 12" title="N-gram models against the baseline, per benchmark">
+
+<div slot="graph">
+
+<div class="plot" data-delta-direction="higher" data-plot="/research/assets/figures/pretraining-dense-models/fig12_ngram_vs_baseline.json" style="--plot-height: 760px" role="img" aria-label="Figure 12. The n-gram models against the baseline on each benchmark. Left: final zero-shot scores. Right: each n-gram model minus the baseline; bars above zero are tasks where the n-gram model is ahead."></div>
+
+</div>
+
+<div slot="table">
+
+| Benchmark | Baseline | N-gram 25% | Δ | N-gram 50% | Δ |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| HellaSwag | 38.98 | 37.38 | <span class="delta-worse" title="Regression">−1.60</span> | 35.22 | **<span class="delta-worse" title="Regression">−3.76</span>** |
+| WinoGrande | 51.62 | 52.64 | <span class="delta-better" title="Improvement">+1.02</span> | 49.25 | <span class="delta-worse" title="Regression">−2.37</span> |
+| ARC-Easy | 40.15 | 38.89 | <span class="delta-worse" title="Regression">−1.26</span> | 38.47 | <span class="delta-worse" title="Regression">−1.68</span> |
+| ARC-Challenge | 23.63 | 24.66 | <span class="delta-better" title="Improvement">+1.03</span> | 22.87 | <span class="delta-worse" title="Regression">−0.76</span> |
+| PIQA | 66.59 | 65.89 | <span class="delta-worse" title="Regression">−0.70</span> | 65.07 | <span class="delta-worse" title="Regression">−1.52</span> |
+| OpenBookQA | 29.00 | 28.20 | <span class="delta-worse" title="Regression">−0.80</span> | 28.20 | <span class="delta-worse" title="Regression">−0.80</span> |
+| CommonsenseQA | 19.82 | 19.82 | 0.00 | 19.90 | <span class="delta-better" title="Improvement">+0.08</span> |
+| SciQ | 63.50 | 62.50 | <span class="delta-worse" title="Regression">−1.00</span> | 63.30 | <span class="delta-worse" title="Regression">−0.20</span> |
+| LAMBADA | 37.75 | 35.07 | **<span class="delta-worse" title="Regression">−2.68</span>** | 33.57 | **<span class="delta-worse" title="Regression">−4.18</span>** |
+| **Shared-9 average** | **41.23** | **40.56** | **<span class="delta-worse" title="Regression">−0.67</span>** | **39.54** | **<span class="delta-worse" title="Regression">−1.69</span>** |
+
+</div>
+
+<figcaption>
+
+Figure 12. The n-gram models against the baseline on each benchmark. Left: final zero-shot scores. Right: each n-gram model minus the baseline; bars above zero are tasks where the n-gram model is ahead.
+
+</figcaption>
+
+</FigureViews>
+
+
+Per benchmark, the 25% model does not clearly beat the QK-normalized baseline on any task. Its only positive deltas are WinoGrande (**<span class="delta-better" title="Improvement">+1.0</span>**) and ARC-Challenge (**<span class="delta-better" title="Improvement">+1.0</span>**), both near-chance tasks that wobble more than that between checkpoints. Everywhere else it trails.
+
+**The LAMBADA reversal.** Its largest single deficit is LAMBADA (**<span class="delta-worse" title="Regression">−2.68</span>**). LAMBADA is final-word prediction over a broad context, exactly the local, surface-statistics signal a learned n-gram predictor should sharpen, and against the old, unstable baseline the tables did lead it by **<span class="delta-better" title="Improvement">+8.4</span>**. But QK normalization lifted the baseline's own LAMBADA to **37.75**, past both n-gram models (**35.07** and **33.57**). So the one task the tables were built for is now where they fall furthest behind a properly trained baseline.
+
+**The rest tracks depth.** HellaSwag scales cleanly with transformer layers (**38.98** at 32 layers, **37.38** at 23, **35.22** at 16), and the knowledge tasks fall with it: SciQ (**<span class="delta-worse" title="Regression">−1.0</span>**), OpenBookQA (**<span class="delta-worse" title="Regression">−0.8</span>**), and PIQA (**<span class="delta-worse" title="Regression">−0.7</span>**) for the 25% model. The loss tracks the shallower backbone, not the tables.
+
+There is an efficiency angle in the deficit, clearest against compute rather than tokens. The 25% model runs **23** transformer layers instead of **32**, so it spends about a quarter fewer FLOPs per token (**6.28** against **8.62 GFLOP**), and the 50% model roughly half. Plotting loss against cumulative compute rather than tokens, both n-gram runs sit *below* the baseline for most of training: per FLOP spent, the tables are ahead. The baseline only pulls level at the very end because it spends more total compute to get there (**51.7 EFLOP** against **37.7** for the 25% run).
+
+<figure class="article-figure">
+
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig13_loss_vs_flops.json" style="--plot-height: 440px" role="img" aria-label="Figure 13. Training loss against cumulative compute (EFLOP) rather than tokens. Per FLOP, both n-gram runs lead the baseline for most of training; the baseline only catches up by spending more total compute. The loss axis is cropped to 2.4 to 4.2, so the higher early-training loss runs off the top."></div>
+
+<figcaption>
+
+Figure 13. Training loss against cumulative compute (EFLOP) rather than tokens. Per FLOP, both n-gram runs lead the baseline for most of training; the baseline only catches up by spending more total compute. The loss axis is cropped to 2.4 to 4.2, so the higher early-training loss runs off the top.
+
+</figcaption>
+
+</figure>
+
+So coming within **0.67** Shared-9 of the baseline at a compute discount is a modest efficiency result. The saving is in compute. On the downstream NER task (below), the n-gram models still score lower.
+
+### The QK-norm lesson
+
+We took the Llama 3 architecture as TorchTitan ships it, and [Llama 3](https://arxiv.org/abs/2407.21783) does not come with QK normalization, so our first baseline trained without it. [Qwen3](https://arxiv.org/abs/2505.09388) does ship with it: take Qwen3's attention, remove QK-norm, and you are most of the way back to Llama 3. The literature is consistent that QK-norm aids training stability (see the [original QK-norm paper](https://arxiv.org/abs/2010.04245) and Stanford's [CS336](https://cs336.stanford.edu)), so we added it to the Llama architecture and reran the baseline. That changed our headline conclusion, because leaving it out had inverted our architecture comparison. It was a major lesson for us: turn QK normalization on every time.
+
+The original baseline converged, but its gradient norm never settled: it stayed high and wavy for the whole run, humping up again through the middle of training. QK normalization (RMSNorm on the query and key vectors before the attention dot-product, which bounds the attention-score scale) fixed it. We added it, changed nothing else, and reran. The two runs follow nearly the same loss path, but the gradient tells them apart: with QK-norm it dropped and stayed flat right after warmup, and its mean over the run fell from **0.58** to **0.20**.
+
+<figure class="article-figure">
+
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig14_gradnorm_stability.json" style="--plot-height: 420px" role="img" aria-label="Figure 14. The original baseline (gray, dashed) against the QK-norm rerun (blue). Left: training loss follows nearly the same path, finishing at 2.621 and 2.570. Right: the gradient norm tells them apart. Without QK-norm it stays high and wavy; with it, it drops low and flat after warmup, cutting the mean from 0.58 to 0.20. Faint lines are per-step values, bold lines a running mean."></div>
+
+<figcaption>
+
+Figure 14. The original baseline (gray, dashed) against the QK-norm rerun (blue). Left: training loss follows nearly the same path, finishing at 2.621 and 2.570. Right: the gradient norm tells them apart. Without QK-norm it stays high and wavy; with it, it drops low and flat after warmup, cutting the mean from 0.58 to 0.20. Faint lines are per-step values, bold lines a running mean.
+
+</figcaption>
+
+</figure>
+
+The stability fix showed up directly in the loss. The original baseline's final training loss was **2.621**; the rerun's was **2.570**. That single change closed **0.051** of the **0.058** gap to KDA and left the rerun **0.006** behind it.
+
+
+<FigureViews label="Figure 15" title="Training loss for every run">
+
+<div slot="graph">
+
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig15_loss_curves.json" style="--plot-height: 440px" role="img" aria-label="Figure 15. Training loss over the full run: from random initialization on the left to the final 2B tokens zoomed on the right. The n-gram runs start higher, since their embedding tables begin untrained, but converge into budget order; baseline and KDA overlap throughout and finish 0.006 apart. The dashed gray line is the original baseline without QK-norm, which finishes at 2.621."></div>
+
+</div>
+
+<div slot="table">
+
+| Run | Final train loss | Δ vs QK rerun |
+| --- | ---: | ---: |
+| KDA | 2.56345 | <span class="delta-better" title="Improvement">−0.006</span> |
+| Baseline + QKNorm (rerun) | 2.56989 | 0.000 (reference) |
+| Baseline (original, no QKNorm) | 2.62113 | <span class="delta-worse" title="Regression">+0.051</span> |
+| N-gram 25% | 2.63564 | <span class="delta-worse" title="Regression">+0.066</span> |
+| N-gram 50% | 2.68229 | <span class="delta-worse" title="Regression">+0.112</span> |
+
+</div>
+
+<figcaption>
+
+Figure 15. Training loss over the full run: from random initialization on the left to the final 2B tokens zoomed on the right. The n-gram runs start higher, since their embedding tables begin untrained, but converge into budget order; baseline and KDA overlap throughout and finish 0.006 apart. The dashed gray line is the original baseline without QK-norm, which finishes at 2.621.
+
+</figcaption>
+
+</FigureViews>
+
+The curves make the story visible. Baseline and KDA sit on top of each other for the entire run and finish **0.006** apart, while both n-gram runs train just below them in budget order. This is the failure that biased our early conclusions. Before the rerun, the story was that KDA beats the dense baseline. After the rerun, the baseline matched KDA on training loss to within **0.006** and on the Shared-9 average to within **0.14** points (**41.23** against **41.37**). KDA's earlier lead came from the unstable baseline. The benchmark gain from adding QK normalization was real but narrow (**<span class="delta-better" title="Improvement">+0.62</span>** Shared-9), and almost all of it came from LAMBADA (**<span class="delta-better" title="Improvement">+11.09</span>**), while HellaSwag barely moved (**39.01** to **38.98**). That pattern fits a stability fix better than a capability change.
+
+## Modifying the trained checkpoints
+
+Because all four models were trained on near-identical settings and the same data, they are unusually comparable, which let us operate on the trained checkpoints directly: move parts between them, remove layers, and compress them. None of the experiments below needs new pretraining.
+
+Each experiment starts with a hypothesis. We then run it and check whether the hypothesis held, so every section ends with a clear takeaway.
+
+### Grafting
+
+> **Hypothesis:** If what a module learns during pretraining is modular, a module trained in one checkpoint should keep working inside another without retraining: a KDA or GQA module moved into a compatible model at the same layer indices should keep a meaningful share of the recipient's score. The two directions could behave differently, because KDA relies on learned recurrent state, gating, decay, and short-convolution dynamics. The n-gram module sits before the transformer stack, so it should transfer better than either attention module, though not necessarily without loss.
+
+The four models were trained independently but share a hidden size, vocabulary, and tokenizer, and the baseline and KDA models also share a layer count, so a module from one drops into another with no shape mismatch. Grafting asks whether a module that learned its job inside one model still works inside a different one, with no retraining. We ran three transplants:
+
+- **KDA into the baseline.** We copied the **8** KDA layers from the KDA model into the baseline at the same layer indices, replacing the baseline's attention there. This tests whether a linear-attention module trained in its own model can stand in for softmax attention in another.
+- **GQA into KDA.** The reverse: we copied the baseline's GQA attention into the KDA model in place of its KDA layers. Running both directions tells us whether any collapse is specific to one donor or a symptom of grafting itself.
+- **The n-gram module onto the baseline.** We attached the whole trained n-gram module (tables, projections, and amplification LayerNorm) to the front of the baseline. This is an input-side graft that leaves the transformer stack untouched, so it should transfer more cleanly than an attention swap.
+
+Every grafted checkpoint was evaluated zero-shot on the full nine-task suite with no recovery fine-tuning, so its Shared-9 is a direct measure of how much the transplanted module still functions in its new host.
+
+#### What we found: input modules transfer, attention does not
+
+The two directions of attention grafting collapse almost identically, and the input-side n-gram module survives far better.
+
+
+<FigureViews label="Figure 16" title="Zero-shot grafting: input modules transfer, attention does not">
+
+<div slot="graph">
+
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig16_grafting_retention.json" style="--plot-height: 440px" role="img" aria-label="Figure 16. Shared-9 of each zero-shot graft against its native reference (black line). The input-side n-gram module keeps most of its score, while both directions of attention grafting collapse to about 66%."></div>
+
+</div>
+
+<div slot="table">
+
+| Graft | Shared-9 | Native reference | Retained |
+| --- | ---: | ---: | ---: |
+| N-gram 25% → baseline | 38.86 | 41.23 | 94.2% |
+| N-gram 50% → baseline | 35.31 | 41.23 | 85.6% |
+| KDA → baseline | 27.21 | 41.23 | 66.0% |
+| GQA → KDA | 27.30 | 41.37 | 66.0% |
+
+</div>
+
+<figcaption>
+
+Figure 16. Shared-9 of each zero-shot graft against its native reference (black line). The input-side n-gram module keeps most of its score, while both directions of attention grafting collapse to about 66%.
+
+</figcaption>
+
+</FigureViews>
+
+Two things stand out. First, the attention grafts fail symmetrically: dropping KDA into the baseline and dropping baseline GQA into KDA both land near **27** Shared-9, about **66%** retention, and LAMBADA goes to **0.00** in both directions. That symmetry is the finding. Attention co-adapts with the residual stream it was trained in, so neither module is portable on its own. Second, the n-gram module transfers well because it sits before the transformer rather than interrupting the residual stream at depth: the 25% module grafted onto the baseline keeps **94.2%** and even improves SciQ, though LAMBADA still slips, which shows the naive attach shifts the input distribution.
+
+
+<FigureViews label="Figure 17" title="Grafting: change per benchmark against the recipient's native score">
+
+<div slot="graph">
+
+<div class="plot" data-delta-direction="higher" data-plot="/research/assets/figures/pretraining-dense-models/fig17_grafting_by_benchmark.json" style="--plot-height: 360px" role="img" aria-label="Figure 17. Change per benchmark for each graft, against the recipient's native score (the baseline, or native KDA for GQA → KDA). Red is a loss, green a gain."></div>
+
+</div>
+
+<div slot="table">
+
+| Task | Baseline | Native KDA | KDA → baseline | GQA → KDA | N-gram 50% → baseline | N-gram 25% → baseline |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| HellaSwag | 38.98 | 39.65 | 26.05 | 26.18 | 32.43 | 35.55 |
+| WinoGrande | 51.62 | 51.46 | 48.15 | 50.20 | 49.64 | 50.91 |
+| ARC-Easy | 40.15 | 39.60 | 26.43 | 27.06 | 33.17 | 37.29 |
+| ARC-Challenge | 23.63 | 24.06 | 27.99 | 28.24 | 20.14 | 22.61 |
+| PIQA | 66.59 | 67.79 | 50.11 | 49.51 | 57.45 | 63.87 |
+| OpenBookQA | 29.00 | 27.60 | 26.40 | 22.60 | 26.20 | 28.20 |
+| CommonsenseQA | 19.82 | 20.07 | 18.35 | 21.05 | 19.25 | 19.57 |
+| SciQ | 63.50 | 63.80 | 21.40 | 20.90 | 66.00 | 68.00 |
+| LAMBADA | 37.75 | 38.29 | 0.00 | 0.00 | 13.55 | 23.69 |
+| **Shared-9 average** | **41.23** | **41.37** | **27.21** | **27.30** | **35.31** | **38.86** |
+
+</div>
+
+<figcaption>
+
+Figure 17. Change per benchmark for each graft, against the recipient's native score (the baseline, or native KDA for GQA → KDA). Red is a loss, green a gain.
+
+</figcaption>
+
+</FigureViews>
+
+Per benchmark, the attention grafts lose the most on the tasks that need a working language model. LAMBADA drops to **0.00** in both directions, SciQ falls from about **63.5** to about **21**, PIQA falls to about **50** (its chance level), and HellaSwag and ARC-Easy fall to about **26**, near their random floors. WinoGrande and CommonsenseQA barely move because they were already near chance before the graft, and OpenBookQA loses **2.6** to **5.0** points. ARC-Challenge rises by about **4** points in both directions, which on a near-chance task is more likely noise than a gain. The n-gram grafts follow a milder version of the same pattern: LAMBADA falls to **23.69** (25% module) and **13.55** (50% module), HellaSwag, ARC-Easy, and PIQA lose between **2.7** and **9.1** points, and SciQ rises above the baseline, to **68.00** and **66.00**.
+
+### Pruning
+
+> **Hypothesis:** Every trained model leans on some layers far more than others. A cheap screening pass on 500 examples per task suggested that most KDA-containing blocks can be removed one at a time with little loss, and that the earliest blocks, layer 0 in particular, matter most. Re-running every single-block removal on the full suite tests whether that holds.
+
+Which layers are dispensable? We removed one whole decoder block at a time from the KDA model and re-ran the full suite, with a matched control on the dense baseline to separate a KDA-specific effect from plain depth removal.
+
+#### What we found: only the first two layers are essential
+
+Against the intact KDA model (**41.37**), most of the depth turns out to be redundant at this budget.
+
+
+<FigureViews label="Figure 18" title="Removing one block: only the first two layers are load-bearing">
+
+<div slot="graph">
+
+<div class="plot" data-delta-direction="higher" data-plot="/research/assets/figures/pretraining-dense-models/fig18_layer_removal.json" style="--plot-height: 440px" role="img" aria-label="Figure 18. Change in Shared-9 from removing one KDA-containing block. Layer 0 is catastrophic and layer 4 costs a few points; from layer 8 on removal is close to free, and a few blocks are slightly better gone. The two bars on the right remove all eight blocks at once, from KDA and from the dense baseline (matched control)."></div>
+
+</div>
+
+<div slot="table">
+
+| Block removed | HellaSwag | WinoGrande | ARC-Easy | ARC-Challenge | PIQA | OpenBookQA | CommonsenseQA | SciQ | LAMBADA | Shared-9 | Δ vs intact KDA |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| none (intact KDA) | 39.65 | 51.46 | 39.60 | 24.06 | 67.79 | 27.60 | 20.07 | 63.80 | 38.29 | 41.37 | reference |
+| Layer 0 | 25.61 | 46.80 | 27.02 | 28.24 | 50.60 | 25.40 | 19.98 | 21.10 | 0.00 | 27.19 | <span class="delta-worse" title="Regression">−14.18</span> |
+| Layer 4 | 34.50 | 52.72 | 39.86 | 21.67 | 63.98 | 28.40 | 19.82 | 65.70 | 15.93 | 38.06 | <span class="delta-worse" title="Regression">−3.31</span> |
+| Layer 8 | 36.39 | 51.70 | 40.49 | 22.61 | 65.83 | 28.60 | 19.74 | 68.10 | 29.87 | 40.37 | <span class="delta-worse" title="Regression">−1.00</span> |
+| Layer 12 | 38.77 | 51.62 | 38.97 | 22.35 | 66.27 | 28.00 | 19.98 | 65.70 | 33.51 | 40.58 | <span class="delta-worse" title="Regression">−0.79</span> |
+| Layer 16 | 39.33 | 51.85 | 39.35 | 24.74 | 67.03 | 28.80 | 20.07 | 66.30 | 40.50 | 42.00 | <span class="delta-better" title="Improvement">+0.63</span> |
+| Layer 20 | 39.50 | 51.07 | 39.27 | 23.29 | 67.08 | 27.60 | 19.90 | 65.00 | 42.32 | 41.67 | <span class="delta-better" title="Improvement">+0.30</span> |
+| Layer 24 | 39.43 | 51.78 | 39.56 | 24.15 | 67.03 | 28.00 | 20.07 | 64.90 | 41.06 | 41.78 | <span class="delta-better" title="Improvement">+0.41</span> |
+| Layer 28 | 39.16 | 50.83 | 39.60 | 23.81 | 67.52 | 27.40 | 19.98 | 65.00 | 38.46 | 41.31 | <span class="delta-worse" title="Regression">−0.07</span> |
+| All eight (0, 4, …, 28) | 25.57 | 48.38 | 26.73 | 27.22 | 50.22 | 25.40 | 20.64 | 20.60 | 0.00 | 27.20 | <span class="delta-worse" title="Regression">−14.17</span> |
+| All eight, dense baseline (matched control) | 26.72 | 51.14 | 25.84 | 28.24 | 49.95 | 25.00 | 17.44 | 22.50 | 0.00 | 27.43 | <span class="delta-worse" title="Regression">−13.80</span> vs intact baseline (41.23) |
+
+</div>
+
+<figcaption>
+
+Figure 18. Change in Shared-9 from removing one KDA-containing block. Layer 0 is catastrophic and layer 4 costs a few points; from layer 8 on removal is close to free, and a few blocks are slightly better gone. The two bars on the right remove all eight blocks at once, from KDA and from the dense baseline (matched control).
+
+</figcaption>
+
+</FigureViews>
+
+Layer 0 is critical: removing it cuts the average by a third and zeroes LAMBADA. Layer 4 costs **3.3** points. From layer 8 onward, removal is close to free, and blocks 16, 20, and 24 are slightly *better* gone. A matched control rules out a KDA-specific story: removing all eight blocks from the dense baseline does near-identical damage (**27.43** against **27.20** for KDA), so the catastrophic all-eight number is generic depth removal, not something about KDA.
+
+Per benchmark, removing layer 0 looks like the attention grafts: LAMBADA goes to **0.00**, SciQ falls from **63.80** to **21.10**, PIQA to **50.60**, and HellaSwag and ARC-Easy to about **26**, while OpenBookQA and CommonsenseQA stay close to where they were. Removing layer 4 mostly hits LAMBADA (**38.29** to **15.93**) and HellaSwag (**39.65** to **34.50**), and leaves the knowledge tasks close to intact. From layer 8 on, LAMBADA is the task that moves: it still drops for layers 8 and 12 (**29.87** and **33.51**) and rises above the intact model for layers 16, 20, and 24 (**40.50**, **42.32**, and **41.06**). SciQ sits above the intact **63.80** for every removal after layer 0, and together with LAMBADA it accounts for most of the small gains in the average.
+
+<FigureViews label="Figure 19" title="Block removal: change per benchmark against the intact model">
+
+<div slot="graph">
+
+<div class="plot" data-delta-direction="higher" data-plot="/research/assets/figures/pretraining-dense-models/fig19_pruning_by_benchmark.json" style="--plot-height: 520px" role="img" aria-label="Figure 19. Change per benchmark for each block removal, against the intact model (native KDA, or the baseline for the dense control). Red is a loss, green a gain."></div>
+
+</div>
+
+<div slot="table">
+
+| Block removed | HellaSwag | WinoGrande | ARC-Easy | ARC-Challenge | PIQA | OpenBookQA | CommonsenseQA | SciQ | LAMBADA | Shared-9 | Δ vs intact KDA |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| none (intact KDA) | 39.65 | 51.46 | 39.60 | 24.06 | 67.79 | 27.60 | 20.07 | 63.80 | 38.29 | 41.37 | reference |
+| Layer 0 | 25.61 | 46.80 | 27.02 | 28.24 | 50.60 | 25.40 | 19.98 | 21.10 | 0.00 | 27.19 | <span class="delta-worse" title="Regression">−14.18</span> |
+| Layer 4 | 34.50 | 52.72 | 39.86 | 21.67 | 63.98 | 28.40 | 19.82 | 65.70 | 15.93 | 38.06 | <span class="delta-worse" title="Regression">−3.31</span> |
+| Layer 8 | 36.39 | 51.70 | 40.49 | 22.61 | 65.83 | 28.60 | 19.74 | 68.10 | 29.87 | 40.37 | <span class="delta-worse" title="Regression">−1.00</span> |
+| Layer 12 | 38.77 | 51.62 | 38.97 | 22.35 | 66.27 | 28.00 | 19.98 | 65.70 | 33.51 | 40.58 | <span class="delta-worse" title="Regression">−0.79</span> |
+| Layer 16 | 39.33 | 51.85 | 39.35 | 24.74 | 67.03 | 28.80 | 20.07 | 66.30 | 40.50 | 42.00 | <span class="delta-better" title="Improvement">+0.63</span> |
+| Layer 20 | 39.50 | 51.07 | 39.27 | 23.29 | 67.08 | 27.60 | 19.90 | 65.00 | 42.32 | 41.67 | <span class="delta-better" title="Improvement">+0.30</span> |
+| Layer 24 | 39.43 | 51.78 | 39.56 | 24.15 | 67.03 | 28.00 | 20.07 | 64.90 | 41.06 | 41.78 | <span class="delta-better" title="Improvement">+0.41</span> |
+| Layer 28 | 39.16 | 50.83 | 39.60 | 23.81 | 67.52 | 27.40 | 19.98 | 65.00 | 38.46 | 41.31 | <span class="delta-worse" title="Regression">−0.07</span> |
+| All eight (0, 4, …, 28) | 25.57 | 48.38 | 26.73 | 27.22 | 50.22 | 25.40 | 20.64 | 20.60 | 0.00 | 27.20 | <span class="delta-worse" title="Regression">−14.17</span> |
+| All eight, dense baseline (matched control) | 26.72 | 51.14 | 25.84 | 28.24 | 49.95 | 25.00 | 17.44 | 22.50 | 0.00 | 27.43 | <span class="delta-worse" title="Regression">−13.80</span> vs intact baseline (41.23) |
+
+</div>
+
+<figcaption>
+
+Figure 19. Change per benchmark for each block removal, against the intact model (native KDA, or the baseline for the dense control). Red is a loss, green a gain.
+
+</figcaption>
+
+</FigureViews>
+
+### Quantization
+
+> **Hypothesis:** All four models can be compressed to 4-bit for cheaper inference without losing much benchmark quality.
+
+How much quality does 4-bit compression cost? We compressed each model to 4-bit and measured Shared-9, checkpoint size, and where the loss lands.
+
+#### What we found: 4-bit is nearly free
+
+4-bit costs under a point of Shared-9, and almost all of the loss comes from LAMBADA. The dense baseline and KDA survive it best (**<span class="delta-worse" title="Regression">−0.41</span>** and **<span class="delta-worse" title="Regression">−0.73</span>** Shared-9); the n-gram 50% model, with the least transformer depth, loses the most (**<span class="delta-worse" title="Regression">−1.10</span>**).
+
+
+<FigureViews label="Figure 20" title="4-bit quantization costs under a point of Shared-9">
+
+<div slot="graph">
+
+<div class="plot" data-delta-direction="higher" data-plot="/research/assets/figures/pretraining-dense-models/fig20_quantization.json" style="--plot-height: 440px" role="img" aria-label="Figure 20. Shared-9 at BF16 versus 4-bit (hatched). Every model loses under a point, with the n-gram 50% model taking the largest hit at 1.10. Labels give the change and how much smaller the 4-bit checkpoint is."></div>
+
+</div>
+
+<div slot="table">
+
+| Model | BF16 | 4-bit | Δ | Checkpoint shrink |
+| --- | ---: | ---: | ---: | ---: |
+| Baseline | 41.23 | 40.82 | <span class="delta-worse" title="Regression">−0.41</span> | 3.5× |
+| KDA | 41.37 | 40.64 | <span class="delta-worse" title="Regression">−0.73</span> | 3.5× |
+| N-gram 25% | 40.56 | 40.00 | <span class="delta-worse" title="Regression">−0.56</span> | 2.1× |
+| N-gram 50% | 39.54 | 38.44 | <span class="delta-worse" title="Regression">−1.10</span> | 1.5× |
+
+</div>
+
+<figcaption>
+
+Figure 20. Shared-9 at BF16 versus 4-bit (hatched). Every model loses under a point, with the n-gram 50% model taking the largest hit at 1.10. Labels give the change and how much smaller the 4-bit checkpoint is.
+
+</figcaption>
+
+</FigureViews>
+
+4-bit is cheap here because the checkpoints are heavily undertrained at 6B tokens: relative to what they have learned they are over-parameterized, holding far more precision than the learned function needs, so throwing most of it away costs almost nothing. The dense baseline and KDA lose the least Shared-9 and shrink the most, so they compress best. The dense models shrink **3.5×**; the n-gram models shrink less, **1.5** to **2.1×**, because their lookup tables are not ordinary weight matrices and are left in higher precision. We ran only 4-bit here. An 8-bit rung between BF16 and 4-bit is the obvious next measurement, and it would likely erase even the n-gram 50% model's **1.1**-point loss.
+
+Broken out by task, 4-bit barely touches anything except LAMBADA, which drops **1.4** to **5.6** points across the four models while most other tasks move by well under a point (SciQ even improves for both n-gram models, which is quantization noise rather than a real gain).
+
+<figure class="article-figure">
+
+<div class="plot" data-delta-direction="higher" data-plot="/research/assets/figures/pretraining-dense-models/fig21_quantization_by_benchmark.json" style="--plot-height: 460px" role="img" aria-label="Figure 21. Per-benchmark accuracy change from 4-bit quantization (4-bit minus BF16). LAMBADA absorbs almost all of the loss in every model; the other eight tasks stay within about a point of zero."></div>
+
+<figcaption>
+
+Figure 21. Per-benchmark accuracy change from 4-bit quantization (4-bit minus BF16). LAMBADA absorbs almost all of the loss in every model; the other eight tasks stay within about a point of zero.
+
+</figcaption>
+
+</figure>
+
+LAMBADA was the most sensitive task in all three experiments. The n-gram tables were built to win it and instead fall furthest behind on it. It is the first task to collapse under grafting and pruning, and it takes nearly all of the quantization loss. Because it asks for an exact open-vocabulary prediction instead of a multiple-choice pick, it shows first when the input representation, the residual stream, and the output head fall out of alignment.
+
+## Downstream NER fine-tuning
+
+Benchmarks score the frozen pretrained model. To see whether the pretraining differences survive into a task people actually run, we fine-tuned three checkpoints (baseline, n-gram 25%, n-gram 50%) on named-entity recognition and compared them head to head. NER is a direct test of the n-gram idea: the tables are built to capture short multi-token phrases, so long names, rare words, and heavily fragmented tokens are exactly the cases where they should earn their keep.
+
+> **Hypothesis:** N-gram embeddings are built to capture short multi-token phrases, so the n-gram checkpoints should do better on the NER cases the tables were built for: entities made of long names, rare words, and heavily fragmented tokens. If the 25% model's deficit comes from having fewer transformer layers instead, doubling the table budget to 50% should widen it.
+
+### The data
+
+We use [Few-NERD](https://github.com/thunlp/Few-NERD) with its eight coarse entity types: **person, location, organization, art, product, event, building, and other**. The task is framed as JSON extraction. The model reads a sentence and must emit a JSON list of the entities it contains, each with a type and its exact surface text. Training uses **131,767** sentences; evaluation uses the **18,824**-sentence validation split.
+
+```
+Input:  "Miles Davis recorded Kind of Blue in New York."
+Target: [{"type": "person",   "text": "Miles Davis"},
+         {"type": "art",      "text": "Kind of Blue"},
+         {"type": "location", "text": "New York"}]
+```
+
+### The recipe
+
+Identical across all three models, so the only variable is the base checkpoint:
+
+| Setting | Value |
+| --- | --- |
+| Method | [LoRA](https://arxiv.org/abs/2106.09685) on every transformer layer |
+| LoRA rank / alpha | 16 / 32 |
+| Epochs | 2 |
+| Effective batch size | 120 |
+| Learning rate | 3e-5, cosine decay, 10% warmup |
+| Trainable params (baseline / 25% / 50%) | 16M / 11M / 8M |
+
+The fine-tunes ran on a single RTX 5090 (**32 GB**), using FlashAttention for training and [vLLM](https://github.com/vllm-project/vllm) for inference. LoRA rather than full fine-tuning keeps the run cheap and the comparison about the frozen representations. One limitation it introduces: because LoRA adapts every layer, the shallower n-gram models get proportionally fewer trainable adapter parameters (the **16M / 11M / 8M** above), which we flag where it could matter.
+
+### The scoring
+
+We report on the validation split, running greedy generation over all **18,824** sentences and parsing the JSON each model emits. An entity is correct only when both its type and its exact text match a gold entity, case-insensitively. From that we compute:
+
+- **Micro F1.** Entity-level F1 pooled over every entity in the set, so frequent types dominate.
+- **Macro F1.** The mean of the eight per-type F1 scores, weighting each type equally.
+- **Sentence accuracy.** The fraction of sentences whose predicted entity set exactly matches the gold set, nothing missed and nothing added.
+- **Parse failures.** Answers that do not parse as JSON at all.
+
+These metrics, plus precision, recall, and the per-type breakdown, answer the question the fine-tune exists to ask: did the n-gram checkpoints learn anything that helps them find and label spans of text, or does the pretraining deficit carry through unchanged? Recall and the miss/hallucination split say whether entities are being found at all; precision and the per-type breakdown say whether they are being labeled correctly.
+
+### What we found: the n-gram hypothesis was wrong
+
+Fine-tuning turns the pretraining tie into a clear, statistically significant gap. On Few-NERD the three models line up in strict order, and each **25%** of budget moved from transformer layers into n-gram tables costs a steady **3** points of micro F1.
+
+
+<FigureViews label="Figure 22" title="Few-NERD after LoRA fine-tuning">
+
+<div slot="graph">
+
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig22_ner_overall.json" style="--plot-height: 440px" role="img" aria-label="Figure 22. Few-NERD overall scores after LoRA fine-tuning. The baseline leads on every metric, and the two n-gram models fall below it in budget order. The right panel counts answers that did not parse as JSON."></div>
+
+</div>
+
+<div slot="table">
+
+| Metric | Baseline | N-gram 25% | N-gram 50% |
+| --- | ---: | ---: | ---: |
+| Micro F1 | **0.655** | 0.625 | 0.598 |
+| Micro precision | **0.655** | 0.629 | 0.611 |
+| Micro recall | **0.656** | 0.621 | 0.585 |
+| Macro F1 | **0.595** | 0.564 | 0.535 |
+| Sentence accuracy | **42.2%** | 39.3% | 37.5% |
+| Parse failures | **10** | 19 | 33 |
+
+</div>
+
+<figcaption>
+
+Figure 22. Few-NERD overall scores after LoRA fine-tuning. The baseline leads on every metric, and the two n-gram models fall below it in budget order. The right panel counts answers that did not parse as JSON.
+
+</figcaption>
+
+</FigureViews>
+
+Paired bootstrap, randomization, and McNemar tests over all **18,824** validation sentences show the gap is significant: they put the 25% model's micro-F1 deficit between **2.6** and **3.5** points, and the 50% model's between **5.2** and **6.2** points, with every per-type interval sitting entirely below zero after correction for multiple comparisons. The gap opens inside the first **250** fine-tuning steps and then holds constant, and it matches the loss gap the models already carried out of pretraining. So the gap comes from pretraining.
+
+The ordering holds on every entity type, not just the aggregate. The baseline leads on all eight, and the two n-gram models fall below it in the same budget order, with the widest gap on art (long titles that must be copied exactly).
+
+
+<FigureViews label="Figure 23" title="Few-NERD per-type precision, recall, and F1">
+
+<div slot="graph">
+
+<div class="plot" data-plot="/research/assets/figures/pretraining-dense-models/fig23_ner_pr_f1.json" style="--plot-height: 820px" role="img" aria-label="Figure 23. Per-type precision (top), recall (middle), and F1 (bottom) across Few-NERD's eight entity types. The baseline leads on all three on every type; the n-gram models lose more on recall than precision, which is why they miss more entities than they mislabel."></div>
+
+</div>
+
+<div slot="table">
+
+| Type | Baseline F1 | N-gram 25% F1 | N-gram 50% F1 |
+| --- | ---: | ---: | ---: |
+| Person | **0.801** | 0.777 | 0.744 |
+| Location | **0.718** | 0.690 | 0.668 |
+| Art | **0.620** | 0.569 | 0.535 |
+| Organization | **0.581** | 0.544 | 0.520 |
+| Product | **0.543** | 0.518 | 0.484 |
+| Other | **0.520** | 0.491 | 0.460 |
+| Event | **0.494** | 0.469 | 0.428 |
+| Building | **0.486** | 0.453 | 0.442 |
+
+</div>
+
+<figcaption>
+
+Figure 23. Per-type precision (top), recall (middle), and F1 (bottom) across Few-NERD's eight entity types. The baseline leads on all three on every type; the n-gram models lose more on recall than precision, which is why they miss more entities than they mislabel.
+
+</figcaption>
+
+</FigureViews>
+
+We broke every disagreement down by entity type and by properties of the entity text, looking for slices where n-gram embeddings should help. We found none:
+
+- When the two models disagree, the 25% model is right only **41%** of the time. No slice favors it, including long multi-word names, words unseen in training, and heavily fragmented tokens. Its best results are ties on products and on entities containing digits.
+- The loss is remarkably even, about **40%** across almost every slice. That is the signature of a model that is slightly weaker everywhere, not one with a specific blind spot.
+- The 50% model is worse still, losing **5** to **11** points of win rate in every single category.
+
+The n-gram model misses **22%** more gold entities than the baseline, and it produces **35%** more entity strings that never appear in the sentence at all (**1,429** against **1,058**), almost all of them near-miss copies like "Jinzo Abe" for "Shinzo Abe" or "Davey Jones" for "Davy Jones". That is why art, which is made of long titles that have to be copied exactly, shows its widest per-type gap. At the same parameter budget, the plain transformer does better on this task.
+
+## Conclusion and limitations
+
+At 1B dense scale on 6B tokens, a well-tuned baseline is the model to beat, and neither imported idea beats it cleanly.
+
+KDA at **8 of 32** layers matches the baseline within single-seed noise. The LongCat n-gram tables reproduce only as a depth-versus-tables trade in which depth wins: they come within **0.67** Shared-9 of the baseline at a compute discount, but against a properly trained baseline they win nothing on the suite (even LAMBADA, the task they target, goes to the baseline), and on a real downstream task they lose everywhere with no compensating strength. The one unambiguous win was QK normalization, which we added after the first baseline run. It fixed training stability and closed almost the entire loss gap to KDA, and it taught us the deepest lesson of the project: an unstable baseline can flip an architecture comparison and make the wrong model look like the winner, so the baseline has to be right before any cross-architecture claim means anything. Among the smaller results, attention is not zero-shot portable, most layers past the second are individually dispensable, and 4-bit compression is close to free.
+
+Each one of these conclusions is limited by the following factors. (1) Each configuration is a single pretraining seed and a single fine-tuning seed, so most gaps outside LAMBADA sit within one to two points of ordinary multiple-choice noise, and we have not measured seed-to-seed variation. (2) The two n-gram variants differ in both table share and layer count at once, so their per-benchmark deltas mix two effects, "tables displace knowledge" and "fewer layers store less", that we cannot separate with these runs alone. (3) The biggest is undertraining: all four models trained on **6B** tokens, roughly a third of the Chinchilla-optimal budget for 1B parameters, and none had flattened when training stopped, so a comparison of undertrained checkpoints can only say so much about how these architectures behave once fully trained.

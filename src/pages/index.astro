@@ -1,189 +1,975 @@
 ---
 import { getCollection } from 'astro:content';
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import BentoGrid from '@/components/BentoGrid.astro';
-import HeroSection from '@/components/HeroSection';
-import { formatShortDate, getPostUrl, sortPostsByPublishedDate } from '@/utils/blog';
+import V2Layout from '@/layouts/V2Layout.astro';
 
-const posts = sortPostsByPublishedDate(await getCollection('posts'));
-const latestPosts = posts.slice(0, 4);
+// Counted at build, as on the About page, so the Research card's figure
+// stays true as posts are added.
+const writeups = [...(await getCollection('posts')), ...(await getCollection('research'))];
+const firstYear = Math.min(...writeups.map((e) => e.data.publishedAt.getFullYear()));
 
-const gradients = [
-  'bg-gradient-to-br from-orange-50 to-amber-100',
-  'bg-gradient-to-br from-indigo-50 to-blue-100',
-  'bg-gradient-to-br from-emerald-50 to-teal-100',
-  'bg-gradient-to-br from-slate-100 to-stone-200',
+const capabilities = [
+  {
+    name: 'Synthetic data generation',
+    backdrop: 'sdTarget',
+    seed: 4021,
+    summary:
+      'Over the years we have generated hundreds of billions of tokens of synthetic data and trained models on it. More than half our projects need a pipeline built for that specific data, with our open\u2011source library Simula covering part of the work. Every dataset ships with its generation code, filters and coverage report.',
+  },
+  {
+    name: 'Custom architecture and training',
+    backdrop: 'archLoss',
+    seed: 9137,
+    summary:
+      'LLMs are not always the right tool, and API models cannot always be made to fit. We design and train models around the task, with modified attention and custom kernels where needed, and optimize them to run small and fast, like Qwen3-8B pruned from 36 layers to 30.',
+  },
+  {
+    name: 'Evaluation and benchmarking',
+    backdrop: 'evalBars',
+    seed: 2288,
+    summary:
+      "What we build is used by our clients' customers, so every project starts with evaluation. We learn the domain, build a benchmark for it, and measure every change against that baseline. We run the evaluations by hand and read the outputs ourselves.",
+  },
 ];
 
-const featuredContent =
-  latestPosts.length > 0
-    ? latestPosts.map((post, index) => ({
-        type: post.data.category || 'Research',
-        title: post.data.title,
-        date: formatShortDate(post.data.publishedAt),
-        summary: post.data.summary,
-        link: getPostUrl(post),
-        image: post.data.image,
-        gradient: gradients[index % gradients.length],
-        transitionName: `post-title-${post.data.slug}`,
-      }))
-    : [
-        {
-          type: 'Research',
-          title: 'Mercity Research Updates',
-          date: 'Jan 1, 2026',
-          summary: 'New writing from the lab will appear here shortly.',
-          link: '/blog',
-          image: undefined,
-          gradient: gradients[0],
-          transitionName: 'fallback-post-title',
-        },
-      ];
+const personas = [
+  {
+    label: 'For product teams',
+    title: 'Differentiation others cannot get.',
+    // An array breaks onto a new line between entries.
+    copy: [
+      'You are using the same APIs as everyone else, which means everyone you compete with offers the same features, at the same price and the same speed.',
+      'We help you take that technology in-house, so you can iterate and improve on it much faster than they can.',
+    ],
+    backdrop: 'divergence',
+    seed: 6104,
+    facts: ['6–14 week engagements', 'You walk away with the models and data'],
+  },
+  {
+    label: 'For enterprises',
+    title: 'AI built into your business systems.',
+    copy: 'We help you build AI into the business systems your teams already use, so they can move faster. We optimize the business one part at a time, working alongside your engineers. That speed adds up across the organization.',
+    backdrop: 'structure',
+    seed: 1937,
+    facts: ['Months-long engagements', 'Embedded plug-and-play teams'],
+  },
+];
+
+// \u2011 and \u00a0 in the summaries keep compound terms from splitting
+// across lines. An array summary breaks onto a new line between entries.
+const openWork = [
+  {
+    name: 'Datasets',
+    backdrop: 'strata',
+    seed: 771,
+    image: {
+      src: '/open-datasets.png',
+      alt: 'Mercity dataset cards on Hugging Face',
+      left: '14%',
+      top: '23%',
+      width: '140%',
+    },
+    // Public repos under huggingface.co/Mercity as of 2026-09-27, not
+    // counting the one named "test". Update by hand as sets are added.
+    meta: '12 datasets · Hugging Face',
+    href: 'https://huggingface.co/datasets?author=Mercity',
+    summary:
+      'Pretraining corpora, embedding sets and labelled data for specialised tasks, built for our own training and research. We publish them on Hugging\u00a0Face so anyone can use them.',
+  },
+  {
+    name: 'Models',
+    backdrop: 'isoline',
+    seed: 5410,
+    image: {
+      src: '/open-models.png',
+      alt: 'Training telemetry from Mercity model runs',
+      left: '6.5%',
+      top: '14.7%',
+      width: '141.3%',
+      bakedShadow: true,
+    },
+    // Public repos under huggingface.co/Mercity as of 2026-09-27.
+    meta: '26 models · Hugging Face',
+    href: 'https://huggingface.co/models?author=Mercity',
+    summary:
+      'Pruned and distilled models, adapters, classifiers and fine\u2011tuned retrieval models from our research runs. We publish them alongside our write\u2011ups so anyone can check the results.',
+  },
+  {
+    name: 'Research',
+    backdrop: 'contour',
+    seed: 3364,
+    // Solved from the PNG itself: page 1's top-left corner sits at px
+    // (203, 629) of the 3300×4080 file, which these offsets land at about
+    // 13% in and 25% down, near the anchor the other two cards share.
+    image: {
+      src: '/open-research.png',
+      alt: 'A Mercity research paper',
+      left: '4.9%',
+      top: '6%',
+      width: '125.9%',
+      bakedShadow: true,
+    },
+    meta: `${writeups.length} write-ups · Since ${firstYear}`,
+    href: '/research',
+    summary:
+      'Research logs and guides written from our own projects, with the implementation detail you need to reproduce the work. Recent logs cover layer pruning, diffusion distillation, SAE guardrails and Simula.',
+  },
+];
+
+const tooling = [
+  {
+    name: 'Simula',
+    kind: 'Python',
+    href: '/open-source/simula',
+    summary:
+      'Deliberate synthetic data generation. Describe the distribution you want as a spec, and Simula plans, generates and verifies a corpus against it, with a coverage report at the end.',
+  },
+  {
+    name: 'PromptKeep',
+    kind: 'Python',
+    href: 'https://github.com/Mercity-AI/promptkeep',
+    summary:
+      'Prompts as first-class objects. Versioned templates with lineage in SQLite, and a drop-in OpenAI wrapper that records every run: prompt version, variables, output and usage.',
+  },
+  {
+    name: 'Sieve',
+    kind: 'Rust · Python',
+    soon: true,
+    summary:
+      'Corpus filtering and near-duplicate detection at billion-document scale, with every decision traceable back to the rule that made it.',
+  },
+  {
+    name: 'Anvil',
+    kind: 'CUDA · Triton',
+    soon: true,
+    summary:
+      'Fused kernels and training utilities for architectures that do not fit the standard stack, benchmarked against the reference implementation on every commit.',
+  },
+];
 ---
 
-<BaseLayout
+<V2Layout
   title="Mercity Research"
-  description="Research-grade, reality-ready. Shipping the research to production. Custom training, real optimization, genuine architecture."
   path="/"
-  showBlur={false}
+  description="Research-led capabilities for product and enterprise teams. Synthetic data, custom training, and evaluation that tells the truth."
 >
-  <div class="w-full overflow-hidden">
-    <HeroSection client:load />
-
-    <section id="research" class="py-32 bg-white/40 backdrop-blur-sm">
-      <div class="max-w-7xl mx-auto px-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-16">
-          <article class="group">
-            <div class="w-12 h-12 mb-8 text-slate-800 bg-slate-50 rounded-2xl flex items-center justify-center group-hover:bg-indigo-50 transition-colors duration-500">
-              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9" />
-                <path d="M12 3c4.97 0 9 4.03 9 9" />
-                <circle cx="12" cy="12" r="2.5" />
-              </svg>
-            </div>
-            <h3 class="text-xl font-medium mb-4 text-slate-900">Cognitive Architectures</h3>
-            <p class="text-slate-500 leading-relaxed font-light">
-              Moving beyond statistical pattern matching to structured reasoning and causal understanding.
-            </p>
-          </article>
-
-          <article class="group">
-            <div class="w-12 h-12 mb-8 text-slate-800 bg-slate-50 rounded-2xl flex items-center justify-center group-hover:bg-indigo-50 transition-colors duration-500">
-              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M4 12h6" />
-                <path d="M14 12h6" />
-                <circle cx="12" cy="12" r="2" />
-                <path d="M12 4v6" />
-                <path d="M12 14v6" />
-              </svg>
-            </div>
-            <h3 class="text-xl font-medium mb-4 text-slate-900">Sparse Modeling</h3>
-            <p class="text-slate-500 leading-relaxed font-light">
-              Efficiency is intelligence. Developing models that achieve more with significantly less compute.
-            </p>
-          </article>
-
-          <article class="group">
-            <div class="w-12 h-12 mb-8 text-slate-800 bg-slate-50 rounded-2xl flex items-center justify-center group-hover:bg-indigo-50 transition-colors duration-500">
-              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <rect x="3" y="4" width="18" height="16" rx="2" />
-                <path d="M7 8h10" />
-                <path d="M7 12h10" />
-                <path d="M7 16h6" />
-              </svg>
-            </div>
-            <h3 class="text-xl font-medium mb-4 text-slate-900">Scaffolding Agents</h3>
-            <p class="text-slate-500 leading-relaxed font-light">
-              Building harnesses for the real world to bridge the gap between modeling and reality.
-            </p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <BentoGrid />
-
-    <section class="py-24 border-t border-slate-100 bg-white/50">
-      <div class="max-w-4xl mx-auto px-6 text-center">
-        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400 mb-6">Research to Enterprise</p>
-        <h2 class="text-3xl md:text-4xl font-light text-slate-900 mb-6 leading-tight">
-          We are a research lab that builds production-ready AI capabilities for enterprise teams.
-        </h2>
-        <p class="text-lg text-slate-500 font-light leading-relaxed mb-8">
-          From model evaluation and adaptation to deployment architecture, we help teams turn frontier research into
-          durable business systems.
-        </p>
-        <a href="/contact" class="text-sm font-semibold uppercase tracking-widest text-slate-900 hover:text-slate-600 transition-colors" data-astro-prefetch>
-          Start a Conversation
+  <!-- ═══ HERO ═══════════════════════════════════════════════════ -->
+  <section class="hero">
+    <canvas class="hero-bg" data-backdrop="blurlight" data-seed="8812" data-dpr="1.2" aria-hidden="true"></canvas>
+    <div class="hero-scrim"></div>
+    <div class="shell hero-in">
+      <h1 class="rv" data-rv style="--rv-delay:120ms">
+        Building research led capabilities for product and enterprise teams.
+      </h1>
+      <p class="rv" data-rv style="--rv-delay:240ms">
+        We work with companies on problems off-the-shelf APIs cannot solve: custom training, new model
+        architectures, optimization and private research. We handle every stage, from the training data to the
+        evaluation. You own the weights and the code.
+      </p>
+      <div class="hero-actions rv" data-rv style="--rv-delay:360ms">
+        <a class="btn-solid" href="#work">See what we do<span aria-hidden="true">→</span></a>
+        <a class="btn-quiet" href="/research">
+          <span class="btn-fill"></span>
+          <span class="btn-label">Read our research</span>
         </a>
       </div>
-    </section>
+    </div>
+    <figure class="hero-plate" aria-hidden="true">
+      <canvas data-backdrop="heroCurves" data-seed="5521" data-dpr="1.3"></canvas>
+    </figure>
+  </section>
 
-    <section class="py-32 border-b border-slate-100">
-      <div class="max-w-[80rem] mx-auto px-6">
-        <div class="mb-16">
-          <h2 class="text-3xl font-light text-slate-900 mb-4">Latest Publications</h2>
-          <div class="h-0.5 w-12 bg-slate-900" />
-        </div>
+  <!-- ═══ WHAT WE WORK ON ════════════════════════════════════════ -->
+  <section class="band" id="work">
+    <div class="shell">
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Where our expertise lies</h2>
+      <p class="lede lede-split rv" data-rv style="--rv-delay:160ms">
+        <span>We keep to a narrow set of problems and try to be the best at each of them.</span>
+        <span>The three below are where most of our client work and our published research has gone over the years.</span>
+      </p>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredContent.map((item) => (
-            <a
-              href={item.link}
-              class="group block bg-white border border-slate-200 hover:border-slate-300 transition-all duration-300 overflow-hidden"
-              data-astro-prefetch
+      <div class="cap-grid">
+        {
+          capabilities.map((c, i) => (
+            <article class="cap rv" data-rv style={`--rv-delay:${100 + i * 90}ms`}>
+              <div class="cap-art">
+                <canvas data-backdrop={c.backdrop} data-seed={c.seed} aria-hidden="true"></canvas>
+              </div>
+              <div class="cap-body">
+                <h3>{c.name}</h3>
+                <p>{c.summary}</p>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ WHO WE WORK WITH ═══════════════════════════════════════ -->
+  <section class="band wws" id="who">
+    <div class="shell">
+      <h2 class="wws-title rv" data-rv style="--rv-delay:80ms">
+        We work in two types of engagements
+      </h2>
+      <p class="wws-sub lede-split rv" data-rv style="--rv-delay:160ms">
+        <span>Product companies come to us for the R&amp;D that sets them apart from their competitors.</span>
+        <span>Enterprises come to us to put AI into their existing systems and improve how the organization runs.</span>
+        <span>Either way, you own the models, data and code we build.</span>
+      </p>
+
+      <div class="wws-grid">
+        {
+          personas.map((p, i) => (
+            <article
+              class="pcard rv"
+              data-rv
+              data-from={i === 0 ? 'left' : 'right'}
+              style={`--rv-delay:${120 + i * 80}ms`}
             >
-              {item.image ? (
-                <div class="h-44 w-full relative overflow-hidden bg-slate-100">
+              <span class="pcard-label">
+                <i aria-hidden="true">[</i>{p.label}<i aria-hidden="true">]</i>
+              </span>
+              <h3>{p.title}</h3>
+              <p>{[p.copy].flat().map((line, j) => (j ? [<br />, line] : line))}</p>
+              <figure class="pcard-art">
+                <canvas data-backdrop={p.backdrop} data-seed={p.seed} aria-hidden="true"></canvas>
+              </figure>
+              <ul class="pcard-facts">
+                {p.facts.map((f) => <li>{f}</li>)}
+              </ul>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══ WE SHIP OPENLY ═════════════════════════════════════════ -->
+  <section class="band" id="open">
+    <div class="shell">
+      <div class="open-head">
+        <div class="open-head-copy">
+          <span class="eyebrow rv" data-rv>
+            We <span class="eyebrow-heart" role="img" aria-label="love">&#x2764;&#xFE0F;</span> open source
+          </span>
+          <h2 class="h2 rv" data-rv style="--rv-delay:80ms">We ship openly, and in public.</h2>
+          <p class="lede lede-split rv" data-rv style="--rv-delay:160ms">
+            <span>We are a research-first firm and do our work in the open.</span>
+            <span>Most of what we learn ends up public in some form.</span>
+          </p>
+          <p class="lede lede-split rv" data-rv style="--rv-delay:200ms">
+            <span>Datasets we had to build because nothing suitable existed, weights from runs that cost us thousands of&nbsp;$, and fully detailed write&#8209;ups so anyone can replicate our work.</span>
+            <span>We also partner with other companies on their open&#8209;source initiatives.</span>
+          </p>
+        </div>
+        <a class="wipe rv" data-rv style="--rv-delay:240ms" href="/open-source/simula">
+          <span class="wipe-fill"></span>
+          <span class="wipe-label">Explore our open work</span>
+          <span class="wipe-label" aria-hidden="true">→</span>
+        </a>
+      </div>
+
+      <div class="open-grid">
+        {
+          openWork.map((o, i) => (
+            <a class="open-card rv" data-rv style={`--rv-delay:${100 + i * 90}ms`} href={o.href}>
+              <div class="open-art">
+                <canvas data-backdrop={o.backdrop} data-seed={o.seed} aria-hidden="true"></canvas>
+                {o.image && (
                   <img
-                    src={item.image}
-                    alt={item.title}
+                    class:list={['open-art-img', { 'is-baked': o.image.bakedShadow }]}
+                    src={o.image.src}
+                    alt={o.image.alt}
                     loading="lazy"
-                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    style={`--img-left:${o.image.left};--img-top:${o.image.top};--img-width:${o.image.width}`}
                   />
-                </div>
-              ) : (
-                <div class={`h-44 w-full ${item.gradient} relative overflow-hidden`}>
-                  <div class="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors duration-300" />
-                </div>
-              )}
-
-              <div class="p-6">
-                <div class="flex justify-between items-center mb-4">
-                  <div class="flex items-center gap-2">
-                    <span class="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider border border-slate-200 rounded text-slate-500">
-                      {item.type}
-                    </span>
-                    <span class="text-xs text-slate-400 font-mono">{item.date}</span>
-                  </div>
-                </div>
-
-                <h3
-                  class="text-xl font-medium text-slate-900 mb-3 leading-tight group-hover:text-indigo-900 transition-colors"
-                  transition:name={item.transitionName}
-                >
-                  {item.title}
-                </h3>
-
-                <p class="text-slate-500 text-sm font-light leading-relaxed line-clamp-3">{item.summary}</p>
-
-                <div class="mt-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-900 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                  Read More <span aria-hidden="true">→</span>
-                </div>
+                )}
+              </div>
+              <div class="open-body">
+                <h3>{o.name}</h3>
+                <p>{[o.summary].flat().map((line, j) => (j ? [<br />, line] : line))}</p>
+                <span class="open-meta">{o.meta}</span>
               </div>
             </a>
-          ))}
-        </div>
+          ))
+        }
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section class="py-40 border-t border-slate-100 relative">
-      <div class="max-w-4xl mx-auto px-6 text-center">
-        <blockquote class="font-serif text-3xl md:text-5xl text-slate-800 italic leading-tight">
-          "Research only matters when it improves the systems people rely on every day."
-        </blockquote>
-        <div class="mt-8 text-sm font-semibold uppercase tracking-widest text-slate-400">Mercity Research Team</div>
+  <!-- ═══ TOOLING ════════════════════════════════════════════════ -->
+  <section class="band band-tint" id="tooling">
+    <div class="shell">
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">
+        Alongside the data and weights, we open&#8209;source our tools.
+      </h2>
+      <p class="lede lede-split rv" data-rv style="--rv-delay:160ms">
+        <span>Each one started as something we needed internally and got tired of rewriting for every project.</span>
+        <span>They stay maintained because we run them on our own client work.</span>
+      </p>
+
+      <div class="tool-grid">
+        {
+          tooling.map((t, i) =>
+            t.soon ? (
+              <div class="tool tool-soon rv" data-rv style={`--rv-delay:${80 + i * 80}ms`}>
+                <div class="tool-veil" aria-hidden="true">
+                  <div class="tool-top">
+                    <span class="tool-name">{t.name}</span>
+                    <span class="tool-kind">{t.kind}</span>
+                  </div>
+                  <div>
+                    <span class="tool-dot"></span>
+                    <p>{t.summary}</p>
+                  </div>
+                </div>
+                <span class="tool-soon-label">Coming soon</span>
+              </div>
+            ) : (
+              <a class="tool rv" data-rv style={`--rv-delay:${80 + i * 80}ms`} href={t.href}>
+                <div class="tool-top">
+                  <span class="tool-name">{t.name}</span>
+                  <span class="tool-kind">{t.kind}</span>
+                </div>
+                <div>
+                  <span class="tool-dot"></span>
+                  <p>{t.summary}</p>
+                </div>
+              </a>
+            ),
+          )
+        }
       </div>
-    </section>
-  </div>
-</BaseLayout>
+    </div>
+  </section>
+
+  <!-- ═══ CLOSING ════════════════════════════════════════════════ -->
+  <section class="closer">
+    <canvas class="closer-bg" data-backdrop="strata" data-seed="4488" data-dpr="1.2" aria-hidden="true"></canvas>
+    <div class="shell closer-in">
+      <h2 class="rv" data-rv>Bring us the problem that does not fit the API.</h2>
+      <p class="lede-split rv" data-rv style="--rv-delay:120ms">
+        <span>If an off&#8209;the&#8209;shelf model already solves it, you do not need us.</span>
+        <span>If it gets you most of the way and the rest is what your business depends on, we should talk.</span>
+      </p>
+      <a class="btn-light rv" data-rv style="--rv-delay:240ms" href="/contact">
+        Start a conversation<span aria-hidden="true">→</span>
+      </a>
+    </div>
+  </section>
+</V2Layout>
+
+<style is:global>
+  /* ══════════════════════════════════════════════════════════════
+     V2 PAGE
+     ══════════════════════════════════════════════════════════════ */
+
+  /* ── Hero ───────────────────────────────────────────────────── */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    background: var(--n-50);
+    color: var(--ink);
+    /* Exactly one viewport once the sticky nav is accounted for. svh
+       keeps it honest on mobile, where 100vh includes the URL bar. */
+    min-height: calc(100vh - var(--nav-h));
+    min-height: calc(100svh - var(--nav-h));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  /* Lifts the left third toward paper so the headline always has a
+     quiet ground, whatever the generator lands on. */
+  .hero-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      hsl(240 30% 99% / 0.86) 0%,
+      hsl(240 30% 99% / 0.58) 44%,
+      hsl(240 30% 99% / 0.18) 100%
+    );
+  }
+  .hero-in {
+    position: relative;
+    z-index: 2;
+    padding-block: clamp(56px, 7vw, 92px);
+  }
+  .hero h1 {
+    margin-top: 0;
+    /* 36ch is a touch over half the headline, so it breaks into two rows,
+       and balance makes those two rows even. The size cap is what makes
+       two rows possible at all: the longer half has to fit the shell. */
+    max-width: 36ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(35.2px, 5.39vw, 63.8px);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.026em;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+  .hero p {
+    margin-top: 25.2px;
+    max-width: 54ch;
+    font-size: clamp(15.41px, 1.54vw, 17.82px);
+    font-weight: 400;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12.6px;
+    margin-top: 36px;
+  }
+  .btn-solid,
+  .btn-quiet,
+  .btn-light {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 14.5px 25.2px;
+    border-radius: 0;
+    font-size: 11.2px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transition:
+      transform 400ms var(--ease),
+      background 400ms var(--ease),
+      border-color 400ms var(--ease),
+      color 400ms var(--ease);
+  }
+  .btn-solid {
+    background: var(--ink);
+    color: var(--n-50);
+    border: 1px solid var(--ink);
+  }
+  .btn-solid:hover {
+    transform: translateY(-2px);
+    background: var(--n-800);
+  }
+  .btn-solid span,
+  .btn-light span {
+    transition: transform 400ms var(--ease);
+  }
+  .btn-solid:hover span,
+  .btn-light:hover span {
+    transform: translateX(4px);
+  }
+  .btn-quiet {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--line-2);
+    color: var(--ink-2);
+    background: hsl(240 30% 99% / 0.6);
+  }
+  .btn-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--ink);
+    transform: translateX(-100%);
+    transition: transform 350ms var(--ease);
+  }
+  .btn-label {
+    position: relative;
+    z-index: 1;
+  }
+  .btn-quiet:hover {
+    border-color: var(--ink);
+    color: var(--n-50);
+  }
+  .btn-quiet:hover .btn-fill {
+    transform: translateX(0);
+  }
+  /* Full-bleed across the hero: the lines enter at one edge and leave at
+     the other. Transparent, so there is no image to have an edge; the top
+     fade only keeps them off the paragraph. */
+  .hero-plate {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 38%, #000 62%);
+    mask-image: linear-gradient(to bottom, transparent 38%, #000 62%);
+  }
+  @media (max-width: 900px) {
+    .hero-plate {
+      display: none;
+    }
+  }
+  .hero-plate canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ── Capabilities ───────────────────────────────────────────── */
+  /* One sentence per line. The longest runs about 728px, past the
+     lede caps, so a split lede gets room for it on desktop; narrower
+     screens wrap each sentence evenly instead of stranding a word. */
+  .lede.lede-split,
+  .wws-sub.lede-split {
+    max-width: 760px;
+  }
+  .lede-split span {
+    display: block;
+    text-wrap: balance;
+  }
+  .cap-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 19.8px;
+    margin-top: 52.2px;
+  }
+  @media (max-width: 940px) {
+    .cap-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .cap {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    transition:
+      transform 500ms var(--ease),
+      border-color 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  .cap:hover {
+    transform: translateY(-1.2px);
+    border-color: var(--ink-3);
+    box-shadow: 0 4px 9px -7px hsl(240 14% 10% / 0.07);
+  }
+  .cap-art {
+    height: 182.4px;
+    border-bottom: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .cap-art canvas {
+    width: 100%;
+    height: 100%;
+  }
+  .cap-body {
+    padding: 28.35px 26.46px 32.13px;
+  }
+  .cap h3 {
+    margin-top: 0;
+    font-family: var(--hero-serif);
+    font-size: 19.8px;
+    font-weight: 400;
+    letter-spacing: -0.014em;
+    line-height: 1.24;
+  }
+  .cap p {
+    margin-top: 13.5px;
+    font-size: 13.05px;
+    font-weight: 400;
+    line-height: 1.76;
+    color: var(--ink-3);
+  }
+
+  /* ── Who we work with ───────────────────────────────────────── */
+  .wws {
+    text-align: center;
+    background: var(--n-100);
+  }
+  .wws-title {
+    margin: 0 auto;
+    max-width: 20ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(28px, 3.7vw, 43px);
+    font-weight: 400;
+    line-height: 1.16;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+  .wws-sub {
+    margin: 20px auto 0;
+    max-width: 60ch;
+    font-size: 14.85px;
+    line-height: 1.76;
+    color: var(--ink-3);
+  }
+
+  .wws-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-top: 50px;
+    text-align: center;
+  }
+  @media (max-width: 940px) {
+    .wws-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Hairline card, lighter than the ground, deliberately no shadow. */
+  .pcard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 44px 40px 46px;
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+    transition:
+      transform 500ms var(--ease),
+      border-color 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  .pcard:hover {
+    transform: translateY(-1.2px);
+    border-color: var(--ink-3);
+    box-shadow: 0 4px 9px -7px hsl(240 14% 10% / 0.07);
+  }
+
+  /* Bracket device. Indigo, not amber -- amber means caution in this
+     palette and a label is not a warning. */
+  .pcard-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55em;
+    font-size: 15.5px;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    color: var(--ink-2);
+  }
+  .pcard-label i {
+    display: inline-block;
+    font-style: normal;
+    font-size: 1.5em;
+    line-height: 1;
+    color: var(--indigo-500);
+    transform: scaleY(1.15);
+  }
+
+  .pcard h3 {
+    margin-top: 30px;
+    /* The full card width, so both titles sit on one line from about
+       1024px up; narrower cards still balance them into two. */
+    max-width: 100%;
+    font-family: var(--hero-serif);
+    font-size: clamp(21px, 2.2vw, 26px);
+    font-weight: 400;
+    line-height: 1.24;
+    letter-spacing: -0.016em;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+  .pcard > p {
+    /* Takes up the difference when one card's copy runs longer, so
+       the art and facts line up across the pair. */
+    flex-grow: 1;
+    margin-top: 15px;
+    max-width: 44ch;
+    font-size: 13.95px;
+    line-height: 1.74;
+    color: var(--ink-3);
+    /* Keeps a lone word off the last line. */
+    text-wrap: pretty;
+  }
+
+  /* The graphic floats in the card's whitespace -- no frame, no bleed. */
+  .pcard-art {
+    width: 92%;
+    margin: 34px 0 0;
+    aspect-ratio: 16 / 11.7;
+  }
+  .pcard-art canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Stacked, one fact per line: they are phrases now, too long to sit
+     side by side without breaking mid-phrase. */
+  .pcard-facts {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 92%;
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 9.9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .pcard-facts li {
+    text-align: center;
+    text-wrap: balance;
+  }
+
+
+  /* ── Open source ────────────────────────────────────────────── */
+  .open-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 36px;
+    flex-wrap: wrap;
+  }
+  .open-head-copy {
+    flex: 1 1 30rem;
+    min-width: 0;
+  }
+  .open-head-copy .lede + .lede {
+    margin-top: 12px;
+  }
+  /* The red emoji heart (U+2764 U+FE0F), sized up from the 9px caps. */
+  .eyebrow-heart {
+    font-size: 1.3em;
+    line-height: 1;
+  }
+  .open-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 19.8px;
+    margin-top: 52.2px;
+  }
+  @media (max-width: 940px) {
+    .open-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .open-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    transition:
+      transform 500ms var(--ease),
+      border-color 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  .open-card:hover {
+    transform: translateY(-1.2px);
+    border-color: var(--ink-3);
+    box-shadow: 0 4px 9px -7px hsl(240 14% 10% / 0.07);
+  }
+  .open-art {
+    position: relative;
+    aspect-ratio: 4 / 3.51;
+    border-bottom: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .open-art canvas {
+    width: 100%;
+    height: 100%;
+  }
+  /* Screenshot overlay. Emerges from the bottom-right: its top-left
+     corner sits inside the box so the backdrop stays visible above and
+     to the left, and it is oversized so the box clips its right and
+     bottom edges. */
+  .open-art-img {
+    position: absolute;
+    top: var(--img-top, 23%);
+    left: var(--img-left, 14%);
+    width: var(--img-width, 140%);
+    max-width: none;
+    height: auto;
+    pointer-events: none;
+    filter: drop-shadow(0 12px 28px hsl(240 14% 10% / 0.18));
+  }
+  /* PNGs that ship their own shadow in a transparent margin. */
+  .open-art-img.is-baked {
+    filter: none;
+  }
+  /* Body fills the card and its copy takes up any height difference,
+     so the meta lines sit level when one card's copy runs longer. */
+  .open-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 28.8px 27px 32.4px;
+  }
+  .open-body h3 {
+    font-family: var(--hero-serif);
+    font-size: 18.5px;
+    font-weight: 400;
+    letter-spacing: -0.012em;
+  }
+  .open-body p {
+    flex-grow: 1;
+    text-wrap: pretty;
+    margin-top: 11.7px;
+    font-size: 13.05px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+  .open-meta {
+    display: block;
+    margin-top: 18px;
+    font-family: var(--mono);
+    font-size: 9.45px;
+    color: var(--n-400);
+  }
+
+  /* ── Tooling ────────────────────────────────────────────────── */
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16.2px;
+    margin-top: 46.8px;
+  }
+  @media (max-width: 1080px) {
+    .tool-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 620px) {
+    .tool-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .tool {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 39.6px;
+    min-height: 15.3rem;
+    padding: 23.4px 21.6px 25.2px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    transition:
+      transform 500ms var(--ease),
+      border-color 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  .tool:hover {
+    transform: translateY(-1.2px);
+    border-color: var(--ink-3);
+    box-shadow: 0 4px 9px -7px hsl(240 14% 10% / 0.07);
+  }
+  .tool-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10.8px;
+  }
+  .tool-name {
+    font-family: var(--hero-serif);
+    font-size: 19px;
+    font-weight: 400;
+    letter-spacing: -0.014em;
+  }
+  .tool-kind {
+    padding-top: 6.3px;
+    font-family: var(--mono);
+    font-size: 8.55px;
+    color: var(--n-400);
+    white-space: nowrap;
+  }
+  .tool-dot {
+    display: block;
+    width: 5.4px;
+    height: 5.4px;
+    margin-bottom: 13.5px;
+    border-radius: 50%;
+    background: var(--indigo-500);
+    opacity: 0.5;
+  }
+  .tool p {
+    font-size: 12.6px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+  .tool-soon {
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+  }
+  .tool-soon:hover {
+    transform: none;
+    border-color: var(--line);
+    box-shadow: none;
+  }
+  .tool-veil {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 39.6px;
+    filter: blur(5px);
+    opacity: 0.55;
+  }
+  .tool-soon-label {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-family: var(--mono);
+    font-size: 10.8px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+
+  /* ── Closer ─────────────────────────────────────────────────── */
+  .closer {
+    position: relative;
+    overflow: hidden;
+    border-top: 1px solid var(--line);
+    background: var(--n-900);
+    color: var(--n-50);
+  }
+  .closer-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.55;
+  }
+  .closer-in {
+    position: relative;
+    z-index: 2;
+    padding-block: clamp(79.2px, 9.9vw, 131.4px);
+    text-align: center;
+  }
+  .closer h2 {
+    margin-inline: auto;
+    max-width: 19ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(27px, 3.96vw, 47.7px);
+    font-weight: 400;
+    line-height: 1.12;
+    letter-spacing: -0.022em;
+    text-wrap: balance;
+  }
+  /* Room for the longer sentence on one line; each sentence gets its own. */
+  .closer p {
+    margin: 21.6px auto 0;
+    max-width: 760px;
+    font-size: 14.85px;
+    font-weight: 300;
+    line-height: 1.76;
+    color: hsl(240 18% 96% / 0.76);
+  }
+  .btn-light {
+    margin-top: 34.2px;
+    background: var(--n-50);
+    color: var(--n-900);
+    border: 1px solid var(--n-50);
+  }
+  .btn-light:hover {
+    transform: translateY(-2px);
+    background: #fff;
+  }
+</style>

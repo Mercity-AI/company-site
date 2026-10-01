@@ -30,6 +30,34 @@ export function formatShortDate(date: Date): string {
   });
 }
 
+/** What a listing row needs to know about an entry. */
+export interface EntryRowData {
+  href: string;
+  title: string;
+  summary: string;
+  category: string;
+  date: Date;
+  author?: string;
+  readTime: string;
+  image?: string;
+}
+
+export function entryToRow(
+  entry: CollectionEntry<'posts'> | CollectionEntry<'research'>,
+  href: string,
+): EntryRowData {
+  return {
+    href,
+    title: entry.data.title,
+    summary: entry.data.summary,
+    category: entry.data.category,
+    date: entry.data.publishedAt,
+    author: entry.data.authors[0]?.name,
+    readTime: estimateReadingTime(entry.body ?? entry.data.summary),
+    image: entry.data.image,
+  };
+}
+
 export function estimateReadingTime(markdown: string): string {
   const words = markdown.trim().split(/\s+/).filter(Boolean).length;
   const minutes = Math.max(1, Math.ceil(words / WORDS_PER_MINUTE));

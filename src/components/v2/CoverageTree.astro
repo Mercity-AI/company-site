@@ -1,0 +1,491 @@
+---
+/**
+ * The coverage map on the Simula page: one description → three factors
+ * → six branches → eighteen leaves, full width, drawn left to right.
+ * Factors and branches are named; leaves are dots.
+ *
+ * The tree is abstract: plausible names from the e-commerce example,
+ * not the run's taxonomy. Built in JS so the labels are real pixels at
+ * any width. An axis runs under it, left to right, ticked at each
+ * level and arrowed at the end: the direction of expansion. Plays once
+ * when 45% of it is in view: the axis travels across while the links
+ * draw outward level by level, then the leaves fill teal one at a
+ * time, the way rows reach them. Reduced motion shows the finished
+ * state.
+ */
+---
+
+<figure class="cov rv" data-rv data-cov>
+  <div class="cov-stage">
+    <div class="cov-root">
+      <p>Shopper searches paired with structured extractions.</p>
+    </div>
+    <svg aria-hidden="true"></svg>
+  </div>
+  <figcaption>
+    Expanded one level at a time, before any row is generated. Every row then takes one node from each factor. Our
+    10K run reached 1,739 of its 1,740 leaves.
+  </figcaption>
+</figure>
+
+<script>
+  type Spec = [string, [string, number][]][];
+  /* Factor → [branch, number of leaves]. */
+  const TREE: Spec = [
+    [
+      'product vertical',
+      [
+        ['footwear', 3],
+        ['apparel', 3],
+      ],
+    ],
+    [
+      'shopper intent',
+      [
+        ['known item', 3],
+        ['browsing', 3],
+      ],
+    ],
+    [
+      'query shape',
+      [
+        ['terse keywords', 3],
+        ['full sentence', 3],
+      ],
+    ],
+  ];
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+
+  interface N {
+    depth: number;
+    f: number;
+    parent: N | null;
+    children: N[];
+    x: number;
+    y: number;
+    link: SVGPathElement | null;
+    dot: SVGCircleElement;
+    label: SVGTextElement | null;
+  }
+
+  function setup(fig: HTMLElement) {
+    const stage = fig.querySelector<HTMLElement>('.cov-stage')!;
+    const svg = fig.querySelector('svg')!;
+    const rootBox = fig.querySelector<HTMLElement>('.cov-root')!;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const css = getComputedStyle(fig);
+    const col = (v: string) => css.getPropertyValue(v).trim();
+    const C = { ground: col('--ground'), n400: col('--n-400'), teal: col('--teal-500') };
+
+    const el = <K extends keyof SVGElementTagNameMap>(tag: K, cls: string, parent: SVGElement) => {
+      const e = document.createElementNS(NS, tag);
+      e.setAttribute('class', cls);
+      parent.appendChild(e);
+      return e;
+    };
+    const gAxis = el('g', 'cov-axis-g', svg);
+    const gLink = el('g', 'cov-links', svg);
+    const gDot = el('g', 'cov-dots', svg);
+    const gText = el('g', 'cov-text', svg);
+
+    /* The axis: a line under the tree, a tick per level, an arrowhead. */
+    const axis = el('path', 'cov-axis', gAxis);
+    axis.setAttribute('pathLength', '1');
+    const arrow = el('path', 'cov-arrow', gAxis);
+    const LEVELS = ['description', 'factors', 'branches', 'leaves'];
+    const ticks = LEVELS.map((name, i) => {
+      const line = el('line', `cov-tick t${i}`, gAxis);
+      const text = el('text', `cov-tickl t${i}`, gAxis);
+      text.textContent = name;
+      return { line, text };
+    });
+
+    const stem = el('line', 'cov-stem', gLink);
+    const root: N = { depth: 0, f: -1, parent: null, children: [], x: 0, y: 0, link: null, dot: el('circle', 'cov-dot d0', gDot), label: null };
+    const factors: N[] = [];
+    const subs: N[] = [];
+    const leaves: N[] = [];
+    const mk = (name: string | null, depth: number, f: number, parent: N): N => {
+      const n: N = {
+        depth,
+        f,
+        parent,
+        children: [],
+        x: 0,
+        y: 0,
+        link: el('path', `cov-link d${depth}`, gLink),
+        dot: el('circle', `cov-dot d${depth}`, gDot),
+        label: name ? el('text', `cov-label d${depth}`, gText) : null,
+      };
+      n.link!.setAttribute('pathLength', '1');
+      if (n.label) n.label.textContent = name;
+      parent.children.push(n);
+      return n;
+    };
+    TREE.forEach(([fname, kids], f) => {
+      const F = mk(fname, 1, f, root);
+      factors.push(F);
+      kids.forEach(([sname, count]) => {
+        const S = mk(sname, 2, f, F);
+        subs.push(S);
+        for (let i = 0; i < count; i++) leaves.push(mk(null, 3, f, S));
+      });
+    });
+    const all = [root, ...factors, ...subs, ...leaves];
+
+    /* Fill order: a fixed shuffle that visits the factors in turn, so
+       the bands fill evenly, as sampling one node per factor would. */
+    let seed = 11;
+    const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const pools = factors.map((_, f) => {
+      const p = leaves.filter((l) => l.f === f);
+      for (let i = p.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        [p[i], p[j]] = [p[j], p[i]];
+      }
+      return p;
+    });
+    const order: N[] = [];
+    while (pools.some((p) => p.length)) for (const p of pools) if (p.length) order.push(p.shift()!);
+
+    /* ── Layout ─────────────────────────────────────────────────── */
+    let W = 0;
+    const R: Record<string, number[]> = { full: [7, 6, 4.5, 4.5], compact: [5, 4.5, 3.4, 3.4] };
+    const curve = (a: N, b: N) => {
+      const mx = (a.x + b.x) / 2;
+      return `M${a.x} ${a.y}C${mx} ${a.y} ${mx} ${b.y} ${b.x} ${b.y}`;
+    };
+    const set = (e: Element, attrs: Record<string, string | number>) => {
+      for (const k in attrs) e.setAttribute(k, String(attrs[k]));
+    };
+    function layout() {
+      W = stage.clientWidth;
+      const compact = W < 600;
+      const mode = compact ? 'compact' : 'full';
+      fig.dataset.mode = mode;
+      const pitch = compact ? 16 : 24;
+      const subGap = compact ? 10 : 16;
+      const factorGap = compact ? 26 : 40;
+      const top = 14;
+      const treeH = (leaves.length - 1) * pitch + (subs.length - factors.length) * subGap + (factors.length - 1) * factorGap;
+      const axisY = top + treeH + (compact ? 26 : 34);
+      const H = axisY + 24;
+      set(svg, { viewBox: `0 0 ${W} ${H}`, width: W, height: H });
+
+      /* Wide enough for the description to sit on two lines. */
+      const rootW = compact ? 0 : Math.min(300, W * 0.27);
+      const rootX = compact ? 9 : rootW + 30;
+      const leafX = W - 40;
+      const span = leafX - rootX;
+      const factorX = rootX + span * 0.3;
+      const subX = rootX + span * 0.64;
+
+      leaves.forEach((l, i) => {
+        const s = subs.indexOf(l.parent!);
+        l.x = leafX;
+        l.y = top + i * pitch + (s - l.f) * subGap + l.f * factorGap;
+      });
+      const mid = (n: N, x: number) => {
+        n.x = x;
+        n.y = (n.children[0].y + n.children[n.children.length - 1].y) / 2;
+      };
+      subs.forEach((s) => mid(s, subX));
+      factors.forEach((f) => mid(f, factorX));
+      mid(root, rootX);
+
+      const r = R[mode];
+      for (const n of all) {
+        set(n.dot, { cx: n.x, cy: n.y, r: r[n.depth] });
+        if (n.link && n.parent) set(n.link, { d: curve(n.parent, n) });
+        if (n.label) set(n.label, { x: n.x, y: n.y - (compact ? 11 : n.depth === 1 ? 18 : 15) });
+      }
+      set(stem, { x1: rootW + 8, y1: root.y, x2: rootX - r[0], y2: root.y });
+
+      set(axis, { d: `M0 ${axisY}H${W - 2}` });
+      set(arrow, { d: `M${W - 9} ${axisY - 4.5}L${W - 1} ${axisY}L${W - 9} ${axisY + 4.5}` });
+      [rootX, factorX, subX, leafX].forEach((x, i) => {
+        set(ticks[i].line, { x1: x, y1: axisY - 4, x2: x, y2: axisY + 4 });
+        set(ticks[i].text, { x, y: axisY + (compact ? 15 : 17) });
+      });
+      rootBox.style.top = compact ? '' : `${root.y}px`;
+      rootBox.style.width = compact ? '' : `${rootW}px`;
+    }
+
+    /* ── States ─────────────────────────────────────────────────── */
+    let anims: Animation[] = [];
+    let done = false;
+    const cancelAll = () => {
+      anims.forEach((a) => a.cancel());
+      anims = [];
+    };
+    function reset() {
+      cancelAll();
+      for (const n of all) {
+        n.dot.style.opacity = '0';
+        n.dot.style.transform = 'scale(0.3)';
+        n.dot.style.fill = '';
+        n.dot.style.stroke = '';
+        if (n.link) n.link.style.strokeDashoffset = '1';
+        if (n.label) {
+          n.label.style.opacity = '0';
+          n.label.style.transform = 'translateY(5px)';
+        }
+      }
+      stem.style.opacity = '0';
+      axis.style.strokeDashoffset = '1';
+      arrow.style.opacity = '0';
+      ticks.forEach((t) => {
+        t.line.style.opacity = '0';
+        t.text.style.opacity = '0';
+      });
+    }
+    function finish() {
+      cancelAll();
+      done = true;
+      for (const n of all) {
+        n.dot.style.opacity = '1';
+        n.dot.style.transform = 'none';
+        n.dot.style.fill = n.depth === 3 ? C.teal : '';
+        n.dot.style.stroke = n.depth === 3 ? C.teal : '';
+        if (n.link) n.link.style.strokeDashoffset = '0';
+        if (n.label) {
+          n.label.style.opacity = '1';
+          n.label.style.transform = 'none';
+        }
+      }
+      stem.style.opacity = '1';
+      axis.style.strokeDashoffset = '0';
+      arrow.style.opacity = '1';
+      ticks.forEach((t) => {
+        t.line.style.opacity = '1';
+        t.text.style.opacity = '1';
+      });
+    }
+
+    /* ── The timeline: each level grows out of the last before it
+       lands, then the leaves fill one at a time. ─────────────────── */
+    function play() {
+      reset();
+      const A = (e: Element, kf: Keyframe[], delay: number, duration: number) => {
+        anims.push(e.animate(kf, { delay, duration, easing: EASE, fill: 'both' }));
+      };
+      const draw = (p: SVGElement, d: number, dur: number) => A(p, [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], d, dur);
+      const pop = (n: N, d: number) => {
+        A(n.dot, [{ opacity: 0, transform: 'scale(0.3)' }, { opacity: 1, transform: 'scale(1)' }], d, 550);
+        if (n.label) A(n.label, [{ opacity: 0, transform: 'translateY(5px)' }, { opacity: 1, transform: 'translateY(0)' }], d + 60, 450);
+      };
+
+      A(stem, [{ opacity: 0 }, { opacity: 1 }], 0, 400);
+      pop(root, 0);
+      const T1 = 160;
+      const T2 = T1 + factors.length * 90 + 360;
+      const T3 = T2 + subs.length * 70 + 220;
+      const landed = T3 + (leaves.length - 1) * 30 + 340;
+
+      /* The axis crosses at a steady pace and arrives with the leaves. */
+      anims.push(axis.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: landed, easing: 'linear', fill: 'both' }));
+      A(arrow, [{ opacity: 0, transform: 'translateX(-6px)' }, { opacity: 1, transform: 'translateX(0)' }], landed - 120, 450);
+      [0, T1 + 420, T2 + 380, T3 + 340].forEach((d, i) => {
+        A(ticks[i].line, [{ opacity: 0 }, { opacity: 1 }], d, 400);
+        A(ticks[i].text, [{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'translateY(0)' }], d + 80, 450);
+      });
+
+      factors.forEach((f, i) => {
+        draw(f.link!, T1 + i * 90, 700);
+        pop(f, T1 + i * 90 + 420);
+      });
+      subs.forEach((s, j) => {
+        draw(s.link!, T2 + j * 70, 620);
+        pop(s, T2 + j * 70 + 380);
+      });
+      leaves.forEach((l, k) => {
+        draw(l.link!, T3 + k * 30, 560);
+        pop(l, T3 + k * 30 + 340);
+      });
+      const TF = T3 + leaves.length * 30 + 340 + 400;
+      order.forEach((l, n) => {
+        const d = TF + n * 70;
+        A(l.dot, [{ fill: C.ground, stroke: C.n400 }, { fill: C.teal, stroke: C.teal }], d, 260);
+        A(l.dot, [{ transform: 'scale(1)' }, { transform: 'scale(1.5)', offset: 0.35 }, { transform: 'scale(1)' }], d, 560);
+      });
+      window.setTimeout(() => (done = true), TF + order.length * 70 + 600);
+    }
+
+    /* ── Wiring ─────────────────────────────────────────────────── */
+    layout();
+    if (reduce) finish();
+    else {
+      reset();
+      new IntersectionObserver(
+        (entries, io) => {
+          if (!entries.some((e) => e.intersectionRatio >= 0.45)) return;
+          io.disconnect();
+          play();
+        },
+        { threshold: [0.45] }
+      ).observe(svg);
+    }
+    new ResizeObserver(() => {
+      if (stage.clientWidth === W) return;
+      layout();
+      if (done) finish();
+    }).observe(stage);
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-cov]').forEach(setup);
+</script>
+
+<style>
+  .cov {
+    margin: 43.2px 0 0;
+  }
+  .cov-stage {
+    position: relative;
+  }
+  .cov svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+  .cov figcaption {
+    margin-top: 21.6px;
+    max-width: 62ch;
+    font-family: var(--mono);
+    font-size: 10.35px;
+    line-height: 1.65;
+    color: var(--n-400);
+  }
+
+  /* The description: the one sentence everything else grows from. */
+  .cov-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 1;
+    transform: translateY(-50%);
+  }
+  .cov-root p {
+    font-family: var(--hero-serif);
+    font-size: 20.7px;
+    line-height: 1.28;
+    letter-spacing: -0.012em;
+    color: var(--ink);
+    text-wrap: pretty;
+  }
+  .cov[data-mode='compact'] .cov-root {
+    position: static;
+    max-width: 380px;
+    margin-bottom: 14.4px;
+    transform: none;
+  }
+
+  /* SVG parts. The script animates fill and stroke with the same
+     colours read back from these tokens. */
+  .cov :global(.cov-stem) {
+    stroke: var(--n-400);
+    stroke-width: 1.2;
+  }
+  .cov :global(.cov-link) {
+    fill: none;
+    stroke-dasharray: 1;
+  }
+  .cov :global(.cov-link.d1) {
+    stroke: var(--n-400);
+    stroke-width: 1.4;
+  }
+  .cov :global(.cov-link.d2) {
+    stroke: var(--n-300);
+    stroke-width: 1.2;
+  }
+  .cov :global(.cov-link.d3) {
+    stroke: var(--n-300);
+    stroke-width: 1;
+  }
+  .cov :global(.cov-dot) {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .cov :global(.cov-dot.d0) {
+    fill: var(--indigo-600);
+  }
+  .cov :global(.cov-dot.d1) {
+    fill: var(--ink);
+  }
+  .cov :global(.cov-dot.d2) {
+    fill: var(--n-500);
+  }
+  .cov :global(.cov-dot.d3) {
+    fill: var(--ground);
+    stroke: var(--n-400);
+    stroke-width: 1.2;
+  }
+  /* Labels above their dot, with a halo in the band's colour so a link
+     passing under one reads as passing behind it. */
+  .cov :global(.cov-label) {
+    font-family: var(--mono);
+    text-anchor: middle;
+    transform-box: fill-box;
+    pointer-events: none;
+    paint-order: stroke;
+    stroke: var(--n-100);
+    stroke-width: 3.5px;
+    stroke-linejoin: round;
+  }
+  .cov :global(.cov-label.d1) {
+    font-size: 11.7px;
+    font-weight: 500;
+    fill: var(--ink);
+  }
+  .cov :global(.cov-label.d2) {
+    font-size: 10.35px;
+    fill: var(--ink-2);
+  }
+  .cov[data-mode='compact'] :global(.cov-label.d1) {
+    font-size: 9.9px;
+  }
+  .cov[data-mode='compact'] :global(.cov-label.d2) {
+    font-size: 9px;
+  }
+  .cov[data-mode='compact'] :global(.cov-stem),
+  .cov[data-mode='compact'] :global(.cov-dot.d0),
+  .cov[data-mode='compact'] :global(.t0) {
+    display: none;
+  }
+
+  /* The axis under the tree. */
+  .cov :global(.cov-axis) {
+    fill: none;
+    stroke: var(--n-300);
+    stroke-width: 1;
+    stroke-dasharray: 1;
+  }
+  .cov :global(.cov-arrow) {
+    fill: none;
+    stroke: var(--n-400);
+    stroke-width: 1.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transform-box: fill-box;
+  }
+  .cov :global(.cov-tick) {
+    stroke: var(--n-300);
+    stroke-width: 1;
+  }
+  .cov :global(.cov-tickl) {
+    font-family: var(--mono);
+    font-size: 8.6px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-anchor: middle;
+    fill: var(--n-400);
+    transform-box: fill-box;
+  }
+  .cov[data-mode='compact'] :global(.cov-tickl) {
+    font-size: 8px;
+  }
+</style>

@@ -1,0 +1,1150 @@
+---
+/**
+ * Simula, second version: told as why and how we built it.
+ *
+ * A working surface next to /open-source/simula until it replaces it.
+ * Every number, example and artifact is from the research log (the
+ * 1,000-row job-posting run and the 10K e-commerce run) or the README.
+ * The three briefs in step 03 are the log's own example round.
+ */
+import V2Layout from '@/layouts/V2Layout.astro';
+import CoverageTree from '@/components/v2/CoverageTree.astro';
+
+const GITHUB_URL = 'https://github.com/Mercity-AI/Simula';
+const PAPER_URL = 'https://arxiv.org/abs/2603.29791';
+const LOG_URL = '/research/building-simula-our-synthetic-data-generation-library';
+const DEMO_URL = 'https://blog-cdn.mercity.ai/blog/open-source-simula/simula-demo.mp4';
+
+
+/* What went wrong on client work, and what the library does about it. */
+const problems = [
+  {
+    title: 'Prompting in a loop repeats the common cases.',
+    example:
+      'Ask for shopping queries and you get four hundred versions of “cheap wireless earbuds” and none about warranty transfers or regional sizing.',
+    fix: 'Simula plans the cases before it generates any, so coverage becomes a count. Our 10K run reached 1,739 of the 1,740 leaves it planned.',
+    keys: ['taxonomy.json'],
+  },
+  {
+    title: 'The same requirements give the same row.',
+    example: 'Every “footwear, known item, negation” request came back as the same shoe query with a different brand.',
+    fix: 'Before generating, a model drafts three short briefs for the sampled requirements and one is picked at random. Identical requirements still produce different rows.',
+    keys: ['scenarios_per_mix'],
+  },
+  {
+    title: 'Models under-sample what they think is unlikely.',
+    example:
+      'Our extraction dataset needed far more queries with exclusions than the model considered natural. A moderation classifier needs the hostile queries a model avoids writing.',
+    fix: 'Weighted strategies decide which branches are combined and how often. Write guidance for them in plain English, or edit the file and rerun.',
+    keys: ['strategies.json', 'strategy.guidance'],
+  },
+  {
+    title: 'Rows that look right and are wrong.',
+    example: 'The generator filled in location_state: “Texas” for a job ad that only mentioned Austin.',
+    fix: 'A separate critic checks every record against your rules and returns accept or reject with a reason. Rejected records are rewritten from that reason, up to a limit you set.',
+    keys: ['critic', 'max_refine_attempts'],
+  },
+  {
+    title: 'Long runs fail near the end.',
+    example:
+      'Under rate limits, calls hung for over 800 seconds. Our first version was one run away from sending 1,400 reasoning calls at once.',
+    fix: 'Concurrency has a hard cap, calls time out after 180 seconds by default, and each finished row is written to disk straight away. A killed run resumes where it stopped.',
+    keys: ['concurrency', 'resume'],
+  },
+];
+
+const briefs = [
+  'A runner hunting a specific shoe model they already know, with a hard price cap and one excluded color. Terse keyword phrasing.',
+  'Race-week replacement search: brand + waterproof + size, under $80, typed as bare keywords with a negation.',
+  'A bargain-hunter comparing two named brands on waterproofing and grip, budget-capped.',
+];
+const PICKED = 1;
+
+const cli = [
+  { cmd: 'validate', body: 'Config, schema subset, roles, prompt module, output path. No model calls.' },
+  { cmd: 'taxonomy', body: 'Builds taxonomy.json; auto-accept, write-then-edit, or confirm in the terminal.' },
+  { cmd: 'generate', body: 'Taxonomy → strategies → meta-prompts → records. --stop-after halts at any artifact.' },
+  { cmd: 'evaluate', body: 'Dedupe, decontaminate, coverage, diversity, complexity. Writes eval_report.json.' },
+  { cmd: 'run', body: 'All of the above, end to end.' },
+];
+
+const evalSuite = [
+  {
+    title: 'Dedupe and decontamination',
+    body: '13-gram sets, Jaccard overlap at 0.8. Dedupe compares against rows already kept. Decontamination compares against your test set, so no test item ends up in training.',
+  },
+  {
+    title: 'Coverage, two ways',
+    body: 'From lineage, which costs nothing. Or by reassignment: the critic places each row on the tree independently, which audits the generator and also works on datasets you did not generate.',
+  },
+  {
+    title: 'Embedding diversity',
+    body: 'Global: mean distance across the dataset. Local: mean distance to each row’s ten nearest neighbours. Taxonomy depth raises the first; the briefs raise the second.',
+  },
+  {
+    title: 'Complexity by calibrated Elo',
+    body: 'Rated alone, almost everything scores a 7. So the critic ranks five records at a time, and Elo turns those comparisons into one ranking across the dataset.',
+  },
+];
+
+const stats = [
+  { figure: '1,206', label: 'attempts', note: 'of 1,400 planned; the rest killed under rate limits' },
+  { figure: '96%', label: 'accept rate', note: '1,157 accepted, trimmed to 1,000' },
+  { figure: '100%', label: 'leaf coverage', note: '16/16 · 28/28 · 29/29 · 20/20' },
+  { figure: '0', label: 'duplicates', note: 'and 0 rows with empty lineage' },
+  { figure: '841', label: 'distinct key-sets', note: 'across 1,000 rows, 6.7 fields avg' },
+  { figure: '~4,440', label: 'model calls', note: '3.43M tokens in · 5.57M out' },
+  { figure: '84 min', label: 'wall time', note: 'at concurrency 25' },
+  { figure: '≈ $2.60', label: 'total cost', note: 'including the taxonomy build' },
+];
+
+const limits = [
+  'Single-process concurrency, not distributed workers.',
+  'A single-pass binary critic, not the paper’s double critic.',
+  'Lineage coverage by default; independent reassignment is opt-in.',
+  'Complexity Elo is measured but not yet used by any later step.',
+];
+
+/* Code samples, pre-tokenised. Keys indigo, values teal, comments quiet:
+   the same rule the research log's code blocks follow. */
+const treeCode = `<span class="tok-k">product_vertical</span>
+├─ <span class="tok-s">footwear</span>
+│  ├─ <span class="tok-s">athletic</span>
+│  │  ├─ <span class="tok-s">trail_running</span>        <span class="tok-c">← this row</span>
+│  │  ├─ road_running
+│  │  └─ gym_training
+│  └─ casual <span class="tok-c">…</span>
+├─ electronics <span class="tok-c">…</span>
+└─ apparel <span class="tok-c">…</span>
+<span class="tok-k">shopper_intent</span>    <span class="tok-c">…</span>
+<span class="tok-k">attribute_focus</span>   <span class="tok-c">…</span>
+<span class="tok-k">query_complexity</span>  <span class="tok-c">…</span>`;
+
+const mixCode = `<span class="tok-c"># strategies, by weight</span>
+<span class="tok-k">mainstream_purchase</span>  <span class="wbar" style="--w:3"></span> <span class="tok-n">3.0</span>  <span class="tok-c">← drawn</span>
+<span class="tok-k">hard_cases</span>           <span class="wbar" style="--w:0.5"></span> <span class="tok-n">0.5</span>
+<span class="tok-c">…</span>
+
+<span class="tok-c"># the mix: one node per factor</span>
+<span class="tok-k">product_vertical</span>   footwear <span class="tok-c">›</span> athletic <span class="tok-c">›</span> <span class="tok-s">trail_running</span>
+<span class="tok-k">shopper_intent</span>     <span class="tok-s">known_item_hunt</span>
+<span class="tok-k">attribute_focus</span>    <span class="tok-s">price_and_availability</span>
+<span class="tok-k">query_complexity</span>   <span class="tok-s">terse_multi_constraint_with_negation</span>`;
+
+const recordCode = `<span class="tok-k">"query"</span>: <span class="tok-s">"waterproof trail running shoes size 9 under $80, nothing neon"</span>
+<span class="tok-k">"extraction"</span>: {
+  <span class="tok-k">"category"</span>: <span class="tok-s">"trail running shoes"</span>,
+  <span class="tok-k">"waterproof"</span>: <span class="tok-n">true</span>,
+  <span class="tok-k">"size"</span>: <span class="tok-s">"9"</span>,
+  <span class="tok-k">"price_max"</span>: <span class="tok-n">80</span>,
+  <span class="tok-k">"color_excluded"</span>: [<span class="tok-s">"neon"</span>]
+}`;
+
+const lineageCode = `<span class="tok-k">"taxonomy_mix"</span>:     [<span class="tok-s">"product_vertical.footwear.athletic.trail_running"</span>, <span class="tok-c">…</span>]
+<span class="tok-k">"strategy_id"</span>:      <span class="tok-s">"mainstream_purchase"</span>
+<span class="tok-k">"meta_prompt"</span>:      <span class="tok-s">"Race-week replacement search: …"</span>
+<span class="tok-k">"generator_model"</span>:  <span class="tok-s">"deepseek/deepseek-v4-flash:nitro"</span>
+<span class="tok-k">"critic_verdicts"</span>:  [{ <span class="tok-k">"verdict"</span>: <span class="tok-s">"accept"</span>, <span class="tok-k">"explanation"</span>: <span class="tok-c">…</span> }]
+<span class="tok-k">"schema_valid"</span>:     <span class="tok-n">true</span>
+<span class="tok-k">"accepted"</span>:         <span class="tok-n">true</span>`;
+
+const yamlCode = `<span class="tok-c"># The minimum viable config. Everything else has a default.</span>
+<span class="tok-k">description</span>: <span class="tok-s">"Describe the dataset to generate."</span>
+
+<span class="tok-k">schema</span>:                       <span class="tok-c"># null → free-text mode</span>
+  <span class="tok-k">type</span>: <span class="tok-s">object</span>
+  <span class="tok-k">required</span>: [<span class="tok-s">"input"</span>, <span class="tok-s">"output"</span>]
+  <span class="tok-k">properties</span>:
+    <span class="tok-k">input</span>:  { <span class="tok-k">type</span>: <span class="tok-s">string</span> }
+    <span class="tok-k">output</span>: { <span class="tok-k">type</span>: <span class="tok-s">string</span> }
+
+<span class="tok-k">provider</span>:
+  <span class="tok-k">base_url</span>: <span class="tok-s">"https://openrouter.ai/api/v1"</span>
+  <span class="tok-k">api_key_env</span>: <span class="tok-s">"OPENROUTER_API_KEY"</span>   <span class="tok-c"># from .env</span>
+
+<span class="tok-k">models</span>:
+  <span class="tok-k">strategic</span>: { <span class="tok-k">model</span>: <span class="tok-s">"google/gemini-3-flash-preview"</span> }
+  <span class="tok-k">bulk</span>:      { <span class="tok-k">model</span>: <span class="tok-s">"google/gemini-3-flash-preview"</span> }
+  <span class="tok-k">critic</span>:    { <span class="tok-k">model</span>: <span class="tok-s">"google/gemini-3-flash-preview"</span> }`;
+
+const installCode = `<span class="tok-c">$</span> git clone https://github.com/Mercity-AI/Simula
+<span class="tok-c">$</span> cd Simula &amp;&amp; python -m pip install -e <span class="tok-s">".[dev]"</span>
+<span class="tok-c">$</span> python -m simula.cli run examples/basic_qa.yaml
+<span class="tok-c">  # fake model: runs offline, no API key needed</span>`;
+---
+
+<V2Layout
+  title="Simula: synthetic data generation library"
+  description="Simula is the synthetic data pipeline we built for our client work, now open source: coverage planned as a taxonomy, a critic on every record, and lineage on every row. Python, MIT licensed."
+  path="/open-source/simula-v2"
+  image="/simula-og.jpg"
+  noindex
+>
+  <!-- ═══ HERO ═══════════════════════════════════════════════════ -->
+  <section class="hero">
+    <div class="shell hero-in">
+      <div class="hero-copy">
+        <h1 class="rv" data-rv style="--rv-delay:80ms">Open-sourcing the pipeline we use to generate training data for clients.</h1>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          We’ve generated hundreds of billions of tokens of synthetic data for client projects. We kept running into the
+          same problems, so we built an internal pipeline to fix them. Simula is that pipeline.
+        </p>
+        <div class="hero-actions rv" data-rv style="--rv-delay:240ms">
+          <a class="wipe" href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
+            <span class="wipe-fill"></span>
+            <svg class="wipe-label icon" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+            <span class="wipe-label">View on GitHub</span>
+            <span class="wipe-label" aria-hidden="true">↗</span>
+          </a>
+          <a class="quiet" href={LOG_URL}><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M3.5 1.5h6l3 3v10h-9z"/><path d="M9.5 1.5v3h3"/><path d="M5.5 8h5M5.5 10.5h5M5.5 13h3"/></svg>Read how we built it<span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+      <figure class="plate rv" data-rv data-from="right" style="--rv-delay:200ms">
+        <canvas data-backdrop="plate" data-seed="7731" data-dpr="1.3" aria-hidden="true"></canvas>
+        <span class="plate-word" aria-hidden="true">Simula</span>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ═══ THE MAP ════════════════════════════════════════════════ -->
+  <section class="band band-tint" id="map">
+    <div class="shell">
+      <div class="map-head">
+        <div>
+          <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Map the space first, then sample it.</h2>
+        </div>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          The description is split into factors of variation, and each factor grows into a tree. Every row takes one node
+          from each factor, so the rows reach the rare cases as well as the common ones.
+        </p>
+      </div>
+      <CoverageTree />
+    </div>
+  </section>
+
+  <!-- ═══ WHY ════════════════════════════════════════════════════ -->
+  <section class="band" id="why">
+    <div class="shell">
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">We kept fixing the same problems, so we built a library.</h2>
+      <p class="lede rv" data-rv style="--rv-delay:160ms">
+        Almost every client project we take on starts with generating a dataset, and we were writing the same fixes
+        each time. Then we found a
+        <a class="inline-link" href={PAPER_URL} target="_blank" rel="noopener noreferrer">Google paper</a> built on most
+        of the same ideas and tested past 100M tokens. Simula combines the two, and takes its name from the paper.
+      </p>
+
+      <div class="ledger">
+        <div class="ledger-head" aria-hidden="true">
+          <span>What went wrong</span>
+          <span>What Simula does</span>
+        </div>
+        {
+          problems.map((p, i) => (
+            <div class="ledger-row rv" data-rv style={`--rv-delay:${Math.min(i, 3) * 60}ms`}>
+              <div class="ledger-problem">
+                <h3>{p.title}</h3>
+                <p class="ledger-ex">{p.example}</p>
+              </div>
+              <div class="ledger-fix">
+                <span class="ledger-label">What Simula does</span>
+                <p>{p.fix}</p>
+                <ul class="ledger-keys">
+                  {p.keys.map((k) => (
+                    <li>
+                      <code>{k}</code>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ ONE ROW ════════════════════════════════════════════════ -->
+  <section class="band band-tint" id="how">
+    <div class="shell">
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">How Simula works, step by step.</h2>
+      <p class="lede rv" data-rv style="--rv-delay:160ms">
+        Every stage writes a file you can open and edit, and a file already on disk is reused on the next run, so hand
+        edits are kept. The examples follow one row from a dataset of shopper searches.
+      </p>
+
+      <ol class="flow">
+        <li class="flow-row rv" data-rv>
+          <div class="flow-text">
+            <span class="flow-top"><b>01</b> Strategic model</span>
+            <h3>Map the space</h3>
+            <p>
+              The tree grows one level at a time. Each node's children are proposed twice, and a second call merges and
+              prunes them. You can stop here, edit the tree by hand and rerun.
+            </p>
+          </div>
+          <div class="flow-art">
+            <pre class="code"><code set:html={treeCode} /></pre>
+          </div>
+        </li>
+
+        <li class="flow-row rv" data-rv>
+          <div class="flow-text">
+            <span class="flow-top"><b>02</b> Strategic model</span>
+            <h3>Pick a mix</h3>
+            <p>
+              Weighted strategies say which branches go together and how often. Each row draws a strategy, then one node
+              per factor. That mix is the spec for one row.
+            </p>
+          </div>
+          <div class="flow-art">
+            <pre class="code"><code set:html={mixCode} /></pre>
+          </div>
+        </li>
+
+        <li class="flow-row rv" data-rv>
+          <div class="flow-text">
+            <span class="flow-top"><b>03</b> Bulk model</span>
+            <h3>Write briefs</h3>
+            <p>
+              Three briefs are drafted for the mix and one is picked at random, so two rows from the same mix still
+              differ. A share you set is then rewritten to be harder.
+            </p>
+          </div>
+          <div class="flow-art">
+            <ol class="briefs">
+              {
+                briefs.map((b, i) => (
+                  <li class:list={['brief', { picked: i === PICKED }]}>
+                    <span class="brief-n">{i === PICKED ? 'Picked' : `0${i + 1}`}</span>
+                    <p>{b}</p>
+                  </li>
+                ))
+              }
+            </ol>
+          </div>
+        </li>
+
+        <li class="flow-row rv" data-rv>
+          <div class="flow-text">
+            <span class="flow-top"><b>04</b> Bulk and critic models</span>
+            <h3>Generate and check</h3>
+            <p>
+              The record is checked against the schema first, with one repair attempt. Then the critic accepts it or
+              rejects it with a reason, and rejected records are rewritten.
+            </p>
+          </div>
+          <div class="flow-art">
+            <pre class="code"><code set:html={recordCode} /></pre>
+            <ul class="verdicts">
+              <li><span>schema</span> valid</li>
+              <li><span>critic</span> accept</li>
+            </ul>
+          </div>
+        </li>
+
+        <li class="flow-row rv" data-rv>
+          <div class="flow-text">
+            <span class="flow-top"><b>05</b> No model call</span>
+            <h3>Keep the lineage</h3>
+            <p>
+              Everything that produced the row is stored on it. The trim reads those paths and keeps the rows that cover
+              the most of the tree; the coverage report reads them too.
+            </p>
+          </div>
+          <div class="flow-art">
+            <pre class="code"><code set:html={lineageCode} /></pre>
+          </div>
+        </li>
+      </ol>
+
+      <p class="flow-note rv" data-rv>
+        Each role takes its own model. The strategic model builds the tree and the strategies once per dataset, so it
+        can be a large, expensive one. The bulk and critic models are called thousands of times, so they should be fast
+        and cheap.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══ RUN ════════════════════════════════════════════════════ -->
+  <section class="band" id="run">
+    <div class="shell run">
+      <div class="run-copy">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">One YAML per run. Five commands.</h2>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          A run needs a description and a model for each role. Everything else has a default, and a bad value fails when
+          the config loads, before any model call. Start with twenty rows: our twenty-row test cost thirty cents and
+          caught a concurrency bug before the 1,000-row run.
+        </p>
+        <pre class="code rv" data-rv style="--rv-delay:220ms"><code set:html={installCode} /></pre>
+        <ol class="cli rv" data-rv style="--rv-delay:280ms">
+          {
+            cli.map((c) => (
+              <li>
+                <code>simula {c.cmd}</code>
+                <span>{c.body}</span>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+      <div class="run-side">
+        <figure class="term rv" data-rv data-from="right" style="--rv-delay:160ms">
+          <video
+            data-demo
+            src={DEMO_URL}
+            poster="/simula-demo-poster.jpg"
+            muted
+            loop
+            playsinline
+            preload="none"
+            width="1010"
+            height="830"
+          ></video>
+          <figcaption>
+            <code>simula run</code> on the 10K e-commerce config, building the taxonomy. 53 seconds, muted.
+          </figcaption>
+        </figure>
+        <pre class="code rv" data-rv data-from="right" style="--rv-delay:240ms"><code set:html={yamlCode} /></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ EVALUATION ═════════════════════════════════════════════ -->
+  <section class="band band-tint" id="evaluation">
+    <div class="shell">
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Evaluation reads the dataset. It never writes to it.</h2>
+      <p class="lede rv" data-rv style="--rv-delay:160ms">
+        <code>evaluate</code> reads <code>dataset.final.jsonl</code> and writes its results to separate files. We kept the
+        two apart because an evaluation bug that rewrites a shipped dataset cannot be undone.
+      </p>
+      <div class="suite">
+        {
+          evalSuite.map((e, i) => (
+            <div class="suite-item rv" data-rv style={`--rv-delay:${120 + i * 70}ms`}>
+              <h3>{e.title}</h3>
+              <p>{e.body}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ NUMBERS ════════════════════════════════════════════════ -->
+  <section class="band" id="numbers">
+    <div class="shell">
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">A thousand rows, logged in full.</h2>
+      <p class="lede rv" data-rv style="--rv-delay:160ms">
+        Job-posting extraction, with a different set of keys on almost every row. The provider rate-limited the last 194
+        attempts, so we killed the run: 1,157 rows were already accepted, more than the 1,000 we needed.
+      </p>
+      <dl class="stats rv" data-rv style="--rv-delay:200ms">
+        {
+          stats.map((s) => (
+            <div class="stat">
+              <dt>{s.label}</dt>
+              <dd>
+                <span class="stat-figure">{s.figure}</span>
+                <span class="stat-note">{s.note}</span>
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+      <div class="limits rv" data-rv style="--rv-delay:260ms">
+        <h3>Pilot scale, on purpose.</h3>
+        <ul>
+          {limits.map((l) => <li>{l}</li>)}
+        </ul>
+        <p>
+          Next is batched and multi-turn generation, and a warning when a run finishes under its target. Every
+          stage, including what did not work, is in <a href={LOG_URL}>the research log</a>.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CLOSER ═════════════════════════════════════════════════ -->
+  <section class="band band-tint closer">
+    <div class="shell closer-in">
+      <div>
+        <h2 class="rv" data-rv>Run it on your data.</h2>
+        <p class="rv" data-rv style="--rv-delay:100ms">
+          The offline example runs every stage with a stand-in model, so you can try it with no API key and nothing to
+          pay. When you want it on your own data, we can help you set it up, or generate large synthetic datasets for
+          you.
+        </p>
+      </div>
+      <div class="closer-actions rv" data-rv style="--rv-delay:200ms">
+        <a class="wipe" href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
+          <span class="wipe-fill"></span>
+          <svg class="wipe-label icon" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          <span class="wipe-label">View on GitHub</span>
+          <span class="wipe-label" aria-hidden="true">↗</span>
+        </a>
+        <a class="quiet" href="/contact">Talk to us<span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </section>
+</V2Layout>
+
+<script is:inline>
+  /* The demo plays only while it is on screen. */
+  (() => {
+    const v = document.querySelector('[data-demo]');
+    if (!v || !('IntersectionObserver' in window)) return;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) v.play().catch(() => {});
+          else v.pause();
+        });
+      },
+      { threshold: 0.35 }
+    );
+    io.observe(v);
+  })();
+</script>
+
+<style>
+  /* This page runs 5% wider than the rest of the site, so the map's
+     description sits on two lines. Sections only: the nav and footer
+     stay at the layout's width. */
+  section {
+    --shell: 1207.5px;
+  }
+
+  /* ── Shared bits ───────────────────────────────────────────── */
+  /* No eyebrows on this page, so headings start flush with their section. */
+  section .h2 {
+    margin-top: 0;
+  }
+  .quiet {
+    display: inline-flex;
+    align-items: center;
+    gap: 7.2px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    transition: color 300ms var(--ease);
+  }
+  .quiet span {
+    transition: transform 400ms var(--ease);
+  }
+  /* Button icons: the GitHub mark and a page, sized to the mono caps. */
+  .icon {
+    display: block;
+    flex: none;
+    width: 13.5px;
+    height: 13.5px;
+  }
+  .quiet:hover {
+    color: var(--ink);
+  }
+  .quiet:hover span {
+    transform: translateX(4px);
+  }
+  .inline-link,
+  .limits a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--n-300);
+    transition: text-decoration-color 300ms var(--ease);
+  }
+  .inline-link:hover,
+  .limits a:hover {
+    text-decoration-color: currentColor;
+  }
+  code {
+    font-family: var(--mono);
+  }
+  .lede {
+    text-wrap: pretty;
+  }
+  /* The layout resets ul, not ol. These carry their own numbering. */
+  .flow,
+  .briefs,
+  .cli {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .lede code,
+  .cli code,
+  figcaption code {
+    padding: 1px 5.4px;
+    font-size: 0.86em;
+    color: var(--ink);
+    background: var(--n-100);
+    border: 1px solid var(--line);
+  }
+  /* Dark code on the same ground as the research log's blocks. */
+  .code {
+    margin: 0;
+    padding: 16.2px 19.8px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 12.15px;
+    line-height: 1.7;
+    color: var(--n-100);
+    background: var(--n-900);
+    border: 1px solid var(--n-800);
+  }
+  .code :global(.tok-k) {
+    color: hsl(243 90% 82%);
+  }
+  .code :global(.tok-s),
+  .code :global(.tok-n) {
+    color: hsl(178 58% 66%);
+  }
+  .code :global(.tok-c) {
+    color: var(--n-400);
+  }
+
+  /* ── Hero ──────────────────────────────────────────────────── */
+  .hero {
+    padding-block: clamp(50.4px, 6vw, 82.8px) clamp(54px, 6.5vw, 90px);
+  }
+  .hero-in {
+    display: grid;
+    grid-template-columns: minmax(0, 6.375fr) minmax(0, 5.625fr);
+    gap: clamp(36px, 5vw, 72px);
+    align-items: center;
+  }
+  .hero h1 {
+    margin-top: 0;
+    max-width: 20ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(34.2px, 4.4vw, 52.2px);
+    font-weight: 400;
+    line-height: 1.08;
+    letter-spacing: -0.026em;
+    text-wrap: balance;
+  }
+  .hero .lede {
+    max-width: 54ch;
+    font-size: 15.75px;
+  }
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 27px;
+    margin-top: 32.4px;
+  }
+  /* The plate: the page's one bold element. Square corners, 1px line,
+     the wordmark in the same serif as every heading on the site. 45:32
+     is 5:4 made 12.5% wider at the same height. */
+  .plate {
+    position: relative;
+    margin: 0;
+    aspect-ratio: 45 / 32;
+    overflow: hidden;
+    border: 1px solid var(--line-2);
+    background: var(--indigo-600);
+  }
+  .plate canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .plate-word {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-family: var(--hero-serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(54px, 7.5vw, 99px);
+    letter-spacing: -0.02em;
+    color: #fff;
+    text-shadow: 0 10px 36px hsl(243 80% 20% / 0.55);
+    padding-bottom: 0.08em;
+  }
+  @media (max-width: 860px) {
+    .hero-in {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .plate {
+      aspect-ratio: 16 / 10;
+    }
+  }
+
+  /* ── The map: heading left, lede right, the tree full width under. ── */
+  .map-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 52ch);
+    gap: 18px clamp(36px, 5vw, 72px);
+    align-items: end;
+  }
+  .map-head .lede {
+    margin-top: 0;
+    padding-bottom: 5.4px;
+  }
+  @media (max-width: 860px) {
+    .map-head {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* ── Why: problem on the left, what the library does on the right.
+     Unnumbered, because the order does not matter. ─────────────── */
+  .ledger {
+    margin-top: 46.8px;
+  }
+  .ledger-head,
+  .ledger-row {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    gap: 0 clamp(36px, 5vw, 64.8px);
+  }
+  .ledger-head {
+    padding-bottom: 12.6px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--n-400);
+  }
+  .ledger-row {
+    padding-block: 27px 28.8px;
+    border-top: 1px solid var(--line);
+  }
+  .ledger-row:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+  .ledger-problem h3 {
+    font-family: var(--hero-serif);
+    font-size: 20.7px;
+    font-weight: 400;
+    line-height: 1.24;
+    letter-spacing: -0.014em;
+    text-wrap: pretty;
+  }
+  .ledger-ex {
+    margin-top: 12.6px;
+    padding-left: 14.4px;
+    border-left: 1px solid var(--line-2);
+    font-size: 13.05px;
+    line-height: 1.7;
+    color: var(--ink-3);
+    text-wrap: pretty;
+  }
+  .ledger-label {
+    display: none;
+  }
+  .ledger-fix p {
+    padding-top: 2.7px;
+    font-size: 14.4px;
+    line-height: 1.72;
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+  .ledger-keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7.2px;
+    margin-top: 14.4px;
+  }
+  .ledger-keys code {
+    display: inline-block;
+    padding: 2.7px 7.2px;
+    font-size: 10.35px;
+    color: var(--teal-800);
+    background: var(--teal-100);
+  }
+  @media (max-width: 860px) {
+    .ledger-head {
+      display: none;
+    }
+    .ledger-row {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 18px;
+    }
+    .ledger-label {
+      display: block;
+      margin-bottom: 7.2px;
+      font-family: var(--mono);
+      font-size: 9.9px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--n-400);
+    }
+  }
+
+  /* ── How: one bordered object, explanation left, the artifact
+     right at full width. Numbered, because order matters. ──────── */
+  .flow {
+    margin-top: 46.8px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .flow-row {
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+  }
+  .flow-row + .flow-row {
+    border-top: 1px solid var(--line);
+  }
+  .flow-text {
+    display: flex;
+    flex-direction: column;
+    padding: 27px 28.8px 25.2px;
+  }
+  .flow-top {
+    font-family: var(--mono);
+    font-size: 9.9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--n-400);
+  }
+  .flow-top b {
+    margin-right: 9px;
+    font-weight: 500;
+    color: var(--indigo-600);
+  }
+  .flow-text h3 {
+    margin-top: 16.2px;
+    font-family: var(--hero-serif);
+    font-size: 21.6px;
+    font-weight: 400;
+    line-height: 1.2;
+    letter-spacing: -0.016em;
+  }
+  .flow-text p {
+    margin-top: 9.9px;
+    max-width: 44ch;
+    font-size: 13.05px;
+    line-height: 1.72;
+    color: var(--ink-3);
+    text-wrap: pretty;
+  }
+  .flow-art {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10.8px;
+    min-width: 0;
+    padding: 19.8px;
+    border-left: 1px solid var(--line);
+    background: var(--n-50);
+  }
+  /* Strategy weights drawn to scale: teal, because it is a number. */
+  .flow-art :global(.wbar) {
+    display: inline-block;
+    width: calc(var(--w) * 21.6px);
+    height: 7.2px;
+    margin-right: 5.4px;
+    vertical-align: 0.06em;
+    background: var(--teal-500);
+  }
+  .briefs {
+    display: grid;
+    gap: 9px;
+  }
+  .brief {
+    display: grid;
+    grid-template-columns: 54px minmax(0, 1fr);
+    gap: 14.4px;
+    align-items: baseline;
+    padding: 14.4px 18px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .brief.picked {
+    border-color: var(--indigo-300);
+    box-shadow: inset 2px 0 0 var(--indigo-600);
+  }
+  .brief-n {
+    font-family: var(--mono);
+    font-size: 9.9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--n-400);
+  }
+  .brief.picked .brief-n {
+    font-weight: 500;
+    color: var(--indigo-600);
+  }
+  .brief p {
+    font-family: var(--hero-serif);
+    font-size: 15.3px;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+  .verdicts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7.2px;
+  }
+  .verdicts li {
+    padding: 4.5px 9px;
+    font-family: var(--mono);
+    font-size: 10.35px;
+    color: var(--teal-800);
+    background: var(--teal-100);
+  }
+  .verdicts span {
+    margin-right: 5.4px;
+    color: var(--ink-3);
+  }
+  .flow-note {
+    margin-top: 21.6px;
+    max-width: 78ch;
+    font-size: 13.05px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+  @media (max-width: 900px) {
+    .flow-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .flow-text {
+      padding: 23.4px 21.6px 18px;
+    }
+    .flow-text p {
+      max-width: none;
+    }
+    .flow-art {
+      border-left: 0;
+      border-top: 1px solid var(--line);
+      padding: 14.4px;
+    }
+  }
+  @media (max-width: 560px) {
+    .brief {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 5.4px;
+    }
+  }
+
+  /* ── Run ───────────────────────────────────────────────────── */
+  .run {
+    display: grid;
+    grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
+    gap: clamp(36px, 5vw, 64.8px);
+    align-items: start;
+  }
+  .run-copy .code {
+    margin-top: 28.8px;
+  }
+  .cli {
+    margin-top: 27px;
+  }
+  .cli li {
+    display: grid;
+    grid-template-columns: 138px minmax(0, 1fr);
+    gap: 18px;
+    padding-block: 12.6px;
+    border-top: 1px solid var(--line);
+    font-size: 12.6px;
+    line-height: 1.6;
+    color: var(--ink-3);
+  }
+  .cli li:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+  .cli code {
+    align-self: start;
+    justify-self: start;
+    white-space: nowrap;
+  }
+  .run-side {
+    display: flex;
+    flex-direction: column;
+    gap: 19.8px;
+  }
+  .term {
+    margin: 0;
+  }
+  .term video {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--n-900);
+    border: 1px solid var(--n-800);
+  }
+  .term figcaption {
+    margin-top: 9.9px;
+    font-family: var(--mono);
+    font-size: 10.35px;
+    line-height: 1.6;
+    color: var(--n-400);
+  }
+  @media (max-width: 900px) {
+    /* minmax(0, …), not 1fr: the code blocks' min-content width would
+       otherwise push the column past the viewport. */
+    .run {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .cli li {
+      grid-template-columns: 1fr;
+      gap: 3.6px;
+    }
+  }
+
+  /* ── Evaluation ────────────────────────────────────────────── */
+  .suite {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 46.8px;
+    margin-top: 36px;
+  }
+  .suite-item {
+    padding: 23.4px 0 25.2px;
+    border-top: 1px solid var(--line);
+  }
+  .suite-item h3 {
+    font-family: var(--hero-serif);
+    font-size: 18.9px;
+    font-weight: 400;
+    letter-spacing: -0.014em;
+    line-height: 1.25;
+  }
+  .suite-item p {
+    margin-top: 9px;
+    max-width: 52ch;
+    font-size: 13.05px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+  @media (max-width: 760px) {
+    .suite {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ── Numbers ───────────────────────────────────────────────── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin: 46.8px 0 0;
+    border-top: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+  }
+  .stat {
+    padding: 21.6px 19.8px 23.4px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .stat dt {
+    font-family: var(--mono);
+    font-size: 9.9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .stat dd {
+    margin: 12.6px 0 0;
+  }
+  .stat-figure {
+    display: block;
+    font-family: var(--hero-serif);
+    font-size: 32.4px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--teal-700);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-note {
+    display: block;
+    margin-top: 9px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    line-height: 1.5;
+    color: var(--n-400);
+  }
+  @media (max-width: 900px) {
+    .stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 480px) {
+    .stats {
+      grid-template-columns: 1fr;
+    }
+  }
+  .limits {
+    max-width: 62ch;
+    margin-top: 46.8px;
+  }
+  .limits h3 {
+    font-family: var(--hero-serif);
+    font-size: 21.6px;
+    font-weight: 400;
+    letter-spacing: -0.016em;
+  }
+  .limits ul {
+    margin-top: 12.6px;
+  }
+  .limits li {
+    position: relative;
+    padding: 6.3px 0 6.3px 18px;
+    font-size: 13.05px;
+    line-height: 1.6;
+    color: var(--ink-3);
+  }
+  .limits li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 14.4px;
+    width: 5.4px;
+    height: 5.4px;
+    border-radius: 50%;
+    background: var(--indigo-500);
+    opacity: 0.5;
+  }
+  .limits p {
+    margin-top: 16.2px;
+    font-size: 13.05px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+
+  /* ── Closer ────────────────────────────────────────────────── */
+  .closer-in {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 36px;
+    flex-wrap: wrap;
+  }
+  .closer h2 {
+    max-width: 18ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(27px, 3.4vw, 40.5px);
+    font-weight: 400;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+  .closer p {
+    margin-top: 14.4px;
+    max-width: 54ch;
+    text-wrap: pretty;
+    font-size: 13.95px;
+    line-height: 1.74;
+    color: var(--ink-3);
+  }
+  .closer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 27px;
+    flex: none;
+  }
+</style>

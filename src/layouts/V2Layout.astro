@@ -1,0 +1,1083 @@
+---
+/**
+ * Shell for the landing page (formerly the V2 experiment, now shipping at `/`).
+ *
+ * Deliberately does not extend BaseLayout: this page runs its own type stack
+ * (Fraunces / Inter / JetBrains Mono) and its own palette, and the inner
+ * pages keep the original shell. No ClientRouter here either, so the
+ * backdrop generators run on a plain page load.
+ */
+import { DEFAULT_OG_IMAGE, SITE_DESCRIPTION, SITE_NAME, SITE_URL, absoluteImage, fullTitle } from '@/utils/seo';
+
+interface Props {
+  title?: string;
+  description?: string;
+  path?: string;
+  image?: string;
+  type?: 'website' | 'article';
+  publishedTime?: string;
+  modifiedTime?: string;
+  author?: string;
+  tags?: string[];
+  noindex?: boolean;
+}
+
+const {
+  title,
+  description = SITE_DESCRIPTION,
+  path = Astro.url.pathname,
+  image = DEFAULT_OG_IMAGE,
+  type = 'website',
+  publishedTime,
+  modifiedTime,
+  author,
+  tags = [],
+  noindex = false,
+}: Props = Astro.props;
+
+const fullPageTitle = fullTitle(title);
+const canonicalRaw = new URL(path, SITE_URL).toString();
+const canonicalUrl = canonicalRaw.endsWith('/') ? canonicalRaw : canonicalRaw + '/';
+const ogImage = absoluteImage(image);
+const year = new Date().getFullYear();
+
+interface NavChild {
+  href: string;
+  label: string;
+  note: string;
+}
+interface NavLink {
+  href: string;
+  label: string;
+  children?: NavChild[];
+}
+
+const navLinks: NavLink[] = [
+  {
+    href: '/services/synthetic-data',
+    label: 'Services',
+    children: [
+      {
+        href: '/services/synthetic-data',
+        label: 'Synthetic data generation',
+        note: 'Training and evaluation data for your domain',
+      },
+      // LLM guardrails and security is unpublished: its page is
+      // src/pages/services/_llm-guardrails.astro (the underscore keeps it
+      // out of the build). To publish, drop the underscore and add back
+      // { href: '/services/llm-guardrails', label: 'LLM guardrails and security',
+      //   note: 'Guardrails, red-teaming and evals for production AI' }.
+    ],
+  },
+  { href: '/research', label: 'Research' },
+  { href: '/blog', label: 'Blog' },
+  {
+    href: '/open-source/simula',
+    label: 'Open source',
+    children: [{ href: '/open-source/simula', label: 'Simula', note: 'Deliberate synthetic data generation' }],
+  },
+  { href: '/about', label: 'About' },
+];
+
+/* Which top-level link owns the current page. Posts live under
+   /blog-post/, so they light up Blog; anything under /services/ or
+   /open-source/ lights up that dropdown's trigger. */
+const root = (p: string) => '/' + (p.split('/')[1] ?? '');
+const section = root(path === '/blog-post' || path.startsWith('/blog-post/') ? '/blog' : path);
+const current = (href: string) => (root(href) === section ? 'page' : undefined);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.ico" />
+
+    <title>{fullPageTitle}</title>
+    <meta name="title" content={fullPageTitle} />
+    <meta name="description" content={description} />
+
+    <meta property="og:type" content={type} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={fullPageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:site_name" content={SITE_NAME} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={canonicalUrl} />
+    <meta name="twitter:title" content={fullPageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    {type === 'article' && publishedTime && <meta property="article:published_time" content={publishedTime} />}
+    {type === 'article' && modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+    {type === 'article' && author && <meta property="article:author" content={author} />}
+    {type === 'article' && tags.map((tag) => <meta property="article:tag" content={tag} />)}
+
+    <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
+    <meta name="language" content="English" />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Inter+Tight:wght@300..700&family=Inter:wght@300..600&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+
+    <!-- Microsoft Clarity -->
+    <script is:inline>
+      (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+      })(window, document, "clarity", "script", "h82rwlwyjb");
+    </script>
+
+    <!-- Google tag (gtag.js) -->
+    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-MR3DEJ9G83"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-MR3DEJ9G83');
+    </script>
+
+    <style is:global>
+      /* ══════════════════════════════════════════════════════════════
+         V2 — scoped entirely to this layout.
+         Palette from /design.html: indigo 243 (identity),
+         teal 178 (measurement), amber 34 (signal), neutrals at 240.
+         ══════════════════════════════════════════════════════════════ */
+      :root {
+        --indigo-100: hsl(243 47% 94%);
+        --indigo-200: hsl(243 54% 87%);
+        --indigo-300: hsl(243 62% 78%);
+        --indigo-500: hsl(243 75% 59%);
+        --indigo-600: hsl(243 69% 50%);
+        --indigo-700: hsl(243 66% 41%);
+
+        --teal-100: hsl(178 38% 92%);
+        --teal-500: hsl(178 62% 42%);
+        --teal-700: hsl(178 70% 27%);
+        --teal-800: hsl(178 72% 21%);
+
+        --amber-100: hsl(34 82% 92%);
+        --amber-500: hsl(34 84% 53%);
+        --amber-800: hsl(30 70% 28%);
+
+        --n-0: #ffffff;
+        --n-50: hsl(240 24% 99%);
+        --n-100: hsl(240 18% 96%);
+        --n-200: hsl(240 13% 91%);
+        --n-300: hsl(240 10% 83%);
+        --n-400: hsl(240 8% 65%);
+        --n-500: hsl(240 7% 49%);
+        --n-700: hsl(240 10% 27%);
+        --n-800: hsl(240 12% 17%);
+        --n-900: hsl(240 14% 10%);
+        /* The logo's navy. Hover state for the black CTAs. */
+        --navy: hsl(228 44% 18%);
+
+        --ground: var(--n-50);
+        --surface: var(--n-0);
+        --ink: var(--n-900);
+        --ink-2: var(--n-700);
+        --ink-3: var(--n-500);
+        --line: var(--n-200);
+        --line-2: var(--n-300);
+
+        --display: 'Inter Tight', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        /* Hero only. Everything else stays on the sans. */
+        --hero-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+        --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+        --ease: cubic-bezier(0.22, 1, 0.36, 1);
+        /* 1150 rather than 1116 so the capability card title "Custom
+           architecture and training" (298px of Fraunces) fits on one line
+           once the shell reaches its full width. */
+        --shell: 1150px;
+        /* Resting nav height including its bottom border. The hero
+           subtracts this to land on exactly one viewport. */
+        --nav-h: 62.2px;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        scroll-behavior: smooth;
+        color-scheme: light;
+      }
+
+      body {
+        margin: 0;
+        background: var(--ground);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 14.4px;
+        line-height: 1.6;
+      }
+
+      h1, h2, h3, h4, p, figure, ul {
+        margin: 0;
+      }
+      ul {
+        padding: 0;
+        list-style: none;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      canvas {
+        display: block;
+      }
+      :focus-visible {
+        outline: 2px solid var(--indigo-500);
+        outline-offset: 3px;
+      }
+
+      .shell {
+        max-width: var(--shell);
+        margin: 0 auto;
+        padding-inline: 18.59px;
+      }
+      @media (max-width: 640px) {
+        .shell {
+          padding-inline: 12.39px;
+        }
+      }
+
+      /* ── Reveal — the one curve ─────────────────────────────────── */
+      .rv {
+        opacity: 0;
+        transform: translateY(24px);
+        transition:
+          opacity 600ms var(--ease),
+          transform 600ms var(--ease);
+        transition-delay: var(--rv-delay, 0ms);
+      }
+      .rv[data-from='left'] {
+        transform: translateX(-24px);
+      }
+      .rv[data-from='right'] {
+        transform: translateX(24px);
+      }
+      .rv[data-visible='true'] {
+        opacity: 1;
+        transform: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .rv {
+          opacity: 1;
+          transform: none;
+          transition: none;
+        }
+      }
+
+      /* ── Shared type ────────────────────────────────────────────── */
+      .eyebrow {
+        display: block;
+        font-family: var(--mono);
+        font-size: 9px;
+        font-weight: 500;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--indigo-600);
+      }
+      .h2 {
+        margin-top: 14.4px;
+        max-width: 22ch;
+        font-family: var(--hero-serif);
+        font-size: clamp(27px, 3.51vw, 42.3px);
+        font-weight: 400;
+        line-height: 1.14;
+        letter-spacing: -0.02em;
+        text-wrap: balance;
+      }
+      .lede {
+        margin-top: 18px;
+        max-width: 62ch;
+        font-size: 14.85px;
+        font-weight: 400;
+        line-height: 1.76;
+        color: var(--ink-3);
+      }
+      .band {
+        border-top: 1px solid var(--line);
+        padding-block: clamp(57.83px, 6.89vw, 90.88px);
+      }
+      .band-tint {
+        background: var(--n-100);
+      }
+
+      /* ── Wipe button — the square link with the black left-to-right
+         fill. Shared by the home page and the listing pages. ──────── */
+      .wipe {
+        position: relative;
+        overflow: hidden;
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        flex: none;
+        padding: 13.5px 23.4px;
+        border: 1px solid var(--ink);
+        font-size: 9.9px;
+        font-weight: 500;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        transition: color 300ms var(--ease);
+      }
+      .wipe-fill {
+        position: absolute;
+        inset: 0;
+        background: var(--ink);
+        transform: translateX(-100%);
+        transition: transform 350ms var(--ease);
+      }
+      .wipe-label {
+        position: relative;
+        z-index: 1;
+      }
+      .wipe:hover {
+        color: var(--n-50);
+      }
+      .wipe:hover .wipe-fill {
+        transform: translateX(0);
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="v2-nav" data-nav data-menu-open="false">
+      <div class="v2-bar">
+        <a href="/" class="v2-mark" aria-label="Mercity home">
+          <img src="/no-background-logo.png" alt="Mercity" width="855" height="292" />
+        </a>
+        <nav class="v2-links" aria-label="Primary">
+          {
+            navLinks.map((l) =>
+              l.children ? (
+                <div class="v2-drop">
+                  <a href={l.href} class="v2-drop-trigger" aria-haspopup="true" aria-current={current(l.href)}>
+                    {l.label}
+                    <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                      <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </a>
+                  <div class="v2-drop-panel">
+                    <div class="v2-drop-card">
+                      {l.children.map((c) => (
+                        <a href={c.href}>
+                          <span class="v2-drop-name">{c.label}</span>
+                          <span class="v2-drop-note">{c.note}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <a href={l.href} aria-current={current(l.href)}>
+                  {l.label}
+                </a>
+              )
+            )
+          }
+        </nav>
+        <div class="v2-bar-end">
+          <a href="/contact" class="v2-cta">Start a conversation</a>
+          <button
+            type="button"
+            class="v2-menu-btn"
+            data-menu-toggle
+            aria-expanded="false"
+            aria-controls="v2-menu"
+            aria-label="Open menu"
+          >
+            <span></span><span></span>
+          </button>
+        </div>
+      </div>
+      <div class="v2-menu" id="v2-menu" data-menu hidden>
+        <nav class="shell v2-menu-in" aria-label="Primary, mobile">
+          {
+            navLinks.map((l) => (
+              <>
+                <a href={l.href}>{l.label}</a>
+                {l.children?.map((c) => (
+                  <a href={c.href} class="v2-menu-sub">
+                    {c.label}
+                    <span>{c.note}</span>
+                  </a>
+                ))}
+              </>
+            ))
+          }
+          <a href="/contact" class="v2-menu-contact">Contact us</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="v2-scroll" data-scroll>
+      <main>
+        <slot />
+      </main>
+
+      <footer class="v2-foot">
+        <div class="shell v2-foot-in">
+          <div class="v2-foot-brand">
+            <a href="/" class="v2-foot-mark">Mercity</a>
+            <p>
+              A research-first firm building custom data, models and evaluation for problems an API cannot
+              solve.
+            </p>
+          </div>
+          <div class="v2-foot-col">
+            <span class="v2-foot-h">Site</span>
+            <a href="/">Home</a>
+            <a href="/services/synthetic-data">Services</a>
+            <a href="/research">Research</a>
+            <a href="/blog">Blog</a>
+            <a href="/open-source/simula">Open source</a>
+            <a href="/about">About</a>
+            <a href="/contact">Contact</a>
+            <a href="https://www.linkedin.com/company/mercity-ai/jobs/" target="_blank" rel="noopener noreferrer">Careers</a>
+          </div>
+          <div class="v2-foot-col">
+            <span class="v2-foot-h">Connect</span>
+            <a href="https://x.com/Pranav2278" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+            <a href="https://www.linkedin.com/company/mercity-ai/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+            <a href="https://github.com/Mercity-AI/" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="mailto:pranav@mercity.io">pranav@mercity.io</a>
+          </div>
+        </div>
+        <div class="shell v2-foot-base">
+          <span>&copy; {year} Mercity Research Labs. All rights reserved.</span>
+          <span class="v2-foot-legal"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a></span>
+        </div>
+      </footer>
+    </div>
+
+    <style is:global>
+      /* Virtual scroll. The nav is fixed and the content wrapper reserves
+         its height, so hero + nav still equals one screen. With the
+         wrapper active the body is only a spacer whose height is set by
+         script to match the wrapper; the native scrollbar drives a target
+         and the wrapper is translated toward it every frame. */
+      .v2-scroll {
+        padding-top: var(--nav-h);
+      }
+      html[data-vscroll] .v2-scroll {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        will-change: transform;
+      }
+      html[data-vscroll] {
+        scroll-behavior: auto;
+      }
+
+      /* Full-bleed bar at rest. Past the trigger the background collapses
+         out of the header and re-forms as a centred pill on the inner bar,
+         which also loses 20% of its height. One transition, both states. */
+      .v2-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 60;
+        padding-block: 0;
+        background: hsl(240 30% 99% / 0.94);
+        backdrop-filter: blur(16px) saturate(1.4);
+        border-bottom: 1px solid var(--line-2);
+        transition:
+          padding-block 550ms var(--ease),
+          background 550ms var(--ease),
+          border-color 550ms var(--ease);
+      }
+      .v2-nav[data-scrolled='true'] {
+        padding-block: 10.8px;
+        background: transparent;
+        backdrop-filter: none;
+        border-bottom-color: transparent;
+      }
+
+      .v2-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 21.6px;
+        height: calc(var(--nav-h) - 1px);
+        max-width: var(--shell);
+        margin-inline: auto;
+        padding-inline: 18.59px;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 0;
+        transition:
+          height 550ms var(--ease),
+          max-width 550ms var(--ease),
+          padding-inline 550ms var(--ease),
+          border-radius 550ms var(--ease),
+          border-color 550ms var(--ease),
+          background 550ms var(--ease),
+          box-shadow 550ms var(--ease);
+      }
+      .v2-nav[data-scrolled='true'] .v2-bar {
+        height: 48.6px;
+        max-width: 792px;
+        padding-inline: 19.8px;
+        border-radius: 999px;
+        border-color: var(--line-2);
+        background: var(--n-0);
+        backdrop-filter: blur(18px) saturate(1.4);
+        box-shadow:
+          0 18px 48px -20px hsl(240 14% 10% / 0.3),
+          0 2px 7px -2px hsl(240 14% 10% / 0.09);
+      }
+
+      /* Logo lockup (mark + serif wordmark). Height is the lever; the
+         image keeps its own aspect. Shrinks with the bar. */
+      .v2-mark {
+        display: flex;
+        align-items: center;
+        height: 38px;
+        transition: height 550ms var(--ease);
+      }
+      .v2-mark img {
+        display: block;
+        height: 100%;
+        width: auto;
+      }
+      .v2-nav[data-scrolled='true'] .v2-mark {
+        height: 30px;
+      }
+
+      /* Links sit on the right, beside the CTA; the logo holds the left. */
+      .v2-links {
+        display: flex;
+        gap: 30.6px;
+        margin-left: auto;
+        margin-right: 14.4px;
+        transition:
+          gap 550ms var(--ease),
+          margin-right 550ms var(--ease);
+      }
+      .v2-nav[data-scrolled='true'] .v2-links {
+        gap: 23.4px;
+        margin-right: 7.2px;
+      }
+      .v2-links > a,
+      .v2-drop-trigger {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 5.4px;
+        font-size: 14.4px;
+        font-weight: 500;
+        letter-spacing: -0.005em;
+        color: var(--ink-2);
+        transition:
+          color 300ms var(--ease),
+          font-size 550ms var(--ease);
+      }
+      .v2-nav[data-scrolled='true'] .v2-links > a,
+      .v2-nav[data-scrolled='true'] .v2-drop-trigger {
+        font-size: 13.05px;
+      }
+      .v2-links > a::after,
+      .v2-drop-trigger::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -5px;
+        height: 1px;
+        background: var(--ink);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 300ms var(--ease);
+      }
+      .v2-links > a:hover,
+      .v2-drop:hover .v2-drop-trigger,
+      .v2-drop:focus-within .v2-drop-trigger {
+        color: var(--ink);
+      }
+      .v2-links > a:hover::after,
+      .v2-drop:hover .v2-drop-trigger::after,
+      .v2-drop:focus-within .v2-drop-trigger::after {
+        transform: scaleX(1);
+      }
+      /* The section you are in keeps its underline at rest. */
+      .v2-links > a[aria-current='page'],
+      .v2-drop-trigger[aria-current='page'] {
+        color: var(--ink);
+      }
+      .v2-links > a[aria-current='page']::after,
+      .v2-drop-trigger[aria-current='page']::after {
+        transform: scaleX(1);
+      }
+
+      /* ── Open source dropdown ───────────────────────────────────
+         Hover or keyboard focus opens it. The panel carries the gap
+         as padding so the pointer never leaves the hover area. Square
+         corners: the pill is the only rounded thing in the nav. */
+      .v2-drop {
+        position: relative;
+      }
+      .v2-drop-trigger svg {
+        width: 11px;
+        height: 11px;
+        margin-top: 1px;
+        transition: transform 300ms var(--ease);
+      }
+      .v2-drop:hover .v2-drop-trigger svg,
+      .v2-drop:focus-within .v2-drop-trigger svg {
+        transform: rotate(180deg);
+      }
+      .v2-drop-panel {
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        padding-top: 16.2px;
+        transform: translate(-50%, 6px);
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 220ms var(--ease),
+          transform 220ms var(--ease),
+          visibility 0s linear 220ms;
+      }
+      .v2-drop:hover .v2-drop-panel,
+      .v2-drop:focus-within .v2-drop-panel {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(-50%, 0);
+        transition-delay: 0s;
+      }
+      .v2-drop-card {
+        width: 252px;
+        padding: 5.4px;
+        background: var(--n-0);
+        border: 1px solid var(--line-2);
+        box-shadow:
+          0 18px 48px -20px hsl(240 14% 10% / 0.3),
+          0 2px 7px -2px hsl(240 14% 10% / 0.09);
+      }
+      .v2-drop-card a {
+        display: block;
+        padding: 10.8px 12.6px;
+        transition: background 200ms var(--ease);
+      }
+      .v2-drop-card a:hover {
+        background: var(--n-100);
+      }
+      .v2-drop-name {
+        display: block;
+        font-size: 13.5px;
+        font-weight: 500;
+        color: var(--ink);
+      }
+      .v2-drop-note {
+        display: block;
+        margin-top: 2px;
+        font-size: 11.7px;
+        color: var(--ink-3);
+      }
+
+      .v2-cta {
+        padding: 8.1px 16.2px;
+        border: 1px solid var(--ink);
+        background: var(--ink);
+        color: var(--n-50);
+        border-radius: 0;
+        font-size: 10.35px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        transition:
+          background 300ms var(--ease),
+          color 300ms var(--ease),
+          border-color 300ms var(--ease),
+          padding 550ms var(--ease),
+          font-size 550ms var(--ease);
+      }
+      .v2-nav[data-scrolled='true'] .v2-cta {
+        padding: 6.3px 13.5px;
+        font-size: 9px;
+      }
+      .v2-cta:hover {
+        background: var(--navy);
+        border-color: var(--navy);
+        color: #fff;
+      }
+      .v2-bar-end {
+        display: flex;
+        align-items: center;
+        gap: 10.8px;
+      }
+
+      /* ── Mobile menu ────────────────────────────────────────────
+         Below 900px the link row hides and a square button opens a
+         full-width sheet under the bar. The sheet lives inside the
+         fixed header so it sits above the translated scroll wrapper. */
+      .v2-menu-btn {
+        display: none;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border: 1px solid var(--line-2);
+        background: var(--n-0);
+        cursor: pointer;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        transition: border-color 300ms var(--ease);
+      }
+      .v2-menu-btn span {
+        display: block;
+        width: 14px;
+        height: 1.5px;
+        background: var(--ink);
+        transition: transform 300ms var(--ease);
+      }
+      .v2-nav[data-menu-open='true'] .v2-menu-btn span:first-child {
+        transform: translateY(3.25px) rotate(45deg);
+      }
+      .v2-nav[data-menu-open='true'] .v2-menu-btn span:last-child {
+        transform: translateY(-3.25px) rotate(-45deg);
+      }
+      .v2-menu {
+        display: none;
+        border-top: 1px solid var(--line);
+        background: hsl(240 30% 99% / 0.98);
+        backdrop-filter: blur(16px) saturate(1.4);
+      }
+      .v2-menu .v2-menu-in {
+        display: flex;
+        flex-direction: column;
+        /* Match the bar's gutter, not the shell's; the extra specificity
+           beats the shell's own mobile padding rule. */
+        padding: 10.8px 18.59px 18px;
+      }
+      .v2-menu-in a {
+        padding-block: 12.6px;
+        border-bottom: 1px solid var(--line);
+        font-size: 14.4px;
+        color: var(--ink-2);
+      }
+      .v2-menu-in a:last-child {
+        border-bottom: 0;
+      }
+      .v2-menu-in .v2-menu-contact {
+        color: var(--ink);
+        font-weight: 500;
+      }
+      .v2-menu-in .v2-menu-sub {
+        display: flex;
+        align-items: baseline;
+        gap: 9px;
+        padding-left: 18px;
+        font-size: 13.05px;
+      }
+      .v2-menu-in .v2-menu-sub span {
+        font-size: 11.25px;
+        color: var(--ink-3);
+      }
+      @media (max-width: 900px) {
+        .v2-links {
+          display: none;
+        }
+        .v2-menu-btn {
+          display: flex;
+        }
+        .v2-nav[data-menu-open='true'] {
+          padding-block: 0;
+          background: hsl(240 30% 99% / 0.98);
+          border-bottom-color: var(--line-2);
+        }
+        .v2-nav[data-menu-open='true'] .v2-bar {
+          height: calc(var(--nav-h) - 1px);
+          max-width: var(--shell);
+          padding-inline: 18.59px;
+          border-radius: 0;
+          border-color: transparent;
+          background: transparent;
+          box-shadow: none;
+        }
+        .v2-nav[data-menu-open='true'] .v2-menu {
+          display: block;
+        }
+      }
+      @media (max-width: 480px) {
+        .v2-cta {
+          display: none;
+        }
+      }
+
+      .v2-foot {
+        border-top: 1px solid var(--line);
+        background: var(--surface);
+      }
+      .v2-foot-in {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+        gap: 36px;
+        padding-block: 54px 43.2px;
+      }
+      .v2-foot-brand p {
+        margin-top: 12.6px;
+        max-width: 34ch;
+        font-size: 12.6px;
+        line-height: 1.7;
+        color: var(--ink-3);
+      }
+      .v2-foot-mark {
+        font-family: var(--display);
+        font-size: 18.9px;
+        font-weight: 500;
+        letter-spacing: -0.03em;
+      }
+      .v2-foot-col {
+        display: flex;
+        flex-direction: column;
+        gap: 9.9px;
+      }
+      .v2-foot-h {
+        margin-bottom: 5.4px;
+        font-family: var(--mono);
+        font-size: 9px;
+        font-weight: 500;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--ink);
+      }
+      .v2-foot-col a {
+        font-size: 12.15px;
+        color: var(--ink-3);
+        transition: color 300ms var(--ease);
+      }
+      .v2-foot-col a:hover {
+        color: var(--ink);
+      }
+      .v2-foot-base {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        flex-wrap: wrap;
+        padding-block: 21.6px;
+        border-top: 1px solid var(--line);
+        font-family: var(--mono);
+        font-size: 9.45px;
+        color: var(--n-400);
+      }
+      .v2-foot-legal {
+        display: flex;
+        gap: 18px;
+      }
+      .v2-foot-base a {
+        color: var(--n-400);
+        transition: color 300ms var(--ease);
+      }
+      .v2-foot-base a:hover {
+        color: var(--ink);
+      }
+      @media (max-width: 640px) {
+        .v2-foot-in {
+          grid-template-columns: 1fr 1fr;
+        }
+        .v2-foot-brand {
+          grid-column: 1 / -1;
+        }
+      }
+    </style>
+
+    <script is:inline>
+      /* ── Reveal observer ──────────────────────────────────────── */
+      (() => {
+        const nodes = document.querySelectorAll('[data-rv]');
+        if (!nodes.length) return;
+        if (!('IntersectionObserver' in window)) {
+          nodes.forEach((n) => n.setAttribute('data-visible', 'true'));
+          return;
+        }
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((e) => {
+              if (!e.isIntersecting) return;
+              e.target.setAttribute('data-visible', 'true');
+              io.unobserve(e.target);
+            });
+          },
+          { rootMargin: '0px 0px -10% 0px', threshold: 0.01 }
+        );
+        nodes.forEach((n) => io.observe(n));
+      })();
+    </script>
+
+    <script is:inline>
+      /* ── Virtual scroll ───────────────────────────────────────────
+         Lerp-based smooth scroll. Native wheel/scrollbar input still
+         moves window.scrollY, which becomes the target; the wrapper
+         chases it with `y += (target - y) * DAMPING` per 60Hz frame,
+         made frame-rate independent. Off for coarse pointers and
+         reduced-motion, where native scrolling stays untouched. */
+      (() => {
+        const DAMPING = 0.0935;
+        const wrap = document.querySelector('[data-scroll]');
+        if (!wrap) return;
+        const coarse = matchMedia('(pointer: coarse)').matches;
+        const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (coarse || reduced) return;
+
+        const root = document.documentElement;
+        root.dataset.vscroll = 'true';
+
+        let y = window.scrollY;
+        let target = y;
+        let raf = 0;
+        let lastT = 0;
+        const stickies = [...document.querySelectorAll('[data-vsticky]')];
+
+        const setHeight = () => {
+          document.body.style.height = wrap.scrollHeight + 'px';
+        };
+        const stick = () => {
+          for (const el of stickies) {
+            const top = parseFloat(el.dataset.vsticky) || 0;
+            const parent = el.parentElement;
+            if (getComputedStyle(el).position === 'static') {
+              el.style.transform = '';
+              continue;
+            }
+            el.style.transform = '';
+            const pr = parent.getBoundingClientRect();
+            const er = el.getBoundingClientRect();
+            const max = Math.max(0, pr.bottom - er.bottom);
+            const off = Math.min(max, Math.max(0, top - er.top));
+            el.style.transform = off ? `translate3d(0, ${off}px, 0)` : '';
+          }
+        };
+        const paint = () => {
+          wrap.style.transform = `translate3d(0, ${-y}px, 0)`;
+          if (stickies.length) stick();
+          window.v2Scroll.y = y;
+          window.dispatchEvent(new CustomEvent('v2scroll', { detail: { y } }));
+        };
+        const frame = (t) => {
+          const dt = lastT ? Math.min(t - lastT, 100) : 16.67;
+          lastT = t;
+          const k = 1 - Math.pow(1 - DAMPING, dt / 16.67);
+          y += (target - y) * k;
+          if (Math.abs(target - y) < 0.05) {
+            y = target;
+            paint();
+            raf = 0;
+            lastT = 0;
+            return;
+          }
+          paint();
+          raf = requestAnimationFrame(frame);
+        };
+        const wake = () => {
+          target = window.scrollY;
+          if (!raf) raf = requestAnimationFrame(frame);
+        };
+
+        window.v2Scroll = { y, damping: DAMPING };
+        window.addEventListener('scroll', wake, { passive: true });
+
+        if ('ResizeObserver' in window) {
+          new ResizeObserver(setHeight).observe(wrap);
+        } else {
+          window.addEventListener('resize', setHeight);
+        }
+        setHeight();
+
+        /* In-page anchors: the browser measures a fixed, translated target
+           against its current visual spot, so aim by the wrapper's own
+           offset instead and let the lerp carry it. */
+        document.addEventListener('click', (e) => {
+          const a = e.target.closest('a[href^="#"]');
+          if (!a) return;
+          const id = a.getAttribute('href').slice(1);
+          const el = id && document.getElementById(id);
+          if (!el) return;
+          e.preventDefault();
+          const nav = parseFloat(getComputedStyle(root).getPropertyValue('--nav-h')) || 0;
+          const top = el.getBoundingClientRect().top + y - nav;
+          window.scrollTo(0, Math.max(0, top));
+          history.pushState(null, '', '#' + id);
+        });
+
+        if (location.hash) {
+          const el = document.getElementById(location.hash.slice(1));
+          if (el) {
+            requestAnimationFrame(() => {
+              const top = el.getBoundingClientRect().top + y;
+              y = target = Math.max(0, top);
+              window.scrollTo(0, y);
+              paint();
+            });
+          }
+        }
+        paint();
+      })();
+    </script>
+
+    <script is:inline>
+      /* ── Nav morph trigger ────────────────────────────────────── */
+      (() => {
+        const nav = document.querySelector('[data-nav]');
+        if (!nav) return;
+        let last = null;
+        const update = () => {
+          const cur = window.v2Scroll ? window.v2Scroll.y : window.scrollY;
+          const on = cur > 28;
+          if (on !== last) {
+            last = on;
+            nav.dataset.scrolled = on ? 'true' : 'false';
+          }
+        };
+        update();
+        window.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('v2scroll', update);
+
+        /* Mobile menu */
+        const btn = nav.querySelector('[data-menu-toggle]');
+        const menu = nav.querySelector('[data-menu]');
+        if (!btn || !menu) return;
+        const setOpen = (open) => {
+          nav.dataset.menuOpen = open ? 'true' : 'false';
+          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+          btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+          menu.hidden = !open;
+        };
+        btn.addEventListener('click', () => setOpen(nav.dataset.menuOpen !== 'true'));
+        menu.addEventListener('click', (e) => {
+          if (e.target.closest('a')) setOpen(false);
+        });
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && nav.dataset.menuOpen === 'true') setOpen(false);
+        });
+        matchMedia('(min-width: 901px)').addEventListener('change', (e) => {
+          if (e.matches) setOpen(false);
+        });
+      })();
+    </script>
+
+    <script is:inline src="/v2-backdrops.js"></script>
+  </body>
+</html>

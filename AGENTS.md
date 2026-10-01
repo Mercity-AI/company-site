@@ -27,8 +27,8 @@ Use `pnpm` only.
 - Prefer minimal client JS; keep interactivity in islands only when needed.
 
 ## Testing Guidelines
-- No dedicated unit-test framework is configured yet.
-- Required validation before PR: `pnpm check` and `pnpm build`.
+- Unit tests use Node's built-in runner: `pnpm test` runs `tests/*.test.mjs`.
+- Required validation before PR: `pnpm test`, `pnpm check` and `pnpm build`.
 - For UI changes, manually verify key paths: `/`, `/blog`, `/blog-post/:slug`, `/contact`, `/showcase`.
 - Specifically test back/forward navigation with view transitions and mobile menu behavior.
 

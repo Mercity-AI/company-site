@@ -34,7 +34,18 @@ pnpm check
 
 ## Content
 
-Blog posts are loaded from `content/*.mdx` through `src/content.config.ts`.
+Blog posts are loaded from `content/*.md` and research logs from
+`research/*.md`, both through `src/content.config.ts`.
+
+### Cover images
+
+Export the frontmatter `image` at **1600 × 900 (16:9)**. The same file is
+the listing thumbnail, the research lead card, the article header and the
+social-share card, and 16:9 fits all four. Anything from 3:2 to 2:1 works:
+listings fit the whole image in its frame on white, so nothing is cropped.
+Social cards do crop, so keep key content off the top and bottom edges.
+The listing thumbnail is only 220px wide, so the image needs to read at
+that size.
 
 ## Content scripts
 
