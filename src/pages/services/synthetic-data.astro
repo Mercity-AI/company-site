@@ -63,16 +63,15 @@ const strip = [
   { count: writeups.length, suffix: '', label: 'research write-ups', note: `published since ${firstYear}` },
 ];
 
-/* ── The six problems, around one hub. Each node carries the problem
-   and, in teal, what the engineered dataset does about it; the pulses
-   run from the problems into the hub. ── */
+/* ── The six problems, around one hub. The pulses run from the
+   problems into the hub. ── */
 const problems = [
-  { icon: 'scarcity', title: 'Volume', line: 'Too little data to train on', fix: 'Generated at the volume you need' },
-  { icon: 'access', title: 'Access', line: 'Data you cannot legally use', fix: 'No private records involved' },
-  { icon: 'tail', title: 'The long tail', line: 'Edge cases nobody recorded', fix: 'Rare cases generated on purpose' },
-  { icon: 'quality', title: 'Quality', line: 'Labels that are noisy or skewed', fix: 'Every sample verified' },
-  { icon: 'safety', title: 'Safety', line: 'Attacks you cannot ethically collect', fix: 'Adversarial sets for red-teaming' },
-  { icon: 'leak', title: 'Evaluation', line: 'Test sets you cannot trust', fix: 'Held-out benchmarks for your domain' },
+  { icon: 'scarcity', title: 'Volume', line: 'Too little data to train on' },
+  { icon: 'access', title: 'Access', line: 'Data you cannot legally use' },
+  { icon: 'tail', title: 'The long tail', line: 'Edge cases nobody recorded' },
+  { icon: 'quality', title: 'Quality', line: 'Labels that are noisy or skewed' },
+  { icon: 'safety', title: 'Safety', line: 'Attacks you cannot ethically collect' },
+  { icon: 'leak', title: 'Evaluation', line: 'Test sets you cannot trust' },
 ];
 
 /* ── What we generate ──────────────────────────────────────────── */
@@ -277,11 +276,14 @@ function rng(seed: number) {
 }
 /* A: your data, plotted, with its gaps. A grid over the plot, one case
    type with no samples at all (a hatched column) and a rare corner
-   that was never reached. */
-const PA = { x0: 44, x1: 384, y0: 14, y1: 240 };
-const BIN_W = (PA.x1 - PA.x0) / 10;
-const MISSING = { x: PA.x0 + BIN_W * 3, w: BIN_W };
-const RARE = { x: 338, y: 50, r: 26 };
+   that was never reached. Wider than B's figure (480 against 400), so
+   it fills its card instead of sitting in the middle of it. The
+   clusters were placed on a 340-wide plot; `sx` stretches them to fit. */
+const PA = { x0: 44, x1: 464, y0: 14, y1: 240 };
+const sx = (x: number) => PA.x0 + ((x - 44) * (PA.x1 - PA.x0)) / 340;
+const BIN_W = (PA.x1 - PA.x0) / 12;
+const MISSING = { x: PA.x0 + BIN_W * 4, w: BIN_W };
+const RARE = { x: sx(338), y: 50, r: 26 };
 const scatterRand = rng(7719);
 const gauss = () => {
   const u = 1 - scatterRand();
@@ -290,13 +292,13 @@ const gauss = () => {
 };
 const points: { x: number; y: number }[] = [];
 for (const cl of [
-  { x: 92, y: 150, sx: 24, sy: 40, n: 54 },
-  { x: 240, y: 164, sx: 34, sy: 36, n: 64 },
-  { x: 352, y: 198, sx: 14, sy: 20, n: 16 },
+  { x: sx(92), y: 150, sx: 30, sy: 40, n: 66 },
+  { x: sx(240), y: 164, sx: 42, sy: 36, n: 78 },
+  { x: sx(352), y: 198, sx: 17, sy: 20, n: 20 },
 ]) {
   for (let i = 0; i < cl.n; i++) points.push({ x: cl.x + gauss() * cl.sx, y: cl.y + gauss() * cl.sy });
 }
-for (let i = 0; i < 16; i++) points.push({ x: PA.x0 + scatterRand() * (PA.x1 - PA.x0), y: PA.y0 + scatterRand() * (PA.y1 - PA.y0) });
+for (let i = 0; i < 20; i++) points.push({ x: PA.x0 + scatterRand() * (PA.x1 - PA.x0), y: PA.y0 + scatterRand() * (PA.y1 - PA.y0) });
 const scatter = points.filter(
   (p) =>
     p.x > PA.x0 + 6 &&
@@ -306,7 +308,7 @@ const scatter = points.filter(
     (p.x < MISSING.x - 5 || p.x > MISSING.x + MISSING.w + 5) &&
     Math.hypot(p.x - RARE.x, p.y - RARE.y) > RARE.r + 6,
 );
-const gridX = Array.from({ length: 11 }, (_, i) => PA.x0 + i * BIN_W);
+const gridX = Array.from({ length: 13 }, (_, i) => PA.x0 + i * BIN_W);
 const gridY = Array.from({ length: 7 }, (_, i) => PA.y0 + (i * (PA.y1 - PA.y0)) / 6);
 
 /* B: your experts' knowledge, turned into data. Their notes on the
@@ -614,7 +616,7 @@ const starts = [
   {
     key: 'A',
     title: 'You have some data.',
-    body: ' We audit your data, Collected in production or built in-house, map where it is thin or missing, and generate precisely into those gaps.',
+    body: 'We audit your data, whether collected in production or built in-house, map where it is thin or missing, and generate precisely into those gaps.',
     steps: ['Audit what you have', 'Map the gaps and imbalances', 'Generate to fill them'],
   },
   {
@@ -628,26 +630,42 @@ const starts = [
 const loopSteps = [
   {
     title: 'We generate the first sample.',
-    body: 'A tranche of the dataset, built against the plan, with a coverage report showing exactly what is in it.',
+    body: [
+      'A first batch of the dataset, with a coverage report showing exactly what is in it.',
+      'It is small enough for your team to read in full, and it covers every case type in the taxonomy, rare ones included.',
+    ],
   },
   {
     title: 'Your team reviews it.',
-    body: 'Your experts mark what is right and flag what is not: wrong labels, near duplicates, cases that are missing.',
+    body: [
+      'Your experts mark what is right and flag what is not: wrong labels, near duplicates, cases that are too easy or missing.',
+      'Every row records the case, prompt and checks behind it, so one flag shows us every other row made the same way.',
+    ],
   },
   {
     title: 'We refine and regenerate.',
-    body: 'Every flag goes back into the plan and the generation. Rounds repeat until your team signs off.',
+    body: [
+      'Every flag goes back into the generation. Rounds repeat until your team signs off.',
+      'Each round is scored on the evaluation we agreed with you at the start, so both teams can see the data improve from one round to the next.',
+    ],
   },
   {
     title: 'We deliver at full volume.',
-    body: 'Once the sample is approved, we scale to the full dataset and hand over everything behind it.',
+    body: [
+      'Once the sample is approved, we scale to the full dataset with the same taxonomy, prompts and checks.',
+      'Coverage and quality are measured again on the full set, so what you receive matches the sample your team approved.',
+    ],
   },
 ];
 
 /* The CSV beside the loop. It fills in on step one; on step two a
    review column marks each row with an O or an X; on step three the
-   flagged rows are regenerated; on step four every row passes. */
-const csvRows: { id: string; text: string; intent: string; flag?: string; text2?: string; intent2?: string }[] = [
+   flagged rows are regenerated; on step four every row passes and the
+   `more` rows arrive under them as the dataset scales. Three flags,
+   one per kind: a wrong label, a near duplicate and a case too easy
+   to teach anything. */
+type CsvRow = { id: string; text: string; intent: string; flag?: string; text2?: string; intent2?: string };
+const csvRows: CsvRow[] = [
   { id: '0001', text: 'My card was declined abroad, please unblock it', intent: 'card_block' },
   { id: '0002', text: 'Move my EMI date to the 5th of each month', intent: 'loan_reschedule' },
   {
@@ -666,7 +684,25 @@ const csvRows: { id: string; text: string; intent: string; flag?: string; text2?
     text2: 'Card locked after three wrong PINs at a Dubai ATM',
   },
   { id: '0006', text: 'Why is my statement in a currency I never chose?', intent: 'fx_query' },
+  { id: '0007', text: 'UPI payment failed but the money left my account', intent: 'upi_failure' },
+  {
+    id: '0008',
+    text: 'Block my card',
+    intent: 'card_block',
+    flag: 'too easy',
+    text2: 'Lost my wallet on the metro, block card 4417',
+  },
+  { id: '0009', text: 'Waive the late fee, I paid a day after the due date', intent: 'fee_refund' },
+  { id: '0010', text: 'Update the address on our account to the new flat', intent: 'address_change' },
+  { id: '0011', text: 'Cancel the monthly transfer to my old landlord', intent: 'mandate_cancel' },
+  { id: '0012', text: 'A cheque I deposited last week has not cleared', intent: 'cheque_status' },
 ];
+const csvMore: CsvRow[] = [
+  { id: '0013', text: 'Raise my credit limit before my trip next month', intent: 'limit_increase' },
+  { id: '0014', text: 'Add my daughter as nominee on the fixed deposit', intent: 'nominee_update' },
+  { id: '0015', text: 'I sent money to the wrong account, reverse it', intent: 'transfer_recall' },
+];
+const csvFlagged = csvRows.filter((r) => r.flag).length;
 const csvStatus = ['Round 1 · generating', 'Round 1 · in review', 'Round 2 · regenerated', 'Final · signed off'];
 
 const deliverables = [
@@ -710,7 +746,7 @@ const faqs = [
   },
   {
     q: 'How do we know it will improve our model?',
-    a: 'We agree the evaluation before we start. The first tranche comes back to your team to review and to test against it, and we scale only once it moves the numbers you care about.',
+    a: 'We agree the evaluation before we start. The first sample comes back to your team to review and to test against it, and we scale only once it moves the numbers you care about.',
   },
   {
     q: 'How much data can you generate?',
@@ -743,12 +779,14 @@ const faqs = [
 
       <div class="sh-copy" data-sh-copy data-live="true">
         <div class="shell sh-copy-in">
-          <h1 class="sh-in">Large-scale synthetic data, engineered for training your models.</h1>
+          <h1 class="sh-in"><span>Large-scale synthetic data,</span> <span>engineered for training your models.</span></h1>
           <p class="sh-in d1">
             Generating training data at scale is the work we have specialised in for years. We have produced more than 100
-            billion tokens for client projects, and our clients have trained state-of-the-art models on it. <br /> Every dataset is
-            planned around your domain and verified sample by sample, so your model reaches production sooner, with fewer
-            retraining cycles.
+            billion tokens for client projects, and our clients have trained state-of-the-art models on it.
+          </p>
+          <p class="sh-in d1">
+            Every dataset is built around your domain and verified sample by sample, so your model reaches production sooner,
+            with fewer retraining cycles.
           </p>
           <div class="sh-actions sh-in d2">
             <a class="btn-l" href="/contact">
@@ -760,11 +798,6 @@ const faqs = [
           </div>
         </div>
       </div>
-
-      <div class="sh-cue" aria-hidden="true">
-        <span>Scroll</span>
-        <i></i>
-      </div>
     </div>
   </section>
 
@@ -773,7 +806,7 @@ const faqs = [
   <section class="band band-tint domains wash" id="domains">
     <canvas class="wash-bg" data-backdrop="sdWashWarm" data-seed="9053" data-dpr="0.6" aria-hidden="true"></canvas>
     <div class="shell">
-      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Domains we generate for</h2>
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Domains we have generated data for.</h2>
     </div>
     <div class="mq rv" data-rv>
       <div class="mq-track">
@@ -797,7 +830,7 @@ const faqs = [
       <div class="split-head">
         <h2 class="h2 rv" data-rv style="--rv-delay:80ms">The data problems we are brought in to solve.</h2>
         <p class="lede rv" data-rv style="--rv-delay:160ms">
-          Most teams come to us with more than one problem. Our dataset engineered for your domain resolves all six at once.
+          Most teams come to us with more than one of these. A dataset engineered for your domain solves all six at once.
         </p>
       </div>
 
@@ -805,9 +838,7 @@ const faqs = [
         <svg class="nodes-lines" aria-hidden="true"></svg>
         <figure class="hub rv" data-rv data-hub>
           <canvas data-backdrop="sdStrata" data-seed="918" data-dpr="1" aria-hidden="true"></canvas>
-          <span class="hub-eyebrow">All six, one answer</span>
-          <span class="hub-word">An engineered dataset</span>
-          <span class="hub-note">Planned · Generated · Verified</span>
+          <span class="hub-word">A <span>Mercity-engineered</span> dataset</span>
         </figure>
         {
           problems.map((p, i) => (
@@ -824,7 +855,6 @@ const faqs = [
               <span class="node-text">
                 <b>{p.title}</b>
                 {p.line}
-                <span class="node-fix">{p.fix}</span>
               </span>
             </div>
           ))
@@ -864,10 +894,10 @@ const faqs = [
   <section class="band" id="quality">
     <div class="shell">
       <div class="split-head">
-        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">We engineer against known failures in data generation.</h2>
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">We engineer against the hardest failures in data generation.</h2>
         <p class="lede rv" data-rv style="--rv-delay:160ms">
-          These are the failure modes we have seen repeatedly across client projects. Each is planned for before
-          generation starts and checked before any data reaches you.
+          These are the failure modes we have seen across years of client projects. We design against each one before
+          generation starts, and check for it again before any data reaches you.
         </p>
       </div>
       <div class="controls">
@@ -899,10 +929,7 @@ const faqs = [
   <!-- ═══ TWO WAYS TO START ══════════════════════════════════════ -->
   <section class="band band-tint" id="start">
     <div class="shell">
-      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Two ways to start.</h2>
-      <p class="lede rv" data-rv style="--rv-delay:160ms">
-        It depends on what you already have. Either way, we plan the data before we generate any of it.
-      </p>
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Two ways to start, depending on what you already have.</h2>
 
       <div class="starts">
         {
@@ -910,7 +937,7 @@ const faqs = [
             <article class="start rv" data-rv data-from={i ? 'right' : 'left'} style={`--rv-delay:${140 + i * 80}ms`}>
               <figure class="start-art">
                 {i === 0 ? (
-                  <svg viewBox="0 0 400 276" role="img" aria-label="Existing data on a grid: one case type has no samples and one corner was never reached">
+                  <svg viewBox="0 0 480 276" role="img" aria-label="Existing data on a grid: one case type has no samples and one corner was never reached">
                     <defs>
                       <pattern id="st-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
                         <path d="M0 0 V6" class="hatch" />
@@ -1002,120 +1029,128 @@ const faqs = [
   <!-- ═══ HOW AN ENGAGEMENT RUNS ═════════════════════════════════ -->
   <section class="band" id="loop">
     <div class="shell">
-      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">We build it with you, in rounds.</h2>
-      <p class="lede rv" data-rv style="--rv-delay:160ms">
-        We belive in review loops and feedback, not a single handoff. You approve the data at sample size before we generate the full
-        volume.
-      </p>
-
       <div class="loop" data-loop>
-        <ol class="loop-list">
-          {
-            loopSteps.map((s, i) => (
-              <li class="loop-step" data-step={i}>
-                <span class:list={['loop-node', { spin: i === 2 }]} aria-hidden="true">
-                  {i === 2 && (
-                    <svg viewBox="0 0 24 24">
-                      <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" />
-                      <path d="M19.8 4.5v3.6h-3.6" />
-                    </svg>
-                  )}
+        <div class="loop-stage" data-vsticky="0">
+          <div class="loop-head" data-loop-head>
+            <h2 class="h2 rv" data-rv style="--rv-delay:80ms">We build it with you, in rounds.</h2>
+            <p class="lede rv" data-rv style="--rv-delay:160ms">
+              We work with your team to understand the data and agree on a sample before we generate the full volume.
+            </p>
+          </div>
+          <div class="loop-cols">
+            <div class="csv" data-csv data-stage="-1" aria-hidden="true">
+              <div class="csv-bar">
+                <span class="csv-file">
+                  <svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" /><path d="M14 3v4h4" /></svg>
+                  sample.csv
                 </span>
-                <span class="loop-n">0{i + 1}</span>
-                <h3>{s.title}</h3>
-                <p>{s.body}</p>
-              </li>
-            ))
-          }
-        </ol>
-
-        <div class="csv-wrap">
-          <div class="csv" data-csv data-stage="-1" data-vsticky="104" aria-hidden="true">
-            <div class="csv-bar">
-              <span class="csv-file">
-                <svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" /><path d="M14 3v4h4" /></svg>
-                tranche.csv
-              </span>
-              <span class="csv-status">
-                <svg class="csv-spin" viewBox="0 0 24 24">
-                  <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" />
-                  <path d="M19.8 4.5v3.6h-3.6" />
-                </svg>
-                <svg class="csv-ok" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
-                <span class="csv-states">
-                  {csvStatus.map((t, i) => (
-                    <span data-s={i}>{t}</span>
-                  ))}
+                <span class="csv-status">
+                  <svg class="csv-spin" viewBox="0 0 24 24">
+                    <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" />
+                    <path d="M19.8 4.5v3.6h-3.6" />
+                  </svg>
+                  <svg class="csv-ok" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+                  <span class="csv-states">
+                    {csvStatus.map((t, i) => (
+                      <span data-s={i}>{t}</span>
+                    ))}
+                  </span>
                 </span>
-              </span>
-            </div>
-            <div class="csv-table">
-              <div class="csv-row csv-head">
-                <span>id</span>
-                <span>text</span>
-                <span>intent</span>
-                <span>review</span>
               </div>
-              {
-                csvRows.map((r, i) => (
-                  <div class:list={['csv-row', { flagged: r.flag }]} style={`--i:${i}`}>
-                    <span class="c-id">{r.id}</span>
-                    <span class="c-text">
-                      {r.text2 ? (
-                        <>
-                          <span class="v1"><span><s>{r.text}</s></span></span>
-                          <span class="v2"><span>{r.text2}</span></span>
-                        </>
-                      ) : (
-                        r.text
-                      )}
-                    </span>
-                    <span class="c-intent">
-                      {r.intent2 ? (
-                        <>
-                          <span class="v1"><span><s>{r.intent}</s></span></span>
-                          <span class="v2"><span>{r.intent2}</span></span>
-                        </>
-                      ) : (
-                        r.intent
-                      )}
-                    </span>
-                    <span class="c-rev">
-                      <svg class="mk-o" viewBox="0 0 16 16"><circle cx="8" cy="8" r="4.6" /></svg>
-                      <svg class="mk-v" viewBox="0 0 16 16"><path d="M3.8 8.4l2.8 2.8 5.6-6" /></svg>
-                      {r.flag && (
-                        <svg class="mk-x" viewBox="0 0 16 16"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" /></svg>
-                      )}
-                      {r.flag && <span class="c-flag">{r.flag}</span>}
-                    </span>
-                  </div>
-                ))
-              }
-              <div class="csv-more">
-                <div>
-                  {[0, 1, 2].map((k) => (
-                    <div class="csv-row csv-ghost" style={`--i:${k}`}>
-                      <span><i style="width:70%" /></span>
-                      <span><i style={`width:${[82, 64, 74][k]}%`} /></span>
-                      <span><i style={`width:${[60, 74, 52][k]}%`} /></span>
+              <div class="csv-table">
+                <div class="csv-row csv-head">
+                  <span>id</span>
+                  <span>text</span>
+                  <span>intent</span>
+                  <span>review</span>
+                </div>
+                {
+                  csvRows.map((r, i) => (
+                    <div class:list={['csv-row', { flagged: r.flag }]} style={`--i:${i}`}>
+                      <span class="c-id">{r.id}</span>
+                      <span class="c-text">
+                        {r.text2 ? (
+                          <>
+                            <span class="v1"><span><s>{r.text}</s></span></span>
+                            <span class="v2"><span>{r.text2}</span></span>
+                          </>
+                        ) : (
+                          r.text
+                        )}
+                      </span>
+                      <span class="c-intent">
+                        {r.intent2 ? (
+                          <>
+                            <span class="v1"><span><s>{r.intent}</s></span></span>
+                            <span class="v2"><span>{r.intent2}</span></span>
+                          </>
+                        ) : (
+                          r.intent
+                        )}
+                      </span>
                       <span class="c-rev">
+                        <svg class="mk-o" viewBox="0 0 16 16"><circle cx="8" cy="8" r="4.6" /></svg>
                         <svg class="mk-v" viewBox="0 0 16 16"><path d="M3.8 8.4l2.8 2.8 5.6-6" /></svg>
+                        {r.flag && (
+                          <svg class="mk-x" viewBox="0 0 16 16"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" /></svg>
+                        )}
+                        {r.flag && <span class="c-flag">{r.flag}</span>}
                       </span>
                     </div>
-                  ))}
+                  ))
+                }
+                <div class="csv-more">
+                  <div>
+                    {csvMore.map((r, k) => (
+                      <div class="csv-row csv-new" style={`--i:${k}`}>
+                        <span class="c-id">{r.id}</span>
+                        <span class="c-text">{r.text}</span>
+                        <span class="c-intent">{r.intent}</span>
+                        <span class="c-rev">
+                          <svg class="mk-v" viewBox="0 0 16 16"><path d="M3.8 8.4l2.8 2.8 5.6-6" /></svg>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="csv-foot">
-              <span class="csv-meter"><i></i></span>
-              <span class="csv-count">
-                <span data-s="0">6 rows generated</span>
-                <span data-s="1">4 of 6 approved · 2 flagged</span>
-                <span data-s="2">6 of 6 approved</span>
-                <span data-s="3">Approved · scaling to full volume</span>
-              </span>
+              <div class="csv-foot">
+                <span class="csv-meter"><i></i></span>
+                <span class="csv-count">
+                  <span data-s="0">{csvRows.length} rows generated</span>
+                  <span data-s="1">
+                    {csvRows.length - csvFlagged} of {csvRows.length} approved · {csvFlagged} flagged
+                  </span>
+                  <span data-s="2">{csvRows.length} of {csvRows.length} approved</span>
+                  <span data-s="3">Approved · scaling to full volume</span>
+                </span>
+              </div>
             </div>
           </div>
+        </div>
+
+        <div class="loop-track">
+          <ol class="loop-list">
+            {
+              loopSteps.map((s, i) => (
+                <li class="loop-step" data-step={i}>
+                  <span class:list={['loop-node', { spin: i === 2 }]} aria-hidden="true">
+                    {i === 2 && (
+                      <svg viewBox="0 0 24 24">
+                        <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" />
+                        <path d="M19.8 4.5v3.6h-3.6" />
+                      </svg>
+                    )}
+                  </span>
+                  <span class="loop-n">0{i + 1}</span>
+                  <h3>{s.title}</h3>
+                  {s.body.map((b) => (
+                    <p>{b}</p>
+                  ))}
+                </li>
+              ))
+            }
+          </ol>
         </div>
       </div>
 
@@ -1144,7 +1179,7 @@ const faqs = [
     <div class="shell">
       <div class="ds-head">
         <div>
-          <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Datasets we have published.</h2>
+          <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Datasets we have published openly.</h2>
           <p class="lede rv" data-rv style="--rv-delay:160ms">
             A selection of our open datasets on Hugging Face, from pretraining corpora and retrieval sets to stories
             generated with Simula.
@@ -1198,7 +1233,7 @@ const faqs = [
         <span class="plate-word" aria-hidden="true">Simula</span>
       </figure>
       <div class="sim-copy">
-        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Built on a pipeline we open-sourced.</h2>
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">We recently open-sourced our internal pipeline.</h2>
         <p class="lede rv" data-rv style="--rv-delay:160ms">
           Simula is the generation engine behind our client work. We built it out of years of projects, published it on
           GitHub with a research log of every stage, and extend it whenever an engagement needs more.
@@ -1294,10 +1329,10 @@ const faqs = [
     <span class="sh-light l2" aria-hidden="true"></span>
     <div class="shell end-in">
       <div class="glass rv" data-rv>
-        <h2>Tell us where your model breaks.</h2>
+        <h2><span>Tell us where your model breaks,</span> <span>and we will build the data that fixes it.</span></h2>
         <p>
           Send us the task, the model and the cases it gets wrong. We will come back with an outline of the taxonomy and
-          a plan for the first tranche.
+          a proposal for the first sample.
         </p>
         <div class="sh-actions">
           <a class="btn-l" href="/contact">
@@ -1330,6 +1365,27 @@ const faqs = [
     const loop = document.querySelector('[data-loop]');
     const steps = loop ? [...loop.querySelectorAll('[data-step]')] : [];
     const csv = loop && loop.querySelector('[data-csv]');
+    // Matches the stylesheet's breakpoint for stacking the CSV above the steps.
+    const stacked = matchMedia('(max-width: 900px)');
+    /* The steps start under the pinned heading, whatever its height.
+       `--loop-slack` is the empty stage left under the CSV in its last,
+       longest state; "What you receive" moves up into it (by up to
+       15vh), so it follows the CSV closely on tall screens and never
+       overlaps it on short ones. */
+    const head = loop && loop.querySelector('[data-loop-head]');
+    if (head) {
+      const stageEl = loop.querySelector('.loop-stage');
+      const more = csv.querySelector('.csv-more > div');
+      const measure = () => {
+        loop.style.setProperty('--loop-head-h', head.offsetHeight + 'px');
+        const grown = csv.dataset.stage === '3' ? 0 : more.scrollHeight;
+        const slack = stacked.matches ? 0 : stageEl.offsetHeight - csv.offsetTop - csv.offsetHeight - grown;
+        loop.parentElement.style.setProperty('--loop-slack', Math.max(0, slack) + 'px');
+      };
+      new ResizeObserver(measure).observe(head);
+      window.addEventListener('resize', measure);
+      measure();
+    }
 
     if (reduce) {
       if (hero) copy.dataset.live = 'true';
@@ -1352,16 +1408,34 @@ const faqs = [
         set(hero, '--o', o * o);
         copy.dataset.live = o < 0.5 ? 'true' : 'false';
       }
-      /* The loop: a step is current once its top passes 66% of the
-         screen, so each state arrives a little ahead of the reader.
+      /* The loop: nothing is current until the first step passes 66%
+         of the screen. After that, beside the pinned CSV, the current
+         step is the one whose text sits nearest the CSV's middle, so
+         the step being read is level with the state it describes.
+         Stacked (the CSV above the steps), the 66% line decides alone.
          The CSV beside it shows that step's state, and the rail fills
          to the current step. */
       if (loop) {
         const line = vh * 0.66;
         let stage = -1;
-        steps.forEach((s, i) => {
-          if (s.getBoundingClientRect().top < line) stage = i;
-        });
+        if (stacked.matches) {
+          steps.forEach((s, i) => {
+            if (s.getBoundingClientRect().top < line) stage = i;
+          });
+        } else if (steps[0].getBoundingClientRect().top < line) {
+          const c = csv.getBoundingClientRect();
+          const mid = c.top + c.height / 2;
+          let best = Infinity;
+          steps.forEach((s, i) => {
+            const top = s.querySelector('h3').getBoundingClientRect().top;
+            const bottom = s.lastElementChild.getBoundingClientRect().bottom;
+            const d = Math.abs((top + bottom) / 2 - mid);
+            if (d < best) {
+              best = d;
+              stage = i;
+            }
+          });
+        }
         steps.forEach((s, i) => (s.dataset.on = i <= stage ? 'true' : 'false'));
         csv.dataset.stage = loop.dataset.stage = String(stage);
       }
@@ -1750,7 +1824,7 @@ const faqs = [
   }
   .split-head {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 46ch);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 54ch);
     gap: 18px clamp(36px, 5vw, 72px);
     align-items: end;
   }
@@ -1984,15 +2058,25 @@ const faqs = [
     filter: none;
     transform: none;
   }
+  /* One clause per line, broken at the comma. The size is capped so
+     the longer clause fits the shell on one line; below 720px each
+     clause may wrap inside itself. */
   .sh-copy h1 {
-    max-width: 18ch;
     font-family: var(--hero-serif);
-    font-size: clamp(36px, 5.6vw, 72px);
+    font-size: clamp(34px, 4.6vw, 64px);
     font-weight: 400;
     line-height: 1.06;
     letter-spacing: -0.028em;
     text-wrap: balance;
     text-shadow: 0 10px 40px hsl(243 80% 16% / 0.35);
+  }
+  .sh-copy h1 span {
+    display: block;
+  }
+  @media (min-width: 720px) {
+    .sh-copy h1 span {
+      white-space: nowrap;
+    }
   }
   .sh-copy p {
     margin-top: 24px;
@@ -2002,6 +2086,9 @@ const faqs = [
     color: hsl(0 0% 100% / 0.86);
     text-wrap: pretty;
   }
+  .sh-copy p + p {
+    margin-top: 14px;
+  }
   .sh-actions {
     display: flex;
     flex-wrap: wrap;
@@ -2010,59 +2097,12 @@ const faqs = [
     margin-top: 34px;
   }
 
-  .sh-cue {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: calc(var(--nav-h) + 26px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    pointer-events: none;
-    font-family: var(--mono);
-    font-size: 9px;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: hsl(0 0% 100% / 0.7);
-    opacity: calc(1 - var(--a) * 2.5);
-  }
-  /* The intro runs on the children so it never fights the scroll fade. */
-  .sh-cue > * {
-    animation: focus-in 1200ms var(--ease) 1100ms both;
-  }
-  .sh-cue i {
-    position: relative;
-    display: block;
-    width: 1px;
-    height: 42px;
-    overflow: hidden;
-    background: hsl(0 0% 100% / 0.25);
-  }
-  .sh-cue i::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: -40%;
-    width: 1px;
-    height: 40%;
-    background: #fff;
-    animation: cue 2200ms var(--ease) infinite;
-  }
-  @keyframes cue {
-    to {
-      top: 100%;
-    }
-  }
   @media (prefers-reduced-motion: reduce) {
     .sh {
       height: auto;
     }
     .sh-stage {
       position: relative;
-    }
-    .sh-cue {
-      display: none;
     }
     .sh-light,
     .sh-in {
@@ -2223,6 +2263,7 @@ const faqs = [
     color: #fff;
     background: var(--indigo-600);
     box-shadow: 0 30px 70px -36px hsl(243 80% 20% / 0.6);
+    container-type: inline-size;
   }
   .hub canvas {
     position: absolute;
@@ -2230,35 +2271,22 @@ const faqs = [
     width: 100%;
     height: 100%;
   }
-  .hub-eyebrow,
-  .hub-word,
-  .hub-note {
-    position: relative;
-  }
-  .hub-eyebrow {
-    font-family: var(--mono);
-    font-size: 9px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: hsl(0 0% 100% / 0.78);
-  }
   .hub-word {
+    position: relative;
     padding-inline: 18px;
     text-wrap: balance;
     font-family: var(--hero-serif);
     font-style: italic;
-    font-size: clamp(28px, 2.8vw, 36px);
+    /* Sized to the hub, so "Mercity-engineered" always fits its width. */
+    font-size: clamp(20px, 10cqi, 34px);
     line-height: 1.08;
     letter-spacing: -0.02em;
     text-align: center;
     text-shadow: 0 8px 26px hsl(243 80% 16% / 0.5);
   }
-  .hub-note {
-    font-family: var(--mono);
-    font-size: 9px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: hsl(0 0% 100% / 0.78);
+  /* Never broken at its own hyphen. */
+  .hub-word span {
+    white-space: nowrap;
   }
   .node {
     position: relative;
@@ -2307,25 +2335,6 @@ const faqs = [
     letter-spacing: -0.012em;
     color: var(--ink);
   }
-  /* What the engineered dataset does about it, in teal. */
-  .node-fix {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    margin-top: 7px;
-    font-family: var(--mono);
-    font-size: 10.35px;
-    line-height: 1.4;
-    color: var(--teal-700);
-  }
-  .node-fix::before {
-    content: '';
-    flex: none;
-    width: 6px;
-    height: 6px;
-    background: var(--teal-500);
-    transform: rotate(45deg);
-  }
   @media (max-width: 900px) {
     .nodes {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2365,7 +2374,6 @@ const faqs = [
   .kind {
     position: relative;
     padding: 24px 22px 26px;
-    background: var(--surface);
     border-right: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
     transition: background 400ms var(--ease);
@@ -2383,7 +2391,7 @@ const faqs = [
     transition: transform 500ms var(--ease);
   }
   .kind:hover {
-    background: var(--n-50);
+    background: hsl(243 40% 50% / 0.035);
   }
   .kind:hover::before {
     transform: scaleX(1);
@@ -2460,6 +2468,16 @@ const faqs = [
   section {
     --shell: 1300px;
   }
+  /* The datasets band runs 12% wider again, and everything in its cards
+     is 12% larger: a card is about 270px wide against 241px at 1300px.
+     The band is full-bleed colour, so the wider measure reads as its
+     own, and its heading lines up with its cards. */
+  #datasets {
+    --shell: 1452px;
+  }
+  #datasets .h2 {
+    max-width: none;
+  }
   /* The shader canvas and a fine grain layer over it. The grain is a
      static SVG noise so it stays sharp while the shader runs at half
      resolution. */
@@ -2499,20 +2517,20 @@ const faqs = [
   .ds-grid {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 14px;
+    gap: 16px;
     margin-top: 46.8px;
     align-items: start;
   }
   .ds-col {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
   }
   /* Every column holds the same number of cards, at their natural
      height; the even columns sit a little lower. That offset is the
      only stagger, at the top and mirrored at the bottom. */
   .ds-col:nth-child(even) {
-    padding-top: 56px;
+    padding-top: 63px;
   }
   /* Narrower screens: two even columns of cards. The column wrappers
      drop out of the layout and each card's inline order restores the
@@ -2557,8 +2575,8 @@ const faqs = [
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    min-height: 280px;
-    padding: 18px 15px 16px;
+    min-height: 314px;
+    padding: 20px 17px 18px;
     background:
       radial-gradient(120% 75% at var(--gx, 20%) 0%, var(--c1) 0%, transparent 64%),
       radial-gradient(95% 70% at calc(100% - var(--gx, 20%)) 100%, var(--c2) 0%, transparent 62%),
@@ -2587,12 +2605,12 @@ const faqs = [
   .ds-top {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 11px;
   }
   .ds-dot {
     flex: none;
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
   }
   .ds-dot {
@@ -2601,7 +2619,7 @@ const faqs = [
   }
   .ds-name {
     font-family: var(--hero-serif);
-    font-size: 17.6px;
+    font-size: 19.7px;
     line-height: 1.2;
     letter-spacing: -0.014em;
     color: var(--ink);
@@ -2610,17 +2628,17 @@ const faqs = [
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 4px 7px;
-    margin-top: 8px;
-    padding-left: 17px;
+    gap: 4px 8px;
+    margin-top: 9px;
+    padding-left: 19px;
     font-family: var(--mono);
-    font-size: 10.35px;
+    font-size: 11.6px;
     color: var(--ink-2);
     font-variant-numeric: tabular-nums;
   }
   .ds-meta svg {
-    width: 12px;
-    height: 12px;
+    width: 13.5px;
+    height: 13.5px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.6;
@@ -2638,8 +2656,8 @@ const faqs = [
      under .ds-viz. */
   .ds-viz {
     display: block;
-    margin-top: 14px;
-    padding: 8px 8px 6px;
+    margin-top: 16px;
+    padding: 9px 9px 7px;
     background: hsl(0 0% 100% / 0.72);
     border: 1px solid hsl(0 0% 100% / 0.95);
     -webkit-backdrop-filter: blur(6px);
@@ -2783,8 +2801,8 @@ const faqs = [
   }
   .ds-desc {
     margin-top: auto;
-    padding-top: 18px;
-    font-size: 13.05px;
+    padding-top: 20px;
+    font-size: 14.6px;
     line-height: 1.65;
     color: var(--ink-2);
     text-wrap: pretty;
@@ -2891,6 +2909,10 @@ const faqs = [
   }
 
   /* ══ TWO WAYS TO START: side by side, both visible ═══════════ */
+  /* One line on desktop, so it is not broken mid-phrase. */
+  #start .h2 {
+    max-width: none;
+  }
   .starts {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -2913,7 +2935,7 @@ const faqs = [
     display: block;
     width: 100%;
     height: auto;
-    max-height: 250px;
+    max-height: 275px;
     overflow: visible;
   }
   /* A: the data, its grid and its gaps. Teal is the data; amber marks
@@ -3101,16 +3123,77 @@ const faqs = [
     }
   }
 
-  /* ══ THE LOOP ════════════════════════════════════════════════
-     The steps run down the left; a step lights once it passes 58% of
-     the screen. Beside them a CSV sticks and changes with the step:
-     rows generate, a review column marks each with an O or an X, the
-     flagged rows are regenerated, then the dataset scales. */
+  /* ══ THE LOOP: a pinned stage ══════════════════════════════
+     The heading and the CSV are one stage that pins to the top of the
+     screen while the four steps scroll up beneath it, and lets go
+     after the last one. Stage and steps share one grid cell, so the
+     stage's sticky range is exactly the steps' height, and the heading
+     and the CSV leave together. The heading carries the page ground,
+     so steps pass under it and fade at its edge. The step level with
+     the middle of the CSV is lit (see the scroll script); the CSV
+     shows that step's state: rows generate, a review column marks each
+     with an O or an X, the flagged rows are regenerated, then the
+     dataset scales. `--loop-head-h` is measured by the script. */
+  #loop {
+    padding-top: 0;
+  }
   .loop {
+    --pin-top: max(80px, clamp(57.83px, 6.89vw, 90.88px));
+    --loop-gap: clamp(36px, 5vw, 72px);
+    display: grid;
+  }
+  .loop-stage,
+  .loop-track {
+    grid-area: 1 / 1;
+  }
+  .loop-stage {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    align-self: start;
+    height: 100vh;
+    pointer-events: none;
+  }
+  :global(html[data-vscroll]) .loop-stage {
+    position: relative;
+    top: auto;
+  }
+  /* The ground runs out into the shell's gutter, so the steps' rotated
+     markers cannot show past its edge. */
+  .loop-head {
+    position: relative;
+    margin-inline: -18.59px;
+    padding: var(--pin-top) 18.59px 16px;
+    background: var(--ground);
+    pointer-events: auto;
+  }
+  .loop-head .lede {
+    max-width: none;
+  }
+  .loop-head::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    height: 26px;
+    background: linear-gradient(var(--ground), transparent);
+  }
+  .loop-cols,
+  .loop-track {
     display: grid;
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-    gap: clamp(36px, 5vw, 72px);
-    margin-top: 52px;
+    gap: var(--loop-gap);
+  }
+  .loop-cols {
+    margin-top: 14px;
+  }
+  .loop-cols .csv {
+    grid-column: 2;
+    pointer-events: auto;
+  }
+  .loop-track {
+    padding-top: calc(var(--loop-head-h, 200px) + 14px);
   }
   .loop-list {
     position: relative;
@@ -3118,14 +3201,13 @@ const faqs = [
   }
   .loop-step {
     position: relative;
-    min-height: 42vh;
+    min-height: 50vh;
     padding-bottom: 28px;
   }
-  /* The last step keeps some height of its own, so the CSV, which grows
-     on this step, has room to stay pinned instead of being pushed up
-     under the nav by the end of the section. */
+  /* The last step runs on far enough to come level with the middle of
+     the CSV and hold there a while before the stage lets go. */
   .loop-step:last-child {
-    min-height: 36vh;
+    min-height: calc(100vh - var(--loop-head-h, 200px) - 40px);
     padding-bottom: 0;
   }
   /* The rail, one segment per gap between steps. It fills once the
@@ -3228,6 +3310,9 @@ const faqs = [
     color: var(--ink-3);
     text-wrap: pretty;
   }
+  .loop-step p + p {
+    margin-top: 10px;
+  }
   .loop-step h3,
   .loop-step p {
     opacity: 0.4;
@@ -3239,19 +3324,11 @@ const faqs = [
   }
 
   /* ── The CSV ── */
-  .csv-wrap {
-    position: relative;
-  }
   .csv {
-    position: sticky;
-    top: 104px;
+    position: relative;
     background: var(--surface);
     border: 1px solid var(--line-2);
     box-shadow: 0 30px 60px -44px hsl(243 60% 30% / 0.4);
-  }
-  :global(html[data-vscroll]) .csv {
-    position: relative;
-    top: auto;
   }
   .csv-bar {
     display: flex;
@@ -3331,7 +3408,7 @@ const faqs = [
     grid-template-columns: 40px minmax(0, 1fr) 112px 118px;
     gap: 12px;
     align-items: center;
-    padding: 11px 16px;
+    padding: 6.5px 16px;
     border-bottom: 1px solid var(--line);
     transition:
       opacity 500ms var(--ease) calc(var(--i, 0) * 90ms),
@@ -3469,7 +3546,7 @@ const faqs = [
     opacity: 1;
     transform: none;
   }
-  .csv[data-stage='3'] .csv-ghost .mk-v {
+  .csv[data-stage='3'] .csv-new .mk-v {
     transition-delay: calc(500ms + var(--i) * 120ms);
   }
   .csv[data-stage='1'] .c-flag {
@@ -3493,22 +3570,14 @@ const faqs = [
   .csv[data-stage='3'] .csv-more {
     grid-template-rows: 1fr;
   }
-  .csv-ghost {
+  .csv-new {
     opacity: 0;
     transform: translateY(6px);
   }
-  .csv[data-stage='3'] .csv-ghost {
+  .csv[data-stage='3'] .csv-new {
     opacity: 1;
     transform: none;
     transition-delay: calc(200ms + var(--i) * 120ms);
-  }
-  .csv-ghost i {
-    display: block;
-    height: 5px;
-    background: var(--n-200);
-  }
-  .csv-ghost span:nth-child(3) i {
-    background: hsl(178 38% 86%);
   }
   .csv-foot {
     display: flex;
@@ -3536,25 +3605,53 @@ const faqs = [
     transition: transform 700ms var(--ease);
   }
   .csv[data-stage='1'] .csv-meter i {
-    transform: scaleX(0.667);
+    transform: scaleX(0.75);
   }
   .csv[data-stage='2'] .csv-meter i,
   .csv[data-stage='3'] .csv-meter i {
     transform: scaleX(1);
   }
+  /* Short screens: tighter rows, so the pinned CSV still fits under
+     the heading on its last, longest state. */
+  @media (max-height: 780px) and (min-width: 901px) {
+    .csv-row {
+      padding-block: 4.5px;
+    }
+  }
+  /* Stacked: nothing pins. Heading, then the CSV, then the steps. */
   @media (max-width: 900px) {
+    #loop {
+      padding-top: clamp(57.83px, 6.89vw, 90.88px);
+    }
     .loop {
-      grid-template-columns: minmax(0, 1fr);
+      display: block;
     }
-    .csv-wrap {
-      order: -1;
+    .loop-stage,
+    :global(html[data-vscroll]) .loop-stage {
+      position: static;
+      height: auto;
+      pointer-events: auto;
     }
-    .csv,
-    :global(html[data-vscroll]) .csv {
-      position: relative;
-      top: auto;
+    .loop-head {
+      margin-inline: 0;
+      padding: 0;
+      background: none;
     }
-    .loop-step {
+    .loop-head::after {
+      display: none;
+    }
+    .loop-cols,
+    .loop-track {
+      display: block;
+    }
+    .loop-cols {
+      margin-top: 32px;
+    }
+    .loop-track {
+      padding-top: 34px;
+    }
+    .loop-step,
+    .loop-step:last-child {
       min-height: 0;
       padding-bottom: 34px;
     }
@@ -3566,7 +3663,6 @@ const faqs = [
     }
     .c-id,
     .csv-head span:first-child,
-    .csv-ghost span:first-child,
     .c-flag {
       display: none;
     }
@@ -3581,7 +3677,7 @@ const faqs = [
     display: grid;
     grid-template-columns: minmax(0, 3fr) minmax(0, 8fr);
     gap: 18px clamp(28px, 4vw, 54px);
-    margin-top: 56px;
+    margin-top: calc(56px - min(15vh, var(--loop-slack, 0px)));
     padding: 26px 28px;
     background: var(--surface);
     border: 1px solid var(--line);
@@ -3719,12 +3815,15 @@ const faqs = [
   }
 
   /* ══ DOMAINS ═════════════════════════════════════════════════ */
+  .domains {
+    padding-block: clamp(30px, 3.4vw, 45px);
+  }
   .domains .h2 {
-    max-width: 24ch;
+    max-width: none;
   }
   /* Industries, drifting past. Faded at both edges, paused on hover. */
   .mq {
-    margin-top: 44px;
+    margin-top: 30px;
     overflow: hidden;
     border-block: 1px solid var(--line-2);
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
@@ -3744,10 +3843,10 @@ const faqs = [
   .mq li {
     display: flex;
     align-items: center;
-    gap: 34px;
-    padding: 20px 17px;
+    gap: 26px;
+    padding: 15px 13px;
     font-family: var(--hero-serif);
-    font-size: clamp(20px, 2.2vw, 28px);
+    font-size: clamp(15px, 1.65vw, 21px);
     letter-spacing: -0.016em;
     white-space: nowrap;
     color: var(--ink-2);
@@ -3874,7 +3973,7 @@ const faqs = [
     padding-block: clamp(79.2px, 9.9vw, 131.4px);
   }
   .glass {
-    max-width: 720px;
+    max-width: 900px;
     padding: clamp(30px, 4vw, 52px);
     background: hsl(0 0% 100% / 0.08);
     border: 1px solid hsl(0 0% 100% / 0.24);
@@ -3882,20 +3981,29 @@ const faqs = [
     backdrop-filter: blur(20px) saturate(1.3);
     box-shadow: 0 30px 80px -40px hsl(243 80% 12% / 0.6);
   }
+  /* One clause per line, as in the hero. */
   .glass h2 {
-    max-width: 16ch;
     font-family: var(--hero-serif);
-    font-size: clamp(30px, 4vw, 48px);
+    font-size: clamp(28px, 3vw, 42px);
     font-weight: 400;
     line-height: 1.1;
     letter-spacing: -0.024em;
     text-wrap: balance;
   }
+  .glass h2 span {
+    display: block;
+  }
+  @media (min-width: 900px) {
+    .glass h2 span {
+      white-space: nowrap;
+    }
+  }
   .glass p {
     margin-top: 16px;
-    max-width: 50ch;
+    max-width: 68ch;
     font-size: 14.85px;
     line-height: 1.74;
     color: hsl(0 0% 100% / 0.84);
+    text-wrap: pretty;
   }
 </style>
