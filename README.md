@@ -4,13 +4,13 @@ Astro-based marketing and research site with Markdown and MDX content.
 
 ## Stack
 
-- Astro 5
+- Astro 7
 - MDX content collections (`@astrojs/mdx`)
 - Scoped Astro styles and small inline scripts; no UI framework
 
 ## Run
 
-Prerequisites: Node.js 20+ and `pnpm`.
+Prerequisites: Node.js 22.12+ and `pnpm`.
 
 ```bash
 pnpm install
