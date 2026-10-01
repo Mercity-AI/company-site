@@ -1,8 +1,7 @@
 import { defineConfig } from 'astro/config';
-import react from '@astrojs/react';
 import mdx from '@astrojs/mdx';
+import { unified } from '@astrojs/markdown-remark';
 import sitemap from '@astrojs/sitemap';
-import tailwindcss from '@tailwindcss/vite';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypeHighlight from 'rehype-highlight';
@@ -26,6 +25,10 @@ const forceAllowAllHostsPlugin = {
 
 export default defineConfig({
   site: 'https://www.mercity.ai',
+  // Astro 7 defaults to JSX whitespace rules, which drop spaces between
+  // inline elements; keep the HTML-aware compression the pages were
+  // written against.
+  compressHTML: true,
   redirects: {
     '/v2': '/',
     '/blog-post/laco-layer-pruning-for-qwen3-8b-our-research-log':
@@ -40,35 +43,39 @@ export default defineConfig({
     allowedHosts: ['.ngrok-free.app', '.ngrok.app', '.ngrok.io'],
   },
   integrations: [
-    react(),
     mdx(),
     sitemap({
-      filter: (page) => !/\/(legacy|v2-open|simula-v2)\/?$/.test(page),
+      filter: (page) => !/\/simula-v2\/?$/.test(page),
     }),
   ],
   vite: {
-    plugins: [tailwindcss(), forceAllowAllHostsPlugin],
+    plugins: [forceAllowAllHostsPlugin],
     server: {
       // host: '0.0.0.0',
       allowedHosts: true,
     },
   },
+  // Astro 7 renders Markdown with Sätteri by default; the content relies on
+  // remark/rehype plugins (math, highlighting, heading anchors, scrollable
+  // tables), so it stays on the unified pipeline. MDX inherits it.
   markdown: {
-    remarkPlugins: [remarkMath],
-    rehypePlugins: [
-      rehypeSlug,
-      rehypeHighlight,
-      rehypeKatex,
-      rehypeScrollableTables,
-      [
-        rehypeAutolinkHeadings,
-        {
-          behavior: 'wrap',
-          properties: {
-            className: ['anchor'],
+    processor: unified({
+      remarkPlugins: [remarkMath],
+      rehypePlugins: [
+        rehypeSlug,
+        rehypeHighlight,
+        rehypeKatex,
+        rehypeScrollableTables,
+        [
+          rehypeAutolinkHeadings,
+          {
+            behavior: 'wrap',
+            properties: {
+              className: ['anchor'],
+            },
           },
-        },
+        ],
       ],
-    ],
+    }),
   },
 });

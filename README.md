@@ -1,18 +1,16 @@
 # Mercity Research (Astro)
 
-Astro-based marketing and research site with MDX blog content and selective React islands for animated backgrounds.
+Astro-based marketing and research site with Markdown and MDX content.
 
 ## Stack
 
-- Astro 5
-- React islands (`@astrojs/react`)
+- Astro 7
 - MDX content collections (`@astrojs/mdx`)
-- Tailwind CSS v4
-- View transitions via `astro:transitions`
+- Scoped Astro styles and small inline scripts; no UI framework
 
 ## Run
 
-Prerequisites: Node.js 20+ and `pnpm`.
+Prerequisites: Node.js 22.12+ and `pnpm`.
 
 ```bash
 pnpm install
