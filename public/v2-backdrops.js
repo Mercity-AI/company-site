@@ -108,6 +108,41 @@
     63, 31, 55, 23, 61, 29, 53, 21,
   ];
 
+  // Shared body of the strata grounds: bands of a six-step ramp rising
+  // left to right, Bayer-dithered edges warped by noise, the plate's
+  // weave through every band, and a darker pool at the centre.
+  function strata(ctx, w, h, seed, RAMP, deep) {
+    const fbm = makeNoise(seed);
+    const L = 8;
+    const k = 900 / Math.max(w, h);
+    const img = ctx.createImageData(w, h);
+    const d = img.data;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const nx = x * k;
+        const ny = y * k;
+        const warp = (fbm(nx / 240, ny / 80, 3) - 0.5) * 0.46;
+        const bump = (BAYER8[(y & 7) * 8 + (x & 7)] / 64 - 0.5) * (1.3 / L);
+        // Bands climb toward the top right: light at the top, deep below.
+        let t = 1 - (y / h) * 0.95 + (x / w) * 0.22 - 0.1 + warp + bump;
+        t = t < 0 ? 0 : t > 1 ? 1 : t;
+        let c = ramp(RAMP, Math.round(t * (L - 1)) / (L - 1));
+        const weave = fbm(nx * 0.11, ny * 0.11, 3) - 0.5;
+        c = mix(c, weave > 0 ? RAMP[5] : RAMP[0], Math.abs(weave) * 0.22);
+        const dx = x / w - 0.5;
+        const dy = y / h - 0.52;
+        c = mix(c, deep, Math.exp(-(dx * dx * 3.6 + dy * dy * 8)) * 0.42);
+        const i = (y * w + x) * 4;
+        d[i] = c[0];
+        d[i + 1] = c[1];
+        d[i + 2] = c[2];
+        d[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    grain(ctx, w, h, 24, true);
+  }
+
   // Marching squares for one threshold. Line segments only -- enough to
   // stroke contours, and no dependency to keep alive.
   function marchingSquares(values, gw, gh, threshold, out) {
@@ -1036,6 +1071,206 @@
       }
       ctx.putImageData(img, 0, 0);
       grain(ctx, w, h, 26, true);
+    },
+
+    /* ── Synthetic data service (/services/synthetic-data) ──────── */
+
+    // INDIGO STRATA — the plate's cloth cut into the strata bleed.
+    // Bands of an indigo ramp rise gently left to right, their edges
+    // Bayer-dithered and warped by noise, so the ground reads as data
+    // laid down in layers. The plate's fine weave runs through every
+    // band and a darker pool holds the centre for the type on top.
+    // Coordinates are normalised, so a low-dpr copy blurs to the same
+    // picture.
+    sdStrata(ctx, w, h, seed) {
+      strata(ctx, w, h, seed, [
+        hsl2rgb(243, 78, 22),
+        hsl2rgb(243, 78, 31),
+        hsl2rgb(243, 74, 41),
+        hsl2rgb(243, 74, 50),
+        hsl2rgb(241, 72, 59),
+        hsl2rgb(240, 66, 68),
+      ], hsl2rgb(243, 80, 26));
+    },
+
+    /* ── LLM guardrails service (/services/llm-guardrails) ──────── */
+
+    // CORAL STRATA — sdStrata's construction on a warm ramp: coral at
+    // the base rising through apricot to a pale peach, with a peach
+    // pool at the centre so dark type reads on it. Used for the
+    // guardrails page's hero, the "ship with proof" card and the closer.
+    grStrata(ctx, w, h, seed) {
+      strata(ctx, w, h, seed, [
+        hsl2rgb(0, 79, 55),
+        hsl2rgb(6, 85, 61),
+        hsl2rgb(11, 90, 67),
+        hsl2rgb(17, 94, 73),
+        hsl2rgb(23, 96, 79),
+        hsl2rgb(28, 97, 85),
+      ], hsl2rgb(20, 96, 80));
+    },
+
+    // WARM FIELD — the light counterpart of grEmber: the design lab's
+    // "Blur field" (blurred sources, no geometry, no dither) in soft
+    // apricot, peach and blush over a pale warm ground, with only a
+    // trace of grain. Low contrast, so dark type reads straight on it.
+    // Behind the guardrails page's "safety alignment" section.
+    grWash(ctx, w, h, seed) {
+      const r = rng(seed);
+      const TINTS = [
+        hsl2rgb(20, 88, 88),
+        hsl2rgb(30, 92, 89),
+        hsl2rgb(12, 80, 90),
+        hsl2rgb(38, 94, 90),
+        hsl2rgb(356, 64, 92),
+      ];
+      ctx.fillStyle = css(hsl2rgb(22, 88, 95));
+      ctx.fillRect(0, 0, w, h);
+      ctx.filter = `blur(${Math.round(Math.min(w, h) * 0.24)}px)`;
+      for (let i = 0; i < 7; i++) {
+        ctx.fillStyle = css(TINTS[i % TINTS.length]);
+        ctx.beginPath();
+        ctx.ellipse(r() * w, r() * h, w * (0.14 + r() * 0.2), h * (0.26 + r() * 0.36), r() * 3.14, 0, 6.29);
+        ctx.fill();
+      }
+      ctx.filter = 'none';
+      grain(ctx, w, h, 4, true);
+    },
+
+    // EMBER FIELD — the design lab's "Blur field" (blurred sources, no
+    // geometry left) in dark warm tones: brick, terracotta and umber
+    // over a deep brown ground, with only a trace of grain. The
+    // guardrails page's control-layer section sits on it.
+    grEmber(ctx, w, h, seed) {
+      const r = rng(seed);
+      const TINTS = [
+        hsl2rgb(10, 46, 24),
+        hsl2rgb(18, 50, 21),
+        hsl2rgb(4, 40, 19),
+        hsl2rgb(24, 44, 26),
+        hsl2rgb(350, 32, 17),
+      ];
+      ctx.fillStyle = css(hsl2rgb(14, 32, 10));
+      ctx.fillRect(0, 0, w, h);
+      ctx.filter = `blur(${Math.round(Math.min(w, h) * 0.22)}px)`;
+      for (let i = 0; i < 7; i++) {
+        ctx.fillStyle = css(TINTS[i % TINTS.length]);
+        ctx.beginPath();
+        ctx.ellipse(r() * w, r() * h, w * (0.14 + r() * 0.2), h * (0.24 + r() * 0.36), r() * 3.14, 0, 6.29);
+        ctx.fill();
+      }
+      ctx.filter = 'none';
+      grain(ctx, w, h, 5, true);
+    },
+
+    // WASH — "All three" from /design.html (blur → dither → grain),
+    // kept light enough for ink to sit on it. Stronger than blurlight:
+    // indigo and teal tints with a little warmth, larger sources, a
+    // clear lavender ground. For sections whose content sits on white
+    // cards, so the colour shows between them without costing contrast.
+    sdWash(ctx, w, h, seed) {
+      const r = rng(seed);
+      const TINTS = [
+        hsl2rgb(243, 78, 84),
+        hsl2rgb(178, 52, 83),
+        hsl2rgb(250, 70, 89),
+        hsl2rgb(236, 64, 80),
+        hsl2rgb(30, 80, 90),
+        hsl2rgb(190, 60, 88),
+      ];
+      ctx.fillStyle = css(hsl2rgb(240, 45, 96));
+      ctx.fillRect(0, 0, w, h);
+      ctx.filter = `blur(${Math.round(Math.min(w, h) * 0.2)}px)`;
+      for (let i = 0; i < 7; i++) {
+        ctx.fillStyle = css(TINTS[Math.floor(r() * TINTS.length)]);
+        ctx.beginPath();
+        ctx.ellipse(r() * w, r() * h, w * (0.16 + r() * 0.24), h * (0.3 + r() * 0.4), r() * 3.14, 0, 6.29);
+        ctx.fill();
+      }
+      ctx.filter = 'none';
+      const img = ctx.getImageData(0, 0, w, h);
+      const d = img.data;
+      const L = 12;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const i = (y * w + x) * 4;
+          const bump = (BAYER8[(y & 7) * 8 + (x & 7)] / 64 - 0.5) * (255 / L);
+          for (let k = 0; k < 3; k++) {
+            const v = Math.max(0, Math.min(255, d[i + k] + bump));
+            d[i + k] = (Math.round((v / 255) * (L - 1)) / (L - 1)) * 255;
+          }
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      grain(ctx, w, h, 16, true);
+    },
+
+    // WASH, WARM — the same construction as sdWash, shifted warm:
+    // apricot, sand and blush over an ivory ground, with indigo and a
+    // warm lavender kept in so it still belongs to the site. sdWash
+    // stays available as the cool variant.
+    sdWashWarm(ctx, w, h, seed) {
+      const r = rng(seed);
+      const TINTS = [
+        hsl2rgb(28, 88, 87),
+        hsl2rgb(40, 82, 87),
+        hsl2rgb(12, 78, 90),
+        hsl2rgb(262, 56, 89),
+        hsl2rgb(243, 66, 88),
+        hsl2rgb(20, 70, 84),
+      ];
+      ctx.fillStyle = css(hsl2rgb(36, 60, 96));
+      ctx.fillRect(0, 0, w, h);
+      ctx.filter = `blur(${Math.round(Math.min(w, h) * 0.2)}px)`;
+      for (let i = 0; i < 7; i++) {
+        ctx.fillStyle = css(TINTS[Math.floor(r() * TINTS.length)]);
+        ctx.beginPath();
+        ctx.ellipse(r() * w, r() * h, w * (0.16 + r() * 0.24), h * (0.3 + r() * 0.4), r() * 3.14, 0, 6.29);
+        ctx.fill();
+      }
+      ctx.filter = 'none';
+      const img = ctx.getImageData(0, 0, w, h);
+      const d = img.data;
+      const L = 12;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const i = (y * w + x) * 4;
+          const bump = (BAYER8[(y & 7) * 8 + (x & 7)] / 64 - 0.5) * (255 / L);
+          for (let k = 0; k < 3; k++) {
+            const v = Math.max(0, Math.min(255, d[i + k] + bump));
+            d[i + k] = (Math.round((v / 255) * (L - 1)) / (L - 1)) * 255;
+          }
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      grain(ctx, w, h, 16, true);
+    },
+
+    // BLUR FIELD — "Blur field" from /design.html: blurred sources
+    // with no geometry left, then colour grain, no dither. Brighter
+    // than the washes (indigo, teal, apricot, lilac, sky, blush at
+    // mid-light values) but still light enough for dark ink on top.
+    sdBlurField(ctx, w, h, seed) {
+      const r = rng(seed);
+      const TINTS = [
+        hsl2rgb(243, 82, 80),
+        hsl2rgb(178, 55, 76),
+        hsl2rgb(28, 92, 81),
+        hsl2rgb(262, 70, 85),
+        hsl2rgb(200, 72, 83),
+        hsl2rgb(350, 78, 88),
+      ];
+      ctx.fillStyle = css(hsl2rgb(240, 45, 93));
+      ctx.fillRect(0, 0, w, h);
+      ctx.filter = `blur(${Math.round(Math.min(w, h) * 0.22)}px)`;
+      for (let i = 0; i < 8; i++) {
+        ctx.fillStyle = css(TINTS[i % TINTS.length]);
+        ctx.beginPath();
+        ctx.ellipse(r() * w, r() * h, w * (0.14 + r() * 0.2), h * (0.24 + r() * 0.36), r() * 3.14, 0, 6.29);
+        ctx.fill();
+      }
+      ctx.filter = 'none';
+      grain(ctx, w, h, 20, false);
     },
 
     // LEAFGRID — coverage with a denominator. Every leaf of the

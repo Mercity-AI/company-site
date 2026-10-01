@@ -33,6 +33,7 @@ tools as they ship (see *Still placeholder* below). Treat design changes on
 | `/blog`, `/blog-post/[slug]` | Listing and posts, on `V2Layout`. Same components. |
 | `/open-source/simula` | The Simula product page, on `V2Layout`. See *Simula*. |
 | `/open-source/simula-v2` | A rewrite of the Simula page, told as why and how we built it. `noindex`, for comparison until it replaces `/open-source/simula`. See *Simula v2*. |
+| `/services/synthetic-data` | The synthetic data service page, on `V2Layout`, under the nav's Services dropdown. See *Synthetic data service*. |
 | `/about` | On `V2Layout`. Quiet page; every figure computed from the collections. See *About*. |
 | `/contact` | Unchanged, on `BaseLayout`. The last page on the old shell. |
 
@@ -360,6 +361,123 @@ the repo at `/Volumes/E/Mercity Work/syn-data-gen/runs/v0_ecommerce_search_extra
 leaves reached). `item-4681-3147e13a` is a clean real row to swap in if
 the flow should be one actual row end to end.
 
+## Synthetic data service (`/services/synthetic-data`)
+
+Sells synthetic data generation **as a service**, not Simula. Written
+for bottom-of-funnel buyers: they know the problem and that synthetic
+data is the answer, so the page shows we can do it for them and have
+done it before. Everything is skimmable (icons, short lines; detail
+only in the FAQ) and nothing needs a click to be seen. It has more
+design latitude than the rest of the site.
+
+Sections: a pinned scroll hero (190svh; the stage sticks via
+`data-vsticky="0"`; the offer is the first screen and focuses in from
+a blur on load, then scrolling crossfades a low-res blurred copy of the
+ground in and blurs the copy away) → proof strip (counted figures + a
+link to Simula) → six problems as nodes around a hub, with curves
+drawn from layout offsets and pulses on `animateMotion` → what we
+generate (eight icon tiles) → published datasets (every public
+dataset on huggingface.co/Mercity as natural-height cards in staggered columns, the even columns 56px
+lower, as in Harsh's reference (Hugging Face's own open-source grid).
+The column count is chosen so the datasets divide evenly: `DS_COLS = 5`
+for ten, two cards a column. **The whole page runs at
+`section { --shell: 1300px }`** (nav and footer keep 1150px) so the
+tiles get room while every section's edges line up; card width is
+(shell − 37 − 4 × 14) ÷ 5, about 241px. An earlier 1560px shell on
+the datasets section alone was dropped because it stuck out past the
+other sections. Below
+1100px the column wrappers go `display: contents` and the cards fall
+into two even columns, ordered by an inline `order`. **Keep the count
+dividing evenly**; that is what avoids holes. Rejected on the way:
+3/2 columns with tiles stretched to fill ("very long and stretched"),
+short columns centred (a half-tile hole at the top), and two padding
+tiles to reach twelve ("is it necessary that you need 12?"). Each
+dataset tile has a dot, name, row count and a
+small SVG illustration of what the dataset is (`VIZ` in the
+frontmatter, one per dataset id, 240 × 90, seeded: a taxonomy feeding
+stories, query/positive/negative, reasoning strands converging on an
+answer card, diffusion steps, a rink from above with the skater's
+traced path and the elements marked on it (a spin spiral, two jumps
+as dashed hops, labelled chips), and so on; stick-figure skating, a
+spin-plus-signals skating version and a zig-zag reasoning version were
+all rejected);
+these replaced
+first-row previews, whose `snap` data is still in the list but unused;
+the tiles replaced an earlier carousel) → known failure modes and our check for each (no tree graphic)
+→ two ways to start, side by side → the build/review loop (a
+scroll-filled rail) and what you receive → built on Simula (the plate,
+run figures, links) → domains marquee → buyer FAQ → a frosted glass
+closer.
+
+**Current order and copy (2026-09-30, from Harsh's boss's notes).**
+The order above is superseded: hero → domains marquee → problems →
+what we generate → failure modes → two ways to start → the loop →
+published datasets → built on Simula → proof strip → FAQ → closer.
+The copy was rewritten to sound like an agency with authority. The hero
+is "Large-scale synthetic data, engineered for model training." with
+three sentences (years of specialising, 100B+ tokens, clients trained
+state-of-the-art models, fewer retraining cycles; the SOTA claim is
+from Harsh's note, confirm before launch). The problems section is
+white; the hub reads "All six, one answer / An engineered dataset",
+each node adds a teal line with our fix, and the pulses run inward.
+Failure modes are headed "We engineer against known failures in data
+generation." and stay the two-column table (failure | how we prevent
+it), in agency wording with no Simula context; a version with a
+failure → prevented picture per card was tried and reverted.
+"You have some data" is the scatter with a hatched missing column and a
+"no data" corner (the per-case histogram was cut); "domain expertise" is
+expert notes → spec → colour-tagged samples. The loop is vertical, with
+a sticky `tranche.csv` beside it (`data-stage` -1 to 3, set from which
+step has passed 66% of the screen): rows generate → review marks O/X
+with two flags → flagged values struck through and replaced, X turns to
+a tick → every row ticks and ghost rows arrive. The last step keeps a
+36vh min-height: the CSV grows on that step, and without the room the
+end of the section pushed it up under the nav. The proof strip's
+fourth cell is now a contact link. "Telecom" is out of the marquee.
+
+Colour comes from `sdWashWarm` (apricot, sand, blush and a warm
+lavender on ivory; `sdWash` is the cooler indigo/teal variant, kept
+for comparison), the design lab's "All three" treatment
+(blur → dither → grain), drawn at dpr 0.6
+as a `.wash` background on the datasets tiles and the domains band
+(the problems hub had it until Harsh asked for white). Each has its content on white
+cards or chips, so the colour shows between them without costing
+contrast. Text-on-ground sections stay flat.
+
+The datasets section runs a **WebGL shader** (inline script in the
+page): one canvas under the whole section, half resolution, ~30fps,
+only while on screen. It draws a slow domain-warped fbm flow (ivory,
+lilac, peach, mint) as the ground, and inside each card's rectangle
+a three-colour flow, with a white lift under the description. Every
+card currently uses the Kimi K3 card's palette (`CARD_PAL = 0`:
+indigo, violet, peach); set it to `null` to give each card its own
+palette from the `PAL` list by `data-pal`. Card
+rects are measured every frame, so the colour follows the reveal and
+hover lift; hover speeds a card's flow and deepens it. A static SVG
+grain layer sits over the canvas. With WebGL on, the section gets
+`gl-on` and the cards go transparent; without it, the `sdBlurField`
+canvas and the CSS gradient cards are the fallback. Reduced motion
+draws one still frame. Card colour strength is `CARD_MIX` (0.4, set by
+Harsh as the sweet spot; hover adds 0.15). The illustration sits on frosted white and card
+text uses `--ink`/`--ink-2`, so no small type sits on colour.
+
+The `datasets` array is typed in by hand (as of 2026-09-29; row counts
+from the Hugging Face dataset viewer, `test` left out). It shows 10 of
+the 12: Harsh had the two General Stories sets removed, so the lede
+says "a selection" rather than a count. The proof strip's "12 open
+datasets" and the home page's "12 datasets" count all of them. No
+card carries a "Generated with Simula" badge any more (Harsh had the
+Kimi K3 one removed); its description still mentions Simula.
+
+The hero, hub and closer grounds are `sdStrata`: the Simula plate's
+indigo cloth cut into the strata bleed from `/design.html`. Harsh
+asked for the scroll-and-blur intro to stay, and cut the first draft's
+dark "skipping synthetic data" band, text-heavy shortfall grid and
+entry tabs; later the "Synthetic data" wordmark screen and the
+coverage tree went too. "100B+" stands in for Pranav's "hundreds of billions of tokens";
+the run figures are from the research log; the scatter and tree are
+illustrations.
+
 ## About (`/about`)
 
 Type-only, no backdrop: `ListHead` → "How we work" (four principles,
@@ -471,6 +589,11 @@ silently.
   Plotly chunk with a 504, and every chart on the dense pretraining log
   shows "This chart could not load." The built site is fine. Restart the
   dev server after building.
+- **SVG injected with `set:html` falls back to solid black** if its
+  class styles are missing, which a stale dev stylesheet makes look
+  like a bug (it happened to the skating chips). Put fill and stroke on
+  the shapes as attributes too, with literal colours: `var()` does not
+  work in SVG presentation attributes.
 - **Astro inlines small stylesheets** into the HTML instead of emitting a
   `.css` chunk. Grepping only `dist/_astro/*.css` will make a page's CSS look
   missing when it is present.

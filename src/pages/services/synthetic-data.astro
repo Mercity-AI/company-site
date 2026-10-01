@@ -1,0 +1,3901 @@
+---
+/**
+ * Synthetic data generation, as a service.
+ *
+ * Written for buyers at the bottom of the funnel: they know the problem
+ * and they know synthetic data is the answer, so the page has to show
+ * that we can do it for them and have done it before. Every section is
+ * skimmable: icons and short lines first, detail only in the FAQ.
+ *
+ * The hero is a pinned scroll on `sdStrata` (the Simula plate's indigo
+ * cloth cut into the strata bleed from /design.html). The offer is the
+ * first screen and focuses in on load; scrolling frosts the ground and
+ * then blurs the copy away.
+ *
+ * Figures: "100B+" stands in for Pranav's "hundreds of billions of
+ * tokens"; the dataset count in the strip is the hand count on the home
+ * page and should match the `datasets` list below; the
+ * run figures are from the Simula research log. The scatter and the
+ * tree under "Two ways to start" are illustrations.
+ */
+import { getCollection } from 'astro:content';
+import V2Layout from '@/layouts/V2Layout.astro';
+
+const OSS_URL = '/open-source/simula';
+const GITHUB_URL = 'https://github.com/Mercity-AI/Simula';
+const LOG_URL = '/research/building-simula-our-synthetic-data-generation-library';
+const HF_DATASETS_URL = 'https://huggingface.co/datasets?author=Mercity';
+// Public dataset repos under huggingface.co/Mercity, typed in by hand
+// as on the home page ("test" left out). Update both places together.
+const HF_DATASETS = 12;
+
+const writeups = [...(await getCollection('posts')), ...(await getCollection('research'))];
+const firstYear = Math.min(...writeups.map((e) => e.data.publishedAt.getFullYear()));
+
+/* Line icons on a 24 grid, drawn with currentColor. */
+const ICON: Record<string, string> = {
+  sft: '<path d="M4 5h16v10H10l-6 4z"/><path d="M8 9h8M8 12h5"/>',
+  chat: '<path d="M3 4h12v8H8l-5 3.5z"/><path d="M18 8h3v11l-4-3h-7v-2"/>',
+  agent: '<rect x="3" y="4" width="6" height="6"/><rect x="15" y="14" width="6" height="6"/><path d="M9 7h4v10h2"/><circle cx="13" cy="12" r="1.2"/>',
+  rag: '<path d="M13 3H6v18h6"/><path d="M13 3l4 4v3"/><path d="M13 3v4h4"/><circle cx="16.5" cy="16.5" r="3.5"/><path d="M19 19l2.5 2.5"/>',
+  extract: '<path d="M8 4c-2 0-2.5 1-2.5 3v2c0 1.6-.8 3-2 3 1.2 0 2 1.4 2 3v2c0 2 .5 3 2.5 3"/><path d="M16 4c2 0 2.5 1 2.5 3v2c0 1.6.8 3 2 3-1.2 0-2 1.4-2 3v2c0 2-.5 3-2.5 3"/><path d="M10 12h4"/>',
+  classify: '<rect x="4" y="4" width="7" height="7"/><rect x="13" y="4" width="7" height="7"/><rect x="4" y="13" width="7" height="7"/><circle cx="16.5" cy="16.5" r="3.5"/>',
+  evalset: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12l6.5-6.5"/><path d="M16 5.5h3v3"/>',
+  redteam: '<path d="M12 3l8 3v6c0 4.8-3.4 8-8 9-4.6-1-8-4.2-8-9V6z"/><path d="M12 8v5M12 16v.6"/>',
+  scarcity: '<ellipse cx="12" cy="5.5" rx="7" ry="2.5"/><path d="M5 5.5v13c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-13"/><path d="M5 12c0 1.4 3.1 2.5 7 2.5" stroke-dasharray="2 2.5"/>',
+  access: '<rect x="5" y="11" width="14" height="10"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/><path d="M12 15v2.5"/>',
+  tail: '<path d="M3 3v18h18"/><path d="M5 5c3 0 4 11 16 12"/><circle cx="18" cy="16.6" r="1.3"/>',
+  quality: '<path d="M4 5h16l-6 7.5V19l-4 2v-8.5z"/>',
+  safety: '<circle cx="12" cy="12" r="6.5"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>',
+  leak: '<path d="M9 3h6"/><path d="M10 3v6l-5.2 9.2A2 2 0 0 0 6.5 21h11a2 2 0 0 0 1.7-2.8L14 9V3"/><path d="M7.5 15h9"/>',
+  repeat: '<rect x="8" y="8" width="12" height="12"/><path d="M16 8V4H4v12h4"/>',
+  wrong: '<circle cx="12" cy="12" r="8.5"/><path d="M9 9l6 6M15 9l-6 6"/>',
+  same: '<path d="M5 9h14M5 15h14"/>',
+  lineage: '<circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="12" r="2"/><path d="M6 7v10M6 12h10"/>',
+  map: '<circle cx="4.5" cy="12" r="1.8"/><path d="M6.3 12H9M9 6v12M9 6h4M9 12h4M9 18h4"/><circle cx="15.5" cy="6" r="1.6"/><circle cx="15.5" cy="12" r="1.6"/><circle cx="15.5" cy="18" r="1.6"/>',
+};
+
+/* ── Proof strip, after the Simula section ─────────────────────── */
+const strip = [
+  { count: 100, suffix: 'B+', label: 'tokens generated', note: 'for client projects' },
+  // Hand count of public repos under huggingface.co/Mercity, as on the home page.
+  { count: HF_DATASETS, suffix: '', label: 'open datasets', note: 'published on Hugging Face' },
+  { count: writeups.length, suffix: '', label: 'research write-ups', note: `published since ${firstYear}` },
+];
+
+/* ── The six problems, around one hub. Each node carries the problem
+   and, in teal, what the engineered dataset does about it; the pulses
+   run from the problems into the hub. ── */
+const problems = [
+  { icon: 'scarcity', title: 'Volume', line: 'Too little data to train on', fix: 'Generated at the volume you need' },
+  { icon: 'access', title: 'Access', line: 'Data you cannot legally use', fix: 'No private records involved' },
+  { icon: 'tail', title: 'The long tail', line: 'Edge cases nobody recorded', fix: 'Rare cases generated on purpose' },
+  { icon: 'quality', title: 'Quality', line: 'Labels that are noisy or skewed', fix: 'Every sample verified' },
+  { icon: 'safety', title: 'Safety', line: 'Attacks you cannot ethically collect', fix: 'Adversarial sets for red-teaming' },
+  { icon: 'leak', title: 'Evaluation', line: 'Test sets you cannot trust', fix: 'Held-out benchmarks for your domain' },
+];
+
+/* ── What we generate ──────────────────────────────────────────── */
+const kinds = [
+  { icon: 'sft', title: 'Instruction and SFT sets', line: 'Prompt and response pairs that teach a model your task.' },
+  { icon: 'chat', title: 'Multi-turn conversations', line: 'Dialogues for assistants, including the turns that go wrong.' },
+  { icon: 'agent', title: 'Agent and tool-use traces', line: 'Step-by-step trajectories with tool calls and results.' },
+  { icon: 'rag', title: 'RAG question sets', line: 'Questions and answers grounded in your documents.' },
+  { icon: 'extract', title: 'Structured extraction', line: 'Text paired with the fields your system has to pull out.' },
+  { icon: 'classify', title: 'Classification sets', line: 'Labelled examples, weighted toward the rare classes.' },
+  { icon: 'evalset', title: 'Evaluation sets', line: 'Benchmarks for your domain, kept apart from training.' },
+  { icon: 'redteam', title: 'Adversarial and red-team data', line: 'Attacks, abuse and jailbreaks for your safety systems.' },
+];
+
+/* ── Published datasets, from huggingface.co/Mercity as of
+   2026-09-29 (the repo named "test" left out). Row counts and the
+   `snap` previews are from each dataset's first row in the Hugging
+   Face viewer, trimmed; the last three have no viewer, and their
+   tiles say so instead of inventing a row. `tone` colours the dot:
+   indigo for text, teal for embeddings and retrieval, neutral for
+   images and poses. Update by hand as datasets are added, along with
+   the home page count. ── */
+type Snap = [string, string][];
+const datasets: {
+  id: string;
+  name: string;
+  kind: string;
+  rows?: number;
+  line: string;
+  tone: 'indigo' | 'teal' | 'neutral';
+  snap: Snap;
+}[] = [
+  {
+    id: 'kimi-k3-story-corpus-embeddings',
+    name: 'Kimi K3 story corpus',
+    kind: 'Synthetic text',
+    rows: 4000,
+    line: 'Synthetic short stories generated with Simula, with whole-document embeddings.',
+    tone: 'indigo',
+    snap: [
+      ['id', 'story-00000'],
+      ['genre_path', 'speculative fiction / epic fantasy'],
+      ['strategy_id', 'speculative-and-suspense'],
+      ['story_words', '1040'],
+    ],
+  },
+  {
+    id: 'Memory-Embeddings',
+    name: 'Memory embeddings',
+    kind: 'Retrieval triplets',
+    rows: 410990,
+    line: 'A message, its relevant memories and hard negatives, for memory retrieval in assistants.',
+    tone: 'teal',
+    snap: [
+      ['message', 'So, BuildRight thinks they’re done in October, but the fancy drawers…'],
+      ['positive', 'David’s 16-year-old daughter, Elena, is home from college…'],
+      ['negative', 'David recently purchased the highest-end, imported drawer slides…'],
+    ],
+  },
+  {
+    id: 'ReasonBridge-URT',
+    name: 'ReasonBridge-URT',
+    kind: 'Reasoning traces',
+    rows: 407314,
+    line: 'Conversations pairing reasoning traces with their final answers.',
+    tone: 'indigo',
+    snap: [
+      ['category', 'code'],
+      ['conversation', '[{"role": "user", "content": "Write a function named `repeater()`…'],
+      ['think_len', '1436'],
+    ],
+  },
+  {
+    id: 'FineWeb-Preprocessed',
+    name: 'FineWeb, preprocessed',
+    kind: 'Pretraining text',
+    rows: 10000000,
+    line: 'A preprocessed FineWeb corpus for language model pretraining.',
+    tone: 'indigo',
+    snap: [['text', 'No. 24; Updated March 2011. Parents are usually the first to recognize that…']],
+  },
+  {
+    id: 'laion-subset',
+    name: 'LAION subset',
+    kind: 'Image and caption pairs',
+    rows: 24840,
+    line: 'A curated LAION-5B subset used to train LCM-LoRA adapters.',
+    tone: 'neutral',
+    snap: [
+      ['image', '512 × 512'],
+      ['caption', 'Japanese pagoda and old house in Kyoto at twilight'],
+    ],
+  },
+  {
+    id: 'mahabharat-embeddings',
+    name: 'Mahabharat embeddings',
+    kind: 'Embeddings',
+    rows: 73815,
+    line: 'The Mahabharat in Sanskrit and English, embedded for search and retrieval.',
+    tone: 'teal',
+    snap: [
+      ['sanskrit_data', 'नारायणं नमस्कृत्य नरं चैव नरोत्तमम्…'],
+      ['translation', 'Having saluted the Supreme Deity (Narayana)…'],
+      ['bge_embedding', '[-0.0070, 0.0138, -0.0186, …]'],
+    ],
+  },
+  {
+    id: 'ramayana-embeddings',
+    name: 'Ramayana embeddings',
+    kind: 'Embeddings',
+    rows: 18760,
+    line: 'The Ramayana in Sanskrit and English, embedded for search and retrieval.',
+    tone: 'teal',
+    snap: [
+      ['sanskrit_data', 'तपःस्वाध्यायनिरतं तपस्वी वाग्विदां वरम्…'],
+      ['translation', 'Ascetic Valmiki enquired of Narada…'],
+      ['minilm_embedding', '[0.0072, 0.0352, -0.1428, …]'],
+    ],
+  },
+  {
+    id: 'bhagavad_gita-embeddings',
+    name: 'Bhagavad Gita embeddings',
+    kind: 'Embeddings',
+    rows: 657,
+    line: 'The Bhagavad Gita in Sanskrit and English, embedded for search and retrieval.',
+    tone: 'teal',
+    snap: [
+      ['sanskrit_data', 'धृतराष्ट्र उवाच धर्मक्षेत्रे कुरुक्षेत्रे…'],
+      ['bge_embedding', '[-0.0161, -0.0268, 0.0317, …]'],
+    ],
+  },
+  {
+    id: 'AnimeDiffusion_Dataset',
+    name: 'Anime diffusion',
+    kind: 'Images and prompts',
+    rows: 8202,
+    line: 'Anime wallpapers with tags, prompts and prompt embeddings, for text-to-image diffusion.',
+    tone: 'neutral',
+    snap: [
+      ['resolution', '1920x1080'],
+      ['short_prompt', 'A character from an anime or manga, wearing a black dress…'],
+    ],
+  },
+  {
+    id: 'Figure-Skating-Classification-Data',
+    name: 'Figure skating elements',
+    kind: 'Pose sequences',
+    line: '5,405 skeleton pose sequences of figure skating elements, across 64 classes.',
+    tone: 'neutral',
+    snap: [
+      ['train_data.pkl', '4,324 sequences'],
+      ['test_data.pkl', '1,081 sequences'],
+      ['classes', '64'],
+    ],
+  },
+];
+
+/* Staggered columns, cards at their natural height. The column count
+   is chosen so the datasets divide evenly (ten → five columns of two),
+   which is what leaves no hole at the bottom. Dealt round-robin, so
+   reading order runs across the grid. */
+const DS_COLS = 5;
+const dsColumns = Array.from({ length: DS_COLS }, (_, c) => datasets.filter((_, i) => i % DS_COLS === c));
+
+/* ── Known failure modes, and the check for each ───────────────── */
+const controls = [
+  {
+    icon: 'repeat',
+    risk: 'It over-represents the easy cases',
+    fix: 'We map your domain before generating, so rare cases are produced on purpose and coverage is measured.',
+  },
+  {
+    icon: 'wrong',
+    risk: 'Samples read well and are wrong',
+    fix: 'An independent model verifies every sample against your rules. Failures are regenerated or dropped.',
+  },
+  {
+    icon: 'same',
+    risk: 'It collapses into sameness',
+    fix: 'We vary brief, style and difficulty case by case, and measure diversity on every batch.',
+  },
+  {
+    icon: 'leak',
+    risk: 'Test data leaks into training',
+    fix: 'We deduplicate against your evaluation sets, so a benchmark gain means the model improved.',
+  },
+  {
+    icon: 'lineage',
+    risk: 'Nobody can trace a sample',
+    fix: 'Every sample ships with its lineage: the case, prompt, model and checks behind it.',
+  },
+];
+
+/* ── Two ways to start: the illustrations ──────────────────────── */
+function rng(seed: number) {
+  return () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+/* A: your data, plotted, with its gaps. A grid over the plot, one case
+   type with no samples at all (a hatched column) and a rare corner
+   that was never reached. */
+const PA = { x0: 44, x1: 384, y0: 14, y1: 240 };
+const BIN_W = (PA.x1 - PA.x0) / 10;
+const MISSING = { x: PA.x0 + BIN_W * 3, w: BIN_W };
+const RARE = { x: 338, y: 50, r: 26 };
+const scatterRand = rng(7719);
+const gauss = () => {
+  const u = 1 - scatterRand();
+  const v = scatterRand();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+};
+const points: { x: number; y: number }[] = [];
+for (const cl of [
+  { x: 92, y: 150, sx: 24, sy: 40, n: 54 },
+  { x: 240, y: 164, sx: 34, sy: 36, n: 64 },
+  { x: 352, y: 198, sx: 14, sy: 20, n: 16 },
+]) {
+  for (let i = 0; i < cl.n; i++) points.push({ x: cl.x + gauss() * cl.sx, y: cl.y + gauss() * cl.sy });
+}
+for (let i = 0; i < 16; i++) points.push({ x: PA.x0 + scatterRand() * (PA.x1 - PA.x0), y: PA.y0 + scatterRand() * (PA.y1 - PA.y0) });
+const scatter = points.filter(
+  (p) =>
+    p.x > PA.x0 + 6 &&
+    p.x < PA.x1 - 6 &&
+    p.y > PA.y0 + 6 &&
+    p.y < PA.y1 - 6 &&
+    (p.x < MISSING.x - 5 || p.x > MISSING.x + MISSING.w + 5) &&
+    Math.hypot(p.x - RARE.x, p.y - RARE.y) > RARE.r + 6,
+);
+const gridX = Array.from({ length: 11 }, (_, i) => PA.x0 + i * BIN_W);
+const gridY = Array.from({ length: 7 }, (_, i) => PA.y0 + (i * (PA.y1 - PA.y0)) / 6);
+
+/* B: your experts' knowledge, turned into data. Their notes on the
+   left with three rules marked, each feeding a written spec, which
+   generates the samples on the right, tagged by the rule they cover. */
+const NOTE = { x: 16, y: 34, w: 132, h: 200 };
+const noteRand = rng(3307);
+const noteTags = [
+  { row: 1, label: 'rule', tone: 'i' },
+  { row: 4, label: 'edge case', tone: 't' },
+  { row: 7, label: 'format', tone: 'p' },
+];
+const noteLines = Array.from({ length: 9 }, (_, r) => {
+  const y = NOTE.y + 44 + r * 17;
+  const tag = noteTags.find((t) => t.row === r);
+  if (tag) {
+    const w = tag.label.length * 6.1 + 12;
+    return { y, tag: { ...tag, w, x: NOTE.x + 12 }, after: 14 + noteRand() * 30 };
+  }
+  return { y, bar: 54 + noteRand() * 52 };
+});
+const SPEC = { x: 196, y: 134 };
+const outRows = Array.from({ length: 7 }, (_, i) => ({
+  y: 38 + i * 30,
+  tone: ['i', 't', 'p', 'i', 't', 'i', 'p'][i],
+  a: 46 + noteRand() * 44,
+  b: 22 + noteRand() * 36,
+}));
+const curve = (a: { x: number; y: number }, b: { x: number; y: number }) => {
+  const mx = (a.x + b.x) / 2;
+  return `M${a.x} ${a.y} C${mx} ${a.y}, ${mx} ${b.y}, ${b.x} ${b.y}`;
+};
+
+/* ── Dataset tile illustrations ────────────────────────────────────
+   One small SVG per dataset (240 × 90), a picture of what the data is
+   rather than a row of it. Seeded, so every build draws the same.
+   Colours are classes styled in the page CSS: indigo ink, violet and
+   peach from the cards' palette, soft indigo and neutral grey. */
+const VIZ: Record<string, string> = (() => {
+  const R = rng(5281);
+  const n1 = (v: number) => v.toFixed(1);
+  const o2 = (v: number) => v.toFixed(2);
+  const g = () => {
+    const u = 1 - R();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R());
+  };
+  const bar = (x: number, y: number, w: number, cls: string, op = 1, h = 3.6) =>
+    `<rect class="${cls}" x="${n1(x)}" y="${n1(y - h / 2)}" width="${n1(w)}" height="${h}" rx="${h / 2}" fill-opacity="${o2(op)}"/>`;
+  const out: Record<string, string> = {};
+
+  // Simula stories: a taxonomy branches into leaves, each leaf a story.
+  {
+    let s = '';
+    const root = { x: 16, y: 45 };
+    [18, 45, 72].forEach((y) => {
+      const m = { x: 60, y };
+      s += `<path class="v-line" d="${curve(root, m)}"/>`;
+      [-8, 8].forEach((dy) => {
+        const l = { x: 100, y: y + dy };
+        s += `<path class="v-line" d="${curve(m, l)}"/><circle class="v-peach" cx="100" cy="${l.y}" r="3"/>`;
+        s += bar(110, l.y, 50 + R() * 76, 'v-vio', 0.35 + R() * 0.4);
+      });
+      s += `<circle class="v-ink" cx="60" cy="${y}" r="3.4"/>`;
+    });
+    s += `<rect class="v-ink" x="11.5" y="40.5" width="9" height="9"/>`;
+    out['kimi-k3-story-corpus-embeddings'] = s;
+  }
+
+  // Memory triplets: a message, memories that belong near it, and
+  // hard negatives pushed away.
+  {
+    const m = { x: 36, y: 45 };
+    const pos = [
+      { x: 92, y: 26 },
+      { x: 100, y: 62 },
+    ];
+    const neg = [
+      { x: 196, y: 20 },
+      { x: 212, y: 64 },
+    ];
+    let s = '';
+    pos.forEach((p) => (s += `<path class="v-inkS" d="M${m.x} ${m.y} L${p.x} ${p.y}"/>`));
+    neg.forEach((p) => (s += `<path class="v-dash" d="M${m.x} ${m.y} L${p.x} ${p.y}"/>`));
+    s += `<circle class="v-halo" cx="${m.x}" cy="${m.y}" r="30"/>`;
+    s += `<circle class="v-ink" cx="${m.x}" cy="${m.y}" r="6"/>`;
+    pos.forEach((p) => (s += `<circle class="v-vio" cx="${p.x}" cy="${p.y}" r="4.5"/>`));
+    neg.forEach((p) => (s += `<circle class="v-hollow" cx="${p.x}" cy="${p.y}" r="4.5"/>`));
+    s += `<text class="v-txt" x="36" y="84" text-anchor="middle">message</text>`;
+    s += `<text class="v-txt" x="108" y="68">positive</text>`;
+    s += `<text class="v-txt" x="204" y="45" text-anchor="middle">negative</text>`;
+    out['Memory-Embeddings'] = s;
+  }
+
+  // ReasonBridge: a long reasoning trace, many strands of thought
+  // weaving across, converging into one short answer.
+  {
+    const C = { x: 172, y: 45 };
+    let s = `<defs>
+      <linearGradient id="rb-a" x1="0" x2="1" y1="0" y2="0">
+        <stop offset="0" stop-color="hsl(275 60% 70%)" stop-opacity="0.25"/>
+        <stop offset="0.7" stop-color="hsl(262 70% 62%)" stop-opacity="0.8"/>
+        <stop offset="1" stop-color="hsl(243 75% 52%)"/>
+      </linearGradient>
+      <radialGradient id="rb-glow"><stop offset="0" stop-color="hsl(22 95% 66%)" stop-opacity="0.55"/><stop offset="1" stop-color="hsl(22 95% 66%)" stop-opacity="0"/></radialGradient>
+    </defs>`;
+    const bez = (p0: number[], p1: number[], p2: number[], p3: number[], t: number) =>
+      [0, 1].map((k) => {
+        const u = 1 - t;
+        return u * u * u * p0[k] + 3 * u * u * t * p1[k] + 3 * u * t * t * p2[k] + t * t * t * p3[k];
+      });
+    for (let k = 0; k < 9; k++) {
+      const y0 = 8 + k * 9.25;
+      const wob = (R() - 0.5) * 34;
+      const p0 = [10, y0];
+      const p1 = [64, y0 + wob];
+      const p2 = [118, C.y + (y0 - C.y) * 0.25 - wob * 0.4];
+      const p3 = [C.x, C.y];
+      s += `<path d="M${p0.join(' ')} C${n1(p1[0])} ${n1(p1[1])}, ${n1(p2[0])} ${n1(p2[1])}, ${p3.join(' ')}" fill="none" stroke="url(#rb-a)" stroke-width="${k % 3 === 1 ? 1.6 : 1.1}" stroke-linecap="round"/>`;
+      [0.18, 0.42].forEach((t, j) => {
+        if ((k + j) % 2) return;
+        const [x, y] = bez(p0, p1, p2, p3, t + R() * 0.08);
+        s += `<circle class="${j ? 'v-vio' : 'v-soft'}" cx="${n1(x)}" cy="${n1(y)}" r="${j ? 2 : 1.7}"/>`;
+      });
+    }
+    s += `<circle cx="${C.x}" cy="${C.y}" r="16" fill="url(#rb-glow)"/>`;
+    s += `<circle class="v-ink" cx="${C.x}" cy="${C.y}" r="3"/>`;
+    s += `<path class="v-inkS" d="M${C.x + 4} ${C.y} H186"/>`;
+    s += `<rect class="v-answer" x="188" y="31" width="44" height="28" rx="4"/>`;
+    s += bar(195, 40, 30, 'v-peach', 0.95, 3.4) + bar(195, 48.5, 20, 'v-peach', 0.6, 3.4);
+    s += `<text class="v-txt" x="10" y="88">reasoning trace</text><text class="v-txt" x="232" y="72" text-anchor="end">answer</text>`;
+    out['ReasonBridge-URT'] = s;
+  }
+
+  // FineWeb: page after page of web text.
+  {
+    let s = '';
+    for (let y = 10; y <= 82; y += 8) {
+      let x = 10;
+      while (x < 228) {
+        const w = Math.min(10 + R() * 36, 230 - x);
+        if (w > 4) s += bar(x, y, w, R() < 0.12 ? 'v-vio' : 'v-mute', R() < 0.12 ? 0.55 : 0.9, 3.2);
+        x += w + 4;
+      }
+    }
+    out['FineWeb-Preprocessed'] = s;
+  }
+
+  // LAION: images paired with captions.
+  {
+    let s = '';
+    [12, 126].forEach((x, i) => {
+      const y = 8;
+      s += `<rect class="v-frame" x="${x}" y="${y}" width="102" height="50"/>`;
+      s += `<path class="v-soft" d="M${x + 6} ${y + 46} L${x + 32} ${y + 20} L${x + 48} ${y + 34} L${x + 64} ${y + 22} L${x + 96} ${y + 46} Z"/>`;
+      s += `<circle class="v-peach" cx="${x + 80}" cy="${y + 14}" r="${i ? 4 : 5}"/>`;
+      s += bar(x, 70, 84 - i * 14, 'v-vio', 0.55) + bar(x, 79, 56 + i * 10, 'v-vio', 0.35);
+    });
+    out['laion-subset'] = s;
+  }
+
+  // Mahabharat: rows of verses as embedding vectors.
+  {
+    let s = '';
+    [16, 34, 52, 70].forEach((y) => {
+      for (let c = 0; c < 26; c++) {
+        const v = R();
+        s += `<rect class="${v > 0.9 ? 'v-peach' : 'v-ink'}" x="${n1(12 + c * 8.4)}" y="${y - 7}" width="7.4" height="14" fill-opacity="${o2(v > 0.9 ? 0.85 : 0.08 + v * 0.7)}"/>`;
+      }
+    });
+    out['mahabharat-embeddings'] = s;
+  }
+
+  // Ramayana: embedded passages falling into clusters.
+  {
+    let s = '';
+    [
+      { x: 58, y: 42, c: 'v-ink' },
+      { x: 128, y: 60, c: 'v-vio' },
+      { x: 192, y: 30, c: 'v-peach' },
+    ].forEach((k) => {
+      s += `<circle class="${k.c}" cx="${k.x}" cy="${k.y}" r="24" fill-opacity="0.1"/>`;
+      for (let i = 0; i < 15; i++) {
+        s += `<circle class="${k.c}" cx="${n1(k.x + g() * 9)}" cy="${n1(k.y + g() * 8)}" r="2.3" fill-opacity="0.85"/>`;
+      }
+    });
+    out['ramayana-embeddings'] = s;
+  }
+
+  // Bhagavad Gita: verse vectors from one origin, and the angle
+  // between two of them that similarity search reads.
+  {
+    const o = { x: 24, y: 78 };
+    let s = `<path class="v-line" d="M${o.x} 8 V${o.y} H232"/>`;
+    const vecs = [
+      [22, 170, 'v-ink'],
+      [38, 140, 'v-vio'],
+      [56, 96, 'v-mute'],
+      [74, 72, 'v-mute'],
+    ] as const;
+    vecs.forEach(([deg, len, cls]) => {
+      const a = (deg * Math.PI) / 180;
+      const x = o.x + Math.cos(a) * len;
+      const y = o.y - Math.sin(a) * len * 0.62;
+      const ang = Math.atan2(y - o.y, x - o.x);
+      const hx = (d: number) => n1(x - 7 * Math.cos(ang + d));
+      const hy = (d: number) => n1(y - 7 * Math.sin(ang + d));
+      const stroke = cls === 'v-mute' ? 'v-lineS' : cls === 'v-ink' ? 'v-inkS' : 'v-vioS';
+      s += `<path class="${stroke}" d="M${o.x} ${o.y} L${n1(x)} ${n1(y)} M${hx(0.45)} ${hy(0.45)} L${n1(x)} ${n1(y)} L${hx(-0.45)} ${hy(-0.45)}"/>`;
+    });
+    s += `<path class="v-peachS" d="M${n1(o.x + 46 * Math.cos((22 * Math.PI) / 180))} ${n1(o.y - 46 * Math.sin((22 * Math.PI) / 180) * 0.62)} A46 28 0 0 0 ${n1(o.x + 46 * Math.cos((38 * Math.PI) / 180))} ${n1(o.y - 46 * Math.sin((38 * Math.PI) / 180) * 0.62)}"/>`;
+    s += `<text class="v-txt" x="70" y="75">cos θ</text>`;
+    out['bhagavad_gita-embeddings'] = s;
+  }
+
+  // Anime diffusion: noise resolving into an image, step by step.
+  {
+    let s = '';
+    [1, 0.62, 0.3, 0].forEach((noise, k) => {
+      const x0 = 12 + k * 58;
+      const y0 = 16;
+      for (let i = 0; i < 6; i++) {
+        for (let j = 0; j < 6; j++) {
+          const t = (i + j) / 10;
+          const clean = `hsl(${n1((22 - t * 110 + 360) % 360)} 78% ${n1(80 - t * 12)}%)`;
+          const fill = R() < noise ? `hsl(${n1(R() * 360)} 28% ${n1(46 + R() * 46)}%)` : clean;
+          s += `<rect x="${n1(x0 + i * 7.5)}" y="${n1(y0 + j * 7.5)}" width="7.5" height="7.5" fill="${fill}"/>`;
+        }
+      }
+      s += `<rect class="v-edge" x="${x0}" y="${y0}" width="45" height="45"/>`;
+      if (k < 3) s += `<path class="v-lineS" d="M${x0 + 49} 38.5 l4 0 M${x0 + 51} 36 l2.5 2.5 l-2.5 2.5"/>`;
+    });
+    s += `<text class="v-txt" x="12" y="78">noise</text><text class="v-txt" x="231" y="78" text-anchor="end">image</text>`;
+    out['AnimeDiffusion_Dataset'] = s;
+  }
+
+  // Figure skating: a programme seen from above. The rink, the path
+  // the skater traced across it, and the elements marked where they
+  // happened: jumps as a hop off the trace, a spin as a tight spiral.
+  // The dataset classifies those elements from pose sequences.
+  {
+    let s = `<defs>
+      <linearGradient id="fs-path" x1="0" x2="1">
+        <stop offset="0" stop-color="hsl(275 60% 72%)" stop-opacity="0.35"/>
+        <stop offset="0.55" stop-color="hsl(262 70% 62%)"/>
+        <stop offset="1" stop-color="hsl(243 75% 52%)"/>
+      </linearGradient>
+    </defs>`;
+    // The rink.
+    s += `<rect x="5" y="5" width="230" height="80" rx="34" fill="hsl(243 80% 97.5%)" stroke="hsl(243 54% 87%)" stroke-width="1.1"/>`;
+    s += `<path d="M120 5 V85" stroke="hsl(243 54% 87%)" stroke-width="1" stroke-dasharray="3 3"/>`;
+    s += `<circle cx="120" cy="45" r="11" fill="none" stroke="hsl(243 54% 87%)" stroke-width="1"/>`;
+
+    // The trace: a Catmull-Rom curve through the waypoints.
+    const W: [number, number][] = [
+      [20, 60], [40, 34], [70, 24], [100, 34], [116, 58], [146, 70], [178, 62], [200, 38], [222, 30],
+    ];
+    const seg = (p0: number[], p1: number[], p2: number[], p3: number[]) =>
+      ` C${n1(p1[0] + (p2[0] - p0[0]) / 6)} ${n1(p1[1] + (p2[1] - p0[1]) / 6)}, ${n1(p2[0] - (p3[0] - p1[0]) / 6)} ${n1(p2[1] - (p3[1] - p1[1]) / 6)}, ${p2[0]} ${p2[1]}`;
+    let d = `M${W[0][0]} ${W[0][1]}`;
+    for (let i = 0; i < W.length - 1; i++) {
+      d += seg(W[Math.max(0, i - 1)], W[i], W[i + 1], W[Math.min(W.length - 1, i + 2)]);
+    }
+    s += `<path d="${d}" fill="none" stroke="url(#fs-path)" stroke-width="1.7" stroke-linecap="round"/>`;
+    // Where the skater is now, at the end of the trace.
+    s += `<circle class="v-ink" cx="222" cy="30" r="3"/>`;
+
+    // A spin: a tight spiral sitting on the trace.
+    {
+      const cx = 40;
+      const cy = 34;
+      const pts: string[] = [];
+      for (let i = 0; i <= 60; i++) {
+        const u = i / 60;
+        const a = u * Math.PI * 2 * 2.4;
+        const r = 9 * (1 - u) + 1;
+        pts.push(`${n1(cx + Math.cos(a) * r)} ${n1(cy + Math.sin(a) * r)}`);
+      }
+      s += `<path class="v-vioS" d="M${pts.join(' L')}" stroke-width="1.2"/>`;
+    }
+    // Jumps: a hop arcing off the trace, landing further along.
+    const hop = (x0: number, y0: number, x1: number, y1: number) =>
+      `<path class="v-peachS" d="M${x0} ${y0} Q${(x0 + x1) / 2} ${Math.min(y0, y1) - 16} ${x1} ${y1}" stroke-dasharray="2.5 2.5"/>` +
+      `<circle class="v-peach" cx="${x0}" cy="${y0}" r="2.4"/><circle class="v-peach" cx="${x1}" cy="${y1}" r="2.4"/>`;
+    s += hop(70, 24, 100, 34) + hop(146, 70, 178, 62);
+
+    // Element labels, as small chips.
+    // Colours are set on the shapes themselves as well as by class, so
+    // the chips never fall back to the SVG default of solid black.
+    const chip = (x: number, y: number, label: string, cls: string) => {
+      const w = label.length * 4.4 + 9;
+      const edge = cls === 'v-chip2' ? 'hsl(275 58% 70%)' : 'hsl(22 90% 64%)';
+      return `<rect class="${cls}" x="${n1(x - w / 2)}" y="${y - 6}" width="${n1(w)}" height="11" rx="5.5" fill="#fff" stroke="${edge}" stroke-width="1"/>` +
+        `<text class="v-chiptxt" x="${x}" y="${y + 2.2}" text-anchor="middle" font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="hsl(240 10% 27%)">${label}</text>`;
+    };
+    s += chip(40, 57, 'spin', 'v-chip2');
+    s += chip(85, 13, 'axel', 'v-chip');
+    s += chip(162, 48, 'lutz', 'v-chip');
+    out['Figure-Skating-Classification-Data'] = s;
+  }
+
+  return out;
+})();
+
+const starts = [
+  {
+    key: 'A',
+    title: 'You have some data.',
+    body: ' We audit your data, Collected in production or built in-house, map where it is thin or missing, and generate precisely into those gaps.',
+    steps: ['Audit what you have', 'Map the gaps and imbalances', 'Generate to fill them'],
+  },
+  {
+    key: 'B',
+    title: 'You have the domain expertise.',
+    body: 'No data you can share, but people who know the domain inside out. We turn their knowledge into a written specification of every case, then generate from it.',
+    steps: ['Working sessions with your experts', 'A specification of every case', 'Generation against that spec'],
+  },
+];
+
+const loopSteps = [
+  {
+    title: 'We generate the first sample.',
+    body: 'A tranche of the dataset, built against the plan, with a coverage report showing exactly what is in it.',
+  },
+  {
+    title: 'Your team reviews it.',
+    body: 'Your experts mark what is right and flag what is not: wrong labels, near duplicates, cases that are missing.',
+  },
+  {
+    title: 'We refine and regenerate.',
+    body: 'Every flag goes back into the plan and the generation. Rounds repeat until your team signs off.',
+  },
+  {
+    title: 'We deliver at full volume.',
+    body: 'Once the sample is approved, we scale to the full dataset and hand over everything behind it.',
+  },
+];
+
+/* The CSV beside the loop. It fills in on step one; on step two a
+   review column marks each row with an O or an X; on step three the
+   flagged rows are regenerated; on step four every row passes. */
+const csvRows: { id: string; text: string; intent: string; flag?: string; text2?: string; intent2?: string }[] = [
+  { id: '0001', text: 'My card was declined abroad, please unblock it', intent: 'card_block' },
+  { id: '0002', text: 'Move my EMI date to the 5th of each month', intent: 'loan_reschedule' },
+  {
+    id: '0003',
+    text: 'I was charged twice for the same order',
+    intent: 'card_block',
+    flag: 'wrong label',
+    intent2: 'dispute',
+  },
+  { id: '0004', text: 'Close our joint account, both holders agree', intent: 'account_close' },
+  {
+    id: '0005',
+    text: 'Card declined overseas, can you unblock it',
+    intent: 'card_block',
+    flag: 'near duplicate',
+    text2: 'Card locked after three wrong PINs at a Dubai ATM',
+  },
+  { id: '0006', text: 'Why is my statement in a currency I never chose?', intent: 'fx_query' },
+];
+const csvStatus = ['Round 1 · generating', 'Round 1 · in review', 'Round 2 · regenerated', 'Final · signed off'];
+
+const deliverables = [
+  'The dataset, in the format your pipeline takes',
+  'The taxonomy it was generated from',
+  'The generation code and filters',
+  'A coverage and evaluation report',
+  'Lineage on every row',
+];
+
+const runStats = [
+  { count: 1739, suffix: '', of: '/ 1,740', label: 'leaves reached', note: 'of the taxonomy, 10K e-commerce run' },
+  { count: 96, suffix: '%', label: 'accept rate', note: 'rows passed by the critic, 1,000-row run' },
+  { count: 0, suffix: '', label: 'duplicates', note: 'in the same run, by 13-gram overlap' },
+  { count: 84, suffix: ' min', label: 'wall time', note: 'for the 1,000-row run' },
+];
+
+const industries = [
+  'Financial services',
+  'Healthcare and life sciences',
+  'Cybersecurity',
+  'Insurance',
+  'Manufacturing',
+  'Retail and e-commerce',
+  'IT services',
+  'Enterprise AI',
+];
+
+const faqs = [
+  {
+    q: 'Will training on synthetic data degrade our model?',
+    a: 'Degradation comes from a model training on unchecked model output, round after round. We plan coverage before we generate, verify every sample with an independent model, and measure each round against an evaluation agreed with you before we scale.',
+  },
+  {
+    q: 'Do you need access to our data?',
+    a: 'No. We can generate from a specification written with your domain experts. If you can share samples, we use them to find what is missing and to match your formats.',
+  },
+  {
+    q: 'Who owns the dataset, and can we train on it?',
+    a: 'You own the dataset, the taxonomy, the generation code and the reports. Every row records the model that generated it, so your legal team can check that model’s terms for training use.',
+  },
+  {
+    q: 'How do we know it will improve our model?',
+    a: 'We agree the evaluation before we start. The first tranche comes back to your team to review and to test against it, and we scale only once it moves the numbers you care about.',
+  },
+  {
+    q: 'How much data can you generate?',
+    a: 'We have generated hundreds of billions of tokens for client projects. The volume is set by what your model needs, and the coverage report shows what each extra batch adds.',
+  },
+  {
+    q: 'Can our ML team build this in-house?',
+    a: 'Some can, at the cost of taking senior people off the product for months. Generation pipelines are their own specialisation, and it is the one we have spent years on.',
+  },
+];
+---
+
+<V2Layout
+  title="Synthetic data generation"
+  description="Large-scale synthetic data for model training and evaluation, engineered around your domain, verified sample by sample, and yours to keep."
+  path="/services/synthetic-data"
+  image="/simula-og.jpg"
+>
+  <!-- ═══ HERO: a pinned scroll on the indigo strata ═════════════ -->
+  <section class="sh" data-sh>
+    <div class="sh-stage" data-vsticky="0">
+      <div class="sh-plate" aria-hidden="true">
+        <canvas class="sh-sharp" data-backdrop="sdStrata" data-seed="4471" data-dpr="1"></canvas>
+        <canvas class="sh-soft" data-backdrop="sdStrata" data-seed="4471" data-dpr="0.35"></canvas>
+        <span class="sh-light l1"></span>
+        <span class="sh-light l2"></span>
+        <span class="sh-light l3"></span>
+        <span class="sh-shade"></span>
+      </div>
+
+      <div class="sh-copy" data-sh-copy data-live="true">
+        <div class="shell sh-copy-in">
+          <h1 class="sh-in">Large-scale synthetic data, engineered for training your models.</h1>
+          <p class="sh-in d1">
+            Generating training data at scale is the work we have specialised in for years. We have produced more than 100
+            billion tokens for client projects, and our clients have trained state-of-the-art models on it. <br /> Every dataset is
+            planned around your domain and verified sample by sample, so your model reaches production sooner, with fewer
+            retraining cycles.
+          </p>
+          <div class="sh-actions sh-in d2">
+            <a class="btn-l" href="/contact">
+              <span class="btn-l-fill"></span>
+              <span class="btn-l-label">Scope your dataset</span>
+              <span class="btn-l-label" aria-hidden="true">→</span>
+            </a>
+            <a class="quiet on-dark" href="#generate">See what we generate<span aria-hidden="true">↓</span></a>
+          </div>
+        </div>
+      </div>
+
+      <div class="sh-cue" aria-hidden="true">
+        <span>Scroll</span>
+        <i></i>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══ DOMAINS ════════════════════════════════════════════════ -->
+  <section class="band band-tint domains wash" id="domains">
+    <canvas class="wash-bg" data-backdrop="sdWashWarm" data-seed="9053" data-dpr="0.6" aria-hidden="true"></canvas>
+    <div class="shell">
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Domains we generate for</h2>
+    </div>
+    <div class="mq rv" data-rv>
+      <div class="mq-track">
+        {
+          [0, 1].map((copy) => (
+            <ul aria-hidden={copy === 1 ? 'true' : undefined}>
+              {industries.map((name) => (
+                <li>{name}</li>
+              ))}
+            </ul>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══ THE PROBLEMS: six nodes, one hub ═══════════════════════ -->
+  <section class="band" id="problems">
+    <div class="shell">
+      <div class="split-head">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">The data problems we are brought in to solve.</h2>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          Most teams come to us with more than one problem. Our dataset engineered for your domain resolves all six at once.
+        </p>
+      </div>
+
+      <div class="nodes" data-nodes>
+        <svg class="nodes-lines" aria-hidden="true"></svg>
+        <figure class="hub rv" data-rv data-hub>
+          <canvas data-backdrop="sdStrata" data-seed="918" data-dpr="1" aria-hidden="true"></canvas>
+          <span class="hub-eyebrow">All six, one answer</span>
+          <span class="hub-word">An engineered dataset</span>
+          <span class="hub-note">Planned · Generated · Verified</span>
+        </figure>
+        {
+          problems.map((p, i) => (
+            <div
+              class:list={['node rv', i < 3 ? 'node-l' : 'node-r']}
+              data-rv
+              data-from={i < 3 ? 'left' : 'right'}
+              data-node={i}
+              style={`--rv-delay:${120 + (i % 3) * 80}ms;grid-row:${(i % 3) + 1}`}
+            >
+              <span class="node-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" set:html={ICON[p.icon]} />
+              </span>
+              <span class="node-text">
+                <b>{p.title}</b>
+                {p.line}
+                <span class="node-fix">{p.fix}</span>
+              </span>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══ WHAT WE GENERATE ═══════════════════════════════════════ -->
+  <section class="band band-tint" id="generate">
+    <div class="shell">
+      <div class="split-head">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">What we generate.</h2>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          Data for training and evaluating language models, delivered in the schema your pipeline already uses.
+        </p>
+      </div>
+      <div class="kinds">
+        {
+          kinds.map((k, i) => (
+            <article class="kind rv" data-rv style={`--rv-delay:${60 + (i % 4) * 70}ms`}>
+              <span class="kind-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" set:html={ICON[k.icon]} />
+              </span>
+              <h3>{k.title}</h3>
+              <p>{k.line}</p>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══ HOW WE KEEP IT USABLE ══════════════════════════════════ -->
+  <section class="band" id="quality">
+    <div class="shell">
+      <div class="split-head">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">We engineer against known failures in data generation.</h2>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          These are the failure modes we have seen repeatedly across client projects. Each is planned for before
+          generation starts and checked before any data reaches you.
+        </p>
+      </div>
+      <div class="controls">
+        <div class="controls-head" aria-hidden="true">
+          <span>The failure mode</span>
+          <span>How we prevent it</span>
+        </div>
+        {
+          controls.map((c, i) => (
+            <div class="control rv" data-rv style={`--rv-delay:${Math.min(i, 3) * 60}ms`}>
+              <span class="control-risk">
+                <span class="control-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" set:html={ICON[c.icon]} />
+                </span>
+                {c.risk}
+              </span>
+              <span class="control-fix">
+                <i aria-hidden="true"></i>
+                {c.fix}
+              </span>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══ TWO WAYS TO START ══════════════════════════════════════ -->
+  <section class="band band-tint" id="start">
+    <div class="shell">
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Two ways to start.</h2>
+      <p class="lede rv" data-rv style="--rv-delay:160ms">
+        It depends on what you already have. Either way, we plan the data before we generate any of it.
+      </p>
+
+      <div class="starts">
+        {
+          starts.map((s, i) => (
+            <article class="start rv" data-rv data-from={i ? 'right' : 'left'} style={`--rv-delay:${140 + i * 80}ms`}>
+              <figure class="start-art">
+                {i === 0 ? (
+                  <svg viewBox="0 0 400 276" role="img" aria-label="Existing data on a grid: one case type has no samples and one corner was never reached">
+                    <defs>
+                      <pattern id="st-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                        <path d="M0 0 V6" class="hatch" />
+                      </pattern>
+                    </defs>
+                    {gridX.map((x) => (
+                      <path class="grid" d={`M${x.toFixed(1)} ${PA.y0} V${PA.y1}`} />
+                    ))}
+                    {gridY.map((y) => (
+                      <path class="grid" d={`M${PA.x0} ${y.toFixed(1)} H${PA.x1}`} />
+                    ))}
+                    <rect class="miss" x={MISSING.x.toFixed(1)} y={PA.y0} width={MISSING.w.toFixed(1)} height={PA.y1 - PA.y0} />
+                    <circle class="miss rare" cx={RARE.x} cy={RARE.y} r={RARE.r} />
+                    {scatter.map((p) => (
+                      <circle class="pt" cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="2.4" />
+                    ))}
+                    <path class="axis" d={`M${PA.x0} ${PA.y0} V${PA.y1} H${PA.x1}`} />
+                    <text class="lbl" x={PA.x1} y={PA.y1 + 16} text-anchor="end">case type →</text>
+                    <text class="lbl" x={-PA.y0} y={PA.x0 - 10} text-anchor="end" transform="rotate(-90)">difficulty →</text>
+                    <g class="tag">
+                      <rect x={(MISSING.x + MISSING.w / 2 - 25).toFixed(1)} y={PA.y0 + 60} width="50" height="16" />
+                      <text x={(MISSING.x + MISSING.w / 2).toFixed(1)} y={PA.y0 + 71.5}>missing</text>
+                    </g>
+                    <g class="tag">
+                      <rect x={RARE.x - 58} y={RARE.y + RARE.r + 4} width="50" height="16" />
+                      <text x={RARE.x - 33} y={RARE.y + RARE.r + 15.5}>no data</text>
+                    </g>
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 400 276" role="img" aria-label="Notes from your experts with three rules marked, turned into a specification, which generates samples tagged by the rule they cover">
+                    {noteLines.map((l) =>
+                      l.tag ? (
+                        <path class="ln" d={curve({ x: l.tag.x + l.tag.w, y: l.y }, { x: SPEC.x - 14, y: SPEC.y })} />
+                      ) : null,
+                    )}
+                    {outRows.map((r) => (
+                      <path class="ln" d={curve({ x: SPEC.x + 14, y: SPEC.y }, { x: 238, y: r.y + 10 })} />
+                    ))}
+                    <rect class="note" x={NOTE.x} y={NOTE.y} width={NOTE.w} height={NOTE.h} />
+                    <circle class="head" cx={NOTE.x + 16} cy={NOTE.y + 17} r="6" />
+                    <path class="head-b" d={`M${NOTE.x + 7} ${NOTE.y + 32} Q${NOTE.x + 16} ${NOTE.y + 22} ${NOTE.x + 25} ${NOTE.y + 32}`} />
+                    <text class="lbl" x={NOTE.x + 32} y={NOTE.y + 25}>expert notes</text>
+                    {noteLines.map((l) =>
+                      l.tag ? (
+                        <g class:list={['chip', `c-${l.tag.tone}`]}>
+                          <rect x={l.tag.x} y={l.y - 7} width={l.tag.w.toFixed(1)} height="14" />
+                          <text x={(l.tag.x + l.tag.w / 2).toFixed(1)} y={l.y + 3.2}>
+                            {l.tag.label}
+                          </text>
+                          <rect class="txt" x={(l.tag.x + l.tag.w + 5).toFixed(1)} y={l.y - 2} width={Math.min(l.after, NOTE.w - l.tag.w - 29).toFixed(1)} height="4" />
+                        </g>
+                      ) : (
+                        <rect class="txt" x={NOTE.x + 12} y={l.y - 2} width={l.bar!.toFixed(1)} height="4" />
+                      ),
+                    )}
+                    <rect class="spec" x={SPEC.x - 14} y={SPEC.y - 14} width="28" height="28" />
+                    <path class="spec-lines" d={`M${SPEC.x - 7} ${SPEC.y - 5} H${SPEC.x + 7} M${SPEC.x - 7} ${SPEC.y} H${SPEC.x + 7} M${SPEC.x - 7} ${SPEC.y + 5} H${SPEC.x + 3}`} />
+                    <text class="lbl" x={SPEC.x} y={SPEC.y + 32} text-anchor="middle">spec</text>
+                    {outRows.map((r) => (
+                      <g class:list={['row', `c-${r.tone}`]}>
+                        <rect class="row-box" x="238" y={r.y} width="146" height="20" />
+                        <rect class="txt" x="246" y={r.y + 5} width={r.a.toFixed(1)} height="3.6" />
+                        <rect class="txt soft" x="246" y={r.y + 11.5} width={r.b.toFixed(1)} height="3.6" />
+                        <circle class="dot" cx="372" cy={r.y + 10} r="3.6" />
+                      </g>
+                    ))}
+                    <text class="lbl" x="384" y="262" text-anchor="end">generated samples</text>
+                  </svg>
+                )}
+              </figure>
+              <div class="start-body">
+                <span class="start-key">{s.key}</span>
+                <h3>{s.title}</h3>
+                <p>{s.body}</p>
+                <ol class="start-steps">
+                  {s.steps.map((st) => (
+                    <li>{st}</li>
+                  ))}
+                </ol>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══ HOW AN ENGAGEMENT RUNS ═════════════════════════════════ -->
+  <section class="band" id="loop">
+    <div class="shell">
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">We build it with you, in rounds.</h2>
+      <p class="lede rv" data-rv style="--rv-delay:160ms">
+        We belive in review loops and feedback, not a single handoff. You approve the data at sample size before we generate the full
+        volume.
+      </p>
+
+      <div class="loop" data-loop>
+        <ol class="loop-list">
+          {
+            loopSteps.map((s, i) => (
+              <li class="loop-step" data-step={i}>
+                <span class:list={['loop-node', { spin: i === 2 }]} aria-hidden="true">
+                  {i === 2 && (
+                    <svg viewBox="0 0 24 24">
+                      <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" />
+                      <path d="M19.8 4.5v3.6h-3.6" />
+                    </svg>
+                  )}
+                </span>
+                <span class="loop-n">0{i + 1}</span>
+                <h3>{s.title}</h3>
+                <p>{s.body}</p>
+              </li>
+            ))
+          }
+        </ol>
+
+        <div class="csv-wrap">
+          <div class="csv" data-csv data-stage="-1" data-vsticky="104" aria-hidden="true">
+            <div class="csv-bar">
+              <span class="csv-file">
+                <svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" /><path d="M14 3v4h4" /></svg>
+                tranche.csv
+              </span>
+              <span class="csv-status">
+                <svg class="csv-spin" viewBox="0 0 24 24">
+                  <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" />
+                  <path d="M19.8 4.5v3.6h-3.6" />
+                </svg>
+                <svg class="csv-ok" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+                <span class="csv-states">
+                  {csvStatus.map((t, i) => (
+                    <span data-s={i}>{t}</span>
+                  ))}
+                </span>
+              </span>
+            </div>
+            <div class="csv-table">
+              <div class="csv-row csv-head">
+                <span>id</span>
+                <span>text</span>
+                <span>intent</span>
+                <span>review</span>
+              </div>
+              {
+                csvRows.map((r, i) => (
+                  <div class:list={['csv-row', { flagged: r.flag }]} style={`--i:${i}`}>
+                    <span class="c-id">{r.id}</span>
+                    <span class="c-text">
+                      {r.text2 ? (
+                        <>
+                          <span class="v1"><span><s>{r.text}</s></span></span>
+                          <span class="v2"><span>{r.text2}</span></span>
+                        </>
+                      ) : (
+                        r.text
+                      )}
+                    </span>
+                    <span class="c-intent">
+                      {r.intent2 ? (
+                        <>
+                          <span class="v1"><span><s>{r.intent}</s></span></span>
+                          <span class="v2"><span>{r.intent2}</span></span>
+                        </>
+                      ) : (
+                        r.intent
+                      )}
+                    </span>
+                    <span class="c-rev">
+                      <svg class="mk-o" viewBox="0 0 16 16"><circle cx="8" cy="8" r="4.6" /></svg>
+                      <svg class="mk-v" viewBox="0 0 16 16"><path d="M3.8 8.4l2.8 2.8 5.6-6" /></svg>
+                      {r.flag && (
+                        <svg class="mk-x" viewBox="0 0 16 16"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" /></svg>
+                      )}
+                      {r.flag && <span class="c-flag">{r.flag}</span>}
+                    </span>
+                  </div>
+                ))
+              }
+              <div class="csv-more">
+                <div>
+                  {[0, 1, 2].map((k) => (
+                    <div class="csv-row csv-ghost" style={`--i:${k}`}>
+                      <span><i style="width:70%" /></span>
+                      <span><i style={`width:${[82, 64, 74][k]}%`} /></span>
+                      <span><i style={`width:${[60, 74, 52][k]}%`} /></span>
+                      <span class="c-rev">
+                        <svg class="mk-v" viewBox="0 0 16 16"><path d="M3.8 8.4l2.8 2.8 5.6-6" /></svg>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div class="csv-foot">
+              <span class="csv-meter"><i></i></span>
+              <span class="csv-count">
+                <span data-s="0">6 rows generated</span>
+                <span data-s="1">4 of 6 approved · 2 flagged</span>
+                <span data-s="2">6 of 6 approved</span>
+                <span data-s="3">Approved · scaling to full volume</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="deliver rv" data-rv>
+        <h3>What you receive</h3>
+        <ul>
+          {
+            deliverables.map((d) => (
+              <li>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" /></svg>
+                {d}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══ PUBLISHED DATASETS: staggered tiles with a row preview ═ -->
+  <section class="band wash" id="datasets">
+    <canvas class="wash-bg ds-fallback" data-backdrop="sdBlurField" data-seed="6431" data-dpr="0.8" aria-hidden="true"></canvas>
+    <canvas class="wash-bg ds-gl" aria-hidden="true"></canvas>
+    <div class="wash-bg ds-grain" aria-hidden="true"></div>
+    <div class="shell">
+      <div class="ds-head">
+        <div>
+          <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Datasets we have published.</h2>
+          <p class="lede rv" data-rv style="--rv-delay:160ms">
+            A selection of our open datasets on Hugging Face, from pretraining corpora and retrieval sets to stories
+            generated with Simula.
+          </p>
+        </div>
+        <a class="quiet rv" data-rv style="--rv-delay:220ms" href={HF_DATASETS_URL} target="_blank" rel="noopener noreferrer">All on Hugging Face<span aria-hidden="true">↗</span></a>
+      </div>
+
+      <div class="ds-grid">
+        {
+          dsColumns.map((col, c) => (
+            <div class="ds-col">
+              {col.map((d, r) => (
+                <a
+                  class:list={['ds-tile rv', `tone-${d.tone}`]}
+                  data-rv
+                  data-pal={datasets.indexOf(d)}
+                  style={`--rv-delay:${80 + c * 60 + r * 50}ms;--gx:${[18, 78, 42, 88, 8, 62][(c * 2 + r) % 6]}%;order:${datasets.indexOf(d)}`}
+                  href={`https://huggingface.co/datasets/Mercity/${d.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span class="ds-top">
+                    <span class:list={['ds-dot', `dot-${d.tone}`]} aria-hidden="true" />
+                    <span class="ds-name">{d.name}</span>
+                  </span>
+                  <span class="ds-meta">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" set:html={ICON.scarcity} />
+                    {d.rows ? `${d.rows.toLocaleString('en-US')} rows` : d.kind}
+                    {d.rows && <span class="ds-kind">{d.kind}</span>}
+                  </span>
+                  <span class="ds-viz" aria-hidden="true">
+                    <svg viewBox="0 0 240 90" preserveAspectRatio="xMidYMid meet" set:html={VIZ[d.id] ?? ''} />
+                  </span>
+                  <span class="ds-desc">{d.line}</span>
+                </a>
+              ))}
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══ BUILT ON SIMULA ════════════════════════════════════════ -->
+  <section class="band" id="simula">
+    <div class="shell sim">
+      <figure class="plate rv" data-rv data-from="left">
+        <canvas data-backdrop="plate" data-seed="7731" data-dpr="1.3" aria-hidden="true"></canvas>
+        <span class="plate-word" aria-hidden="true">Simula</span>
+      </figure>
+      <div class="sim-copy">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Built on a pipeline we open-sourced.</h2>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          Simula is the generation engine behind our client work. We built it out of years of projects, published it on
+          GitHub with a research log of every stage, and extend it whenever an engagement needs more.
+        </p>
+        <dl class="sim-stats rv" data-rv style="--rv-delay:220ms" data-counts>
+          {
+            runStats.map((s) => (
+              <div>
+                <dt>{s.label}</dt>
+                <dd>
+                  <span class="sim-fig">
+                    <span data-count={s.count} data-suffix={s.suffix}>
+                      {s.count.toLocaleString('en-US')}
+                      {s.suffix}
+                    </span>
+                    {s.of && <small>{s.of}</small>}
+                  </span>
+                  <span class="sim-note">{s.note}</span>
+                </dd>
+              </div>
+            ))
+          }
+        </dl>
+        <div class="sim-links rv" data-rv style="--rv-delay:280ms">
+          <a class="quiet" href={GITHUB_URL} target="_blank" rel="noopener noreferrer">Simula on GitHub<span aria-hidden="true">↗</span></a>
+          <a class="quiet" href={LOG_URL}>Read the research log<span aria-hidden="true">→</span></a>
+          <a class="quiet" href={OSS_URL}>How Simula works<span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══ PROOF STRIP ════════════════════════════════════════════ -->
+  <section class="strip-band">
+    <div class="shell">
+      <div class="strip" data-counts>
+        {
+          strip.map((s, i) => (
+            <div class="strip-cell rv" data-rv style={`--rv-delay:${i * 80}ms`}>
+              <span class="strip-fig">
+                <span data-count={s.count} data-suffix={s.suffix}>
+                  {s.count.toLocaleString('en-US')}
+                  {s.suffix}
+                </span>
+              </span>
+              <span class="strip-label">
+                {s.label}
+                <span>{s.note}</span>
+              </span>
+            </div>
+          ))
+        }
+        <a class="strip-cell strip-link rv" data-rv style="--rv-delay:240ms" href="/contact">
+          <span class="strip-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" set:html={ICON.chat} />
+          </span>
+          <span>
+            Have a dataset in mind?
+            <b>Scope it with us →</b>
+          </span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══ QUESTIONS ══════════════════════════════════════════════ -->
+  <section class="band band-tint" id="faq">
+    <div class="shell faq-in">
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">What buyers ask us first.</h2>
+      <div class="faq rv" data-rv style="--rv-delay:160ms">
+        {
+          faqs.map((f) => (
+            <details>
+              <summary>
+                {f.q}
+                <span class="plus" aria-hidden="true"></span>
+              </summary>
+              <p>{f.a}</p>
+            </details>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══ CLOSER ═════════════════════════════════════════════════ -->
+  <section class="end">
+    <canvas class="end-bg" data-backdrop="sdStrata" data-seed="5190" data-dpr="0.9" aria-hidden="true"></canvas>
+    <span class="sh-light l1" aria-hidden="true"></span>
+    <span class="sh-light l2" aria-hidden="true"></span>
+    <div class="shell end-in">
+      <div class="glass rv" data-rv>
+        <h2>Tell us where your model breaks.</h2>
+        <p>
+          Send us the task, the model and the cases it gets wrong. We will come back with an outline of the taxonomy and
+          a plan for the first tranche.
+        </p>
+        <div class="sh-actions">
+          <a class="btn-l" href="/contact">
+            <span class="btn-l-fill"></span>
+            <span class="btn-l-label">Scope your dataset</span>
+            <span class="btn-l-label" aria-hidden="true">→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</V2Layout>
+
+<script is:inline>
+  /* ── Scroll-driven pieces ────────────────────────────────────────
+     The hero (ground frosts, then the copy blurs away) and the loop
+     rail follow the scroll.
+     Under the layout's virtual scroll, `v2scroll` fires inside its own
+     frame after the wrapper moves, so we update synchronously there;
+     native scrolling goes through one rAF. */
+  (() => {
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const clamp = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+    const ease = (t) => 1 - Math.pow(1 - t, 3);
+    const set = (el, k, v) => el.style.setProperty(k, v.toFixed(4));
+
+    const hero = document.querySelector('[data-sh]');
+    const stage = hero && hero.querySelector('.sh-stage');
+    const copy = hero && hero.querySelector('[data-sh-copy]');
+    const loop = document.querySelector('[data-loop]');
+    const steps = loop ? [...loop.querySelectorAll('[data-step]')] : [];
+    const csv = loop && loop.querySelector('[data-csv]');
+
+    if (reduce) {
+      if (hero) copy.dataset.live = 'true';
+      if (loop) {
+        steps.forEach((s) => (s.dataset.on = 'true'));
+        csv.dataset.stage = loop.dataset.stage = '3';
+      }
+      return;
+    }
+
+    const update = () => {
+      const vh = window.innerHeight;
+      if (hero) {
+        const r = hero.getBoundingClientRect();
+        const span = r.height - stage.offsetHeight;
+        const p = span > 0 ? clamp(-r.top / span) : 1;
+        set(hero, '--a', ease(clamp(p / 0.5)));
+        // Ease in, so the copy holds and then leaves quickly.
+        const o = clamp((p - 0.45) / 0.5);
+        set(hero, '--o', o * o);
+        copy.dataset.live = o < 0.5 ? 'true' : 'false';
+      }
+      /* The loop: a step is current once its top passes 66% of the
+         screen, so each state arrives a little ahead of the reader.
+         The CSV beside it shows that step's state, and the rail fills
+         to the current step. */
+      if (loop) {
+        const line = vh * 0.66;
+        let stage = -1;
+        steps.forEach((s, i) => {
+          if (s.getBoundingClientRect().top < line) stage = i;
+        });
+        steps.forEach((s, i) => (s.dataset.on = i <= stage ? 'true' : 'false'));
+        csv.dataset.stage = loop.dataset.stage = String(stage);
+      }
+    };
+
+    let raf = 0;
+    const req = () => {
+      if (!raf)
+        raf = requestAnimationFrame(() => {
+          raf = 0;
+          update();
+        });
+    };
+    window.addEventListener('scroll', () => (document.documentElement.dataset.vscroll ? null : req()), {
+      passive: true,
+    });
+    window.addEventListener('v2scroll', update);
+    window.addEventListener('resize', req);
+    update();
+  })();
+
+  /* ── Problem nodes: a curve from the hub to each node, drawn when
+     the figure comes into view, with a pulse running in along it. ── */
+  (() => {
+    const root = document.querySelector('[data-nodes]');
+    if (!root) return;
+    const svg = root.querySelector('.nodes-lines');
+    const hub = root.querySelector('[data-hub]');
+    const nodes = [...root.querySelectorAll('[data-node]')];
+    const NS = 'http://www.w3.org/2000/svg';
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const build = () => {
+      svg.replaceChildren();
+      if (getComputedStyle(svg).display === 'none') return;
+      /* Layout offsets, not client rects: the reveal and the virtual
+         scroll both move things with transforms, which offsets ignore. */
+      svg.setAttribute('viewBox', `0 0 ${root.offsetWidth} ${root.offsetHeight}`);
+      const hx = hub.offsetLeft;
+      const hy = hub.offsetTop;
+      nodes.forEach((n, i) => {
+        const left = n.classList.contains('node-l');
+        const row = i % 3;
+        const x1 = left ? hx : hx + hub.offsetWidth;
+        const y1 = hy + hub.offsetHeight * (0.3 + row * 0.2);
+        const x2 = left ? n.offsetLeft + n.offsetWidth : n.offsetLeft;
+        const y2 = n.offsetTop + n.offsetHeight / 2;
+        const mx = (x1 + x2) / 2;
+        const path = document.createElementNS(NS, 'path');
+        path.setAttribute('d', `M${x1} ${y1} C${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`);
+        path.setAttribute('pathLength', '1');
+        path.setAttribute('id', 'np-' + i);
+        path.style.transitionDelay = 200 + row * 120 + 'ms';
+        svg.appendChild(path);
+        [x1, x2].forEach((x, j) => {
+          const dot = document.createElementNS(NS, 'circle');
+          dot.setAttribute('cx', x);
+          dot.setAttribute('cy', j ? y2 : y1);
+          dot.setAttribute('r', '3');
+          dot.setAttribute('class', 'end');
+          svg.appendChild(dot);
+        });
+        if (reduce) return;
+        const pulse = document.createElementNS(NS, 'circle');
+        pulse.setAttribute('r', '3.2');
+        pulse.setAttribute('class', 'pulse');
+        const move = document.createElementNS(NS, 'animateMotion');
+        move.setAttribute('dur', '2.8s');
+        move.setAttribute('repeatCount', 'indefinite');
+        move.setAttribute('begin', -(i * 0.47).toFixed(2) + 's');
+        // Inward: each problem runs into the hub that answers it.
+        move.setAttribute('keyPoints', '1;0');
+        move.setAttribute('keyTimes', '0;1');
+        move.setAttribute('calcMode', 'spline');
+        move.setAttribute('keySplines', '0.4 0 0.2 1');
+        const mpath = document.createElementNS(NS, 'mpath');
+        mpath.setAttribute('href', '#np-' + i);
+        move.appendChild(mpath);
+        pulse.appendChild(move);
+        svg.appendChild(pulse);
+      });
+    };
+
+    let t;
+    const rebuild = () => {
+      clearTimeout(t);
+      t = setTimeout(build, 80);
+    };
+    if ('ResizeObserver' in window) new ResizeObserver(rebuild).observe(root);
+    else window.addEventListener('resize', rebuild);
+    build();
+
+    if (!('IntersectionObserver' in window) || reduce) {
+      root.dataset.on = 'true';
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0].isIntersecting) return;
+        root.dataset.on = 'true';
+        io.disconnect();
+      },
+      { threshold: 0.35 }
+    );
+    io.observe(root);
+  })();
+
+  /* ── Datasets shader ──────────────────────────────────────────────
+     One WebGL canvas under the whole datasets section. Everywhere it
+     draws a slow domain-warped flow (fbm of fbm of fbm) in ivory,
+     lilac, peach and mint. Inside each card's rectangle it draws that
+     card's own three-colour flow instead, with a white lift under the
+     description so ink stays readable. Card rectangles are measured
+     every frame, so the colour follows the reveal and the hover lift.
+     Hovering a card speeds its flow and deepens its colours. Rendered
+     at half resolution (the fields are smooth; grain is a CSS layer on
+     top), capped near 30fps, and only while the section is on screen.
+     Reduced motion draws one still frame. No WebGL: the CSS cards and
+     the sdBlurField canvas stay as they are. */
+  (() => {
+    const sec = document.getElementById('datasets');
+    const cv = sec && sec.querySelector('.ds-gl');
+    if (!cv) return;
+    const gl = cv.getContext('webgl', { antialias: false, alpha: false, preserveDrawingBuffer: false });
+    if (!gl) return;
+    const tiles = [...sec.querySelectorAll('.ds-tile')].slice(0, 12);
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const VERT = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
+    const FRAG = `
+      precision highp float;
+      uniform vec2 uRes;
+      uniform float uScale;
+      uniform float uTime;
+      uniform int uCount;
+      uniform vec4 uRect[12];
+      uniform vec3 uPal[36];
+      uniform float uPhase[12];
+      uniform float uHov[12];
+      uniform float uCardMix;
+
+      float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+      float noise(vec2 p){
+        vec2 i = floor(p), f = fract(p);
+        vec2 u = f * f * (3. - 2. * f);
+        return mix(mix(hash(i), hash(i + vec2(1., 0.)), u.x), mix(hash(i + vec2(0., 1.)), hash(i + vec2(1., 1.)), u.x), u.y);
+      }
+      float fbm(vec2 p){
+        float v = 0., a = .5;
+        mat2 m = mat2(1.6, 1.2, -1.2, 1.6);
+        for (int i = 0; i < 5; i++){ v += a * noise(p); p = m * p; a *= .5; }
+        return v;
+      }
+      float warp(vec2 p, float t, out vec2 q, out vec2 r){
+        q = vec2(fbm(p + t * .10), fbm(p + vec2(5.2, 1.3) - t * .08));
+        r = vec2(fbm(p + 2.6 * q + vec2(1.7, 9.2) + t * .12), fbm(p + 2.6 * q + vec2(8.3, 2.8) - t * .10));
+        return fbm(p + 2.4 * r);
+      }
+
+      void main(){
+        vec2 px = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y) / uScale;
+        vec2 q, r;
+        float f = warp(px / 560., uTime * .6, q, r);
+        vec3 col = vec3(.985, .972, .952);
+        col = mix(col, vec3(.87, .85, .985), smoothstep(.35, .85, f));
+        col = mix(col, vec3(.995, .87, .81), smoothstep(.45, .95, q.x) * .75);
+        col = mix(col, vec3(.81, .945, .925), smoothstep(.5, .95, r.y) * .65);
+
+        for (int i = 0; i < 12; i++){
+          if (i >= uCount) break;
+          vec4 R = uRect[i];
+          vec2 uv = (px - R.xy) / R.zw;
+          if (uv.x < 0. || uv.y < 0. || uv.x > 1. || uv.y > 1.) continue;
+          vec2 p = vec2(uv.x * R.z / R.w, uv.y) * 1.25 + vec2(float(i) * 3.7, float(i) * 1.9);
+          vec2 cq, cr;
+          float g = warp(p, uPhase[i], cq, cr);
+          vec3 c0 = uPal[i * 3], c1 = uPal[i * 3 + 1], c2 = uPal[i * 3 + 2];
+          vec3 cc = mix(c0, c1, smoothstep(.22, .78, g));
+          cc = mix(cc, c2, smoothstep(.3, .85, cr.x) * .9);
+          cc += .07 * smoothstep(.55, .95, cq.y);
+          cc = mix(cc, pow(cc, vec3(1.35)), uHov[i] * .55);
+          cc = mix(cc, vec3(1.), smoothstep(.5, 1., uv.y) * .42);
+          // Card strength: how much of the flow shows over white.
+          col = mix(vec3(1.), cc, uCardMix + uHov[i] * .15);
+        }
+        gl_FragColor = vec4(col, 1.);
+      }`;
+
+    const sh = (type, src) => {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null;
+    };
+    const vs = sh(gl.VERTEX_SHADER, VERT);
+    const fs = sh(gl.FRAGMENT_SHADER, FRAG);
+    if (!vs || !fs) return;
+    const prog = gl.createProgram();
+    gl.attachShader(prog, vs);
+    gl.attachShader(prog, fs);
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
+    gl.useProgram(prog);
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const aLoc = gl.getAttribLocation(prog, 'a');
+    gl.enableVertexAttribArray(aLoc);
+    gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
+    const U = {};
+    ['uRes', 'uScale', 'uTime', 'uCount', 'uRect', 'uPal', 'uPhase', 'uHov', 'uCardMix'].forEach(
+      (n) => (U[n] = gl.getUniformLocation(prog, n))
+    );
+
+    /* Three colours per card, in dataset order. Mid-light values, so
+       dark ink reads on every one of them. */
+    const PAL = [
+      [[243, 85, 77], [282, 70, 84], [22, 95, 83]],
+      [[176, 58, 71], [205, 78, 82], [148, 55, 84]],
+      [[262, 72, 80], [330, 72, 86], [210, 82, 84]],
+      [[30, 95, 79], [350, 80, 85], [48, 95, 83]],
+      [[196, 78, 77], [243, 72, 84], [168, 55, 84]],
+      [[166, 55, 73], [46, 92, 81], [200, 72, 85]],
+      [[314, 58, 83], [243, 78, 81], [26, 92, 85]],
+      [[20, 92, 79], [270, 62, 85], [188, 72, 83]],
+      [[338, 76, 83], [262, 72, 81], [36, 95, 85]],
+      [[212, 82, 79], [158, 56, 81], [262, 66, 87]],
+      [[40, 95, 79], [14, 86, 85], [243, 72, 86]],
+      [[150, 52, 77], [196, 72, 83], [282, 56, 87]],
+    ];
+    const rgb = ([h, s, l]) => {
+      s /= 100;
+      l /= 100;
+      const k = (n) => (n + h / 30) % 12;
+      const a = s * Math.min(l, 1 - l);
+      const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+      return [f(0), f(8), f(4)];
+    };
+    /* Every card uses the Kimi K3 card's palette (indigo, violet,
+       peach). Each still flows on its own, since the pattern offset
+       and phase differ per card. Set CARD_PAL to null to go back to
+       one palette per dataset. */
+    const CARD_PAL = 0;
+    const pal = new Float32Array(36 * 3);
+    tiles.forEach((t, i) => {
+      const p = CARD_PAL === null ? PAL[Number(t.dataset.pal) % PAL.length] : PAL[CARD_PAL];
+      p.forEach((c, k) => pal.set(rgb(c), (i * 3 + k) * 3));
+    });
+    gl.uniform3fv(U.uPal, pal);
+    /* How strongly the card colour shows over white: 1 is full colour,
+       0 is plain white. Hover adds 0.15 on top. */
+    const CARD_MIX = 0.4;
+    gl.uniform1f(U.uCardMix, CARD_MIX);
+    gl.uniform1i(U.uCount, tiles.length);
+
+    const hovT = new Float32Array(12);
+    const hov = new Float32Array(12);
+    const phase = new Float32Array(12).map((_, i) => i * 1.7);
+    tiles.forEach((t, i) => {
+      const on = () => (hovT[i] = 1);
+      const off = () => (hovT[i] = 0);
+      t.addEventListener('pointerenter', on);
+      t.addEventListener('pointerleave', off);
+      t.addEventListener('focus', on);
+      t.addEventListener('blur', off);
+    });
+
+    let scale = 1;
+    const resize = () => {
+      scale = Math.min(window.devicePixelRatio || 1, 2) * 0.5;
+      cv.width = Math.max(1, Math.round(sec.clientWidth * scale));
+      cv.height = Math.max(1, Math.round(sec.clientHeight * scale));
+      gl.viewport(0, 0, cv.width, cv.height);
+    };
+    const rects = new Float32Array(48);
+    let t0 = performance.now();
+    let last = 0;
+    const draw = (now) => {
+      const dt = Math.min(0.1, (now - last) / 1000 || 0);
+      last = now;
+      const sr = sec.getBoundingClientRect();
+      tiles.forEach((t, i) => {
+        const r = t.getBoundingClientRect();
+        rects.set([r.left - sr.left, r.top - sr.top, r.width, r.height], i * 4);
+        hov[i] += (hovT[i] - hov[i]) * Math.min(1, dt * 6);
+        phase[i] += dt * (0.55 + hov[i] * 1.6);
+      });
+      gl.uniform2f(U.uRes, cv.width, cv.height);
+      gl.uniform1f(U.uScale, scale);
+      gl.uniform1f(U.uTime, (now - t0) / 1000);
+      gl.uniform4fv(U.uRect, rects);
+      gl.uniform1fv(U.uPhase, phase);
+      gl.uniform1fv(U.uHov, hov);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    };
+
+    resize();
+    sec.classList.add('gl-on');
+    let running = false;
+    let raf = 0;
+    let lastFrame = 0;
+    const loop = (now) => {
+      raf = 0;
+      if (!running) return;
+      if (now - lastFrame >= 32) {
+        lastFrame = now;
+        draw(now);
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    const start = () => {
+      if (reduce) return draw(performance.now());
+      if (!raf) raf = requestAnimationFrame(loop);
+    };
+    if ('ResizeObserver' in window)
+      new ResizeObserver(() => {
+        resize();
+        draw(performance.now());
+      }).observe(sec);
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(
+        (entries) => {
+          running = entries[0].isIntersecting;
+          if (running) start();
+        },
+        { rootMargin: '100px' }
+      ).observe(sec);
+    } else {
+      running = true;
+      start();
+    }
+    draw(performance.now());
+  })();
+
+  /* ── Counters: count up once, when their strip comes into view. ── */
+  (() => {
+    const groups = [...document.querySelectorAll('[data-counts]')];
+    if (!groups.length || !('IntersectionObserver' in window)) return;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const fmt = (n) => Math.round(n).toLocaleString('en-US');
+    const run = (n) => {
+      const to = Number(n.dataset.count);
+      const t0 = performance.now();
+      const tick = (t) => {
+        const k = Math.min(1, (t - t0) / 1400);
+        n.textContent = fmt(to * (1 - Math.pow(1 - k, 4))) + n.dataset.suffix;
+        if (k < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    };
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          e.target.querySelectorAll('[data-count]').forEach(run);
+          io.unobserve(e.target);
+        });
+      },
+      { threshold: 0.4 }
+    );
+    groups.forEach((g) => {
+      g.querySelectorAll('[data-count]').forEach((n) => (n.textContent = '0' + n.dataset.suffix));
+      io.observe(g);
+    });
+  })();
+</script>
+
+<style>
+  /* ── Shared bits ───────────────────────────────────────────── */
+  section .h2 {
+    margin-top: 0;
+  }
+  .lede {
+    text-wrap: pretty;
+  }
+  ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  svg :global(path),
+  svg :global(rect),
+  svg :global(circle),
+  svg :global(ellipse) {
+    vector-effect: non-scaling-stroke;
+  }
+  .split-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 46ch);
+    gap: 18px clamp(36px, 5vw, 72px);
+    align-items: end;
+  }
+  .split-head .lede {
+    margin-top: 0;
+    padding-bottom: 5.4px;
+  }
+  @media (max-width: 860px) {
+    .split-head {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .quiet {
+    display: inline-flex;
+    align-items: center;
+    gap: 7.2px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    transition: color 300ms var(--ease);
+  }
+  .quiet span {
+    transition: transform 400ms var(--ease);
+  }
+  .quiet:hover {
+    color: var(--ink);
+  }
+  .quiet:hover span {
+    transform: translateX(4px);
+  }
+  .quiet.on-dark {
+    color: hsl(0 0% 100% / 0.82);
+  }
+  .quiet.on-dark:hover {
+    color: #fff;
+  }
+  /* Icons: 24-grid line drawings, indigo. */
+  .node-icon svg,
+  .kind-icon svg,
+  .control-icon svg,
+  .strip-icon svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* Light button for indigo grounds. It wipes black left to right on
+     hover, like every other button on the site. */
+  .btn-l {
+    position: relative;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 14.5px 25.2px;
+    background: var(--n-50);
+    color: var(--n-900);
+    border: 1px solid var(--n-50);
+    font-size: 11.2px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transition:
+      color 300ms var(--ease),
+      border-color 300ms var(--ease);
+  }
+  .btn-l-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--n-900);
+    transform: translateX(-100%);
+    transition: transform 350ms var(--ease);
+  }
+  .btn-l-label {
+    position: relative;
+    z-index: 1;
+  }
+  .btn-l:hover {
+    color: var(--n-50);
+    border-color: var(--n-900);
+  }
+  .btn-l:hover .btn-l-fill {
+    transform: translateX(0);
+  }
+
+  /* ══ HERO ═══════════════════════════════════════════════════════
+     The headline is the first screen: it comes into focus on load.
+     The section is taller than the screen and the stage pins for the
+     extra height. --a runs 0 → 1 as the ground frosts over, then --o
+     as the copy blurs away and the next section takes over. */
+  .sh {
+    --a: 0;
+    --o: 0;
+    position: relative;
+    height: 190svh;
+    background: var(--indigo-700);
+  }
+  .sh-stage {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+    overflow: hidden;
+    color: #fff;
+    will-change: transform;
+  }
+  /* Under virtual scroll the layout emulates the stick with a
+     transform (data-vsticky), so the stage needs a plain box. */
+  :global(html[data-vscroll]) .sh-stage {
+    position: relative;
+  }
+  .sh-plate {
+    position: absolute;
+    inset: 0;
+    background: var(--indigo-600);
+  }
+  .sh-plate canvas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+  }
+  .sh-sharp {
+    inset: 0;
+  }
+  /* The same ground at a third of the resolution, blurred, and faded
+     in over the sharp one. A crossfade is far cheaper than animating
+     a blur across the whole screen. */
+  .sh-plate .sh-soft {
+    inset: -8%;
+    width: 116%;
+    height: 116%;
+    filter: blur(26px) saturate(1.15) brightness(1.06);
+    opacity: var(--a);
+  }
+  /* Soft lights drifting on the ground. Indigo and white only. */
+  .sh-light {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(70px);
+    mix-blend-mode: screen;
+    animation: drift 22s ease-in-out infinite alternate;
+  }
+  .sh-light.l1 {
+    width: 46vw;
+    height: 46vw;
+    left: -10vw;
+    top: -16vw;
+    background: hsl(243 90% 72% / 0.45);
+  }
+  .sh-light.l2 {
+    width: 38vw;
+    height: 38vw;
+    right: -8vw;
+    bottom: -14vw;
+    background: hsl(240 60% 90% / 0.26);
+    animation-duration: 28s;
+    animation-delay: -9s;
+  }
+  .sh-light.l3 {
+    width: 30vw;
+    height: 30vw;
+    left: 38vw;
+    top: 30%;
+    background: hsl(250 80% 64% / 0.3);
+    animation-duration: 34s;
+    animation-delay: -17s;
+    opacity: calc(0.4 + var(--a) * 0.6);
+  }
+  @keyframes drift {
+    to {
+      transform: translate3d(6vw, 4vw, 0) scale(1.12);
+    }
+  }
+  /* Deepens the left behind the copy, for contrast. */
+  .sh-shade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, hsl(243 80% 14% / 0.6) 0%, hsl(243 80% 14% / 0.2) 55%, transparent 100%);
+  }
+  @keyframes focus-in {
+    from {
+      opacity: 0;
+      filter: blur(24px);
+      transform: scale(1.05);
+    }
+  }
+
+  /* Padded by the nav's height so the copy sits in the middle of what
+     is visible before the stage pins. */
+  .sh-copy {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    padding-bottom: var(--nav-h);
+    pointer-events: none;
+  }
+  .sh-copy[data-live='true'] {
+    pointer-events: auto;
+  }
+  /* The scroll drives the wrapper; the load intro runs on the lines
+     inside it, so the two never fight over the same properties. */
+  .sh-copy-in {
+    width: 100%;
+    opacity: calc(1 - var(--o));
+    filter: blur(calc(var(--o) * 18px));
+    transform: translateY(calc(var(--o) * -6vh)) scale(calc(1 - var(--o) * 0.03));
+  }
+  .sh-in {
+    animation: focus-in 1400ms var(--ease) 120ms both;
+  }
+  .sh-in.d1 {
+    animation-delay: 320ms;
+  }
+  .sh-in.d2 {
+    animation-delay: 520ms;
+  }
+  /* A keyboard user tabbing into the buttons sees them, whatever
+     the scroll position. */
+  .sh-copy:focus-within .sh-copy-in {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+  .sh-copy h1 {
+    max-width: 18ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(36px, 5.6vw, 72px);
+    font-weight: 400;
+    line-height: 1.06;
+    letter-spacing: -0.028em;
+    text-wrap: balance;
+    text-shadow: 0 10px 40px hsl(243 80% 16% / 0.35);
+  }
+  .sh-copy p {
+    margin-top: 24px;
+    max-width: 62ch;
+    font-size: clamp(14.85px, 1.4vw, 16.65px);
+    line-height: 1.74;
+    color: hsl(0 0% 100% / 0.86);
+    text-wrap: pretty;
+  }
+  .sh-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 27px;
+    margin-top: 34px;
+  }
+
+  .sh-cue {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--nav-h) + 26px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    pointer-events: none;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: hsl(0 0% 100% / 0.7);
+    opacity: calc(1 - var(--a) * 2.5);
+  }
+  /* The intro runs on the children so it never fights the scroll fade. */
+  .sh-cue > * {
+    animation: focus-in 1200ms var(--ease) 1100ms both;
+  }
+  .sh-cue i {
+    position: relative;
+    display: block;
+    width: 1px;
+    height: 42px;
+    overflow: hidden;
+    background: hsl(0 0% 100% / 0.25);
+  }
+  .sh-cue i::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: -40%;
+    width: 1px;
+    height: 40%;
+    background: #fff;
+    animation: cue 2200ms var(--ease) infinite;
+  }
+  @keyframes cue {
+    to {
+      top: 100%;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sh {
+      height: auto;
+    }
+    .sh-stage {
+      position: relative;
+    }
+    .sh-cue {
+      display: none;
+    }
+    .sh-light,
+    .sh-in {
+      animation: none;
+    }
+  }
+
+  /* ══ PROOF STRIP ═════════════════════════════════════════════ */
+  .strip-band {
+    background: var(--surface);
+    border-block: 1px solid var(--line);
+  }
+  .strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.25fr);
+    margin: 0;
+    border-left: 1px solid var(--line);
+  }
+  .strip-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 30px 24px 28px;
+    border-right: 1px solid var(--line);
+  }
+  .strip-fig {
+    display: block;
+    font-family: var(--hero-serif);
+    font-size: clamp(34px, 3.6vw, 46px);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--teal-700);
+    font-variant-numeric: tabular-nums;
+  }
+  .strip-label {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .strip-label span {
+    display: block;
+    margin-top: 3px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 400;
+    color: var(--n-400);
+  }
+  .strip-link {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    background: var(--n-50);
+    transition: background 400ms var(--ease);
+  }
+  .strip-link:hover {
+    background: var(--indigo-100);
+  }
+  .strip-icon {
+    flex: none;
+    width: 38px;
+    height: 38px;
+    padding: 8px;
+    color: var(--indigo-600);
+    border: 1px solid var(--indigo-200);
+    background: var(--surface);
+  }
+  .strip-link > span:last-child {
+    font-family: var(--hero-serif);
+    font-size: 17.1px;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+  .strip-link b {
+    display: block;
+    margin-top: 6px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--indigo-600);
+  }
+  @media (max-width: 900px) {
+    .strip {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .strip-link {
+      grid-column: 1 / -1;
+      border-top: 1px solid var(--line);
+    }
+  }
+  @media (max-width: 560px) {
+    .strip {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .strip-cell + .strip-cell {
+      border-top: 1px solid var(--line);
+    }
+  }
+
+  /* ══ PROBLEMS: three nodes a side, the hub in the middle ═════ */
+  .nodes {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px) minmax(0, 1fr);
+    grid-template-rows: repeat(3, auto);
+    gap: 22px clamp(56px, 8vw, 120px);
+    align-items: center;
+    margin-top: 52px;
+  }
+  .nodes-lines {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .nodes-lines :global(path) {
+    fill: none;
+    stroke: var(--indigo-300);
+    stroke-width: 1.2;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    transition: stroke-dashoffset 1100ms var(--ease);
+  }
+  .nodes[data-on='true'] .nodes-lines :global(path) {
+    stroke-dashoffset: 0;
+  }
+  .nodes-lines :global(.end) {
+    fill: var(--indigo-500);
+    opacity: 0;
+    transition: opacity 600ms var(--ease) 900ms;
+  }
+  .nodes[data-on='true'] .nodes-lines :global(.end) {
+    opacity: 1;
+  }
+  .nodes-lines :global(.pulse) {
+    fill: var(--indigo-600);
+    opacity: 0;
+    transition: opacity 600ms var(--ease) 1400ms;
+  }
+  .nodes[data-on='true'] .nodes-lines :global(.pulse) {
+    opacity: 1;
+  }
+  .hub {
+    position: relative;
+    grid-column: 2;
+    grid-row: 1 / 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    aspect-ratio: 1;
+    margin: 0;
+    overflow: hidden;
+    color: #fff;
+    background: var(--indigo-600);
+    box-shadow: 0 30px 70px -36px hsl(243 80% 20% / 0.6);
+  }
+  .hub canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .hub-eyebrow,
+  .hub-word,
+  .hub-note {
+    position: relative;
+  }
+  .hub-eyebrow {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: hsl(0 0% 100% / 0.78);
+  }
+  .hub-word {
+    padding-inline: 18px;
+    text-wrap: balance;
+    font-family: var(--hero-serif);
+    font-style: italic;
+    font-size: clamp(28px, 2.8vw, 36px);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    text-align: center;
+    text-shadow: 0 8px 26px hsl(243 80% 16% / 0.5);
+  }
+  .hub-note {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: hsl(0 0% 100% / 0.78);
+  }
+  .node {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+    transition:
+      transform 500ms var(--ease),
+      border-color 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  .node-l {
+    grid-column: 1;
+  }
+  .node-r {
+    grid-column: 3;
+  }
+  .node:hover {
+    transform: translateY(-1.2px);
+    border-color: var(--indigo-300);
+    box-shadow: 0 10px 24px -16px hsl(243 60% 30% / 0.35);
+  }
+  .node-icon {
+    flex: none;
+    width: 42px;
+    height: 42px;
+    padding: 9px;
+    color: var(--indigo-600);
+    background: var(--indigo-100);
+  }
+  .node-text {
+    font-size: 13.05px;
+    line-height: 1.5;
+    color: var(--ink-3);
+  }
+  .node-text b {
+    display: block;
+    margin-bottom: 2px;
+    font-family: var(--hero-serif);
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: -0.012em;
+    color: var(--ink);
+  }
+  /* What the engineered dataset does about it, in teal. */
+  .node-fix {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 7px;
+    font-family: var(--mono);
+    font-size: 10.35px;
+    line-height: 1.4;
+    color: var(--teal-700);
+  }
+  .node-fix::before {
+    content: '';
+    flex: none;
+    width: 6px;
+    height: 6px;
+    background: var(--teal-500);
+    transform: rotate(45deg);
+  }
+  @media (max-width: 900px) {
+    .nodes {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: none;
+      gap: 12px;
+    }
+    .nodes-lines {
+      display: none;
+    }
+    .hub {
+      grid-column: 1 / -1;
+      grid-row: auto;
+      aspect-ratio: 21 / 8;
+      margin-bottom: 8px;
+    }
+    .node,
+    .node-l,
+    .node-r {
+      grid-column: auto;
+      grid-row: auto !important;
+    }
+  }
+  @media (max-width: 520px) {
+    .nodes {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* ══ WHAT WE GENERATE ════════════════════════════════════════ */
+  .kinds {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-top: 46.8px;
+    border-top: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+  }
+  .kind {
+    position: relative;
+    padding: 24px 22px 26px;
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    transition: background 400ms var(--ease);
+  }
+  .kind::before {
+    content: '';
+    position: absolute;
+    left: -1px;
+    right: -1px;
+    top: -1px;
+    height: 2px;
+    background: var(--indigo-600);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 500ms var(--ease);
+  }
+  .kind:hover {
+    background: var(--n-50);
+  }
+  .kind:hover::before {
+    transform: scaleX(1);
+  }
+  .kind-icon {
+    display: block;
+    width: 30px;
+    height: 30px;
+    color: var(--indigo-600);
+    transition: transform 500ms var(--ease);
+  }
+  .kind:hover .kind-icon {
+    transform: translateY(-2px);
+  }
+  .kind h3 {
+    margin-top: 22px;
+    font-family: var(--hero-serif);
+    font-size: 18.9px;
+    font-weight: 400;
+    line-height: 1.25;
+    letter-spacing: -0.012em;
+  }
+  .kind p {
+    margin-top: 8px;
+    font-size: 12.6px;
+    line-height: 1.65;
+    color: var(--ink-3);
+    text-wrap: pretty;
+  }
+  @media (max-width: 1000px) {
+    .kinds {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 480px) {
+    .kinds {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* ══ WASH: "All three" from /design.html (blur → dither → grain)
+     as a light colour field behind sections whose content sits on
+     white cards. The canvas is drawn at low resolution; the dither
+     and grain carry the texture. Content stacks above it. */
+  .wash {
+    position: relative;
+    overflow: hidden;
+  }
+  .wash-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .wash > :not(.wash-bg) {
+    position: relative;
+    z-index: 1;
+  }
+  .wash .mq {
+    background: hsl(0 0% 100% / 0.45);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+
+  /* ══ PUBLISHED DATASETS ══════════════════════════════════════
+     Four staggered columns of tiles. Each tile: a dot and the name,
+     the row count, a preview of the first row in mono (keys indigo,
+     values teal, as in the site's code blocks), then one line of
+     description pinned to the bottom. Square and hairline, like every
+     other card on the site. */
+  /* Every section on this page runs wider than the site's 1150px
+     shell, so the dataset tiles get room and all edges still line up.
+     The nav and footer are in the layout and keep 1150px. */
+  section {
+    --shell: 1300px;
+  }
+  /* The shader canvas and a fine grain layer over it. The grain is a
+     static SVG noise so it stays sharp while the shader runs at half
+     resolution. */
+  .ds-gl {
+    display: none;
+  }
+  #datasets.gl-on .ds-gl {
+    display: block;
+  }
+  #datasets.gl-on .ds-fallback {
+    display: none;
+  }
+  .ds-grain {
+    pointer-events: none;
+    opacity: 0.22;
+    mix-blend-mode: soft-light;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  /* With the shader on, the card's colour comes from the canvas under
+     it, so the card itself goes transparent and keeps its grain,
+     hairline and shadow. */
+  #datasets.gl-on .ds-tile {
+    background: transparent;
+    border-color: hsl(0 0% 100% / 0.65);
+  }
+  .ds-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px 36px;
+    flex-wrap: wrap;
+  }
+  .ds-head > div {
+    flex: 1 1 30rem;
+    min-width: 0;
+  }
+  .ds-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 46.8px;
+    align-items: start;
+  }
+  .ds-col {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  /* Every column holds the same number of cards, at their natural
+     height; the even columns sit a little lower. That offset is the
+     only stagger, at the top and mirrored at the bottom. */
+  .ds-col:nth-child(even) {
+    padding-top: 56px;
+  }
+  /* Narrower screens: two even columns of cards. The column wrappers
+     drop out of the layout and each card's inline order restores the
+     dataset order. */
+  @media (max-width: 1100px) {
+    .ds-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .ds-col {
+      display: contents;
+    }
+  }
+  /* Colourful cards. Each tile is its own small blur field: two soft
+     sources in its tone over a pale ground of the same hue, placed per
+     tile (--gx) so no two match, with colour grain over the top. The
+     row preview sits on frosted white and the text keeps dark ink, so
+     the colour never sits directly behind small type. */
+  .ds-tile.tone-indigo {
+    --c0: hsl(243 85% 95%);
+    --c1: hsl(243 92% 83%);
+    --c2: hsl(270 78% 88%);
+    --tone: var(--indigo-600);
+    --glow: hsl(243 70% 40% / 0.32);
+  }
+  .ds-tile.tone-teal {
+    --c0: hsl(172 55% 93%);
+    --c1: hsl(178 62% 74%);
+    --c2: hsl(200 74% 86%);
+    --tone: var(--teal-700);
+    --glow: hsl(178 70% 24% / 0.3);
+  }
+  .ds-tile.tone-neutral {
+    --c0: hsl(32 92% 94%);
+    --c1: hsl(24 96% 80%);
+    --c2: hsl(350 82% 89%);
+    --tone: hsl(20 80% 46%);
+    --glow: hsl(20 80% 34% / 0.3);
+  }
+  .ds-tile {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
+    padding: 18px 15px 16px;
+    background:
+      radial-gradient(120% 75% at var(--gx, 20%) 0%, var(--c1) 0%, transparent 64%),
+      radial-gradient(95% 70% at calc(100% - var(--gx, 20%)) 100%, var(--c2) 0%, transparent 62%),
+      var(--c0);
+    border: 1px solid hsl(0 0% 100% / 0.75);
+    box-shadow: 0 10px 30px -22px var(--glow);
+    transition:
+      transform 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  /* Colour grain, as in the design lab's Blur field. Under the content. */
+  .ds-tile::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.32;
+    mix-blend-mode: soft-light;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .ds-tile:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 22px 40px -24px var(--glow);
+  }
+  .ds-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ds-dot {
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+  .ds-dot {
+    background: var(--tone);
+    box-shadow: 0 0 0 3px hsl(0 0% 100% / 0.6);
+  }
+  .ds-name {
+    font-family: var(--hero-serif);
+    font-size: 17.6px;
+    line-height: 1.2;
+    letter-spacing: -0.014em;
+    color: var(--ink);
+  }
+  .ds-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 7px;
+    margin-top: 8px;
+    padding-left: 17px;
+    font-family: var(--mono);
+    font-size: 10.35px;
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+  }
+  .ds-meta svg {
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .ds-kind {
+    color: var(--ink-3);
+  }
+  .ds-kind::before {
+    content: '· ';
+  }
+  /* A small picture of the dataset on frosted white. The SVG content
+     is injected with set:html, so its classes are styled globally
+     under .ds-viz. */
+  .ds-viz {
+    display: block;
+    margin-top: 14px;
+    padding: 8px 8px 6px;
+    background: hsl(0 0% 100% / 0.72);
+    border: 1px solid hsl(0 0% 100% / 0.95);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    transition: background 500ms var(--ease);
+  }
+  .ds-tile:hover .ds-viz {
+    background: hsl(0 0% 100% / 0.86);
+  }
+  .ds-viz svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 240 / 90;
+    overflow: visible;
+  }
+  .ds-viz :global(.v-ink) {
+    fill: var(--indigo-600);
+  }
+  .ds-viz :global(.v-vio) {
+    fill: hsl(275 58% 62%);
+  }
+  .ds-viz :global(.v-peach) {
+    fill: hsl(22 90% 64%);
+  }
+  .ds-viz :global(.v-soft) {
+    fill: var(--indigo-200);
+  }
+  .ds-viz :global(.v-mute) {
+    fill: var(--n-300);
+  }
+  .ds-viz :global(.v-line),
+  .ds-viz :global(.v-lineS) {
+    fill: none;
+    stroke: var(--n-300);
+    stroke-width: 1.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .ds-viz :global(.v-lineS) {
+    stroke: var(--n-400);
+  }
+  .ds-viz :global(.v-inkS),
+  .ds-viz :global(.v-vioS),
+  .ds-viz :global(.v-peachS) {
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .ds-viz :global(.v-inkS) {
+    stroke: var(--indigo-600);
+  }
+  .ds-viz :global(.v-vioS) {
+    stroke: hsl(275 58% 62%);
+  }
+  .ds-viz :global(.v-peachS) {
+    stroke: hsl(22 90% 60%);
+  }
+  .ds-viz :global(.v-dash) {
+    fill: none;
+    stroke: var(--n-400);
+    stroke-width: 1.2;
+    stroke-dasharray: 3 3;
+  }
+  .ds-viz :global(.v-hollow) {
+    fill: #fff;
+    stroke: var(--n-400);
+    stroke-width: 1.2;
+  }
+  .ds-viz :global(.v-halo) {
+    fill: var(--indigo-500);
+    fill-opacity: 0.08;
+  }
+  .ds-viz :global(.v-box),
+  .ds-viz :global(.v-frame) {
+    fill: hsl(22 90% 64% / 0.12);
+    stroke: hsl(22 90% 64%);
+    stroke-width: 1.2;
+  }
+  .ds-viz :global(.v-frame) {
+    fill: hsl(243 80% 97%);
+    stroke: var(--indigo-200);
+  }
+  .ds-viz :global(.v-chip) {
+    fill: #fff;
+    stroke: hsl(22 90% 64%);
+    stroke-width: 1;
+  }
+  .ds-viz :global(.v-chip2) {
+    fill: #fff;
+    stroke: hsl(275 58% 70%);
+    stroke-width: 1;
+  }
+  .ds-viz :global(.v-chiptxt) {
+    font-family: var(--mono);
+    font-size: 7px;
+    fill: var(--ink-2);
+  }
+  .ds-viz :global(.v-answer) {
+    fill: #fff;
+    stroke: hsl(22 90% 64%);
+    stroke-width: 1.3;
+  }
+  .ds-viz :global(.v-edge) {
+    fill: none;
+    stroke: var(--indigo-200);
+    stroke-width: 1;
+  }
+  .ds-viz :global(.v-page) {
+    fill: #fff;
+    stroke: var(--indigo-200);
+    stroke-width: 1.2;
+  }
+  .ds-viz :global(.v-tok1),
+  .ds-viz :global(.v-tok2),
+  .ds-viz :global(.v-tok3) {
+    stroke-width: 1;
+  }
+  .ds-viz :global(.v-tok1) {
+    fill: hsl(243 85% 95%);
+    stroke: var(--indigo-300);
+  }
+  .ds-viz :global(.v-tok2) {
+    fill: hsl(275 70% 95%);
+    stroke: hsl(275 58% 76%);
+  }
+  .ds-viz :global(.v-tok3) {
+    fill: hsl(22 95% 94%);
+    stroke: hsl(22 90% 76%);
+  }
+  .ds-viz :global(.v-txt),
+  .ds-viz :global(.v-tokid) {
+    font-family: var(--mono);
+    font-size: 8px;
+    fill: var(--ink-3);
+  }
+  .ds-viz :global(.v-tokid) {
+    font-size: 7.2px;
+    fill: var(--ink-2);
+  }
+  .ds-desc {
+    margin-top: auto;
+    padding-top: 18px;
+    font-size: 13.05px;
+    line-height: 1.65;
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+  /* The section's own text sits on the blur field, so it takes the
+     darker ink too. */
+  #datasets .lede {
+    color: var(--ink-2);
+  }
+  @media (max-width: 560px) {
+    .ds-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .ds-tile {
+      min-height: 0;
+    }
+  }
+
+  /* ══ QUALITY ═════════════════════════════════════════════════ */
+  .controls {
+    margin-top: 44px;
+  }
+  .controls-head,
+  .control {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 0 clamp(28px, 4vw, 54px);
+  }
+  .controls-head {
+    padding-bottom: 12px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--n-400);
+  }
+  .control {
+    align-items: center;
+    padding-block: 16px;
+    border-top: 1px solid var(--line-2);
+  }
+  .control:last-child {
+    border-bottom: 1px solid var(--line-2);
+  }
+  .control-risk {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-family: var(--hero-serif);
+    font-size: 18px;
+    letter-spacing: -0.012em;
+    color: var(--ink);
+  }
+  .control-icon {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    padding: 7px;
+    color: var(--ink-3);
+    border: 1px solid var(--line-2);
+    background: var(--surface);
+  }
+  .control-fix {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+  .control-fix i {
+    flex: none;
+    width: 26px;
+    height: 1px;
+    background: var(--indigo-500);
+    position: relative;
+  }
+  .control-fix i::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: -3px;
+    width: 6px;
+    height: 6px;
+    border-top: 1px solid var(--indigo-500);
+    border-right: 1px solid var(--indigo-500);
+    transform: rotate(45deg);
+  }
+  @media (max-width: 760px) {
+    .controls-head {
+      display: none;
+    }
+    .control {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+    }
+    .control-fix i {
+      display: none;
+    }
+    .control-fix {
+      padding-left: 48px;
+    }
+  }
+
+  /* ══ TWO WAYS TO START: side by side, both visible ═══════════ */
+  .starts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-top: 40px;
+  }
+  .start {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .start-art {
+    margin: 0;
+    padding: 22px 26px;
+    background: var(--n-50);
+    border-bottom: 1px solid var(--line);
+  }
+  .start-art svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 250px;
+    overflow: visible;
+  }
+  /* A: the data, its grid and its gaps. Teal is the data; amber marks
+     only what is missing, which is the one signal in the figure. */
+  .start-art .grid {
+    fill: none;
+    stroke: var(--n-200);
+    stroke-width: 1;
+  }
+  .start-art .axis {
+    fill: none;
+    stroke: var(--n-400);
+    stroke-width: 1.2;
+  }
+  .start-art .pt {
+    fill: var(--teal-500);
+    opacity: 0.72;
+  }
+  .start-art .hatch {
+    stroke: var(--amber-500);
+    stroke-width: 1;
+    opacity: 0.5;
+  }
+  .start-art .miss {
+    fill: url(#st-hatch);
+    stroke: var(--amber-500);
+    stroke-width: 1.2;
+    stroke-dasharray: 4 3;
+  }
+  .start-art .rare {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: breathe 3.2s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    50% {
+      transform: scale(1.07);
+    }
+  }
+  .start-art .tag rect {
+    fill: var(--surface);
+    stroke: var(--amber-500);
+    stroke-width: 1;
+  }
+  .start-art .tag text {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    text-anchor: middle;
+    letter-spacing: 0.06em;
+    fill: var(--amber-800);
+  }
+  .start-art .lbl {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    fill: var(--ink-2);
+  }
+  /* B: expert notes → a spec → generated samples. The three marked
+     rules each have a colour, and every sample carries the colour of
+     the rule it covers. */
+  .start-art .ln {
+    fill: none;
+    stroke: var(--n-300);
+    stroke-width: 1.2;
+  }
+  .start-art .note {
+    fill: var(--surface);
+    stroke: var(--line-2);
+    stroke-width: 1.2;
+  }
+  .start-art .head {
+    fill: var(--indigo-100);
+    stroke: var(--indigo-600);
+    stroke-width: 1.2;
+  }
+  .start-art .head-b {
+    fill: none;
+    stroke: var(--indigo-600);
+    stroke-width: 1.2;
+    stroke-linecap: round;
+  }
+  .start-art .txt {
+    fill: var(--n-300);
+  }
+  .start-art .txt.soft {
+    fill: var(--n-200);
+  }
+  .start-art .chip rect:first-child {
+    stroke-width: 1;
+  }
+  .start-art .chip text {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-anchor: middle;
+    fill: var(--ink);
+  }
+  .start-art .c-i rect:first-child,
+  .start-art .c-i .dot {
+    fill: hsl(243 85% 94%);
+    stroke: var(--indigo-500);
+  }
+  .start-art .c-t rect:first-child,
+  .start-art .c-t .dot {
+    fill: hsl(178 55% 90%);
+    stroke: var(--teal-500);
+  }
+  .start-art .c-p rect:first-child,
+  .start-art .c-p .dot {
+    fill: hsl(22 95% 92%);
+    stroke: hsl(22 90% 58%);
+  }
+  .start-art .row .row-box {
+    fill: var(--surface);
+    stroke: var(--line-2);
+    stroke-width: 1;
+  }
+  .start-art .row .dot {
+    stroke-width: 1.2;
+  }
+  .start-art .spec {
+    fill: var(--indigo-600);
+  }
+  .start-art .spec-lines {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 1.4;
+    stroke-linecap: round;
+  }
+  .start-body {
+    padding: 26px 28px 28px;
+  }
+  .start-key {
+    display: inline-grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    font-family: var(--mono);
+    font-size: 10.8px;
+    font-weight: 500;
+    color: #fff;
+    background: var(--indigo-600);
+  }
+  .start h3 {
+    margin-top: 16px;
+    font-family: var(--hero-serif);
+    font-size: clamp(21px, 2vw, 25px);
+    font-weight: 400;
+    line-height: 1.2;
+    letter-spacing: -0.016em;
+  }
+  .start p {
+    margin-top: 10px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: var(--ink-3);
+    text-wrap: pretty;
+  }
+  .start-steps {
+    margin-top: 20px;
+    counter-reset: s;
+  }
+  .start-steps li {
+    counter-increment: s;
+    display: flex;
+    gap: 14px;
+    padding-block: 10px;
+    border-top: 1px solid var(--line);
+    font-size: 13.05px;
+    color: var(--ink-2);
+  }
+  .start-steps li::before {
+    content: '0' counter(s);
+    font-family: var(--mono);
+    font-size: 10.35px;
+    padding-top: 2px;
+    color: var(--indigo-600);
+  }
+  @media (max-width: 860px) {
+    .starts {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .start-art .rare {
+      animation: none;
+    }
+  }
+
+  /* ══ THE LOOP ════════════════════════════════════════════════
+     The steps run down the left; a step lights once it passes 58% of
+     the screen. Beside them a CSV sticks and changes with the step:
+     rows generate, a review column marks each with an O or an X, the
+     flagged rows are regenerated, then the dataset scales. */
+  .loop {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(36px, 5vw, 72px);
+    margin-top: 52px;
+  }
+  .loop-list {
+    position: relative;
+    padding-left: 44px;
+  }
+  .loop-step {
+    position: relative;
+    min-height: 42vh;
+    padding-bottom: 28px;
+  }
+  /* The last step keeps some height of its own, so the CSV, which grows
+     on this step, has room to stay pinned instead of being pushed up
+     under the nav by the end of the section. */
+  .loop-step:last-child {
+    min-height: 36vh;
+    padding-bottom: 0;
+  }
+  /* The rail, one segment per gap between steps. It fills once the
+     next step is lit. */
+  .loop-step:not(:last-child)::before,
+  .loop-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: -38.5px;
+    top: 22px;
+    bottom: -2px;
+    width: 1px;
+    background: var(--line-2);
+  }
+  .loop-step:not(:last-child)::after {
+    background: var(--indigo-600);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 700ms var(--ease);
+  }
+  .loop-step:has(+ .loop-step[data-on='true'])::after {
+    transform: scaleY(1);
+  }
+  .loop-node {
+    position: absolute;
+    left: -44px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    background: var(--n-100);
+    border: 1px solid var(--line-2);
+    transition:
+      background 400ms var(--ease),
+      border-color 400ms var(--ease),
+      transform 400ms var(--ease);
+  }
+  .loop-step[data-on='true'] .loop-node {
+    background: var(--indigo-600);
+    border-color: var(--indigo-600);
+    transform: rotate(45deg);
+  }
+  /* The refine step's node is a circular arrow, turning while it is
+     the current step. */
+  .loop-node.spin {
+    left: -50px;
+    top: -1px;
+    width: 24px;
+    height: 24px;
+    padding: 3px;
+    color: var(--n-400);
+    background: var(--surface);
+    border-color: var(--line-2);
+    border-radius: 50%;
+  }
+  .loop-step[data-on='true'] .loop-node.spin {
+    color: #fff;
+    background: var(--indigo-600);
+    transform: none;
+  }
+  .loop-node.spin svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .loop[data-stage='2'] .loop-node.spin svg {
+    animation: turn 1.6s linear infinite;
+  }
+  @keyframes turn {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .loop-n {
+    font-family: var(--mono);
+    font-size: 10.35px;
+    color: var(--n-400);
+    transition: color 400ms var(--ease);
+  }
+  .loop-step[data-on='true'] .loop-n {
+    color: var(--indigo-600);
+  }
+  .loop-step h3 {
+    margin-top: 10px;
+    font-family: var(--hero-serif);
+    font-size: 22.5px;
+    font-weight: 400;
+    letter-spacing: -0.016em;
+    line-height: 1.2;
+  }
+  .loop-step p {
+    margin-top: 8px;
+    max-width: 38ch;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: var(--ink-3);
+    text-wrap: pretty;
+  }
+  .loop-step h3,
+  .loop-step p {
+    opacity: 0.4;
+    transition: opacity 500ms var(--ease);
+  }
+  .loop-step[data-on='true'] h3,
+  .loop-step[data-on='true'] p {
+    opacity: 1;
+  }
+
+  /* ── The CSV ── */
+  .csv-wrap {
+    position: relative;
+  }
+  .csv {
+    position: sticky;
+    top: 104px;
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+    box-shadow: 0 30px 60px -44px hsl(243 60% 30% / 0.4);
+  }
+  :global(html[data-vscroll]) .csv {
+    position: relative;
+    top: auto;
+  }
+  .csv-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 16px;
+    background: var(--n-50);
+    border-bottom: 1px solid var(--line-2);
+    font-family: var(--mono);
+    font-size: 10.35px;
+    color: var(--ink-2);
+  }
+  .csv-file,
+  .csv-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .csv-bar svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .csv-status {
+    color: var(--indigo-600);
+    transition: color 400ms var(--ease);
+  }
+  .csv-spin,
+  .csv-ok {
+    display: none;
+  }
+  .csv[data-stage='-1'] .csv-spin,
+  .csv[data-stage='0'] .csv-spin,
+  .csv[data-stage='2'] .csv-spin {
+    display: block;
+    animation: turn 1.4s linear infinite;
+  }
+  .csv[data-stage='1'] .csv-status {
+    color: var(--amber-800);
+  }
+  .csv[data-stage='3'] .csv-status {
+    color: var(--teal-700);
+  }
+  .csv[data-stage='3'] .csv-ok {
+    display: block;
+  }
+  /* Stacked labels; the one for the current stage shows. */
+  .csv-states,
+  .csv-count {
+    display: grid;
+  }
+  .csv-states > span,
+  .csv-count > span {
+    grid-area: 1 / 1;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 400ms var(--ease);
+  }
+  .csv[data-stage='-1'] [data-s='0'],
+  .csv[data-stage='0'] [data-s='0'],
+  .csv[data-stage='1'] [data-s='1'],
+  .csv[data-stage='2'] [data-s='2'],
+  .csv[data-stage='3'] [data-s='3'] {
+    opacity: 1;
+  }
+  .csv-states > span {
+    text-align: right;
+  }
+
+  .csv-row {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 112px 118px;
+    gap: 12px;
+    align-items: center;
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--line);
+    transition:
+      opacity 500ms var(--ease) calc(var(--i, 0) * 90ms),
+      transform 500ms var(--ease) calc(var(--i, 0) * 90ms),
+      background 500ms var(--ease);
+  }
+  .csv-head {
+    padding-block: 9px;
+    font-family: var(--mono);
+    font-size: 9.45px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--n-400);
+  }
+  .csv[data-stage='-1'] .csv-row:not(.csv-head) {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  .c-id {
+    font-family: var(--mono);
+    font-size: 10.35px;
+    color: var(--n-400);
+  }
+  .c-text {
+    display: grid;
+    font-size: 12.6px;
+    line-height: 1.45;
+    color: var(--ink-2);
+  }
+  .c-intent {
+    display: grid;
+    font-family: var(--mono);
+    font-size: 10.35px;
+    color: var(--teal-700);
+    overflow-wrap: anywhere;
+  }
+  /* A regenerated row. On refine the old value is struck through and
+     the new one opens beneath it; on delivery the struck value folds
+     away. Each value sits in a 0fr/1fr grid row so it can collapse
+     smoothly. */
+  .v1,
+  .v2 {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition:
+      grid-template-rows 600ms var(--ease),
+      opacity 500ms var(--ease),
+      color 500ms var(--ease);
+  }
+  .v1 > span,
+  .v2 > span {
+    min-height: 0;
+    overflow: hidden;
+  }
+  .v2 {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+  .v1 s {
+    text-decoration: none;
+    background: linear-gradient(var(--amber-500), var(--amber-500)) no-repeat 0 58% / 0% 1.3px;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    transition: background-size 600ms var(--ease);
+  }
+  .csv[data-stage='2'] .v1 {
+    color: var(--n-400);
+  }
+  .csv[data-stage='2'] .v1 s,
+  .csv[data-stage='3'] .v1 s {
+    background-size: 100% 1.3px;
+  }
+  .csv[data-stage='2'] .v2,
+  .csv[data-stage='3'] .v2 {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    transition-delay: 250ms;
+  }
+  .csv[data-stage='3'] .v1 {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+  /* Review marks: an O for a row that passes, an X for a flag. */
+  .c-rev {
+    position: relative;
+    height: 16px;
+  }
+  .c-rev svg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    opacity: 0;
+    transform: scale(0.4);
+    transition:
+      opacity 400ms var(--ease) calc(var(--i, 0) * 70ms),
+      transform 400ms var(--ease) calc(var(--i, 0) * 70ms);
+  }
+  .mk-o,
+  .mk-v {
+    stroke: var(--teal-500);
+  }
+  .mk-v {
+    stroke-width: 2;
+    stroke-linejoin: round;
+  }
+  .mk-x {
+    stroke: var(--amber-500);
+  }
+  .c-flag {
+    position: absolute;
+    left: 22px;
+    top: 50%;
+    padding: 1px 6px;
+    font-family: var(--mono);
+    font-size: 9px;
+    white-space: nowrap;
+    color: var(--amber-800);
+    background: var(--amber-100);
+    opacity: 0;
+    transform: translateY(-50%);
+    transition: opacity 400ms var(--ease);
+  }
+  /* Review: an O for a pass, an X for a flag. Refine: the flags turn
+     to ticks. Delivery: every row, the new ones too, ends on a tick. */
+  .csv[data-stage='1'] .csv-row:not(.flagged) .mk-o,
+  .csv[data-stage='1'] .flagged .mk-x,
+  .csv[data-stage='2'] .csv-row:not(.flagged) .mk-o,
+  .csv[data-stage='2'] .flagged .mk-v,
+  .csv[data-stage='3'] .mk-v {
+    opacity: 1;
+    transform: none;
+  }
+  .csv[data-stage='3'] .csv-ghost .mk-v {
+    transition-delay: calc(500ms + var(--i) * 120ms);
+  }
+  .csv[data-stage='1'] .c-flag {
+    opacity: 1;
+  }
+  .csv[data-stage='1'] .flagged {
+    background: hsl(34 82% 92% / 0.55);
+  }
+  .csv[data-stage='2'] .flagged {
+    background: hsl(178 38% 92% / 0.7);
+  }
+  /* The last step: more rows arrive under the approved ones. */
+  .csv-more {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 700ms var(--ease);
+  }
+  .csv-more > div {
+    overflow: hidden;
+  }
+  .csv[data-stage='3'] .csv-more {
+    grid-template-rows: 1fr;
+  }
+  .csv-ghost {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  .csv[data-stage='3'] .csv-ghost {
+    opacity: 1;
+    transform: none;
+    transition-delay: calc(200ms + var(--i) * 120ms);
+  }
+  .csv-ghost i {
+    display: block;
+    height: 5px;
+    background: var(--n-200);
+  }
+  .csv-ghost span:nth-child(3) i {
+    background: hsl(178 38% 86%);
+  }
+  .csv-foot {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    background: var(--n-50);
+    font-family: var(--mono);
+    font-size: 10.35px;
+    color: var(--ink-2);
+  }
+  .csv-meter {
+    position: relative;
+    flex: none;
+    width: 120px;
+    height: 4px;
+    background: var(--n-200);
+  }
+  .csv-meter i {
+    position: absolute;
+    inset: 0;
+    background: var(--teal-500);
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: transform 700ms var(--ease);
+  }
+  .csv[data-stage='1'] .csv-meter i {
+    transform: scaleX(0.667);
+  }
+  .csv[data-stage='2'] .csv-meter i,
+  .csv[data-stage='3'] .csv-meter i {
+    transform: scaleX(1);
+  }
+  @media (max-width: 900px) {
+    .loop {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .csv-wrap {
+      order: -1;
+    }
+    .csv,
+    :global(html[data-vscroll]) .csv {
+      position: relative;
+      top: auto;
+    }
+    .loop-step {
+      min-height: 0;
+      padding-bottom: 34px;
+    }
+  }
+  @media (max-width: 560px) {
+    .csv-row {
+      grid-template-columns: minmax(0, 1fr) 84px 26px;
+      padding-inline: 12px;
+    }
+    .c-id,
+    .csv-head span:first-child,
+    .csv-ghost span:first-child,
+    .c-flag {
+      display: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .csv-spin,
+    .loop-node.spin svg {
+      animation: none !important;
+    }
+  }
+  .deliver {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 8fr);
+    gap: 18px clamp(28px, 4vw, 54px);
+    margin-top: 56px;
+    padding: 26px 28px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .deliver h3 {
+    font-family: var(--hero-serif);
+    font-size: 21.6px;
+    font-weight: 400;
+    letter-spacing: -0.016em;
+  }
+  .deliver ul {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 28px;
+  }
+  .deliver li {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+  .deliver svg {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    transform: translateY(2px);
+    fill: none;
+    stroke: var(--teal-700);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  @media (max-width: 760px) {
+    .deliver,
+    .deliver ul {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* ══ BUILT ON SIMULA ═════════════════════════════════════════ */
+  .sim {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    gap: clamp(36px, 5vw, 72px);
+    align-items: center;
+  }
+  .plate {
+    position: relative;
+    margin: 0;
+    aspect-ratio: 45 / 32;
+    overflow: hidden;
+    border: 1px solid var(--line-2);
+    background: var(--indigo-600);
+  }
+  .plate canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .plate-word {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding-bottom: 0.08em;
+    font-family: var(--hero-serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(48px, 6.4vw, 86px);
+    letter-spacing: -0.02em;
+    color: #fff;
+    text-shadow: 0 10px 36px hsl(243 80% 20% / 0.55);
+  }
+  .sim-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 30px 0 0;
+    border-top: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+  }
+  .sim-stats > div {
+    padding: 16px 18px 18px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .sim-stats dt {
+    font-family: var(--mono);
+    font-size: 9.9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .sim-stats dd {
+    margin: 10px 0 0;
+  }
+  .sim-fig {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    font-family: var(--hero-serif);
+    font-size: 30px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--teal-700);
+    font-variant-numeric: tabular-nums;
+  }
+  .sim-fig small {
+    font-size: 0.45em;
+    opacity: 0.7;
+  }
+  .sim-note {
+    display: block;
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    line-height: 1.5;
+    color: var(--n-400);
+  }
+  .sim-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 28px;
+    margin-top: 26px;
+  }
+  @media (max-width: 900px) {
+    .sim {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .plate {
+      aspect-ratio: 16 / 9;
+    }
+  }
+
+  /* ══ DOMAINS ═════════════════════════════════════════════════ */
+  .domains .h2 {
+    max-width: 24ch;
+  }
+  /* Industries, drifting past. Faded at both edges, paused on hover. */
+  .mq {
+    margin-top: 44px;
+    overflow: hidden;
+    border-block: 1px solid var(--line-2);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  }
+  .mq-track {
+    display: flex;
+    width: max-content;
+    animation: marquee 46s linear infinite;
+  }
+  .mq:hover .mq-track {
+    animation-play-state: paused;
+  }
+  .mq ul {
+    display: flex;
+  }
+  .mq li {
+    display: flex;
+    align-items: center;
+    gap: 34px;
+    padding: 20px 17px;
+    font-family: var(--hero-serif);
+    font-size: clamp(20px, 2.2vw, 28px);
+    letter-spacing: -0.016em;
+    white-space: nowrap;
+    color: var(--ink-2);
+  }
+  .mq li::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--indigo-500);
+    transform: rotate(45deg);
+    opacity: 0.55;
+  }
+  @keyframes marquee {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mq-track {
+      animation: none;
+      width: auto;
+    }
+    .mq ul {
+      flex-wrap: wrap;
+    }
+    .mq ul[aria-hidden] {
+      display: none;
+    }
+  }
+
+  /* ══ QUESTIONS ═══════════════════════════════════════════════ */
+  .faq-in {
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+    gap: 28px clamp(36px, 5vw, 72px);
+    align-items: start;
+  }
+  .faq details {
+    border-top: 1px solid var(--line);
+  }
+  .faq details:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+  .faq summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding-block: 20px;
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--hero-serif);
+    font-size: 19.8px;
+    line-height: 1.3;
+    letter-spacing: -0.012em;
+    transition: color 300ms var(--ease);
+  }
+  .faq summary::-webkit-details-marker {
+    display: none;
+  }
+  .faq summary:hover {
+    color: var(--indigo-700);
+  }
+  .plus {
+    position: relative;
+    flex: none;
+    width: 14px;
+    height: 14px;
+    transition: transform 400ms var(--ease);
+  }
+  .plus::before,
+  .plus::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6.5px;
+    width: 14px;
+    height: 1.2px;
+    background: currentColor;
+  }
+  .plus::after {
+    transform: rotate(90deg);
+  }
+  .faq details[open] .plus {
+    transform: rotate(45deg);
+  }
+  .faq details p {
+    max-width: 62ch;
+    padding-bottom: 22px;
+    font-size: 14.4px;
+    line-height: 1.74;
+    color: var(--ink-3);
+    animation: answer-in 500ms var(--ease) both;
+  }
+  @keyframes answer-in {
+    from {
+      opacity: 0;
+      filter: blur(6px);
+      transform: translateY(8px);
+    }
+  }
+  @media (max-width: 860px) {
+    .faq-in {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* ══ CLOSER: frosted glass on the strata ═════════════════════ */
+  .end {
+    position: relative;
+    overflow: hidden;
+    background: var(--indigo-600);
+    color: #fff;
+  }
+  .end-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .end-in {
+    position: relative;
+    z-index: 1;
+    padding-block: clamp(79.2px, 9.9vw, 131.4px);
+  }
+  .glass {
+    max-width: 720px;
+    padding: clamp(30px, 4vw, 52px);
+    background: hsl(0 0% 100% / 0.08);
+    border: 1px solid hsl(0 0% 100% / 0.24);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    box-shadow: 0 30px 80px -40px hsl(243 80% 12% / 0.6);
+  }
+  .glass h2 {
+    max-width: 16ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(30px, 4vw, 48px);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.024em;
+    text-wrap: balance;
+  }
+  .glass p {
+    margin-top: 16px;
+    max-width: 50ch;
+    font-size: 14.85px;
+    line-height: 1.74;
+    color: hsl(0 0% 100% / 0.84);
+  }
+</style>

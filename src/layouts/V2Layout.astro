@@ -53,6 +53,22 @@ interface NavLink {
 }
 
 const navLinks: NavLink[] = [
+  {
+    href: '/services/synthetic-data',
+    label: 'Services',
+    children: [
+      {
+        href: '/services/synthetic-data',
+        label: 'Synthetic data generation',
+        note: 'Training and evaluation data for your domain',
+      },
+      {
+        href: '/services/llm-guardrails',
+        label: 'LLM guardrails and security',
+        note: 'Guardrails, red-teaming and evals for production AI',
+      },
+    ],
+  },
   { href: '/research', label: 'Research' },
   { href: '/blog', label: 'Blog' },
   {
@@ -64,8 +80,8 @@ const navLinks: NavLink[] = [
 ];
 
 /* Which top-level link owns the current page. Posts live under
-   /blog-post/, so they light up Blog; anything under /open-source/
-   lights up the dropdown trigger. */
+   /blog-post/, so they light up Blog; anything under /services/ or
+   /open-source/ lights up that dropdown's trigger. */
 const root = (p: string) => '/' + (p.split('/')[1] ?? '');
 const section = root(path === '/blog-post' || path.startsWith('/blog-post/') ? '/blog' : path);
 const current = (href: string) => (root(href) === section ? 'page' : undefined);
@@ -428,6 +444,7 @@ const current = (href: string) => (root(href) === section ? 'page' : undefined);
           <div class="v2-foot-col">
             <span class="v2-foot-h">Site</span>
             <a href="/">Home</a>
+            <a href="/services/synthetic-data">Services</a>
             <a href="/research">Research</a>
             <a href="/blog">Blog</a>
             <a href="/open-source/simula">Open source</a>
