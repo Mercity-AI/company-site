@@ -1,8 +1,6 @@
 import { defineConfig } from 'astro/config';
-import react from '@astrojs/react';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
-import tailwindcss from '@tailwindcss/vite';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypeHighlight from 'rehype-highlight';
@@ -40,14 +38,13 @@ export default defineConfig({
     allowedHosts: ['.ngrok-free.app', '.ngrok.app', '.ngrok.io'],
   },
   integrations: [
-    react(),
     mdx(),
     sitemap({
-      filter: (page) => !/\/(legacy|v2-open|simula-v2)\/?$/.test(page),
+      filter: (page) => !/\/simula-v2\/?$/.test(page),
     }),
   ],
   vite: {
-    plugins: [tailwindcss(), forceAllowAllHostsPlugin],
+    plugins: [forceAllowAllHostsPlugin],
     server: {
       // host: '0.0.0.0',
       allowedHosts: true,

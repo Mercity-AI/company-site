@@ -6,10 +6,13 @@ redesign work stands.
 
 ## Branch
 
-`redesign`, branched from `astro-migration`. V2 is now the home page; the
-previous home is parked at `/legacy`. Every live page is on the V2
-shell, Contact included (2026-10-02); only `/legacy` still uses
-`BaseLayout`.
+`redesign`, branched from `astro-migration`, merged into `main` on
+2026-10-02 (PR #8). Every page is on `V2Layout`, the site's only layout.
+The V1 site (`/legacy`, `/showcase`, `BaseLayout`, its React islands and
+Tailwind) and the `/v2-open` comparison were removed the same day.
+
+Production is served from our own server, not Vercel; the Vercel app on
+the GitHub repo only builds previews.
 
 ## Status — landing page design is done
 
@@ -25,9 +28,7 @@ tools as they ship (see *Still placeholder* below). Treat design changes on
 | Route | What it is |
 |---|---|
 | `/` | The landing page. Formerly `/v2`; `src/pages/index.astro` on `V2Layout`. |
-| `/legacy` | The previous home page, retired. `noindex`, kept for comparison. |
 | `/v2` | Redirects to `/`. |
-| `/v2-open` | Two treatments of the open-source section, A and B, for comparison. |
 | `/design.html` | Design lab. Static file in `public/`, no Astro layout. |
 | `/research`, `/research/[slug]` | Listing and logs, on `V2Layout`. Logs are `.md` or `.mdx`. See *Research and Blog*. |
 | `/blog`, `/blog-post/[slug]` | Listing and posts, on `V2Layout`. Same components. |
@@ -38,34 +39,30 @@ tools as they ship (see *Still placeholder* below). Treat design changes on
 | `/about` | On `V2Layout`. Quiet page; every figure computed from the collections. See *About*. |
 | `/contact` | On `V2Layout`. Form plus a Calendly band. See *Contact*. |
 
-`/legacy`, `/v2-open`, `/open-source/simula-v2` and `/design.html` are
-`noindex` and excluded from the sitemap. They are working surfaces, not shipping pages.
+`/open-source/simula-v2` and `/design.html` are `noindex` and excluded
+from the sitemap. They are working surfaces, not shipping pages.
 
-## The legacy page (`/legacy`)
+## Kept on purpose
 
-Sections in order: hero → what we work on → who we work with → we ship
-openly → tooling. `BentoGrid`, "Research to Enterprise", "Latest
-Publications" and the closing pull-quote were removed.
+Pranav asked for these to stay when the V1 remnants were cleared
+(2026-10-02). Do not remove them in a cleanup:
 
-Type is Inter + Playfair Display, slate neutrals, indigo `#4f46e5`.
-
-Two independent sizing levers in `src/styles/global.css`:
-
-- `html { font-size: 102% }` — the **type** scale.
-- `--spacing: 0.2647rem` — the **layout** scale (a 4.32px step, +8% on
-  Tailwind's 4px). Drives every `p-`/`m-`/`gap-`/`w-`/`h-` utility.
-
-Horizontal padding is one class, `.page-gutter`, applied across all 17
-containers. `.hero-original` pins the hero to its pre-scale pixel sizing;
-delete that block and the hero scales with everything else.
-
-Media-query breakpoints resolve against the browser default and are
-deliberately unaffected by the root font-size.
+- **Both Simula pages**, `/open-source/simula` and `/open-source/simula-v2`:
+  still being worked on, and no winner yet.
+- **`/design.html`**, the design lab, kept as a tool.
+- **The root images** (`banner.png`, `banner copy.png`, `image.png`,
+  `no-background-logo*.png`) and **`public/simula-demo.mp4`** (the source
+  of the CDN copy the Simula pages play). Not referenced, may be used.
+- **`nginx.conf`**, since production runs on our own server.
+- **`ASTRO_ALLOWED_HOSTS_ISSUE_REPORT.md`** and the `forceAllowAllHostsPlugin`
+  workaround in `astro.config.mjs`, until the bug is confirmed fixed.
+- **`migration/`**, the one-time Webflow import scripts.
+- **`src/pages/services/_llm-guardrails.astro`**, unpublished (see Routes).
 
 ## V2 (`/`)
 
-Standalone. `src/layouts/V2Layout.astro` does **not** extend `BaseLayout`,
-carries no `ClientRouter`, and scopes its own palette and fonts. It carries
+`src/layouts/V2Layout.astro` is the only layout. It carries no
+`ClientRouter` and scopes its own palette and fonts. It carries
 its own copy of the SEO head (title/OG/canonical via `src/utils/seo.ts`),
 Clarity and gtag, and accepts `noindex` for working surfaces.
 
@@ -107,7 +104,7 @@ past 900px. Below 480px the CTA hides too and "Contact us" lives in the
 sheet.
 
 **Footer** — three columns (brand, Site, Connect) over a copyright/legal
-strip. Same links as the `BaseLayout` footer.
+strip.
 
 **Hero** — exactly one viewport. `min-height: calc(100vh - var(--nav-h))`,
 declared again in `svh` so mobile does not count the URL bar, with the content
@@ -600,21 +597,6 @@ Two rules learned the hard way:
   invisible. `heroCurves` is the correct pattern: `clearRect`, strokes only.
 - Generators should fill the frame they are given. Large internal insets make
   the art box look empty; 2–4% is the working range.
-
-## Open-source treatments (`/v2-open`)
-
-Both live on the page, labelled, running the same content and graphics with
-different seeds.
-
-- **A** — sticky left column, panels as separate cards with gaps. Scrolls.
-- **B** — one bordered object: every internal edge shared, no gaps, left block
-  full height. Capped to `min(100vh - 190px, 760px)` with the three panels
-  sharing that height via flex, so all three are visible at once. Panel
-  padding, title size and copy tighten to suit, and the body is clamped to
-  three lines. Below 1000px the cap lifts and panels return to natural height.
-
-A flush stack cannot use the lift-and-shadow hover — a panel lifting out of a
-continuous rectangle leaves a hole. B shifts background instead.
 
 ## Design lab (`/design.html`)
 

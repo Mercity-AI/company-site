@@ -2,8 +2,8 @@
 
 ## Project Structure & Module Organization
 - `src/pages/`: Route files (`index.astro`, `blog/index.astro`, `blog-post/[slug].astro`, etc.).
-- `src/layouts/`: Shared shells (`BaseLayout.astro`, `ShowcaseLayout.astro`).
-- `src/components/`: UI building blocks. Use `.astro` for static components and `.tsx` for interactive React islands.
+- `src/layouts/`: The site shell (`V2Layout.astro`).
+- `src/components/`: UI building blocks, all `.astro`. Interactivity is small inline scripts; there is no UI framework.
 - `src/content.config.ts`: Astro Content Collections schema.
 - `content/*.md`: Blog posts with frontmatter (`title`, `slug`, `publishedAt`, `summary`, `authors`, etc.).
 - `public/`: Static assets (logos, favicon, blog images).
@@ -21,16 +21,16 @@ Use `pnpm` only.
 ## Coding Style & Naming Conventions
 - Language: TypeScript + Astro (ES modules).
 - Indentation: 2 spaces; keep formatting consistent with existing files.
-- Components: `PascalCase` (`HeroSection.tsx`, `BlurBackground.astro`).
+- Components: `PascalCase` (`ListHead.astro`, `EntryRow.astro`).
 - Routes/content filenames: kebab-case where appropriate (`guide-to-...md`).
 - Keep route logic in `src/pages/`; shared logic in `src/utils/`.
-- Prefer minimal client JS; keep interactivity in islands only when needed.
+- Prefer minimal client JS.
 
 ## Testing Guidelines
 - Unit tests use Node's built-in runner: `pnpm test` runs `tests/*.test.mjs`.
 - Required validation before PR: `pnpm test`, `pnpm check` and `pnpm build`.
-- For UI changes, manually verify key paths: `/`, `/blog`, `/blog-post/:slug`, `/contact`, `/showcase`.
-- Specifically test back/forward navigation with view transitions and mobile menu behavior.
+- For UI changes, manually verify key paths: `/`, `/research`, `/blog`, `/blog-post/:slug`, `/contact`.
+- Specifically test the nav (pill on scroll, dropdowns) and the mobile menu.
 
 ## Commit & Pull Request Guidelines
 - Commit style in history is short, imperative, and task-focused (e.g., `Fix blog back navigation script scope`).
