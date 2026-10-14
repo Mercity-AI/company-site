@@ -35,7 +35,7 @@ tools as they ship (see *Still placeholder* below). Treat design changes on
 | `/open-source/simula` | The Simula product page, on `V2Layout`. See *Simula*. |
 | `/open-source/simula-v2` | A rewrite of the Simula page, told as why and how we built it. `noindex`, for comparison until it replaces `/open-source/simula`. See *Simula v2*. |
 | `/services/synthetic-data` | The synthetic data service page, on `V2Layout`, under the nav's Services dropdown. See *Synthetic data service*. |
-| (unpublished) | Harsh's LLM guardrails and security page, kept at `src/pages/services/_llm-guardrails.astro`. The underscore keeps it out of the build and it is out of the nav (2026-10-02, Pranav: "it does not look good"). To publish, rename it to `llm-guardrails.astro` and restore its entry in the Services dropdown (commented in `V2Layout`). |
+| `/services/llm-guardrails` | Harsh's LLM guardrails and security page, on `V2Layout`, under the nav's Services dropdown. Unpublished on 2026-10-02 (Pranav: "it does not look good"), reworked and republished 2026-10-07. |
 | `/about` | On `V2Layout`. Quiet page; every figure computed from the collections. See *About*. |
 | `/contact` | On `V2Layout`. Form plus a Calendly band. See *Contact*. |
 
@@ -57,7 +57,6 @@ Pranav asked for these to stay when the V1 remnants were cleared
 - **`ASTRO_ALLOWED_HOSTS_ISSUE_REPORT.md`** and the `forceAllowAllHostsPlugin`
   workaround in `astro.config.mjs`, until the bug is confirmed fixed.
 - **`migration/`**, the one-time Webflow import scripts.
-- **`src/pages/services/_llm-guardrails.astro`**, unpublished (see Routes).
 
 ## V2 (`/`)
 

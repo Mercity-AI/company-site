@@ -1,0 +1,254 @@
+---
+/**
+ * A research card on the guardrails service page: a small figure, the
+ * title, its headline number and a link out. The page shows them under
+ * "Can your team build this in-house?".
+ */
+export interface PaperCardData {
+  href: string;
+  ext: boolean;
+  title: string;
+  fig: string;
+  figNote: string;
+  art: 'bars' | 'sparse' | 'matrix';
+}
+
+interface Props {
+  r: PaperCardData;
+  delay?: number;
+}
+
+const { r, delay = 0 }: Props = Astro.props;
+
+const sparseOn = new Set([3, 11, 17, 24, 31, 38, 46, 52, 57]);
+---
+
+<a
+  class="paper rv"
+  data-rv
+  style={`--rv-delay:${delay}ms`}
+  href={r.href}
+  {...(r.ext ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+>
+  <span class="paper-art" aria-hidden="true">
+    {r.art === 'bars' && (
+      <svg viewBox="0 0 220 84">
+        <text class="pa-lbl" x="0" y="12">Policy in the system prompt</text>
+        <rect class="pa-bad" x="0" y="18" width="164" height="12" />
+        <text class="pa-val" x="170" y="28">96.7%</text>
+        <text class="pa-lbl" x="0" y="52">Policy trained in</text>
+        <rect class="pa-good" x="0" y="58" width="40" height="12" />
+        <text class="pa-val pa-val-good" x="46" y="68">23.3%</text>
+      </svg>
+    )}
+    {r.art === 'sparse' && (
+      <svg viewBox="0 0 220 84">
+        {Array.from({ length: 60 }, (_, k) => (
+          <rect
+            class={sparseOn.has(k) ? 'pa-on' : 'pa-off'}
+            x={(k % 15) * 7.4}
+            y={6 + Math.floor(k / 15) * 13}
+            width="5"
+            height="10"
+          />
+        ))}
+        <text class="pa-lbl" x="0" y="80">SAE features</text>
+        <path class="pa-arrow" d="M116 32h20M131 27l5 5-5 5" />
+        <rect class="pa-chip" x="144" y="6" width="76" height="17" />
+        <text class="pa-chip-t" x="152" y="18">Legal</text>
+        <rect class="pa-chip pa-chip-on" x="144" y="27" width="76" height="17" />
+        <text class="pa-chip-t pa-chip-t-on" x="152" y="39">Healthcare</text>
+        <rect class="pa-chip" x="144" y="48" width="76" height="17" />
+        <text class="pa-chip-t" x="152" y="60">Finance</text>
+        <text class="pa-lbl" x="144" y="80">topic</text>
+      </svg>
+    )}
+    {r.art === 'matrix' && (
+      <svg viewBox="0 0 220 84">
+        <text class="pa-lbl" x="0" y="10">Test case</text>
+        <text class="pa-lbl" x="220" y="10" text-anchor="end">Result</text>
+        {[118, 150, 96, 136].map((w, k) => (
+          <g>
+            <path class="pa-rule" d={`M0 ${18 + k * 16}.5H220`} />
+            <rect class="pa-line" x="0" y={24 + k * 16} width={w} height="5" />
+            {k === 2 ? (
+              <path class="pa-x" d={`M208 ${23 + k * 16}l7 7M215 ${23 + k * 16}l-7 7`} />
+            ) : (
+              <path class="pa-tick" d={`M207 ${27 + k * 16}l3 3 6-6`} />
+            )}
+          </g>
+        ))}
+      </svg>
+    )}
+  </span>
+  <span class="paper-title">
+    <span class="paper-title-t">{r.title}</span>{'\u00a0'}<span class="paper-arrow" aria-hidden="true">↗</span>
+  </span>
+  <span class="paper-fig">
+    {r.fig}
+    <small>{r.figNote}</small>
+  </span>
+</a>
+
+<style>
+  .paper {
+    display: flex;
+    flex-direction: column;
+    padding: 0 0 23px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    transition:
+      border-color 500ms var(--ease),
+      transform 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  .paper:hover {
+    border-color: var(--teal-500);
+    transform: translateY(-2px);
+    box-shadow: 0 18px 36px -26px hsl(18 50% 24% / 0.3);
+  }
+  .paper > span:not(.paper-art) {
+    padding-inline: 23px;
+  }
+  .paper-art {
+    display: block;
+    padding: 16px 23px;
+    background: var(--n-50);
+    border-bottom: 1px solid var(--line);
+  }
+  .paper-art svg {
+    display: block;
+    width: 100%;
+    height: 97px;
+    overflow: visible;
+  }
+  .paper-art svg :global(text),
+  .paper-art text {
+    font-family: var(--mono);
+  }
+  .pa-lbl {
+    font-size: 9px;
+    fill: var(--ink-3);
+  }
+  .pa-val {
+    font-size: 10px;
+    font-weight: 500;
+    fill: var(--issue);
+  }
+  .pa-val-good {
+    fill: var(--teal-700);
+  }
+  .pa-bad {
+    fill: var(--issue);
+    opacity: 0.8;
+  }
+  .pa-good {
+    fill: var(--teal-500);
+  }
+  .pa-on {
+    fill: var(--teal-500);
+  }
+  .pa-off {
+    fill: var(--n-200);
+  }
+  .pa-arrow {
+    fill: none;
+    stroke: var(--ink-3);
+    stroke-width: 1.2;
+  }
+  .pa-chip {
+    fill: var(--surface);
+    stroke: var(--line-2);
+  }
+  .pa-chip-on {
+    fill: var(--teal-500);
+    stroke: var(--teal-500);
+  }
+  .pa-chip-t {
+    font-size: 9.5px;
+    fill: var(--ink-3);
+  }
+  .pa-chip-t-on {
+    fill: #fff;
+  }
+  .pa-rule {
+    stroke: var(--line);
+  }
+  .pa-line {
+    fill: var(--n-200);
+  }
+  .pa-tick,
+  .pa-x {
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .pa-tick {
+    stroke: var(--teal-500);
+  }
+  .pa-x {
+    stroke: var(--issue);
+  }
+  .paper-kind {
+    margin-top: 18px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .paper-title {
+    margin-top: 21px;
+    font-family: var(--hero-serif);
+    font-size: 22.9px;
+    line-height: 1.25;
+    letter-spacing: -0.012em;
+    color: var(--ink);
+  }
+  .paper-line {
+    margin-top: 8px;
+    font-size: 13.05px;
+    line-height: 1.6;
+    color: var(--ink-3);
+  }
+  .paper-fig {
+    margin-top: auto;
+    padding-top: 19px;
+    font-family: var(--hero-serif);
+    font-size: 28px;
+    color: var(--teal-700);
+  }
+  .paper-fig small {
+    display: block;
+    margin-top: 4px;
+    font-family: var(--mono);
+    font-size: 11.4px;
+    color: var(--n-400);
+  }
+  /* Underlined like links in posts (v2-article.css): a 1px line that
+     darkens on hover. */
+  .paper-title-t {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+    text-decoration-color: hsl(20 20% 30% / 0.35);
+    transition: text-decoration-color 300ms var(--ease);
+  }
+  .paper:hover .paper-title-t {
+    text-decoration-color: currentColor;
+  }
+  /* Inline-block, so the underline stops short of it. Sized like the
+     mono labels, not the title. */
+  .paper-arrow {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 14.7px;
+    vertical-align: 0.2em;
+    color: var(--indigo-600);
+    transition: transform 700ms var(--ease);
+  }
+  .paper:hover .paper-arrow {
+    transform: translate(2px, -2px);
+  }
+</style>

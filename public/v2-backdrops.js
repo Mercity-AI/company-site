@@ -1137,6 +1137,37 @@
       grain(ctx, w, h, 4, true);
     },
 
+    // PALE FIELD — grWash's construction taken almost to white: blurred
+    // sources in pale teal and mint with one warm blush, over a pale
+    // mint ground, with a teal source pinned to the left edge so the
+    // card starts green. The guardrails page's "read our full research"
+    // cell.
+    grPale(ctx, w, h, seed) {
+      const r = rng(seed);
+      const TINTS = [
+        hsl2rgb(174, 52, 84),
+        hsl2rgb(150, 46, 87),
+        hsl2rgb(14, 82, 90),
+        hsl2rgb(186, 48, 88),
+        hsl2rgb(160, 40, 89),
+      ];
+      ctx.fillStyle = css(hsl2rgb(162, 40, 93));
+      ctx.fillRect(0, 0, w, h);
+      ctx.filter = `blur(${Math.round(Math.min(w, h) * 0.3)}px)`;
+      ctx.fillStyle = css(TINTS[0]);
+      ctx.beginPath();
+      ctx.ellipse(0, h * 0.5, w * 0.3, h * 0.9, 0, 0, 6.29);
+      ctx.fill();
+      for (let i = 0; i < 5; i++) {
+        ctx.fillStyle = css(TINTS[i % TINTS.length]);
+        ctx.beginPath();
+        ctx.ellipse(r() * w, r() * h, w * (0.18 + r() * 0.2), h * (0.3 + r() * 0.36), r() * 3.14, 0, 6.29);
+        ctx.fill();
+      }
+      ctx.filter = 'none';
+      grain(ctx, w, h, 3, true);
+    },
+
     // EMBER FIELD — the design lab's "Blur field" (blurred sources, no
     // geometry left) in dark warm tones: brick, terracotta and umber
     // over a deep brown ground, with only a trace of grain. The

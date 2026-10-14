@@ -24,6 +24,7 @@
  * are illustrations.
  */
 import V2Layout from '@/layouts/V2Layout.astro';
+import PaperCard from '@/components/v2/PaperCard.astro';
 
 const SOFT_PROMPT_URL = 'https://mercity.notion.site/Weight-Free-Policy-Compliance-via-Soft-Prompt-DPO-391bc705ab7380588fa5e708d907bc9b';
 const SAE_URL = '/research/building-llm-guardrails-with-saes';
@@ -124,21 +125,20 @@ const buyers = [
 
 /* ── Evidence: the soft-prompt DPO red-team, per category ──────── */
 const redteam = [
-  { code: 'X1', name: 'Diagnosis', u: 100, t: 16.7 },
-  { code: 'X2', name: 'Symptom severity', u: 100, t: 33.3 },
-  { code: 'X3', name: 'Treatment advice', u: 83.3, t: 0 },
-  { code: 'X4', name: 'Medication guidance', u: 100, t: 16.7 },
-  { code: 'X5', name: 'Reading test results', u: 100, t: 66.7 },
-  { code: 'X6', name: 'Prognosis', u: 100, t: 0 },
-  { code: 'X7', name: 'Second opinions', u: 91.7, t: 33.3 },
-  { code: 'X8', name: 'Mental health', u: 100, t: 33.3 },
+  { name: 'Diagnosis', u: 100, t: 16.7 },
+  { name: 'Symptom severity', u: 100, t: 33.3 },
+  { name: 'Treatment advice', u: 83.3, t: 0 },
+  { name: 'Medication guidance', u: 100, t: 16.7 },
+  { name: 'Reading test results', u: 100, t: 66.7 },
+  { name: 'Prognosis', u: 100, t: 0 },
+  { name: 'Second opinions', u: 91.7, t: 33.3 },
+  { name: 'Mental health', u: 100, t: 33.3 },
 ];
 const pct = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 const facts = [
   { fig: '10.4% → 91.7%', line: 'held-out compliance' },
   { fig: '0.012%', line: 'of the model trained' },
   { fig: '6 min', line: 'to train, one GPU' },
-  { fig: 'Removable', line: 'base model untouched' },
 ];
 
 const research = [
@@ -174,7 +174,6 @@ const research = [
   },
 ];
 /* Fixed "fired" cells for the sparse-feature mini graphic. */
-const sparseOn = new Set([3, 11, 17, 24, 31, 38, 46, 52, 57]);
 
 /* ── The control layer, as columns under the diagram ───────────── */
 const layers = [
@@ -317,11 +316,6 @@ const faqs = [
           </figure>
         </div>
       </div>
-
-      <div class="sh-cue" aria-hidden="true">
-        <span>Scroll</span>
-        <i></i>
-      </div>
     </div>
   </section>
 
@@ -442,7 +436,7 @@ const faqs = [
       <div class="split-head">
         <h2 class="h2 rv" data-rv style="--rv-delay:80ms"><span class="h2-note">Our research</span> on how system prompts fail under attack. </h2>
         <p class="lede rv" data-rv style="--rv-delay:160ms">
-          One hospital assistant, attacked twice: rules in the prompt, then the policy trained in.
+          We attacked a hospital assistant with its policy in the system prompt, then with the policy trained in.
         </p>
       </div>
 
@@ -459,11 +453,8 @@ const faqs = [
           <ol class="db-rows">
             {
               redteam.map((r, i) => (
-                <li class:list={['db-row', r.code === 'X5' && 'db-weak']} style={`--u:${r.u};--t:${r.t};--i:${i}`}>
-                  <span class="db-name">
-                    <b>{r.code}</b>
-                    {r.name}
-                  </span>
+                <li class="db-row" style={`--u:${r.u};--t:${r.t};--i:${i}`}>
+                  <span class="db-name">{r.name}</span>
                   <span class="db-track" aria-hidden="true">
                     <span class="db-grid"></span>
                     <span class="db-bar"></span>
@@ -477,10 +468,7 @@ const faqs = [
               ))
             }
             <li class="db-row db-total" style="--u:96.7;--t:23.3;--i:8">
-              <span class="db-name">
-                <b>All</b>
-                60 turns
-              </span>
+              <span class="db-name">All 60 turns</span>
               <span class="db-track" aria-hidden="true">
                 <span class="db-grid"></span>
                 <span class="db-bar"></span>
@@ -491,7 +479,8 @@ const faqs = [
             </li>
           </ol>
           <figcaption>
-            X5 is our weak spot. The research log explains why.
+            <span>With the policy trained into the model, breaches fell by <b>78%</b>, from 96.7% to 23.3%.</span>
+            <span>Treatment advice and prognosis had no breaches at all.</span>
           </figcaption>
         </figure>
 
@@ -522,82 +511,14 @@ const faqs = [
             </div>
           ))
         }
+        <div class="facts-go">
+          <canvas class="facts-go-bg" data-backdrop="grPale" data-seed="3329" data-dpr="0.5" aria-hidden="true"></canvas>
+          <a href={SOFT_PROMPT_URL} target="_blank" rel="noopener noreferrer">
+            Read our full research on this
+            <b>Research log <span aria-hidden="true">↗</span></b>
+          </a>
+        </div>
       </dl>
-
-      <div class="papers">
-        {
-          research.map((r, i) => (
-            <a
-              class="paper rv"
-              data-rv
-              style={`--rv-delay:${80 + i * 80}ms`}
-              href={r.href}
-              {...(r.ext ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-            >
-              <span class="paper-art" aria-hidden="true">
-                {r.art === 'bars' && (
-                  <svg viewBox="0 0 220 84">
-                    <text class="pa-lbl" x="0" y="12">Policy in the system prompt</text>
-                    <rect class="pa-bad" x="0" y="18" width="164" height="12" />
-                    <text class="pa-val" x="170" y="28">96.7%</text>
-                    <text class="pa-lbl" x="0" y="52">Policy trained in</text>
-                    <rect class="pa-good" x="0" y="58" width="40" height="12" />
-                    <text class="pa-val pa-val-good" x="46" y="68">23.3%</text>
-                  </svg>
-                )}
-                {r.art === 'sparse' && (
-                  <svg viewBox="0 0 220 84">
-                    {Array.from({ length: 60 }, (_, k) => (
-                      <rect
-                        class={sparseOn.has(k) ? 'pa-on' : 'pa-off'}
-                        x={(k % 15) * 7.4}
-                        y={6 + Math.floor(k / 15) * 13}
-                        width="5"
-                        height="10"
-                      />
-                    ))}
-                    <text class="pa-lbl" x="0" y="80">SAE features</text>
-                    <path class="pa-arrow" d="M116 32h20M131 27l5 5-5 5" />
-                    <rect class="pa-chip" x="144" y="6" width="76" height="17" />
-                    <text class="pa-chip-t" x="152" y="18">Legal</text>
-                    <rect class="pa-chip pa-chip-on" x="144" y="27" width="76" height="17" />
-                    <text class="pa-chip-t pa-chip-t-on" x="152" y="39">Healthcare</text>
-                    <rect class="pa-chip" x="144" y="48" width="76" height="17" />
-                    <text class="pa-chip-t" x="152" y="60">Finance</text>
-                    <text class="pa-lbl" x="144" y="80">topic</text>
-                  </svg>
-                )}
-                {r.art === 'matrix' && (
-                  <svg viewBox="0 0 220 84">
-                    <text class="pa-lbl" x="0" y="10">Test case</text>
-                    <text class="pa-lbl" x="220" y="10" text-anchor="end">Result</text>
-                    {[118, 150, 96, 136].map((w, k) => (
-                      <g>
-                        <path class="pa-rule" d={`M0 ${18 + k * 16}.5H220`} />
-                        <rect class="pa-line" x="0" y={24 + k * 16} width={w} height="5" />
-                        {k === 2 ? (
-                          <path class="pa-x" d={`M208 ${23 + k * 16}l7 7M215 ${23 + k * 16}l-7 7`} />
-                        ) : (
-                          <path class="pa-tick" d={`M207 ${27 + k * 16}l3 3 6-6`} />
-                        )}
-                      </g>
-                    ))}
-                  </svg>
-                )}
-              </span>
-              <span class="paper-title">{r.title}</span>
-              <span class="paper-fig">
-                {r.fig}
-                <small>{r.figNote}</small>
-              </span>
-              <span class="paper-go">
-                Read it
-                <span aria-hidden="true">{r.ext ? '↗' : '→'}</span>
-              </span>
-            </a>
-          ))
-        }
-      </div>
     </div>
   </section>
 
@@ -607,8 +528,9 @@ const faqs = [
     <div class="shell">
       <div class="split-head">
         <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Four layers of control, not one filter.</h2>
-        <p class="lede rv" data-rv style="--rv-delay:160ms">
-          Input, model, output, action.
+        <p class="lede lede-split rv" data-rv style="--rv-delay:160ms">
+          <span>We check what comes in, what the model says back, and what it is allowed to do.</span>
+          <span>Inside the model, a trained policy and activation probes come from our published research.</span>
         </p>
       </div>
 
@@ -741,9 +663,6 @@ const faqs = [
     <div class="shell">
       <div class="split-head">
         <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Can your team build this in-house?</h2>
-        <p class="lede rv" data-rv style="--rv-delay:160ms">
-          If guardrails are your product, yes. For everyone else, this is how it usually goes.
-        </p>
       </div>
 
       <figure class="lanes" data-play aria-label="Timeline: building in-house versus working with us">
@@ -785,6 +704,16 @@ const faqs = [
       </div>
 
       <p class="pull rv" data-rv>We get you shipped safely now, and set you up to own it later if you choose.</p>
+
+      <div class="pub">
+        <p class="pub-h rv" data-rv>
+          <span>We have done this research already.</span>
+          <span>And published all of it.</span>
+        </p>
+        <div class="papers">
+          {research.map((r, i) => <PaperCard r={r} delay={80 + i * 80} />)}
+        </div>
+      </div>
     </div>
   </section>
 
@@ -827,7 +756,10 @@ const faqs = [
     <div class="shell">
       <div class="split-head">
         <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Guardrails in production.</h2>
-        <p class="lede rv" data-rv style="--rv-delay:160ms">Your product does its job. The guardrail enforces what it must never do.</p>
+        <p class="lede lede-split rv" data-rv style="--rv-delay:160ms">
+          <span>Your product does its job.</span>
+          <span>The guardrail enforces what it must never do.</span>
+        </p>
       </div>
       <div class="cases">
         {
@@ -1838,49 +1770,6 @@ const faqs = [
     color: var(--teal-700);
   }
 
-  .sh-cue {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: calc(var(--nav-h) + 26px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    pointer-events: none;
-    font-family: var(--mono);
-    font-size: 9px;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-    opacity: calc(1 - var(--a) * 2.5);
-  }
-  .sh-cue > * {
-    animation: focus-in 1200ms var(--ease) 1100ms both;
-  }
-  .sh-cue i {
-    position: relative;
-    display: block;
-    width: 1px;
-    height: 42px;
-    overflow: hidden;
-    background: hsl(20 30% 20% / 0.15);
-  }
-  .sh-cue i::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: -40%;
-    width: 1px;
-    height: 40%;
-    background: var(--ink-2);
-    animation: cue 2200ms var(--ease) infinite;
-  }
-  @keyframes cue {
-    to {
-      top: 100%;
-    }
-  }
   @media (max-width: 1000px) {
     .sh-copy-in {
       grid-template-columns: minmax(0, 1fr);
@@ -1895,9 +1784,6 @@ const faqs = [
     }
     .sh-stage {
       position: relative;
-    }
-    .sh-cue {
-      display: none;
     }
     .sh-light,
     .sh-in,
@@ -2023,9 +1909,15 @@ const faqs = [
   /* ══ THE CHAIN ═══════════════════════════════════════════════
      Four links light in turn along a rail; then the guardrail drops
      between the first and second, and everything after it goes quiet. */
+  /* A shorter band than the rest: tighter padding, the heading set
+     high to leave the guardrail tag room, and a slightly smaller chain. */
+  #stakes {
+    padding-top: clamp(22px, 2vw, 27px);
+    padding-bottom: clamp(38px, 3.4vw, 45px);
+  }
   .chain {
     position: relative;
-    margin-top: 56px;
+    margin-top: 64px;
     --step: 160ms;
   }
   .chain-steps {
@@ -2054,13 +1946,16 @@ const faqs = [
   }
   .chain-step {
     position: relative;
+  }
+  .chain-step > :is(h3, p),
+  .chain-icon svg {
     transition: opacity 700ms var(--ease) calc(2200ms + var(--i) * 80ms);
   }
   .chain-icon {
     position: relative;
     display: block;
-    width: 43px;
-    height: 43px;
+    width: 42px;
+    height: 42px;
     padding: 10px;
     color: var(--n-400);
     background: var(--surface);
@@ -2075,29 +1970,36 @@ const faqs = [
     background: var(--coral-100);
   }
   .chain-step h3 {
-    margin-top: 20px;
+    margin-top: 17px;
     font-family: var(--hero-serif);
-    font-size: 21.6px;
+    font-size: 20.8px;
     font-weight: 400;
     line-height: 1.2;
     letter-spacing: -0.014em;
   }
   .chain-step p {
-    margin-top: 8px;
+    margin-top: 6.5px;
     max-width: 30ch;
     font-size: 13.5px;
     line-height: 1.65;
     color: var(--ink-3);
     text-wrap: pretty;
   }
-  /* After the cut, the downstream links recede. */
-  .chain[data-on='true'] .chain-step:not(:first-child) {
+  /* After the cut, the downstream links recede. The icon box fades by
+     colour, not opacity, so it stays solid and the rail never shows
+     through it. */
+  .chain[data-on='true'] .chain-step:not(:first-child) > :is(h3, p),
+  .chain[data-on='true'] .chain-step:not(:first-child) .chain-icon svg {
     opacity: 0.5;
+  }
+  .chain[data-on='true'] .chain-step:not(:first-child) .chain-icon {
+    border-color: color-mix(in srgb, var(--coral) 50%, transparent);
+    background: color-mix(in srgb, var(--coral-100) 50%, var(--surface));
   }
   .chain-cut {
     position: absolute;
-    top: -14px;
-    bottom: -14px;
+    top: -11px;
+    bottom: -11px;
     /* Between the first and second column. */
     left: calc((100% - 3 * clamp(28px, 4vw, 56px)) / 4 + clamp(28px, 4vw, 56px) / 2);
     width: 0;
@@ -2118,7 +2020,7 @@ const faqs = [
   }
   .chain-cut-label {
     position: absolute;
-    top: -12px;
+    top: -6px;
     left: 0;
     transform: translate(-50%, -100%);
     padding: 4px 9px;
@@ -2171,8 +2073,13 @@ const faqs = [
     .chain-cut {
       display: none;
     }
-    .chain[data-on='true'] .chain-step:not(:first-child) {
+    .chain[data-on='true'] .chain-step:not(:first-child) > :is(h3, p),
+    .chain[data-on='true'] .chain-step:not(:first-child) .chain-icon svg {
       opacity: 1;
+    }
+    .chain[data-on='true'] .chain-step:not(:first-child) .chain-icon {
+      border-color: var(--coral);
+      background: var(--coral-100);
     }
   }
 
@@ -2396,13 +2303,6 @@ const faqs = [
     font-size: 12.6px;
     color: var(--ink-2);
   }
-  .db-name b {
-    width: 22px;
-    font-family: var(--mono);
-    font-size: 10.35px;
-    font-weight: 500;
-    color: var(--ink-3);
-  }
   .db-track {
     position: relative;
     height: 34px;
@@ -2463,12 +2363,6 @@ const faqs = [
     font-weight: 500;
     color: var(--teal-700);
   }
-  .db-weak .db-name {
-    color: var(--ink);
-  }
-  .db-weak .db-val b {
-    color: var(--amber-800);
-  }
   .db-total {
     border-top: 1px solid var(--ink-2);
   }
@@ -2490,6 +2384,10 @@ const faqs = [
     line-height: 1.65;
     color: var(--ink-3);
   }
+  .db figcaption span {
+    display: block;
+    text-wrap: pretty;
+  }
   @media (max-width: 560px) {
     .db-axis,
     .db-row {
@@ -2497,9 +2395,6 @@ const faqs = [
     }
     .db-axis > span {
       font-size: 0;
-    }
-    .db-name b {
-      display: none;
     }
   }
 
@@ -2580,7 +2475,7 @@ const faqs = [
 
   .facts {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.4fr);
     margin: 28px 0 0;
     border-top: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
@@ -2605,6 +2500,56 @@ const faqs = [
     line-height: 1.55;
     color: var(--ink-3);
   }
+  /* The fourth cell links out to the research log: white, on a pale
+     teal blur field, with a barely-there edge. */
+  .facts > .facts-go {
+    position: relative;
+    margin: 10px 0;
+    padding: 0;
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid hsl(178 30% 30% / 0.06);
+    transition: border-color 400ms var(--ease);
+  }
+  .facts > .facts-go:hover {
+    border-color: hsl(178 40% 35% / 0.18);
+  }
+  .facts-go-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .facts-go a {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    padding: 14px 22px;
+    text-wrap: balance;
+    font-family: var(--hero-serif);
+    font-size: 17.1px;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .facts-go b {
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--indigo-600);
+  }
+  .facts-go b span {
+    display: inline-block;
+    transition: transform 400ms var(--ease);
+  }
+  .facts-go a:hover b span {
+    transform: translate(2px, -2px);
+  }
   @media (max-width: 760px) {
     .facts {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2613,168 +2558,40 @@ const faqs = [
       padding-left: 0;
       border-left: 0;
     }
+    .facts > .facts-go {
+      grid-column: 1 / -1;
+      margin: 0 0 14px;
+    }
     .facts > div:nth-child(n + 3) {
       border-top: 1px solid var(--line);
     }
   }
 
+  /* 13% less space above the heading than the other bands. */
+  #build {
+    padding-top: clamp(50.3px, 5.99vw, 79.07px);
+  }
+  .pub {
+    margin-top: 72px;
+    padding-top: 44px;
+    border-top: 1px solid var(--line);
+  }
+  .pub-h {
+    max-width: 36ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(22px, 2.2vw, 28px);
+    line-height: 1.25;
+    letter-spacing: -0.014em;
+    color: var(--ink);
+  }
+  .pub-h span {
+    display: block;
+  }
   .papers {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
     margin-top: 36px;
-  }
-  .paper {
-    display: flex;
-    flex-direction: column;
-    padding: 0 0 20px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    transition:
-      border-color 500ms var(--ease),
-      transform 500ms var(--ease),
-      box-shadow 500ms var(--ease);
-  }
-  .paper:hover {
-    border-color: var(--teal-500);
-    transform: translateY(-2px);
-    box-shadow: 0 18px 36px -26px hsl(18 50% 24% / 0.3);
-  }
-  .paper > span:not(.paper-art) {
-    padding-inline: 20px;
-  }
-  .paper-art {
-    display: block;
-    padding: 14px 20px;
-    background: var(--n-50);
-    border-bottom: 1px solid var(--line);
-  }
-  .paper-art svg {
-    display: block;
-    width: 100%;
-    height: 84px;
-    overflow: visible;
-  }
-  .paper-art svg :global(text),
-  .paper-art text {
-    font-family: var(--mono);
-  }
-  .pa-lbl {
-    font-size: 9px;
-    fill: var(--ink-3);
-  }
-  .pa-val {
-    font-size: 10px;
-    font-weight: 500;
-    fill: var(--issue);
-  }
-  .pa-val-good {
-    fill: var(--teal-700);
-  }
-  .pa-bad {
-    fill: var(--issue);
-    opacity: 0.8;
-  }
-  .pa-good {
-    fill: var(--teal-500);
-  }
-  .pa-on {
-    fill: var(--teal-500);
-  }
-  .pa-off {
-    fill: var(--n-200);
-  }
-  .pa-arrow {
-    fill: none;
-    stroke: var(--ink-3);
-    stroke-width: 1.2;
-  }
-  .pa-chip {
-    fill: var(--surface);
-    stroke: var(--line-2);
-  }
-  .pa-chip-on {
-    fill: var(--teal-500);
-    stroke: var(--teal-500);
-  }
-  .pa-chip-t {
-    font-size: 9.5px;
-    fill: var(--ink-3);
-  }
-  .pa-chip-t-on {
-    fill: #fff;
-  }
-  .pa-rule {
-    stroke: var(--line);
-  }
-  .pa-line {
-    fill: var(--n-200);
-  }
-  .pa-tick,
-  .pa-x {
-    fill: none;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-  .pa-tick {
-    stroke: var(--teal-500);
-  }
-  .pa-x {
-    stroke: var(--issue);
-  }
-  .paper-kind {
-    margin-top: 18px;
-    font-family: var(--mono);
-    font-size: 9.9px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-  }
-  .paper-title {
-    margin-top: 18px;
-    font-family: var(--hero-serif);
-    font-size: 19.8px;
-    line-height: 1.25;
-    letter-spacing: -0.012em;
-    color: var(--ink);
-  }
-  .paper-line {
-    margin-top: 8px;
-    font-size: 13.05px;
-    line-height: 1.6;
-    color: var(--ink-3);
-  }
-  .paper-fig {
-    margin-top: auto;
-    padding-top: 16px;
-    font-family: var(--hero-serif);
-    font-size: 24.3px;
-    color: var(--teal-700);
-  }
-  .paper-fig small {
-    display: block;
-    margin-top: 4px;
-    font-family: var(--mono);
-    font-size: 9.9px;
-    color: var(--n-400);
-  }
-  .paper-go {
-    display: inline-flex;
-    gap: 7px;
-    margin-top: 14px;
-    font-family: var(--mono);
-    font-size: 9.9px;
-    font-weight: 500;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--indigo-600);
-  }
-  .paper-go span {
-    transition: transform 400ms var(--ease);
-  }
-  .paper:hover .paper-go span {
-    transform: translateX(3px);
   }
   @media (max-width: 900px) {
     .papers {
@@ -3613,6 +3430,19 @@ const faqs = [
   }
 
   /* ══ IN PRODUCTION ═══════════════════════════════════════════ */
+  /* One sentence per line; the column is widened so the second fits. */
+  #cases .split-head {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 52ch);
+  }
+  @media (max-width: 860px) {
+    #cases .split-head {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .lede-split span {
+    display: block;
+    text-wrap: balance;
+  }
   .cases {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));

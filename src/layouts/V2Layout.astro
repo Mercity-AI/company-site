@@ -62,11 +62,11 @@ const navLinks: NavLink[] = [
         label: 'Synthetic data generation',
         note: 'Training and evaluation data for your domain',
       },
-      // LLM guardrails and security is unpublished: its page is
-      // src/pages/services/_llm-guardrails.astro (the underscore keeps it
-      // out of the build). To publish, drop the underscore and add back
-      // { href: '/services/llm-guardrails', label: 'LLM guardrails and security',
-      //   note: 'Guardrails, red-teaming and evals for production AI' }.
+      {
+        href: '/services/llm-guardrails',
+        label: 'LLM guardrails and security',
+        note: 'Guardrails, red-teaming and evals for production AI',
+      },
     ],
   },
   { href: '/research', label: 'Research' },
