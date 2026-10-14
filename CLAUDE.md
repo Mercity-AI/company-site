@@ -223,6 +223,27 @@ These figures keep their own look (rounded frames, pill toggles, the
 Okabe-Ito palette) rather than the V2 square-cornered indigo/teal/amber
 system. Pranav has accepted that for this log.
 
+The second interactive log is `research/online-topic-guardrails-with-saes.mdx`,
+the SAE topic-guardrail detectors (draft: `SAE-Guardrails/blog_new/draft_alternative.md`).
+It follows the same pattern, with its own pieces:
+
+- **Charts** come from `SAE-Guardrails/blog_new/figures/make_interactive.py`
+  (same numbers and Okabe-Ito entity colours as its `gen_figures.py`),
+  written to `public/research/assets/figures/online-topic-guardrails-with-saes/`.
+  Score bars start at a floor (50, or 30/40) via Plotly's `base`, so the
+  axis states where it starts. Diagrams (figures 2, 3, 5–9, 26) stay PNGs
+  in `public/research/online-topic-guardrails-with-saes/`.
+- **Viewers**, each lazy-loading JSON from
+  `public/research/assets/data/online-topic-guardrails-with-saes/`
+  (written by that repo's `export_site_data.py`):
+  `DetectorRunsViewer` (backbone × detector, five feature-stage curves,
+  reusing `runs-viewer.css`), `DatasetViewer` (32 test records) and
+  `DecodeDemo` (Gemma vs GPT switch playback; `layout="a"` is side by
+  side, `"b"` one row per answer, the one in use).
+
+The older `building-llm-guardrails-with-saes.md` is a different study
+(prompt-level probes) and stays.
+
 `pnpm test` runs the Node tests in `tests/` (delta colours, the runs
 viewer's log-axis ticks).
 
