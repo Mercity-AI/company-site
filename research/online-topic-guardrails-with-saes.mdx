@@ -61,7 +61,9 @@ Figure 1. Best test macro-F1 for each detector input, at both model sizes.
 - **A fixed SAE feature set chosen without labels breaks down at 4B.** Keeping the 150 most active features per layer drops the best detector from 96.2 at 1B to 92.4 at 4B. Choosing the same number of features with the topic labels brings it back to 96.4.
 - **Detectors trained only on teacher-written text carry over to the model's own writing.** With dynamic SAE features, 94 to 95 percent of the tokens Gemma generates are labelled with a topic the prompt asked for, at both model sizes and for all three detectors.
 
-The sections below follow the order in which we ran the experiments: the prefill experiments first, then the downstream and diagnostic ones. The code is on [GitHub](https://github.com/Mercity-AI/SAE-Guardrails) and the trained detectors are on [Hugging Face](https://huggingface.co/collections/Mercity/online-guardrails-using-sparse-autoencoders-6ac602940468c62fefb2b9e8).
+The sections below follow the order in which we ran the experiments: the prefill experiments first, then the downstream and diagnostic ones.
+
+The code is on [GitHub](https://github.com/Mercity-AI/SAE-Guardrails) and the pretrained checkpoints are on [Hugging Face](https://huggingface.co/collections/Mercity/online-guardrails-using-sparse-autoencoders).
 
 ## Why do we need topical guardrails?
 
