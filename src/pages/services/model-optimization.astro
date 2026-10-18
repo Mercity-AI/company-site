@@ -834,7 +834,7 @@ const faqs = [
       <div class="qs">
         {
           faqs.map((f, i) => (
-            <details class="rv" data-rv name="mo-faq" open={i === 0}>
+            <details class="rv" data-rv data-faq open={i === 0}>
               <summary>
                 {f.q}
                 <i aria-hidden="true" />
@@ -1089,6 +1089,12 @@ const faqs = [
     ).observe(fig);
   })();
 
+</script>
+
+<script>
+  import { initFaq } from '@/scripts/faq';
+
+  initFaq();
 </script>
 
 <style>
@@ -3047,8 +3053,9 @@ const faqs = [
   }
 
   /* ══ QUESTIONS ═════════════════════════════════════════════
-     An accordion on native <details>: one open at a time (shared
-     `name`), the first open on load. The plus turns to a minus. */
+     An accordion on native <details>, the first open on load. Each
+     item opens on its own and eases open and shut (src/scripts/faq.ts).
+     The plus turns to a minus. */
   .qs {
     margin: 40px 0 0;
     border-bottom: 1px solid var(--line-2);
@@ -3097,7 +3104,7 @@ const faqs = [
   .qs summary i::after {
     transform: rotate(90deg);
   }
-  .qs details[open] summary i::after {
+  .qs details[open]:not(.is-closing) summary i::after {
     transform: none;
   }
   .qs details p {
@@ -3107,6 +3114,14 @@ const faqs = [
     line-height: 1.72;
     color: var(--ink-2);
     text-wrap: pretty;
+    animation: answer-in 500ms var(--ease) both;
+  }
+  @keyframes answer-in {
+    from {
+      opacity: 0;
+      filter: blur(6px);
+      transform: translateY(8px);
+    }
   }
 
   /* ══ CLOSER: frosted glass on green strata ═══════════════════ */
