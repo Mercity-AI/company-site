@@ -1910,12 +1910,16 @@ const faqs = [
     letter-spacing: 0.14em;
     text-transform: uppercase;
     white-space: nowrap;
-    color: var(--indigo-600);
-    border: 1px solid var(--line-2);
-    transition: border-color 400ms var(--ease);
+    color: #fff;
+    background: var(--indigo-600);
+    border: 1px solid var(--indigo-600);
+    transition:
+      background-color 400ms var(--ease),
+      border-color 400ms var(--ease);
   }
   .log-go:hover {
-    border-color: var(--indigo-500);
+    background: var(--indigo-700);
+    border-color: var(--indigo-700);
   }
   .log-go span {
     transition: transform 400ms var(--ease);
