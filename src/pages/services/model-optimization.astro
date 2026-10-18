@@ -762,6 +762,33 @@ const faqs = [
     </div>
   </section>
 
+  <!-- ═══ WHAT WE DO: SIX TECHNIQUES ═════════════════════════════ -->
+  <section class="band" id="methods">
+    <div class="shell">
+      <div class="split-head">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Methodologies that we pick, to meet targets.</h2>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          We profile your model and use what reaches your number. Usually two or three of these.
+        </p>
+      </div>
+
+      <div class="methods">
+        {
+          methods.map((m, i) => (
+            <article class="method rv" data-rv style={`--rv-delay:${60 + (i % 3) * 70}ms`}>
+              <span class="method-art" aria-hidden="true">
+                <svg viewBox="0 0 220 84" set:html={ART[m.art]} />
+              </span>
+              <h3>{m.title}</h3>
+              <p>{m.line}</p>
+              <span class="method-buys">{m.buys}</span>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
   <!-- ═══ WHERE IT IS USED: BEFORE AND AFTER ═════════════════════ -->
   <section class="band band-tint wash" id="cases">
     <canvas class="wash-bg" data-backdrop="moWash" data-seed="7481" data-dpr="0.5" aria-hidden="true"></canvas>
@@ -800,36 +827,8 @@ const faqs = [
     </div>
   </section>
 
-  <!-- ═══ WHAT WE DO: SIX TECHNIQUES ═════════════════════════════ -->
-  <section class="band" id="methods">
-    <div class="shell">
-      <div class="split-head">
-        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Methodologies that we pick, to meet targets.</h2>
-        <p class="lede rv" data-rv style="--rv-delay:160ms">
-          We profile your model and use what reaches your number. Usually two or three of these.
-        </p>
-      </div>
-
-      <div class="methods">
-        {
-          methods.map((m, i) => (
-            <article class="method rv" data-rv style={`--rv-delay:${60 + (i % 3) * 70}ms`}>
-              <span class="method-art" aria-hidden="true">
-                <svg viewBox="0 0 220 84" set:html={ART[m.art]} />
-              </span>
-              <h3>{m.title}</h3>
-              <p>{m.line}</p>
-              <span class="method-buys">{m.buys}</span>
-            </article>
-          ))
-        }
-      </div>
-    </div>
-  </section>
-
   <!-- ═══ QUESTIONS, ALL OPEN ════════════════════════════════════ -->
-  <section class="band band-tint wash" id="faq">
-    <canvas class="wash-bg" data-backdrop="moWash" data-seed="1162" data-dpr="0.5" aria-hidden="true"></canvas>
+  <section class="band" id="faq">
     <div class="shell">
       <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Questions buyers ask.</h2>
       <div class="qs">

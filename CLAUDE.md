@@ -555,9 +555,11 @@ directory tree and the section lede were cut on 2026-10-15) → the
 published runs as proof (one section, two numbered white "log" panels
 with the race, the layer stack, the retention chart and the
 perplexity-vs-MMLU verdicts) → the trade-off chart (dark, "You approve the trade before
-anything ships") → a before/after table of six situations → methods,
-last and framed as when we use each → FAQ as a dropdown accordion
-(native `<details>`, one open at a time, Harsh's request) → closer.
+anything ships") → methods, framed as when we use each → a
+before/after table of six situations with its ask (moved below
+methods on 2026-10-18; the FAQ went white so tinted bands still
+alternate) → FAQ as a dropdown accordion (native `<details>`, one
+open at a time, Harsh's request) → closer.
 
 Unconfirmed commercial claims, check with Harsh or Pranav before
 launch: the baseline as the first step of every engagement (the
