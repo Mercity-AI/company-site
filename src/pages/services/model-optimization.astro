@@ -1909,15 +1909,23 @@ const faqs = [
     letter-spacing: 0.14em;
     text-transform: uppercase;
     white-space: nowrap;
-    color: #fff;
-    /* Indigo at 70%, so the fill does not outweigh the panel; hover
-       brings it to full strength. */
-    background: color-mix(in srgb, var(--indigo-600) 70%, transparent);
-    border: 1px solid transparent;
-    transition: background-color 400ms var(--ease);
+    /* A light indigo fill with dark indigo type: filled, without the
+       weight of solid indigo. On hover, full indigo wipes in from the
+       left, the site's button motion. */
+    color: var(--indigo-700);
+    background:
+      linear-gradient(var(--indigo-600), var(--indigo-600)) left / 0% 100% no-repeat,
+      var(--indigo-100);
+    border: 1px solid var(--indigo-200);
+    transition:
+      background-size 350ms var(--ease),
+      border-color 350ms var(--ease),
+      color 300ms var(--ease);
   }
   .log-go:hover {
-    background: var(--indigo-600);
+    color: #fff;
+    background-size: 100% 100%;
+    border-color: var(--indigo-600);
   }
   .log-go span {
     transition: transform 400ms var(--ease);
