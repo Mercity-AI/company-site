@@ -36,6 +36,7 @@ tools as they ship (see *Still placeholder* below). Treat design changes on
 | `/open-source/simula-v2` | A rewrite of the Simula page, told as why and how we built it. `noindex`, for comparison until it replaces `/open-source/simula`. See *Simula v2*. |
 | `/services/synthetic-data` | The synthetic data service page, on `V2Layout`, under the nav's Services dropdown. See *Synthetic data service*. |
 | `/services/llm-guardrails` | Harsh's LLM guardrails and security page, on `V2Layout`, under the nav's Services dropdown. Unpublished on 2026-10-02 (Pranav: "it does not look good"), reworked and republished 2026-10-07. |
+| `/services/model-optimization` | The model optimization service page, on `V2Layout`, under the nav's Services dropdown. In review on the `model-optimization` branch (from PR #10). See *Model optimization service*. |
 | `/about` | On `V2Layout`. Quiet page; every figure computed from the collections. See *About*. |
 | `/contact` | On `V2Layout`. Form plus a Calendly band. See *Contact*. |
 
@@ -509,6 +510,102 @@ entry tabs; later the "Synthetic data" wordmark screen and the
 coverage tree went too. "100B+" stands in for Pranav's "hundreds of billions of tokens";
 the run figures are from the research log; the scatter and tree are
 illustrations.
+
+## Model optimization service (`/services/model-optimization`)
+
+The third service page, built 2026-10-02. It shares the service pages'
+pinned scroll hero and frosted closer and **nothing else, on purpose**:
+Harsh found the first version too close to the guardrails page ("so
+highly inspired that it starts looking identical"). Removed for that
+reason: the frosted hero card with bar rows, the proof strip, the
+"Our service" labels, two "Our research on…" sections, the paper cards,
+the icon-node engagement flow, the icon-card cases grid and the
+two-column FAQ. Keep new sections in forms the other two pages do not
+use. He likes the research graphics (race, layer stack, retention,
+cliff); keep those.
+
+Green: `moStrata` (hero, closer), `moWash` (tinted bands) and `moDeep`
+(the dark band) in `public/v2-backdrops.js`; page neutrals are sage,
+the accent is `--leaf`, figures are teal as everywhere, and amber marks
+only the knowledge cliff.
+
+**The page sells; it does not teach.** Harsh found the second version
+"very educational": it explained the problem and the techniques to
+buyers who already know both. The cost-slope chart and the "what each
+technique is" copy were cut for that. Do not add sections that explain
+why inference is expensive or what a technique is. The ask is "Get a
+baseline", in the hero, under the engagement stages ("Start with a
+baseline", which Harsh asked for on 2026-10-02) and the closer; the
+earlier mid-page ask bars and a "Give us the number" pledge panel stay
+removed. **No tinted pills, chips or icon tiles on this page**: Harsh
+said they read as AI-made, so facts are plain lines under a rule, the
+released weights are underlined links and icons sit bare. Copy is short on
+purpose (one or two short sentences per lede); he called a longer pass
+"sloppy".
+
+Sections, in the buyer's order: hero ("the squeeze": no card, an
+isometric stack of plates inside a dashed wireframe of its original
+size; the plates that go are outlined, slide out, and the rest drops;
+the flat slab version was replaced at Harsh's request; it alternates Stable Diffusion
+50 → 6 steps and Qwen3-8B 36 → 28 layers, with a large serif readout) → "Which number has to move?" (the cost-slope
+chart, which Harsh asked to have back, beside four targets, each ending
+in the result we can point to) → engagement (five stages as one flush
+object, then the ask on the pine ground; the "What lands in your repo"
+directory tree and the section lede were cut on 2026-10-15) → the
+published runs as proof (one section, two numbered white "log" panels
+with the race, the layer stack, the retention chart and the
+perplexity-vs-MMLU verdicts) → the trade-off chart (dark, "You approve the trade before
+anything ships") → methods, framed as when we use each → a
+before/after table of six situations with its ask (moved below
+methods on 2026-10-18; the FAQ went white so tinted bands still
+alternate) → FAQ as a dropdown accordion (native `<details>`, one
+open at a time, Harsh's request) → closer.
+
+Unconfirmed commercial claims, check with Harsh or Pranav before
+launch: the baseline as the first step of every engagement (the
+"Get a baseline" button).
+
+**Every number is from the LCM-LoRA and LaCo research logs** in
+`research/`. The slope chart, the technique diagrams and the trade-off
+chart are illustrations. Quantization, recovery training and inference
+engineering are offered but have no published log behind them;
+recovery is the LaCo log's future work, so the page claims no recovery
+result. "6 to 14 weeks" is the home page's engagement figure and "26
+models" its hand count. Copy is scanned against the banlist; rescan
+after edits.
+
+**Review with Pranav (2026-10-14 and 15).**
+Hero: headline "Optimizing models for production-grade high
+performance." (`production-grade` held on one line). Cut: the mono
+trust line, the "Scroll" cue (as on the other two service pages) and
+the "Original size" tag over the figure. The hero's Qwen run is the
+log's 28-layer cut, not the released 30-layer one: Pranav found
+36 → 30 too small to show and did not want the deepest cut; its note
+"71–87% of reasoning scores kept" is the 28-layer retention range.
+The research section's LaCo panel follows it (2026-10-18): title,
+facts (22.2% removed, 2.01× perplexity), the layer strip (eight
+collapsed; the log names merged layers only for 30, so which eight is
+illustrative) and the retention chart, which highlights 28 layers and
+starts its axis at 25% (chance on MMLU) to zoom in. The released
+weights stay `Qwen3-8B-LaCo-30L`, the only pruned model published.
+**The page runs at `section { --shell: 1300px }`**, the synthetic
+data page's width, so the readout's fixed 280px column holds every
+note on one line (`nowrap`) and all section edges line up; below
+1100px the figure hides.
+
+Metrics: the cost chart's "Today" curve is red and bends upward,
+"After optimization" is teal and flattens, both kept gentle (Pranav
+had the first curves flattened by 20% and the gap widened). "What you
+stop paying" sits upright in the upper left with a thin arrow into the
+green wedge. Cost per request has a dollar icon; throughput took the
+trend icon. Each shown proof uses → ("Qwen3-8B: 36 → 28 layers") and
+links to its log with a small raised ↗ that lifts on hover and an
+underline on hover only; throughput has no log, so no link. The cards
+share subgrid rows so the dashed rules line up across each row.
+
+Engagement: the ask card is on the pine ground (`hsl(158 34% 9%)`),
+one sentence per line, with the button outlined in `--on-dark` and
+filling with it on hover.
 
 ## About (`/about`)
 

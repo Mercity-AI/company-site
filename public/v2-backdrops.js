@@ -1194,6 +1194,73 @@
       grain(ctx, w, h, 5, true);
     },
 
+    /* ── Model optimization service (/services/model-optimization) ── */
+
+    // GREEN STRATA — sdStrata's construction on a green ramp: jade at
+    // the base rising through leaf to a pale lime, with a pale pool at
+    // the centre so dark type reads on it. The model optimization
+    // page's hero and closer.
+    moStrata(ctx, w, h, seed) {
+      strata(ctx, w, h, seed, [
+        hsl2rgb(168, 50, 44),
+        hsl2rgb(160, 48, 53),
+        hsl2rgb(150, 48, 62),
+        hsl2rgb(132, 50, 71),
+        hsl2rgb(108, 58, 79),
+        hsl2rgb(86, 72, 86),
+      ], hsl2rgb(100, 66, 82));
+    },
+
+    // MINT FIELD — grWash's construction in mint, lime and a little
+    // aqua and butter over a pale green ground. Low contrast, so dark
+    // type reads straight on it. Behind the page's tinted sections.
+    moWash(ctx, w, h, seed) {
+      const r = rng(seed);
+      const TINTS = [
+        hsl2rgb(140, 56, 89),
+        hsl2rgb(96, 66, 89),
+        hsl2rgb(168, 50, 89),
+        hsl2rgb(72, 76, 90),
+        hsl2rgb(186, 48, 91),
+      ];
+      ctx.fillStyle = css(hsl2rgb(110, 50, 96));
+      ctx.fillRect(0, 0, w, h);
+      ctx.filter = `blur(${Math.round(Math.min(w, h) * 0.24)}px)`;
+      for (let i = 0; i < 7; i++) {
+        ctx.fillStyle = css(TINTS[i % TINTS.length]);
+        ctx.beginPath();
+        ctx.ellipse(r() * w, r() * h, w * (0.14 + r() * 0.2), h * (0.26 + r() * 0.36), r() * 3.14, 0, 6.29);
+        ctx.fill();
+      }
+      ctx.filter = 'none';
+      grain(ctx, w, h, 4, true);
+    },
+
+    // PINE FIELD — grEmber's construction in dark greens: pine, moss
+    // and deep teal over a near-black green ground. The page's
+    // trade-off section sits on it.
+    moDeep(ctx, w, h, seed) {
+      const r = rng(seed);
+      const TINTS = [
+        hsl2rgb(160, 44, 20),
+        hsl2rgb(140, 38, 18),
+        hsl2rgb(176, 46, 17),
+        hsl2rgb(120, 34, 21),
+        hsl2rgb(190, 36, 15),
+      ];
+      ctx.fillStyle = css(hsl2rgb(158, 34, 8));
+      ctx.fillRect(0, 0, w, h);
+      ctx.filter = `blur(${Math.round(Math.min(w, h) * 0.22)}px)`;
+      for (let i = 0; i < 7; i++) {
+        ctx.fillStyle = css(TINTS[i % TINTS.length]);
+        ctx.beginPath();
+        ctx.ellipse(r() * w, r() * h, w * (0.14 + r() * 0.2), h * (0.24 + r() * 0.36), r() * 3.14, 0, 6.29);
+        ctx.fill();
+      }
+      ctx.filter = 'none';
+      grain(ctx, w, h, 5, true);
+    },
+
     // WASH — "All three" from /design.html (blur → dither → grain),
     // kept light enough for ink to sit on it. Stronger than blurlight:
     // indigo and teal tints with a little warmth, larger sources, a

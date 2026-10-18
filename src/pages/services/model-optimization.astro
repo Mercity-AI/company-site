@@ -1,0 +1,3170 @@
+---
+/**
+ * Model optimization, as a service.
+ *
+ * For buyers at the bottom of the funnel: they have a model that is too
+ * slow, too large or too expensive to run, they know the answer is
+ * distillation, pruning or quantization, and they are deciding who does
+ * it. The page shows the two optimizations we have published, what they
+ * cost in quality, what we offer, and how an engagement runs.
+ *
+ * The page shares the service pages' hero scroll and closer and
+ * nothing else on purpose: Harsh found the first version too close to
+ * the guardrails page. No proof strip, no "Our service" labels, no
+ * icon-node flow, no paper cards, no two-column FAQ. Keep new sections
+ * in forms the other two pages do not already use.
+ *
+ * Graphics play on their own when they come into view; hover only adds
+ * emphasis. The FAQ is the one thing behind a click: Harsh asked for a
+ * dropdown.
+ *
+ * The hero keeps the other service pages' pinned scroll and blur, on
+ * `moStrata`: the same strata construction on a jade-to-lime ramp. Page
+ * neutrals are cooled to sage in the style block, the dark section is
+ * pine, and amber marks the one failure (the knowledge cliff) only.
+ *
+ * Figures: every number is from our two research logs. Distillation
+ * (50 → 4–6 steps, 8× and 12.5×, ~100 MB, ~4 hours and $8–10 on one
+ * A100, 70 → 6 GPU hours per 10,000 images, 15–25 s → 2–4 s) is from
+ * the LCM-LoRA log; pruning (36 → 28 layers, 22.2%, every benchmark and
+ * retention figure, the perplexity ratios) is from the LaCo log.
+ * "6 to 14 weeks" is Pranav's engagement figure from the home page and
+ * "26 models" is the home page's hand count of huggingface.co/Mercity.
+ * The cost-slope chart, the technique diagrams and the trade-off chart
+ * are illustrations.
+ *
+ * The page sells; it does not teach. Harsh found an earlier version
+ * "very educational": it explained the problem and the techniques to
+ * buyers who already know both. So the order is the buyer's: which
+ * number has to move → how we get there → proof we have done it → you
+ * approve the trade → is this your situation → methods (as "when we
+ * use it", last) → questions. The ask ("Get a baseline") is in the
+ * hero, under the engagement stages (Harsh asked for that one back)
+ * and the closer. No tinted pills or chips anywhere: Harsh finds them
+ * AI-looking, so facts sit as plain lines under a rule.
+ * Copy is short on purpose; he called a longer pass "sloppy".
+ */
+import V2Layout from '@/layouts/V2Layout.astro';
+
+const LCM_URL = '/research/lcm-lora-distillation-training-fast-diffusion-models';
+const LACO_URL = '/research/laco-layer-pruning-for-qwen3-8b-our-research-log';
+const HF_URL = 'https://huggingface.co/Mercity';
+// Public model repos under huggingface.co/Mercity, typed in by hand as
+// on the home page. Update both places together.
+const HF_MODELS = 26;
+
+/* Line icons on a 24 grid, drawn with currentColor. */
+const ICON: Record<string, string> = {
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/>',
+  cost: '<path d="M3 20h18"/><path d="M5 16l5-5 3 3 6-8"/><path d="M15 6h4v4"/>',
+  dollar: '<path d="M12 3v18"/><path d="M16.5 7.5c-.8-1.3-2.4-2-4.5-2-2.6 0-4.2 1.3-4.2 3.1 0 4.4 9 2.3 9 6.8 0 1.9-1.8 3.2-4.6 3.2-2.3 0-4.1-.9-4.9-2.4"/>',
+  chip: '<rect x="7" y="7" width="10" height="10"/><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"/>',
+  image: '<rect x="3" y="5" width="18" height="14"/><circle cx="9" cy="10" r="1.6"/><path d="M3 17l5-4 4 3 3-2 6 4"/>',
+  layers: '<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12l9 5 9-5M3 16l9 5 9-5"/>',
+  device: '<rect x="7" y="2.5" width="10" height="19"/><path d="M10.5 18.5h3"/>',
+  batch: '<path d="M8 3h9l3 3v13H8z"/><path d="M5 6v15h11"/><path d="M11 9h6M11 12.5h6M11 16h3"/>',
+  cloud: '<path d="M7 18a4 4 0 0 1-.6-7.96A5.5 5.5 0 0 1 17 9a4.5 4.5 0 0 1 .5 9z"/><path d="M12 12v5M9.8 14.8L12 17l2.2-2.2"/>',
+  voice: '<rect x="9" y="3" width="6" height="11"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8.5 21h7"/>',
+};
+
+/* ── Hero: the squeeze. An isometric stack of plates, one per unit of
+   work (a denoising step, a transformer layer), inside a dashed
+   wireframe of its original size. `cut` lists the plates that go;
+   index 0 is the bottom plate. Both runs are from our research logs. ── */
+const SQ_MAX = 50;
+const range = (n: number) => Array.from({ length: n }, (_, i) => i);
+const SD_KEEP = [0, 10, 20, 29, 39, 49];
+const runs = [
+  {
+    tech: 'Distillation · LCM-LoRA',
+    model: 'Stable Diffusion 1.5',
+    n: 50,
+    cut: range(50).filter((i) => !SD_KEEP.includes(i)),
+    from: '50',
+    to: '6',
+    unit: 'denoising steps per image',
+    notes: ['15–25 seconds an image, down to 2–4', '100 MB adapter, base model untouched'],
+  },
+  {
+    tech: 'Layer pruning · LaCo',
+    model: 'Qwen3-8B',
+    n: 36,
+    cut: [20, 21, 22, 23, 24, 25, 26, 27],
+    from: '36',
+    to: '28',
+    unit: 'transformer layers',
+    notes: ['71–87% of reasoning scores kept', 'Measured before any post-training'],
+  },
+];
+
+/* Plate geometry, in the figure's 260 × 450 viewBox. A plate is a
+   rhombus top (half-width a, half-depth b) over two side faces of
+   thickness t. The stack always spans H, so the pitch depends on the
+   plate count. The hero script repeats these numbers. */
+const ISO = { cx: 130, a: 112, b: 36, base: 396, H: 330, slide: [48, 15] };
+const isoPitch = (n: number) => ISO.H / (n - 1);
+const isoFaces = (t: number) => ({
+  top: `0,${-ISO.b} ${ISO.a},0 0,${ISO.b} ${-ISO.a},0`,
+  left: `${-ISO.a},0 0,${ISO.b} 0,${ISO.b + t} ${-ISO.a},${t}`,
+  right: `0,${ISO.b} ${ISO.a},0 ${ISO.a},${t} 0,${ISO.b + t}`,
+});
+// The first run's finished state, so the figure is right without the script.
+const plates0 = (() => {
+  const r = runs[0];
+  const p = isoPitch(r.n);
+  const f = isoFaces(p * 0.6);
+  let rank = 0;
+  return range(SQ_MAX).map((i) => {
+    const off = i >= r.n;
+    const cut = !off && r.cut.includes(i);
+    const x = ISO.cx + (cut ? ISO.slide[0] : 0);
+    const y = cut ? ISO.base - i * p + ISO.slide[1] : ISO.base - rank * p;
+    if (!off && !cut) rank++;
+    return { off, cut, f, style: `transform:translate(${x}px,${y.toFixed(2)}px);opacity:${cut ? 0 : 1}` };
+  });
+})();
+const WT = ISO.base - ISO.H;
+const WB = ISO.base + 5;
+const wire =
+  `M${ISO.cx} ${WT - ISO.b}L${ISO.cx + ISO.a} ${WT}L${ISO.cx} ${WT + ISO.b}L${ISO.cx - ISO.a} ${WT}Z` +
+  `M${ISO.cx - ISO.a} ${WT}V${WB}L${ISO.cx} ${WB + ISO.b}L${ISO.cx + ISO.a} ${WB}V${WT}` +
+  `M${ISO.cx} ${WT + ISO.b}V${WB + ISO.b}`;
+
+/* ── The four numbers a buyer comes with. Each carries the result
+   we can point to; throughput has no published run, so it says how
+   it is measured instead. ── */
+const targets = [
+  { icon: 'clock', title: 'Latency', line: 'Responses inside your budget.', tag: 'Shown', proof: 'Stable Diffusion: 15–25 s → 2–4 s an image', href: LCM_URL },
+  { icon: 'dollar', title: 'Cost per request', line: 'A lower GPU bill at the same traffic.', tag: 'Shown', proof: '10,000 images: 70 → 6 GPU hours', href: LCM_URL },
+  { icon: 'chip', title: 'Model size', line: 'A model that fits the hardware you have.', tag: 'Shown', proof: 'Qwen3-8B: 36 → 28 layers', href: LACO_URL },
+  { icon: 'cost', title: 'Throughput', line: 'More requests from every GPU.', tag: 'Measured', proof: 'Load-tested on your hardware' },
+];
+
+/* ── What we do: six techniques, each with a small diagram. The
+   diagrams are injected with set:html, so every colour is a literal
+   attribute (scoped class styles do not reach them). ── */
+const G = '#b9c4b9';
+const L = '#2c8c5f';
+const F = '#e4f6de';
+const T = '#5d6f65';
+const txt = (x: number, y: number, s: string, fill = T, anchor = 'start', size = 9) =>
+  `<text x="${x}" y="${y}" font-size="${size}" fill="${fill}" text-anchor="${anchor}">${s}</text>`;
+const cells = (x0: number, y0: number, n: number, fill: string) =>
+  Array.from({ length: n * n }, (_, k) => `<rect x="${x0 + (k % n) * 12}" y="${y0 + Math.floor(k / n) * 12}" width="10" height="10" fill="${fill}"/>`).join('');
+const arrow = (x: number, y: number, w: number) => `<path d="M${x} ${y}h${w}M${x + w - 6} ${y - 5}l6 5-6 5" fill="none" stroke="${T}" stroke-width="1.2"/>`;
+const ART: Record<string, string> = {
+  distil:
+    `<rect x="8" y="8" width="58" height="58" fill="none" stroke="${G}"/>${cells(14, 14, 4, '#dfe6dc')}` +
+    arrow(80, 37, 50) +
+    txt(105, 28, 'outputs', T, 'middle') +
+    `<rect x="146" y="20" width="34" height="34" fill="${F}" stroke="${L}"/>${cells(152, 26, 2, L)}` +
+    txt(8, 80, 'teacher') +
+    txt(146, 80, 'student', L),
+  prune:
+    Array.from({ length: 9 }, (_, k) =>
+      [3, 4, 6].includes(k)
+        ? `<rect x="8.5" y="${4.5 + k * 7}" width="69" height="4" fill="none" stroke="${G}" stroke-dasharray="3 3"/>`
+        : `<rect x="8" y="${4 + k * 7}" width="70" height="5" fill="#cfd8cc"/>`,
+    ).join('') +
+    arrow(92, 34, 38) +
+    Array.from({ length: 6 }, (_, k) => `<rect x="144" y="${14 + k * 7}" width="70" height="5" fill="${L}"/>`).join('') +
+    txt(8, 80, '9 layers') +
+    txt(144, 80, '6 layers', L),
+  quant:
+    `<path d="M8 52C40 0 72 0 106 34S170 70 212 18" fill="none" stroke="${G}" stroke-width="1.4"/>` +
+    `<path d="M8 50h17V30h17V16h34v10h17v14h17v14h34V42h17V28h17V18h17" fill="none" stroke="${L}" stroke-width="1.6"/>` +
+    txt(8, 80, '32-bit weights') +
+    txt(212, 80, '4-bit', L, 'end'),
+  lora:
+    `<rect x="8" y="8" width="58" height="58" fill="#eef2ec" stroke="${G}"/>` +
+    txt(37, 42, 'W', T, 'middle', 14) +
+    txt(86, 42, '+', T, 'middle', 14) +
+    `<rect x="106" y="8" width="12" height="58" fill="${L}"/><rect x="128" y="8" width="58" height="12" fill="${L}"/>` +
+    txt(134, 42, 'B · A', L, 'start', 12) +
+    txt(8, 80, 'frozen') +
+    txt(106, 80, 'trained', L),
+  recover:
+    `<path d="M70 18H212" fill="none" stroke="${G}" stroke-dasharray="3 4"/>` +
+    `<path d="M8 18H70L82 56" fill="none" stroke="${T}" stroke-width="1.4"/>` +
+    `<path d="M82 56C112 50 150 30 212 23" fill="none" stroke="${L}" stroke-width="2"/>` +
+    `<circle cx="82" cy="56" r="3" fill="#fff" stroke="${T}"/>` +
+    txt(8, 80, 'compress') +
+    txt(212, 80, 'fine-tune back', L, 'end'),
+  serve:
+    Array.from({ length: 6 }, (_, k) => `<rect x="${8 + (k % 3) * 12}" y="${22 + Math.floor(k / 3) * 12}" width="8" height="8" fill="#cfd8cc"/>`).join('') +
+    arrow(52, 32, 28) +
+    `<rect x="92" y="18" width="46" height="28" fill="${F}" stroke="${L}"/>` +
+    txt(115, 36, 'batch', L, 'middle') +
+    arrow(148, 32, 22) +
+    `<rect x="180" y="12" width="32" height="40" fill="none" stroke="${T}"/><path d="M186 22h20M186 32h20M186 42h20" stroke="${G}"/>` +
+    txt(8, 80, 'requests') +
+    txt(212, 80, 'one GPU', T, 'end'),
+};
+const methods = [
+  { art: 'distil', title: 'Distillation', line: 'For the same output in fewer steps or parameters.', buys: 'Fewer steps, fewer parameters' },
+  { art: 'prune', title: 'Pruning', line: 'For layers the model does not need.', buys: 'Less memory, less compute' },
+  { art: 'quant', title: 'Quantization', line: 'For memory and GPU limits.', buys: 'Smaller GPUs, lower cost' },
+  { art: 'lora', title: 'Adapters', line: 'For base models that cannot change.', buys: 'Megabytes, not gigabytes' },
+  { art: 'recover', title: 'Recovery training', line: 'For quality lost in compression.', buys: 'Quality back at the smaller size' },
+  { art: 'serve', title: 'Inference engineering', line: 'For a good model on slow serving.', buys: 'More requests per GPU' },
+];
+
+/* ── Evidence one: LCM-LoRA. The race is drawn here; the script only
+   moves the two dots and lights what they pass. ── */
+const RACE = { x0: 150, x1: 500, y: [72, 186], tile: 92 };
+const T_STEPS = 50;
+const S_STEPS = 6;
+const tDx = (RACE.x1 - RACE.x0) / T_STEPS;
+const sDx = (RACE.x1 - RACE.x0) / S_STEPS;
+const lcmFacts = [
+  { fig: '50 → 4–6', line: 'denoising steps per image' },
+  { fig: '~100 MB', line: 'adapter size, base model untouched' },
+  { fig: '~4 hours', line: 'to train on one A100, about $8 to $10' },
+  { fig: '70 → 6', line: 'GPU hours per 10,000 images, at 4 steps' },
+];
+
+/* ── Evidence two: LaCo on Qwen3-8B, shown at the log's 28-layer cut
+   (the hero's number). Layers 0–3 and 29–35 were never candidates.
+   The log names the merged layers only for 30 layers (22–27 into 21),
+   so the eight collapsed here (20–27 into 19) are illustrative.
+   Retention is each pruned model's score as a share of the
+   original's, from the log: a is 28 layers (highlighted), b is 30,
+   c is 26. ── */
+const layerKind = (i: number) => (i < 4 || i > 28 ? 'prot' : i === 19 ? 'into' : i > 19 && i < 28 ? 'gone' : 'keep');
+const retention = [
+  { name: 'WinoGrande', a: 83.0, b: 93.8, c: 78.2 },
+  { name: 'PIQA', a: 87.0, b: 89.7, c: 82.6 },
+  { name: 'ARC-Challenge', a: 76.2, b: 85.9, c: 69.5 },
+  { name: 'ARC-Easy', a: 73.1, b: 80.6, c: 68.5 },
+  { name: 'HellaSwag', a: 70.7, b: 78.9, c: 61.8 },
+  { name: 'BoolQ', a: 74.9, b: 78.2, c: 74.3 },
+  { name: 'MMLU', a: 33.7, b: 40.7, c: 32.7, weak: true },
+];
+const mmlu = [
+  { l: '36', v: 76.89 },
+  { l: '30', v: 31.3 },
+  { l: '28', v: 25.89 },
+  { l: '26', v: 25.12 },
+];
+const lacoFacts = [
+  { fig: '22.2%', line: 'of the layers removed' },
+  { fig: '2.01×', line: 'perplexity ratio at 28 layers' },
+  { fig: 'None', line: 'post-training before scoring' },
+];
+const lcmWeights = ['lcm-lora-sd15-step-400', 'lcm-lora-sd15-step-800', 'lcm-lora-sd15-step-1200', 'lcm-lora-sd15-step-1600'];
+const lacoWeights = ['Qwen3-8B-LaCo-30L'];
+
+/* ── The trade-off chart. c is cost per request and q is quality, both
+   0 to 1; `front` points are on the frontier, in order from today's
+   model down to the cheapest. Illustrative. ── */
+const FX = (c: number) => 20 + c * 1070;
+const FY = (q: number) => 382 - q * 352;
+const BUDGET = 0.5;
+const FLOOR = 0.8;
+const front = [
+  { c: 0.92, q: 0.93, label: 'Your model today', kind: 'today' },
+  { c: 0.74, q: 0.92, label: '8-bit' },
+  { c: 0.55, q: 0.89, label: 'Distilled' },
+  { c: 0.4, q: 0.86, label: 'Distilled, 8-bit', kind: 'pick' },
+  { c: 0.28, q: 0.72, label: 'Pruned 17%' },
+  { c: 0.17, q: 0.5, label: 'Pruned 28%', kind: 'low' },
+  { c: 0.1, q: 0.3, label: '' },
+];
+const behind = [
+  [0.86, 0.74], [0.8, 0.84], [0.7, 0.6], [0.66, 0.8], [0.6, 0.7], [0.48, 0.74],
+  [0.45, 0.6], [0.36, 0.56], [0.34, 0.3], [0.22, 0.2],
+];
+const frontD = front.map((p, i) => `${i ? 'L' : 'M'}${FX(p.c)} ${FY(p.q)}`).join(' ');
+/* ── Engagement: five stages as one object. The small figure in each
+   shows the candidate pool narrowing: one model in, many candidates,
+   a shortlist, one model out. ── */
+const flow = [
+  { art: 'profile', title: 'Profile', line: 'Where the time and the money go.', out: 'Baseline report' },
+  { art: 'target', title: 'Target', line: 'Your budget and your quality floor.', out: 'Agreed numbers' },
+  { art: 'many', title: 'Compress', line: 'Many candidates, several methods.', out: 'Candidate models' },
+  { art: 'few', title: 'Recover', line: 'The best few, trained back up.', out: 'Scored shortlist' },
+  { art: 'one', title: 'Ship', line: 'One model, verified on your hardware.', out: 'Weights and report' },
+];
+const DOTS = range(12).map((k) => ({ x: 10 + (k % 6) * 20, y: 20 + Math.floor(k / 6) * 24 }));
+const SHORTLIST = [1, 4, 8, 10];
+
+/* ── Where it is used ──────────────────────────────────────────── */
+const cases = [
+  { icon: 'image', title: 'Interactive image tools', before: '50 steps, 15 to 25 seconds an image', after: '4 to 6 steps, a few seconds' },
+  { icon: 'layers', title: 'Self-hosted language models', before: 'A large model on your largest GPU', after: 'Fewer layers and bits, on a smaller one' },
+  { icon: 'device', title: 'On-device models', before: 'Too large for the phone or the edge box', after: 'A student sized to the device' },
+  { icon: 'batch', title: 'High-volume pipelines', before: 'Millions of documents through a large model', after: 'A distilled model at a fraction of the GPU hours' },
+  { icon: 'cloud', title: 'Moving off a hosted API', before: 'A per-token bill that grows with usage', after: 'A small open model, tuned to your task, in your cloud' },
+  { icon: 'voice', title: 'Turn-by-turn latency', before: 'A pause before every reply', after: 'First token inside your budget' },
+];
+
+const faqs = [
+  { q: 'How much quality will we lose?', a: 'You set the floor. We report the loss per task before anything ships.' },
+  { q: 'Which technique do we need?', a: 'Usually two or three. We profile first, then choose.' },
+  { q: 'Do you need our data?', a: 'A sample of your traffic, or a dataset like it. If you have neither, we generate one.' },
+  { q: 'Can you optimize a model behind an API?', a: 'We need the weights. On a hosted API, we train an open model on your task so you can move off it.' },
+  { q: 'Will it run on our stack?', a: 'Yes. We deliver in the format your serving stack loads.' },
+  { q: 'What if the target cannot be reached?', a: 'You hear it early. The baseline shows how close the model can get.' },
+];
+---
+
+<V2Layout
+  title="Model optimization"
+  description="Distillation, pruning and quantization for models that are too slow, too large or too expensive to run. Delivered with before-and-after benchmarks on your own tasks."
+  path="/services/model-optimization"
+>
+  <!-- ═══ HERO: the pinned scroll, on green strata ═══════════════ -->
+  <section class="sh" data-sh>
+    <div class="sh-stage" data-vsticky="0">
+      <div class="sh-plate" aria-hidden="true">
+        <canvas class="sh-sharp" data-backdrop="moStrata" data-seed="5519" data-dpr="1"></canvas>
+        <canvas class="sh-soft" data-backdrop="moStrata" data-seed="5519" data-dpr="0.35"></canvas>
+        <span class="sh-light l1"></span>
+        <span class="sh-light l2"></span>
+        <span class="sh-light l3"></span>
+        <span class="sh-shade"></span>
+      </div>
+
+      <div class="sh-copy" data-sh-copy data-live="true">
+        <div class="shell sh-copy-in">
+          <div class="sh-text">
+            <h1 class="sh-in"><span class="sh-h1-lead">Optimizing models</span> <span class="sh-h1-rest">for <span class="nowrap">production-grade</span> high performance.</span></h1>
+            <p class="sh-in d1">
+              We optimize models to deliver the performance your applications need, with less compute, lower latency, and reduced inference costs. <br />From quantization and fine-tuning to inference optimization and model compression, every improvement is engineered around your workloads and validated against your quality benchmarks.
+            </p>
+            <div class="sh-actions sh-in d2">
+              <a class="wipe" href="/contact">
+                <span class="wipe-fill"></span>
+                <span class="wipe-label">Get a baseline</span>
+                <span class="wipe-label" aria-hidden="true">→</span>
+              </a>
+              <a class="quiet" href="#research">See what we have shipped<span aria-hidden="true">↓</span></a>
+            </div>
+          </div>
+
+          <figure class="sq sh-in d3" data-sq={JSON.stringify(runs)} aria-label="Two optimizations from our research: Stable Diffusion 1.5 from 50 denoising steps to 6, and Qwen3-8B from 36 layers to 28.">
+            <div class="sq-stack" data-sq-stack data-state="cut" aria-hidden="true">
+              <svg viewBox="0 0 260 450">
+                <path class="sq-wire" d={wire} />
+                {
+                  plates0.map((pl) => (
+                    <g class:list={['pl', pl.off && 'is-off', pl.cut && 'is-cut']} style={pl.style}>
+                      <polygon class="pl-l" points={pl.f.left} />
+                      <polygon class="pl-r" points={pl.f.right} />
+                      <polygon class="pl-top" points={pl.f.top} />
+                    </g>
+                  ))
+                }
+              </svg>
+            </div>
+            <figcaption class="sq-read">
+              <span class="sq-tech" data-sq-tech>{runs[0].tech}</span>
+              <span class="sq-model" data-sq-model>{runs[0].model}</span>
+              <span class="sq-fig">
+                <span data-sq-from>{runs[0].from}</span>
+                <i aria-hidden="true">→</i>
+                <b data-sq-to>{runs[0].to}</b>
+              </span>
+              <span class="sq-unit" data-sq-unit>{runs[0].unit}</span>
+              <ul class="sq-notes">
+                {runs[0].notes.map((t) => <li data-sq-note>{t}</li>)}
+              </ul>
+              <span class="sq-src">From our published research</span>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ THE NUMBER: WHAT YOU COME WITH, WHAT WE COMMIT TO ════ -->
+  <section class="band" id="targets">
+    <div class="shell">
+      <div class="split-head">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">The metrics that we optimize for.</h2>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          When it comes to model optimization, we build until the numbers meet your goals.
+        </p>
+      </div>
+
+      <div class="why">
+        <figure class="slope rv" data-rv data-play>
+          <svg viewBox="0 0 520 340" role="img" aria-label="Inference spend against requests per day: today's curve bends upward as traffic grows; after optimization it flattens out.">
+            <path class="slope-axis" d="M20 20V292H512" />
+            <path class="slope-gap" d="M20 288C185.6 224.8 367.8 158.4 500 36V221C326.1 234.6 143.9 263 20 288Z" />
+            <path class="slope-now" d="M20 288C185.6 224.8 367.8 158.4 500 36" pathLength="1" />
+            <path class="slope-opt" d="M20 288C143.9 263 326.1 234.6 500 221" pathLength="1" />
+            <text class="slope-t" x="20" y="12">Inference spend ↑</text>
+            <text class="slope-t" x="512" y="314" text-anchor="end">Requests per day →</text>
+            <text class="slope-l slope-l-now" x="488" y="30" text-anchor="end">Today</text>
+            <text class="slope-l slope-l-opt" x="500" y="243" text-anchor="end">After optimization</text>
+            <text class="slope-mid" x="136" y="118">What you stop paying</text>
+            <path class="slope-arrow" d="M246 130Q340 128 372 200M372.8 192L372 200L365.5 195.3" />
+          </svg>
+          <figcaption>Illustration. Same traffic, lower slope.</figcaption>
+        </figure>
+
+        <div class="symptoms">
+          {
+            targets.map((t, i) => (
+              <div class="symptom rv" data-rv style={`--rv-delay:${80 + i * 70}ms`}>
+                <span class="symptom-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" set:html={ICON[t.icon]} />
+                </span>
+                <h3>{t.title}</h3>
+                <p>{t.line}</p>
+                {t.href ? (
+                  <a class="symptom-proof" href={t.href}>
+                    <small>{t.tag}</small>
+                    <span class="proof-t">{t.proof}<span class="proof-go" aria-hidden="true">↗</span></span>
+                  </a>
+                ) : (
+                  <span class="symptom-proof">
+                    <small>{t.tag}</small>
+                    {t.proof}
+                  </span>
+                )}
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ HOW AN ENGAGEMENT RUNS ═════════════════════════════════ -->
+  <section class="band band-tint wash" id="engagement">
+    <canvas class="wash-bg" data-backdrop="moWash" data-seed="3317" data-dpr="0.5" aria-hidden="true"></canvas>
+    <div class="shell">
+      <div class="split-head">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">How we get your model there.</h2>
+      </div>
+
+      <ol class="pipe" data-play>
+        {
+          flow.map((f, i) => (
+            <li class="pipe-step" style={`--i:${i}`}>
+              <span class="pipe-n" aria-hidden="true">0{i + 1}</span>
+              <svg class="pipe-art" viewBox="0 0 120 64" aria-hidden="true">
+                {f.art === 'profile' && (
+                  <g>
+                    <rect class="pa-dim" x="2" y="22" width="28" height="14" />
+                    <rect class="pa-hot" x="32" y="22" width="58" height="14" />
+                    <rect class="pa-dim" x="92" y="22" width="26" height="14" />
+                    <text x="61" y="52" text-anchor="middle">bottleneck</text>
+                  </g>
+                )}
+                {f.art === 'target' && (
+                  <g>
+                    <path class="pa-axis" d="M8 4V58H116" />
+                    <rect class="pa-zone" x="8" y="6" width="54" height="18" />
+                    <path class="pa-rule" d="M62 4V58M8 24H116" />
+                  </g>
+                )}
+                {f.art === 'many' && DOTS.map((d) => <circle class="pa-dot" cx={d.x} cy={d.y} r="5" />)}
+                {f.art === 'few' && DOTS.map((d, k) => <circle class={SHORTLIST.includes(k) ? 'pa-dot pa-on' : 'pa-dot pa-out'} cx={d.x} cy={d.y} r="5" />)}
+                {f.art === 'one' && (
+                  <g>
+                    <circle class="pa-ring" cx="60" cy="32" r="21" />
+                    <circle class="pa-dot pa-on" cx="60" cy="32" r="12" />
+                    <path class="pa-tick" d="M54 32.5l4 4 8-8.5" />
+                  </g>
+                )}
+              </svg>
+              <h3>{f.title}</h3>
+              <p>{f.line}</p>
+              <span class="pipe-out">
+                <small>You get</small>
+                {f.out}
+              </span>
+            </li>
+          ))
+        }
+      </ol>
+
+      <div class="pipe-ask rv" data-rv>
+        <p><span>Every engagement starts by profiling your model for bottlenecks.</span> <span>It ends with an optimized model, shipped on your hardware.</span></p>
+        <a class="wipe" href="/contact">
+          <span class="wipe-fill"></span>
+          <span class="wipe-label">Start with a baseline</span>
+          <span class="wipe-label" aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ THE PUBLISHED RUNS: TWO LOGS, ONE SECTION ══════════════ -->
+  <section class="band" id="research">
+    <div class="shell">
+      <div class="split-head">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">
+          <span class="h2-note">Our research</span> on model optimization.
+        </h2>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          Our research to optimize models spans across distillation and layer pruning, failures included in our writeups and weights pushed on Hugging Face.
+        </p>
+      </div>
+
+      <article class="log rv" data-rv>
+        <header class="log-head">
+          <span class="log-n" aria-hidden="true">01</span>
+          <div>
+            <span class="log-kind">Distillation · LCM-LoRA</span>
+            <h3>Stable Diffusion 1.5, from 50 steps to 6</h3>
+          </div>
+          <a class="log-go" href={LCM_URL}>Read the log<span aria-hidden="true">→</span></a>
+        </header>
+        <div class="log-body">
+          <div class="ev">
+            <figure class="race rv" data-rv data-race>
+          <svg viewBox="0 0 640 250" role="img" aria-label="Two lanes from noise to image. Stable Diffusion 1.5 takes 50 steps; with the LCM-LoRA adapter it takes 6.">
+            <defs>
+              <filter id="mo-noise" x="0" y="0" width="100%" height="100%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="4"></feTurbulence>
+                <feColorMatrix type="matrix" values="1.5 0 0 0 0  1.5 0 0 0 0  1.5 0 0 0 0  0 0 0 0 1"></feColorMatrix>
+              </filter>
+            </defs>
+            {
+              RACE.y.map((y, lane) => (
+                <g data-lane={lane}>
+                  <text class="race-name" x="0" y={y - 4}>{lane ? 'With LCM-LoRA' : 'Stable Diffusion 1.5'}</text>
+                  <text class="race-sub" x="0" y={y + 13}>{lane ? '6 steps' : '50 steps'}</text>
+                  <path class="race-line" d={`M${RACE.x0} ${y}H${RACE.x1}`} />
+                  {lane === 0 &&
+                    Array.from({ length: T_STEPS }, (_, i) => (
+                      <rect class="race-tick is-on" x={RACE.x0 + (i + 1) * tDx - 1} y={y - 5} width="2" height="10" />
+                    ))}
+                  {lane === 1 &&
+                    Array.from({ length: S_STEPS }, (_, k) => (
+                      <path
+                        class="race-hop is-on"
+                        d={`M${RACE.x0 + k * sDx} ${y}Q${RACE.x0 + (k + 0.5) * sDx} ${y - 34} ${RACE.x0 + (k + 1) * sDx} ${y}`}
+                      />
+                    ))}
+                  {lane === 1 &&
+                    Array.from({ length: S_STEPS }, (_, k) => <circle class="race-node is-on" cx={RACE.x0 + (k + 1) * sDx} cy={y} r="4.5" />)}
+                  <circle class="race-start" cx={RACE.x0} cy={y} r="4" />
+                  <text class="race-end" x={RACE.x0} y={y + 26} text-anchor="middle">noise</text>
+                  <text class="race-status is-done" x={RACE.x1} y={y + 26} text-anchor="end" data-race-status>
+                    {lane ? 'done in 6' : 'done in 50'}
+                  </text>
+                  <circle class="race-dot is-done" cx={RACE.x1} cy={y} r="5.5" data-race-dot />
+                  <g transform={`translate(528 ${y - RACE.tile / 2})`}>
+                    <rect width={RACE.tile} height={RACE.tile} fill="#cfe9f2" />
+                    <circle cx="64" cy="30" r="11" fill="#f4b740" />
+                    <path d="M0 66C20 48 40 52 54 62S80 50 92 58V92H0Z" fill="#2c8c5f" />
+                    <path d="M0 78C24 66 50 72 92 70V92H0Z" fill="#1f6b49" />
+                    <rect width={RACE.tile} height={RACE.tile} fill="#888" filter="url(#mo-noise)" opacity="0" data-race-noise />
+                    <rect class="race-frame" x="0.5" y="0.5" width={RACE.tile - 1} height={RACE.tile - 1} />
+                  </g>
+                </g>
+              ))
+            }
+          </svg>
+          <figcaption>
+            Same time per step, fewer steps. Prompts far from the training captions lose accuracy at 5 and 6 steps.
+            The log has the numbers.
+          </figcaption>
+        </figure>
+
+            <dl class="kv">
+          {
+            lcmFacts.map((f, i) => (
+              <div class="rv" data-rv style={`--rv-delay:${120 + i * 70}ms`}>
+                <dt>{f.fig}</dt>
+                <dd>{f.line}</dd>
+              </div>
+            ))
+          }
+        </dl>
+          </div>
+        </div>
+        <footer class="log-foot">
+          <span>Released weights</span>
+          {
+            lcmWeights.map((m) => (
+              <a href={`${HF_URL}/${m}`} target="_blank" rel="noopener noreferrer">
+                Mercity/{m}
+              </a>
+            ))
+          }
+        </footer>
+      </article>
+
+      <article class="log rv" data-rv>
+        <header class="log-head">
+          <span class="log-n" aria-hidden="true">02</span>
+          <div>
+            <span class="log-kind">Layer pruning · LaCo</span>
+            <h3>Qwen3-8B, from 36 layers to 28</h3>
+          </div>
+          <a class="log-go" href={LACO_URL}>Read the log<span aria-hidden="true">→</span></a>
+        </header>
+        <div class="log-body">
+          <div class="ev ev-lead">
+            <dl class="kv">
+              {
+                lacoFacts.map((f, i) => (
+                  <div class="rv" data-rv style={`--rv-delay:${120 + i * 70}ms`}>
+                    <dt>{f.fig}</dt>
+                    <dd>{f.line}</dd>
+                  </div>
+                ))
+              }
+            </dl>
+          <figure class="stack rv" data-rv data-play>
+        <div class="stack-head" aria-hidden="true">
+          <span class="stack-count"><b>36</b><b>28</b> layers</span>
+          <span class="stack-key"><i class="sk-prot"></i>never merged</span>
+          <span class="stack-key"><i class="sk-gone"></i>collapsed</span>
+          <span class="stack-key"><i class="sk-into"></i>the layer they merge into</span>
+        </div>
+        <div class="stack-row" role="img" aria-label="Qwen3-8B’s 36 layers. Eight middle layers collapse into the one below them, leaving 28.">
+          {Array.from({ length: 36 }, (_, i) => <i class={`sl sl-${layerKind(i)}`} />)}
+        </div>
+        <div class="stack-foot" aria-hidden="true">
+          <span>L0</span>
+          <span>Input side</span>
+          <span>Output side</span>
+          <span>L35</span>
+        </div>
+      </figure>
+          </div>
+
+          <div class="ev ev-top">
+            <figure class="rt rv" data-rv data-play>
+          <div class="rt-legend" aria-hidden="true">
+            <span><i class="k-a"></i>28 layers</span>
+            <span><i class="k-b"></i>30 layers</span>
+            <span><i class="k-c"></i>26 layers</span>
+          </div>
+          <div class="rt-axis" aria-hidden="true">
+            <span>Share of the original score kept</span>
+            <div class="rt-ticks"><i>25%</i><i>50</i><i>75</i><i>100%</i></div>
+          </div>
+          <ol class="rt-rows">
+            {
+              retention.map((r, i) => (
+                <li class:list={['rt-row', r.weak && 'rt-weak']} style={`--a:${r.a};--b:${r.b};--c:${r.c};--i:${i}`}>
+                  <span class="rt-name">{r.name}</span>
+                  <span class="rt-track" aria-hidden="true">
+                    <span class="rt-grid"></span>
+                    <span class="rt-bar"></span>
+                    <span class="rt-dot rt-c"></span>
+                    <span class="rt-dot rt-b"></span>
+                    <span class="rt-dot rt-a"></span>
+                  </span>
+                  <span class="rt-val">
+                    <b>{r.a.toFixed(1)}</b> · {r.b.toFixed(1)} · {r.c.toFixed(1)}
+                  </span>
+                </li>
+              ))
+            }
+          </ol>
+          <figcaption>Reasoning holds. Factual recall does not: MMLU keeps 33.7% of its score at 28 layers.</figcaption>
+        </figure>
+
+            <div class="cliff rv" data-rv data-play style="--rv-delay:120ms">
+          <p class="cliff-h">One model, two verdicts <span>28 layers</span></p>
+          <div class="cliff-a">
+            <span class="cliff-who">Perplexity ratio</span>
+            <b>2.01×</b>
+            <span class="cliff-tag">Reads as acceptable.</span>
+          </div>
+          <div class="cliff-a cliff-bad">
+            <span class="cliff-who">MMLU, 5-shot</span>
+            <b>25.89%</b>
+            <span class="cliff-tag">Random chance is 25%.</span>
+          </div>
+          <div class="mm" aria-label="MMLU by layer count: 76.89% at 36 layers, 31.30% at 30, 25.89% at 28, 25.12% at 26." role="img">
+            {
+              mmlu.map((m, i) => (
+                <span class="mm-col" style={`--v:${m.v};--i:${i}`}>
+                  <b>{m.v.toFixed(1)}</b>
+                  <i />
+                  <span>{m.l}L</span>
+                </span>
+              ))
+            }
+            <span class="mm-chance"><em>chance, 25%</em></span>
+          </div>
+          <p class="cliff-note">Perplexity missed it. We test on the tasks you ship.</p>
+        </div>
+          </div>
+        </div>
+        <footer class="log-foot">
+          <span>Released weights</span>
+          {
+            lacoWeights.map((m) => (
+              <a href={`${HF_URL}/${m}`} target="_blank" rel="noopener noreferrer">
+                Mercity/{m}
+              </a>
+            ))
+          }
+          <a class="log-all" href={HF_URL} target="_blank" rel="noopener noreferrer">
+            All {HF_MODELS} models on Hugging Face <span aria-hidden="true">↗</span>
+          </a>
+        </footer>
+      </article>
+    </div>
+  </section>
+
+  <!-- ═══ THE TRADE-OFF ══════════════════════════════════════════ -->
+  <section class="band dark" id="tradeoff">
+    <canvas class="deep-bg" data-backdrop="moDeep" data-seed="4412" data-dpr="0.5" aria-hidden="true"></canvas>
+    <div class="shell">
+      <div class="split-head">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">We optimize on your evals, then ship.</h2>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          Every candidate is scored on your evaluation set.
+        </p>
+      </div>
+
+      <figure class="fr rv" data-rv data-play>
+        <div class="fr-legend" aria-hidden="true">
+          <span><i class="k-cand"></i>candidate</span>
+          <span><i class="k-front"></i>best at its cost</span>
+          <span><i class="k-pick"></i>ships</span>
+          <span class="fr-note">illustration</span>
+        </div>
+        <svg viewBox="0 0 1150 440" role="img" aria-label="Candidates plotted by cost per request and quality. A cost budget and a quality floor bound a target zone; the cheapest candidate inside it is the one that ships.">
+          <path class="fr-axis" d="M20 20V382H1100" />
+          <text class="fr-ax" x="20" y="12">Quality on your eval ↑</text>
+          <text class="fr-ax" x="1100" y="410" text-anchor="end">Cost per request →</text>
+
+          <rect class="fr-zone" x="20" y="30" width={FX(BUDGET) - 20} height={FY(FLOOR) - 30} />
+          <path class="fr-rule fr-budget" d={`M${FX(BUDGET)} 30V382`} />
+          <text class="fr-rule-t" x={FX(BUDGET) + 10} y="376">Your cost and latency budget</text>
+          <path class="fr-rule fr-floor" d={`M20 ${FY(FLOOR)}H1100`} />
+          <text class="fr-rule-t" x="1096" y={FY(FLOOR) + 18} text-anchor="end">Your quality floor</text>
+          <text class="fr-zone-t" x="34" y="50">Target zone</text>
+
+          {behind.map(([c, q], i) => <circle class="fr-pt" cx={FX(c)} cy={FY(q)} r="4" style={`--i:${i}`} />)}
+          <path class="fr-front" d={frontD} pathLength="1" />
+          {
+            front.map((p, i) => (
+              <g class:list={['fr-f', p.kind && `fr-${p.kind}`]} style={`--i:${i}`}>
+                {p.kind === 'pick' && <circle class="fr-ring" cx={FX(p.c)} cy={FY(p.q)} r="15" />}
+                <circle cx={FX(p.c)} cy={FY(p.q)} r={p.kind === 'pick' ? 7 : 5} />
+                {p.label && (
+                  <text x={FX(p.c) + (p.kind === 'pick' ? -14 : 12)} y={FY(p.q) + (p.kind === 'pick' ? -22 : 20)} text-anchor={p.kind === 'pick' ? 'end' : 'start'}>
+                    {p.kind === 'pick' ? `Ships: ${p.label.toLowerCase()}` : p.label}
+                  </text>
+                )}
+                {p.kind === 'low' && (
+                  <text class="fr-low-t" x={FX(p.c) + 12} y={FY(p.q) + 36}>cheaper, below your floor</text>
+                )}
+              </g>
+            ))
+          }
+        </svg>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ═══ WHAT WE DO: SIX TECHNIQUES ═════════════════════════════ -->
+  <section class="band" id="methods">
+    <div class="shell">
+      <div class="split-head">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Methodologies that we pick, to meet targets.</h2>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          We profile your model and use what reaches your number. Usually two or three of these.
+        </p>
+      </div>
+
+      <div class="methods">
+        {
+          methods.map((m, i) => (
+            <article class="method rv" data-rv style={`--rv-delay:${60 + (i % 3) * 70}ms`}>
+              <span class="method-art" aria-hidden="true">
+                <svg viewBox="0 0 220 84" set:html={ART[m.art]} />
+              </span>
+              <h3>{m.title}</h3>
+              <p>{m.line}</p>
+              <span class="method-buys">{m.buys}</span>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ WHERE IT IS USED: BEFORE AND AFTER ═════════════════════ -->
+  <section class="band band-tint wash" id="cases">
+    <canvas class="wash-bg" data-backdrop="moWash" data-seed="7481" data-dpr="0.5" aria-hidden="true"></canvas>
+    <div class="shell">
+      <div class="split-head">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">If this is your situation, we should talk.</h2>
+        <div class="head-ask rv" data-rv style="--rv-delay:160ms">
+          <a class="wipe" href="/contact">
+            <span class="wipe-fill"></span>
+            <span class="wipe-label">Tell us your situation</span>
+            <span class="wipe-label" aria-hidden="true">→</span>
+          </a>
+        </div>
+      </div>
+      <div class="ba" role="table">
+        <div class="ba-row ba-head" role="row">
+          <span role="columnheader">Situation</span>
+          <span role="columnheader">Before</span>
+          <span role="columnheader">After</span>
+        </div>
+        {
+          cases.map((c, i) => (
+            <div class="ba-row rv" data-rv role="row" style={`--rv-delay:${i * 50}ms`}>
+              <span class="ba-what" role="cell">
+                <span class="ba-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" set:html={ICON[c.icon]} />
+                </span>
+                <span>{c.title}</span>
+              </span>
+              <span class="ba-before" role="cell">{c.before}</span>
+              <span class="ba-after" role="cell">{c.after}</span>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ QUESTIONS, ALL OPEN ════════════════════════════════════ -->
+  <section class="band" id="faq">
+    <div class="shell">
+      <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Questions buyers ask.</h2>
+      <div class="qs">
+        {
+          faqs.map((f, i) => (
+            <details class="rv" data-rv data-faq open={i === 0}>
+              <summary>
+                {f.q}
+                <i aria-hidden="true" />
+              </summary>
+              <p>{f.a}</p>
+            </details>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CLOSER ═════════════════════════════════════════════════ -->
+  <section class="end">
+    <canvas class="end-bg" data-backdrop="moStrata" data-seed="6602" data-dpr="0.9" aria-hidden="true"></canvas>
+    <span class="sh-light l1" aria-hidden="true"></span>
+    <span class="sh-light l2" aria-hidden="true"></span>
+    <div class="shell end-in">
+      <div class="glass rv" data-rv>
+        <h2>Send us the model and the number it has to hit.</h2>
+        <p>You get a measured baseline and a plan back.</p>
+        <div class="sh-actions">
+          <a class="wipe" href="/contact">
+            <span class="wipe-fill"></span>
+            <span class="wipe-label">Get a baseline</span>
+            <span class="wipe-label" aria-hidden="true">→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</V2Layout>
+
+<script is:inline>
+  /* ── Hero scroll: the ground frosts, then the copy blurs away.
+     Under the layout's virtual scroll, `v2scroll` fires inside its own
+     frame after the wrapper moves, so we update synchronously there;
+     native scrolling goes through one rAF. ── */
+  (() => {
+    const hero = document.querySelector('[data-sh]');
+    if (!hero) return;
+    const stage = hero.querySelector('.sh-stage');
+    const copy = hero.querySelector('[data-sh-copy]');
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const clamp = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+    const ease = (t) => 1 - Math.pow(1 - t, 3);
+    const update = () => {
+      const r = hero.getBoundingClientRect();
+      const span = r.height - stage.offsetHeight;
+      const p = span > 0 ? clamp(-r.top / span) : 1;
+      hero.style.setProperty('--a', ease(clamp(p / 0.5)).toFixed(4));
+      const o = clamp((p - 0.45) / 0.5);
+      hero.style.setProperty('--o', (o * o).toFixed(4));
+      hero.toggleAttribute('data-leaving', o > 0.001);
+      copy.dataset.live = o < 0.5 ? 'true' : 'false';
+    };
+    let raf = 0;
+    const req = () => {
+      if (!raf)
+        raf = requestAnimationFrame(() => {
+          raf = 0;
+          update();
+        });
+    };
+    window.addEventListener('scroll', () => (document.documentElement.dataset.vscroll ? null : req()), { passive: true });
+    window.addEventListener('v2scroll', update);
+    window.addEventListener('resize', req);
+    update();
+  })();
+
+  /* ── Hero squeeze: the two published runs, one at a time. The stack
+     shows at full size, the plates that go are outlined, then they
+     slide out and the rest drops inside the wireframe of the original
+     size. Only classes, text, attributes and inline transforms change,
+     so the page's styles always apply. Runs only while the hero is on screen;
+     without the script the markup shows the first run, finished. ── */
+  (() => {
+    const fig = document.querySelector('[data-sq]');
+    if (!fig || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const runs = JSON.parse(fig.dataset.sq);
+    const stack = fig.querySelector('[data-sq-stack]');
+    const plates = [...stack.querySelectorAll('.pl')];
+    const q = (k) => fig.querySelector(`[data-sq-${k}]`);
+    const notes = [...fig.querySelectorAll('[data-sq-note]')];
+    // The frontmatter's ISO, repeated.
+    const CX = 130;
+    const A = 112;
+    const B = 36;
+    const BASE = 396;
+    const H = 330;
+    const SLIDE = [48, 15];
+    let n = 0;
+    let timers = [];
+    let running = false;
+    const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+    const clear = () => {
+      timers.forEach(clearTimeout);
+      timers = [];
+    };
+    // Put every plate where `state` wants it: 'full' is the original
+    // stack; 'cut' slides the cut plates out along the plate's own axis
+    // and drops the rest onto what is left.
+    const place = (r, state) => {
+      const gone = new Set(r.cut);
+      const p = H / (r.n - 1);
+      const done = state === 'cut';
+      let rank = 0;
+      let k = 0;
+      plates.forEach((g, i) => {
+        if (i >= r.n) return;
+        const c = gone.has(i);
+        const x = CX + (c && done ? SLIDE[0] : 0);
+        const y = c ? BASE - i * p + (done ? SLIDE[1] : 0) : BASE - (done ? rank : i) * p;
+        if (!c) rank++;
+        g.style.transitionDelay = c ? `${(k++ % 11) * 35}ms` : done ? '520ms' : '0ms';
+        g.style.transform = `translate(${x}px,${y.toFixed(2)}px)`;
+        g.style.opacity = c && done ? 0 : 1;
+      });
+      stack.dataset.state = state;
+    };
+    const set = (r) => {
+      const gone = new Set(r.cut);
+      const t = (H / (r.n - 1)) * 0.6;
+      stack.dataset.swap = 'true';
+      plates.forEach((g, i) => {
+        g.classList.toggle('is-off', i >= r.n);
+        g.classList.toggle('is-cut', gone.has(i));
+        const [l, rt] = g.children;
+        l.setAttribute('points', `${-A},0 0,${B} 0,${B + t} ${-A},${t}`);
+        rt.setAttribute('points', `0,${B} ${A},0 ${A},${t} 0,${B + t}`);
+      });
+      place(r, 'full');
+      void stack.getBoundingClientRect();
+      delete stack.dataset.swap;
+      q('tech').textContent = r.tech;
+      q('model').textContent = r.model;
+      q('from').textContent = r.from;
+      q('to').textContent = r.to;
+      q('unit').textContent = r.unit;
+      notes.forEach((el, i) => (el.textContent = r.notes[i]));
+    };
+    const squeeze = () => {
+      place(runs[n], 'full');
+      later(() => (stack.dataset.state = 'mark'), 1000);
+      later(() => place(runs[n], 'cut'), 2300);
+      later(next, 8600);
+    };
+    const next = () => {
+      if (!running) return;
+      fig.dataset.fade = 'true';
+      later(() => {
+        n = (n + 1) % runs.length;
+        set(runs[n]);
+        later(() => {
+          fig.dataset.fade = 'false';
+          squeeze();
+        }, 120);
+      }, 650);
+    };
+    new IntersectionObserver((e) => {
+      const on = e[0].isIntersecting;
+      if (on === running) return;
+      running = on;
+      clear();
+      if (on) later(squeeze, 1900);
+    }).observe(fig);
+  })();
+
+  /* ── Play once: any [data-play] gets data-on when it is well in view.
+     Reduced motion shows the finished state at once. ── */
+  (() => {
+    const els = [...document.querySelectorAll('[data-play]')];
+    if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      els.forEach((el) => (el.dataset.on = 'true'));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) =>
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          e.target.dataset.on = 'true';
+          io.unobserve(e.target);
+        }),
+      { threshold: 0.35 }
+    );
+    els.forEach((el) => io.observe(el));
+  })();
+
+  /* ── The race: both dots leave noise together and take the same
+     time per step. The distilled model is done after six; the base
+     model is still on its way. Each lane's picture clears as it
+     goes. Loops while on screen; without the script, or with reduced
+     motion, the markup already shows both lanes finished. ── */
+  (() => {
+    const fig = document.querySelector('[data-race]');
+    if (!fig || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const X0 = 150;
+    const X1 = 500;
+    const STEP = 130;
+    const HOLD = 2200;
+    const lanes = [...fig.querySelectorAll('[data-lane]')].map((g, i) => {
+      const n = i ? 6 : 50;
+      return {
+        n,
+        dx: (X1 - X0) / n,
+        y: Number(g.querySelector('[data-race-dot]').getAttribute('cy')),
+        dot: g.querySelector('[data-race-dot]'),
+        noise: g.querySelector('[data-race-noise]'),
+        status: g.querySelector('[data-race-status]'),
+        marks: [...g.querySelectorAll(i ? '.race-node' : '.race-tick')],
+        hops: [...g.querySelectorAll('.race-hop')],
+        hop: i === 1,
+        shown: -1,
+      };
+    });
+    const draw = (t) => {
+      lanes.forEach((ln) => {
+        const s = Math.min(ln.n, t / STEP);
+        const k = Math.floor(s);
+        const f = s - k;
+        ln.dot.setAttribute('cx', (X0 + s * ln.dx).toFixed(1));
+        if (ln.hop) ln.dot.setAttribute('cy', (ln.y - (s < ln.n ? Math.sin(f * Math.PI) * 17 : 0)).toFixed(1));
+        ln.noise.setAttribute('opacity', (1 - Math.pow(s / ln.n, 1.6)).toFixed(3));
+        if (k === ln.shown) return;
+        ln.shown = k;
+        ln.marks.forEach((m, i) => m.classList.toggle('is-on', i < k));
+        ln.hops.forEach((m, i) => m.classList.toggle('is-on', i < k));
+        ln.dot.classList.toggle('is-done', k >= ln.n);
+        ln.status.classList.toggle('is-done', k >= ln.n);
+        ln.status.textContent = k >= ln.n ? `done in ${ln.n}` : `step ${k} of ${ln.n}`;
+      });
+    };
+    let t0 = 0;
+    let raf = 0;
+    let running = false;
+    const frame = (now) => {
+      raf = 0;
+      if (!running) return;
+      if (!t0 || now - t0 > 50 * STEP + HOLD) t0 = now;
+      draw(now - t0);
+      raf = requestAnimationFrame(frame);
+    };
+    new IntersectionObserver(
+      (e) => {
+        running = e[0].isIntersecting;
+        if (running && !raf) {
+          t0 = 0;
+          raf = requestAnimationFrame(frame);
+        }
+      },
+      { threshold: 0.3 }
+    ).observe(fig);
+  })();
+
+</script>
+
+<script>
+  import { initFaq } from '@/scripts/faq';
+
+  initFaq();
+</script>
+
+<style>
+  /* ── Page tokens ── */
+  section {
+    /* Sage neutrals for this page: the site's blue-grey pulled toward
+       green, so no ground reads as grey against the strata. */
+    --n-50: hsl(110 40% 98%);
+    --n-100: hsl(108 34% 95.4%);
+    --n-200: hsl(112 20% 89%);
+    --n-300: hsl(116 13% 80%);
+    --n-400: hsl(125 8% 60%);
+    --n-500: hsl(135 8% 43%);
+    --line: hsl(112 20% 89%);
+    --line-2: hsl(116 13% 80%);
+    --ink: hsl(156 24% 9%);
+    --ink-2: hsl(154 15% 24%);
+    --ink-3: hsl(150 9% 40%);
+    /* Deep ground: pine, dark enough to hold white type. */
+    --deep-950: hsl(158 38% 7%);
+    /* The page's accent: a leaf green, for icons and graphics. */
+    --leaf: hsl(152 52% 36%);
+    --leaf-100: hsl(108 62% 93%);
+    --leaf-200: hsl(120 46% 82%);
+    --leaf-700: hsl(158 58% 23%);
+    --on-dark: hsl(88 72% 76%);
+    --pick: hsl(72 90% 62%);
+    /* Every section runs at the synthetic data page's 1300px, so the
+       hero's readout fits each note on one line and all edges still
+       line up. The nav and footer are in the layout and keep 1150px. */
+    --shell: 1300px;
+  }
+
+  /* ── Shared bits ───────────────────────────────────────────── */
+  section .h2 {
+    margin-top: 0;
+  }
+  .lede {
+    text-wrap: pretty;
+  }
+  ol,
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .split-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 44ch);
+    gap: 18px clamp(36px, 5vw, 72px);
+    align-items: end;
+  }
+  .split-head .h2 {
+    max-width: 24ch;
+  }
+  .h2-note {
+    font-style: italic;
+    color: var(--leaf-700);
+  }
+  .split-head .lede {
+    margin-top: 0;
+    padding-bottom: 5.4px;
+  }
+  /* A button in the lede's place, at the head's right edge. */
+  .head-ask {
+    display: flex;
+    justify-content: flex-end;
+    padding-bottom: 5.4px;
+  }
+  @media (max-width: 860px) {
+    .head-ask {
+      justify-content: flex-start;
+    }
+    .split-head {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .quiet {
+    display: inline-flex;
+    align-items: center;
+    gap: 7.2px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    transition: color 300ms var(--ease);
+  }
+  .quiet span {
+    transition: transform 400ms var(--ease);
+  }
+  .quiet:hover span {
+    transform: translateY(3px);
+  }
+  /* 24-grid line icons. */
+  .symptom-icon svg,
+  .ba-icon svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  figure figcaption {
+    font-family: var(--mono);
+    font-size: 10.35px;
+    line-height: 1.65;
+    color: var(--ink-3);
+  }
+
+  /* ══ HERO ═══════════════════════════════════════════════════════
+     The service pages' pinned scroll, on green strata. --a runs
+     0 → 1 as the ground frosts over, then --o as the copy blurs away. */
+  .sh {
+    --a: 0;
+    --o: 0;
+    position: relative;
+    height: 190svh;
+    background: hsl(96 60% 92%);
+  }
+  .sh-stage {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+    overflow: hidden;
+    color: var(--ink);
+    will-change: transform;
+  }
+  :global(html[data-vscroll]) .sh-stage {
+    position: relative;
+  }
+  .sh-plate {
+    position: absolute;
+    inset: 0;
+    background: hsl(110 56% 84%);
+  }
+  .sh-plate canvas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+  }
+  .sh-sharp {
+    inset: 0;
+  }
+  .sh-plate .sh-soft {
+    inset: -8%;
+    width: 116%;
+    height: 116%;
+    filter: blur(26px) saturate(1.1);
+    opacity: var(--a);
+  }
+  /* Soft lights drifting on the ground: jade, lime and a little aqua,
+     kept pale so the ground does not shout. */
+  .sh-light {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(70px);
+    animation: drift 22s ease-in-out infinite alternate;
+  }
+  .sh-light.l1 {
+    width: 46vw;
+    height: 46vw;
+    left: -10vw;
+    top: -16vw;
+    background: hsl(160 70% 56% / 0.36);
+  }
+  .sh-light.l2 {
+    width: 38vw;
+    height: 38vw;
+    right: -8vw;
+    bottom: -14vw;
+    background: hsl(70 96% 80% / 0.55);
+    animation-duration: 28s;
+    animation-delay: -9s;
+  }
+  .sh-light.l3 {
+    width: 30vw;
+    height: 30vw;
+    left: 38vw;
+    top: 30%;
+    background: hsl(186 80% 66% / 0.2);
+    animation-duration: 34s;
+    animation-delay: -17s;
+    opacity: calc(0.4 + var(--a) * 0.6);
+  }
+  @keyframes drift {
+    to {
+      transform: translate3d(6vw, 4vw, 0) scale(1.12);
+    }
+  }
+  .sh-shade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, hsl(96 80% 93% / 0.62) 0%, hsl(96 80% 93% / 0.18) 50%, transparent 80%);
+  }
+  @keyframes focus-in {
+    from {
+      opacity: 0;
+      filter: blur(24px);
+      transform: scale(1.05);
+    }
+  }
+  .sh-copy {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    padding-bottom: var(--nav-h);
+    pointer-events: none;
+  }
+  .sh-copy[data-live='true'] {
+    pointer-events: auto;
+  }
+  .sh-copy-in {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+    gap: clamp(32px, 4vw, 64px);
+    align-items: center;
+    opacity: calc(1 - var(--o));
+    transform: translateY(calc(var(--o) * -6vh)) scale(calc(1 - var(--o) * 0.03));
+  }
+  .sh[data-leaving] .sh-copy-in {
+    filter: blur(calc(var(--o) * 18px));
+  }
+  .sh-in {
+    animation: focus-in 1400ms var(--ease) 120ms both;
+  }
+  .sh-in.d1 {
+    animation-delay: 320ms;
+  }
+  .sh-in.d2 {
+    animation-delay: 520ms;
+  }
+  .sh-in.d3 {
+    animation-delay: 760ms;
+  }
+  .sh-copy:focus-within .sh-copy-in {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+  .sh-copy h1 {
+    font-family: var(--hero-serif);
+    font-size: clamp(34px, 4.9vw, 64px);
+    font-weight: 400;
+    line-height: 1.06;
+    letter-spacing: -0.028em;
+  }
+  /* The lead clause holds the first line on its own; the rest balances under it. */
+  .sh-h1-lead,
+  .sh-h1-rest {
+    display: block;
+  }
+  .sh-h1-lead {
+    white-space: nowrap;
+  }
+  .sh-h1-rest {
+    text-wrap: balance;
+  }
+  .nowrap {
+    white-space: nowrap;
+  }
+  .sh-text p {
+    margin-top: 24px;
+    max-width: 54ch;
+    font-size: clamp(14.85px, 1.4vw, 16.65px);
+    line-height: 1.74;
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+  .sh-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 27px;
+    margin-top: 34px;
+  }
+
+  /* The squeeze: no card. An isometric stack of plates sits straight
+     on the ground inside a dashed wireframe of its original size; the
+     plates that go are outlined, slide out, and the rest drops to the
+     bottom of the wireframe. The readout beside it names the run, in a
+     fixed column wide enough that every note holds one line, so the
+     stack does not resize when the runs swap. */
+  .sq {
+    display: grid;
+    grid-template-columns: minmax(0, 216px) 280px;
+    gap: clamp(22px, 2.6vw, 34px);
+    align-items: center;
+    margin: 0;
+  }
+  .sq-stack {
+    position: relative;
+  }
+  .sq-stack svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    transition:
+      opacity 600ms var(--ease),
+      filter 600ms var(--ease);
+  }
+  .sq-wire {
+    fill: none;
+    stroke: hsl(156 30% 14% / 0.5);
+    stroke-width: 0.9;
+    stroke-dasharray: 3 3;
+  }
+  .pl {
+    transition:
+      transform 950ms var(--ease),
+      opacity 700ms var(--ease);
+  }
+  .pl.is-off {
+    display: none;
+  }
+  .sq-stack[data-swap] .pl {
+    transition: none;
+  }
+  .pl polygon {
+    stroke: hsl(156 30% 11%);
+    stroke-width: 0.7;
+    stroke-linejoin: round;
+    transition:
+      fill 450ms var(--ease),
+      stroke-opacity 450ms var(--ease);
+  }
+  .pl-top {
+    fill: hsl(104 62% 90%);
+  }
+  .pl-l {
+    fill: hsl(156 30% 11%);
+  }
+  .pl-r {
+    fill: hsl(156 24% 23%);
+  }
+  .sq-stack[data-state='mark'] .is-cut polygon,
+  .sq-stack[data-state='cut'] .is-cut polygon {
+    fill: hsl(104 62% 90% / 0.35);
+    stroke-opacity: 0.55;
+    stroke-dasharray: 2 2;
+  }
+  .sq .sq-read {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-family: var(--sans);
+    font-size: inherit;
+    transition:
+      opacity 600ms var(--ease),
+      filter 600ms var(--ease);
+  }
+  .sq[data-fade='true'] .sq-read,
+  .sq[data-fade='true'] .sq-stack svg {
+    opacity: 0;
+    filter: blur(6px);
+  }
+  .sq-tech {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--leaf-700);
+  }
+  .sq-model {
+    margin-top: 6px;
+    font-family: var(--hero-serif);
+    font-size: 25.2px;
+    line-height: 1.2;
+    letter-spacing: -0.016em;
+    color: var(--ink);
+  }
+  .sq-fig {
+    display: flex;
+    align-items: baseline;
+    gap: 0.16em;
+    margin-top: 22px;
+    font-family: var(--hero-serif);
+    font-size: clamp(52px, 5.6vw, 78px);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  .sq-fig span,
+  .sq-fig i {
+    font-style: normal;
+    color: hsl(156 30% 14% / 0.42);
+  }
+  .sq-fig i {
+    font-size: 0.6em;
+    letter-spacing: 0;
+  }
+  .sq-fig b {
+    font-weight: 400;
+  }
+  .sq-unit {
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 10.8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .sq-notes {
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid hsl(156 30% 14% / 0.2);
+  }
+  .sq-notes li {
+    position: relative;
+    padding-left: 16px;
+    font-size: 13.95px;
+    line-height: 1.75;
+    white-space: nowrap;
+    color: var(--ink-2);
+  }
+  .sq-notes li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.72em;
+    width: 6px;
+    height: 6px;
+    background: var(--ink);
+  }
+  .sq-src {
+    margin-top: 18px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* Below 1100px the readout's fixed column would squeeze the stack,
+     so the figure goes and the copy takes the width. */
+  @media (max-width: 1100px) {
+    .sh-copy-in {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .sq {
+      display: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sh {
+      height: auto;
+    }
+    .sh-stage {
+      position: relative;
+    }
+    .sh-light,
+    .sh-in {
+      animation: none;
+    }
+  }
+
+  /* ══ WASH: a pale green blur field behind a section, the light
+     counterpart of the trade-off section's moDeep. Drawn once at low
+     resolution; content stacks above it. */
+  .wash {
+    position: relative;
+    overflow: hidden;
+  }
+  .wash-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .wash > :not(.wash-bg) {
+    position: relative;
+    z-index: 1;
+  }
+  .wash .lede {
+    color: var(--ink-2);
+  }
+
+  /* ══ THE NUMBER ══════════════════════════════════════════════
+     The cost slope on the left: two lines draw from the origin and
+     the wedge between them fills. The four targets on the right, each
+     ending in the result we can point to. */
+  .why {
+    display: grid;
+    grid-template-columns: minmax(0, 6.1fr) minmax(0, 5.9fr);
+    gap: 14px;
+    margin-top: 46px;
+  }
+  .slope {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin: 0;
+    padding: 20px 16px 18px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .slope svg {
+    display: block;
+    margin-block: auto;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    font-family: var(--mono);
+  }
+  .slope-axis {
+    fill: none;
+    stroke: var(--line-2);
+  }
+  .slope-gap {
+    fill: var(--leaf-100);
+    opacity: 0;
+    transition: opacity 700ms var(--ease) 900ms;
+  }
+  .slope-now,
+  .slope-opt {
+    fill: none;
+    stroke-width: 2;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    transition: stroke-dashoffset 1200ms var(--ease) 200ms;
+  }
+  /* Today's curve is red: the cost that keeps climbing. */
+  .slope-now {
+    stroke: hsl(4 72% 52%);
+  }
+  .slope-l-now {
+    fill: hsl(4 66% 42%);
+    font-weight: 500;
+  }
+  .slope-opt {
+    stroke: var(--teal-500);
+    stroke-width: 2.6;
+    transition-delay: 500ms;
+  }
+  .slope-t {
+    font-size: 9.5px;
+    fill: var(--ink-3);
+  }
+  .slope-l,
+  .slope-mid {
+    font-size: 11px;
+    fill: var(--ink-3);
+    opacity: 0;
+    transition: opacity 500ms var(--ease) 1200ms;
+  }
+  .slope-l-opt {
+    fill: var(--teal-700);
+    font-weight: 500;
+  }
+  .slope-mid {
+    font-family: var(--hero-serif);
+    font-size: 17px;
+    font-style: italic;
+    fill: var(--leaf-700);
+  }
+  /* The wedge's label sits clear of the lines, upper left, with an
+     arrow into the green. */
+  .slope-arrow {
+    fill: none;
+    stroke: var(--leaf-700);
+    stroke-width: 1.2;
+    opacity: 0;
+    transition: opacity 500ms var(--ease) 1200ms;
+  }
+  .slope[data-on='true'] .slope-gap,
+  .slope[data-on='true'] .slope-l,
+  .slope[data-on='true'] .slope-mid,
+  .slope[data-on='true'] .slope-arrow {
+    opacity: 1;
+  }
+  .slope[data-on='true'] .slope-now,
+  .slope[data-on='true'] .slope-opt {
+    stroke-dashoffset: 0;
+  }
+  .slope figcaption {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .symptoms {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    /* Two rows of cards, four tracks each; the line track takes the
+       spare height so the proofs sit at the bottom. */
+    grid-template-rows: auto auto 1fr auto auto auto 1fr auto;
+    gap: 14px;
+  }
+  .symptom {
+    padding: 24px 24px 26px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .symptom-icon {
+    display: block;
+    width: 26px;
+    height: 26px;
+    color: var(--leaf-700);
+  }
+  .symptom h3 {
+    margin-top: 20px;
+    font-family: var(--hero-serif);
+    font-size: 21.6px;
+    font-weight: 400;
+    line-height: 1.2;
+    letter-spacing: -0.014em;
+  }
+  /* Each card spans four rows of the grid (icon, title, line, proof)
+     and shares them with the card beside it, so the dashed rules
+     above the proofs line up across a row whatever wraps. */
+  .symptom {
+    display: grid;
+    grid-row: span 4;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+    align-content: start;
+  }
+  .symptom-proof {
+    display: block;
+    align-self: end;
+    padding-top: 14px;
+    border-top: 1px dashed var(--line-2);
+    font-size: 13.05px;
+    font-weight: 500;
+    line-height: 1.45;
+    color: var(--teal-800);
+  }
+  .proof-t {
+    text-decoration: underline 1px transparent;
+    text-underline-offset: 3px;
+    transition: text-decoration-color 300ms var(--ease);
+  }
+  .symptom-proof:hover .proof-t {
+    text-decoration-color: currentColor;
+  }
+  /* The ↗ sits high and small, like a superscript, and lifts toward
+     its corner on hover. */
+  .proof-go {
+    display: inline-block;
+    margin-left: 3px;
+    font-size: 0.8em;
+    vertical-align: 0.35em;
+    line-height: 0;
+    transition: transform 300ms var(--ease);
+  }
+  .symptom-proof:hover .proof-go {
+    transform: translate(2px, -2px);
+  }
+  .symptom-proof small {
+    display: block;
+    margin-bottom: 3px;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .symptom p {
+    padding-bottom: 18px;
+    margin-top: 8px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--ink-3);
+    text-wrap: pretty;
+  }
+  @media (max-width: 900px) {
+    .why {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  @media (max-width: 480px) {
+    .symptoms {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: none;
+    }
+  }
+
+  /* ══ METHODS ═════════════════════════════════════════════════
+     Six tiles, each a small diagram of the mechanism over one line
+     and what it buys. */
+  .methods {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 44px;
+  }
+  .method {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    transition:
+      border-color 500ms var(--ease),
+      transform 500ms var(--ease),
+      box-shadow 500ms var(--ease);
+  }
+  .method:hover {
+    border-color: var(--leaf-200);
+    transform: translateY(-2px);
+    box-shadow: 0 18px 36px -26px hsl(150 50% 20% / 0.3);
+  }
+  .method > :not(.method-art) {
+    margin-inline: 22px;
+  }
+  .method-art {
+    display: block;
+    padding: 18px 22px 12px;
+    background: var(--n-50);
+    border-bottom: 1px solid var(--line);
+  }
+  .method-art svg {
+    display: block;
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+    overflow: visible;
+    font-family: var(--mono);
+  }
+  .method h3 {
+    margin-top: 20px;
+    font-family: var(--hero-serif);
+    font-size: 21.6px;
+    font-weight: 400;
+    letter-spacing: -0.014em;
+  }
+  .method p {
+    margin-top: 6px;
+    padding-bottom: 18px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--ink-3);
+    text-wrap: pretty;
+  }
+  .method-buys {
+    margin-top: auto;
+    padding-top: 13px;
+    border-top: 1px dashed var(--line-2);
+    font-size: 13.05px;
+    font-weight: 500;
+    color: var(--teal-800);
+  }
+  @media (max-width: 960px) {
+    .methods {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 600px) {
+    .methods {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* ══ THE PUBLISHED RUNS ══════════════════════════════════════
+     One section, two logs. Each log is a white panel: a numbered
+     header with the link to the write-up, the figures, and a foot
+     with the released weights. The figures inside drop their own
+     frames, so the panel is the only box. */
+  .log {
+    margin-top: 46px;
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+  }
+  .log + .log {
+    margin-top: 22px;
+  }
+  .log-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 6px clamp(18px, 2.4vw, 30px);
+    align-items: center;
+    padding: 22px 28px;
+    border-bottom: 1px solid var(--line);
+  }
+  .log-n {
+    font-family: var(--hero-serif);
+    font-size: clamp(40px, 4.4vw, 58px);
+    font-style: italic;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--leaf);
+  }
+  .log-kind {
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--leaf-700);
+  }
+  .log-head h3 {
+    margin-top: 4px;
+    font-family: var(--hero-serif);
+    font-size: clamp(21px, 2.3vw, 28.8px);
+    font-weight: 400;
+    line-height: 1.2;
+    letter-spacing: -0.018em;
+    text-wrap: balance;
+  }
+  /* About 10% larger than the site's mono buttons and set at 600, so
+     the way into each log draws the eye. */
+  .log-go {
+    display: inline-flex;
+    gap: 8px;
+    padding: 11px 15.5px;
+    font-family: var(--mono);
+    font-size: 10.8px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--indigo-600);
+    border: 1px solid var(--line-2);
+    transition: border-color 400ms var(--ease);
+  }
+  .log-go:hover {
+    border-color: var(--indigo-500);
+  }
+  .log-go span {
+    transition: transform 400ms var(--ease);
+  }
+  .log-go:hover span {
+    transform: translateX(3px);
+  }
+  .log-body {
+    padding: 28px;
+  }
+  .log .ev {
+    margin-top: 0;
+  }
+  /* Second log: its three figures left, the layer stack right. */
+  .log .ev-lead {
+    grid-template-columns: minmax(0, 3.6fr) minmax(0, 8.4fr);
+    gap: clamp(24px, 3vw, 40px);
+    align-items: stretch;
+  }
+  .log .ev-lead .stack {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .log .ev-lead .kv > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+  .log .ev-top {
+    margin-top: 28px;
+    gap: clamp(24px, 3vw, 40px);
+  }
+  .log .race,
+  .log .rt {
+    padding: 0;
+    border: 0;
+  }
+  .log .stack {
+    margin: 0;
+  }
+  .log .cliff {
+    border: 0;
+    background: var(--n-50);
+  }
+  .log .mm-chance em {
+    background: var(--n-50);
+  }
+  .log-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    background: var(--n-50);
+    border-top: 1px solid var(--line);
+  }
+  .log-foot > span {
+    margin-right: 10px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .log-foot {
+    column-gap: 22px;
+  }
+  .log-foot a {
+    font-family: var(--mono);
+    font-size: 10.8px;
+    color: var(--ink-2);
+    text-decoration: underline;
+    text-decoration-color: var(--line-2);
+    text-underline-offset: 4px;
+    transition:
+      text-decoration-color 400ms var(--ease),
+      color 400ms var(--ease);
+  }
+  .log-foot a:hover {
+    color: var(--teal-800);
+    text-decoration-color: var(--teal-500);
+  }
+  .log-foot .log-all {
+    margin-left: auto;
+    color: var(--indigo-600);
+    text-decoration: none;
+  }
+  @media (max-width: 700px) {
+    .log-head {
+      grid-template-columns: auto minmax(0, 1fr);
+      padding: 18px;
+    }
+    .log-go {
+      grid-column: 1 / -1;
+      justify-self: start;
+    }
+    .log-body {
+      padding: 18px;
+    }
+    .log-foot {
+      padding: 14px 18px;
+    }
+    .log-foot .log-all {
+      margin-left: 0;
+    }
+  }
+
+  /* ══ EVIDENCE ════════════════════════════════════════════════ */
+  .ev {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: clamp(28px, 4vw, 56px);
+    margin-top: 46px;
+    align-items: start;
+  }
+  .ev-top {
+    margin-top: 14px;
+    gap: 14px;
+    align-items: stretch;
+  }
+  @media (max-width: 960px) {
+    .ev {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* The race: two lanes from noise to image. Grey ticks are steps not
+     yet taken, teal ones are done. */
+  .race {
+    margin: 0;
+    padding: 24px 24px 18px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .race svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    font-family: var(--mono);
+  }
+  .race-name {
+    font-family: var(--hero-serif);
+    font-size: 15px;
+    fill: var(--ink);
+  }
+  .race-sub,
+  .race-end,
+  .race-status {
+    font-size: 9.5px;
+    fill: var(--ink-3);
+  }
+  .race-status.is-done {
+    fill: var(--teal-700);
+    font-weight: 500;
+  }
+  .race-line {
+    fill: none;
+    stroke: var(--line-2);
+  }
+  .race-tick {
+    fill: var(--n-300);
+  }
+  .race-tick.is-on {
+    fill: var(--teal-500);
+  }
+  .race-hop {
+    fill: none;
+    stroke: var(--line-2);
+    stroke-dasharray: 3 4;
+  }
+  .race-hop.is-on {
+    stroke: var(--teal-500);
+    stroke-dasharray: none;
+    stroke-width: 1.6;
+  }
+  .race-node {
+    fill: var(--surface);
+    stroke: var(--n-400);
+    stroke-width: 1.4;
+  }
+  .race-node.is-on {
+    fill: var(--teal-500);
+    stroke: var(--teal-500);
+  }
+  .race-start {
+    fill: var(--surface);
+    stroke: var(--ink-3);
+    stroke-width: 1.4;
+  }
+  .race-dot {
+    fill: var(--ink);
+    stroke: var(--surface);
+    stroke-width: 2.5;
+  }
+  .race-dot.is-done {
+    fill: var(--teal-700);
+  }
+  .race-frame {
+    fill: none;
+    stroke: var(--line-2);
+  }
+  .race figcaption {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+
+  /* The four facts beside the race, stacked. */
+  .kv {
+    margin: 0;
+    border-top: 1px solid var(--line-2);
+  }
+  .kv > div {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr);
+    gap: 16px;
+    align-items: baseline;
+    padding-block: 19px;
+    border-bottom: 1px solid var(--line-2);
+  }
+  .kv dt {
+    font-family: var(--hero-serif);
+    font-size: clamp(25px, 2.7vw, 33px);
+    line-height: 1;
+    letter-spacing: -0.018em;
+    color: var(--teal-700);
+    white-space: nowrap;
+  }
+  .kv dd {
+    margin: 0;
+    font-size: 13.05px;
+    line-height: 1.55;
+    color: var(--ink-2);
+  }
+
+  /* The layer stack: 36 cells. On view, six collapse into the one
+     beside them and the row closes up to 30 full cells. */
+  .stack {
+    margin: 46px 0 0;
+    padding: 22px 24px 18px;
+    background: var(--n-50);
+    border: 1px solid var(--line);
+  }
+  .stack-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 22px;
+    font-size: 12.6px;
+    color: var(--ink-2);
+  }
+  .stack-count {
+    position: relative;
+    margin-right: auto;
+    padding-left: 1.5em;
+    font-family: var(--hero-serif);
+    font-size: 21.6px;
+    letter-spacing: -0.014em;
+    color: var(--ink);
+  }
+  .stack-count b {
+    position: absolute;
+    left: 0;
+    font-weight: 400;
+    color: var(--teal-700);
+    transition: opacity 500ms var(--ease) 900ms;
+  }
+  .stack-count b + b {
+    opacity: 0;
+  }
+  .stack[data-on='true'] .stack-count b {
+    opacity: 0;
+  }
+  .stack[data-on='true'] .stack-count b + b {
+    opacity: 1;
+  }
+  .stack-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .stack-key i {
+    width: 10px;
+    height: 14px;
+  }
+  .sk-prot,
+  .sl.sl-prot {
+    background: repeating-linear-gradient(135deg, var(--n-400) 0 1.5px, var(--n-200) 1.5px 5px);
+  }
+  .sk-gone {
+    border: 1px dashed var(--amber-500);
+  }
+  .sk-into {
+    background: var(--teal-500);
+  }
+  .stack-row {
+    display: flex;
+    height: 76px;
+    margin-top: 18px;
+  }
+  .sl {
+    flex: 1 1 0;
+    min-width: 0;
+    margin-right: 3px;
+    background: var(--n-300);
+    transition:
+      flex-grow 1100ms var(--ease) 600ms,
+      flex-basis 1100ms var(--ease) 600ms,
+      margin 1100ms var(--ease) 600ms,
+      background 500ms var(--ease) 300ms;
+  }
+  .sl:last-child {
+    margin-right: 0;
+  }
+  .sl.sl-gone {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--amber-500);
+  }
+  /* Collapsed layers end as amber slivers beside the layer that
+     absorbed them, so the finished row still shows where they were. */
+  .stack[data-on='true'] .sl-gone {
+    flex-grow: 0;
+    flex-basis: 2px;
+    margin-right: 2px;
+  }
+  .stack[data-on='true'] .sl-into {
+    background: var(--teal-500);
+  }
+  .stack-foot {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--n-500);
+  }
+  .stack-foot span:nth-child(2) {
+    margin: 0 auto 0 14px;
+  }
+  .stack-foot span:nth-child(3) {
+    margin-right: 14px;
+  }
+  @media (max-width: 560px) {
+    .sl {
+      margin-right: 1px;
+    }
+    .stack-row {
+      height: 52px;
+    }
+  }
+
+  /* Retention: one row per benchmark, three dots. All three start at
+     100% and slide left to what each pruned model kept. */
+  .rt {
+    margin: 0;
+    padding: 24px 24px 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .rt-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 22px;
+    font-size: 12.6px;
+    color: var(--ink-2);
+  }
+  .rt-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .rt-legend i {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .k-a,
+  .rt-a {
+    background: var(--teal-500);
+  }
+  .k-b,
+  .rt-b {
+    background: hsl(178 44% 70%);
+  }
+  .k-c,
+  .rt-c {
+    background: var(--surface);
+    border: 1.6px solid var(--n-400);
+  }
+  .rt-axis,
+  .rt-row {
+    display: grid;
+    grid-template-columns: 118px minmax(0, 1fr) 132px;
+  }
+  .rt-axis {
+    margin-top: 20px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--n-500);
+  }
+  .rt-axis > span {
+    align-self: end;
+    padding-right: 10px;
+    line-height: 1.4;
+  }
+  .rt-ticks {
+    display: flex;
+    justify-content: space-between;
+    align-self: end;
+  }
+  .rt-ticks i {
+    font-style: normal;
+    width: 0;
+    display: flex;
+    justify-content: center;
+    white-space: nowrap;
+  }
+  .rt-rows {
+    margin-top: 8px;
+  }
+  .rt-row {
+    align-items: center;
+    min-height: 36px;
+    border-top: 1px solid var(--line);
+  }
+  .rt-name {
+    padding-right: 10px;
+    font-size: 12.6px;
+    color: var(--ink-2);
+  }
+  .rt-track {
+    position: relative;
+    height: 36px;
+  }
+  .rt-grid {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px calc(100% / 3));
+    opacity: 0.8;
+  }
+  .rt-bar {
+    position: absolute;
+    top: 50%;
+    height: 2px;
+    margin-top: -1px;
+    left: calc((var(--c) - 25) * 1% / 0.75);
+    right: 0;
+    background: var(--teal-500);
+    opacity: 0.28;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 1100ms var(--ease) calc(300ms + var(--i) * 90ms);
+  }
+  .rt-dot {
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    width: 11px;
+    height: 11px;
+    margin: -5.5px 0 0 -5.5px;
+    border-radius: 50%;
+    transition: left 1100ms var(--ease) calc(300ms + var(--i) * 90ms);
+  }
+  .rt-a {
+    box-shadow: 0 0 0 3px var(--surface);
+  }
+  /* The axis starts at 25% (chance on MMLU), so a value v sits at
+     (v - 25) / 75 of the track. */
+  [data-on='true'] .rt-a {
+    left: calc((var(--a) - 25) * 1% / 0.75);
+  }
+  [data-on='true'] .rt-b {
+    left: calc((var(--b) - 25) * 1% / 0.75);
+  }
+  [data-on='true'] .rt-c {
+    left: calc((var(--c) - 25) * 1% / 0.75);
+  }
+  [data-on='true'] .rt-bar {
+    transform: scaleX(1);
+  }
+  .rt-val {
+    padding-left: 12px;
+    font-family: var(--mono);
+    font-size: 10.35px;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .rt-val b {
+    font-weight: 500;
+    color: var(--teal-700);
+  }
+  .rt-weak {
+    border-top-color: var(--ink-2);
+  }
+  .rt-weak .rt-name {
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .rt-weak .rt-a {
+    background: var(--amber-500);
+  }
+  .rt-weak .rt-bar {
+    background: var(--amber-500);
+  }
+  .rt-weak .rt-val b {
+    color: var(--amber-800);
+  }
+  .rt figcaption {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+  @media (max-width: 560px) {
+    .rt-axis,
+    .rt-row {
+      grid-template-columns: 96px minmax(0, 1fr) 44px;
+    }
+    .rt-axis > span {
+      font-size: 0;
+    }
+    .rt-val {
+      font-size: 0;
+    }
+    .rt-val b {
+      font-size: 10.35px;
+    }
+  }
+
+  /* The cliff: one model, two measurements that disagree. */
+  .cliff {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .cliff-h span {
+    margin-left: 8px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .cliff-h {
+    margin-bottom: 4px;
+    font-family: var(--hero-serif);
+    font-size: 19.8px;
+    line-height: 1.25;
+    letter-spacing: -0.012em;
+  }
+  .cliff-a {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2px 14px;
+    align-items: baseline;
+    padding: 14px 0;
+    border-top: 1px solid var(--line-2);
+  }
+  .cliff-who {
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .cliff-a b {
+    grid-row: 1 / 3;
+    grid-column: 2;
+    align-self: center;
+    font-family: var(--hero-serif);
+    font-size: 28.8px;
+    font-weight: 400;
+    letter-spacing: -0.018em;
+    color: var(--teal-700);
+  }
+  .cliff-bad b {
+    color: var(--amber-800);
+  }
+  .cliff-tag {
+    font-size: 13.05px;
+    color: var(--ink-2);
+  }
+  /* MMLU by layer count. Bars share a 0 to 80 scale; the dashed line
+     is random chance. */
+  .mm {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    align-items: end;
+    height: 148px;
+    margin-top: 8px;
+    padding: 0 84px 22px 0;
+  }
+  .mm-col {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    height: 100%;
+  }
+  .mm-col b {
+    margin-bottom: 5px;
+    font-family: var(--mono);
+    font-size: 10.35px;
+    font-weight: 500;
+    color: var(--ink-2);
+  }
+  .mm-col i {
+    width: 100%;
+    height: calc(var(--v) / 80 * 100px);
+    background: var(--n-300);
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform 900ms var(--ease) calc(200ms + var(--i) * 120ms);
+  }
+  .mm-col:first-child i {
+    background: var(--teal-500);
+  }
+  .mm-col:nth-child(n + 3) i {
+    background: var(--amber-500);
+  }
+  .cliff[data-on='true'] .mm-col i {
+    transform: none;
+  }
+  .mm-col span {
+    position: absolute;
+    bottom: -20px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--n-500);
+  }
+  .mm-chance {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(22px + 25 / 80 * 100px);
+    border-top: 1px dashed var(--ink-2);
+    pointer-events: none;
+  }
+  .mm-chance em {
+    position: absolute;
+    right: 0;
+    top: 0;
+    transform: translateY(-50%);
+    padding-left: 6px;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-style: normal;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    line-height: 1.4;
+    color: var(--ink-2);
+    background: var(--surface);
+  }
+  .cliff-note {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-size: 13.05px;
+    line-height: 1.6;
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+
+
+  /* ══ THE TRADE-OFF (dark) ════════════════════════════════════
+     The ground is `moDeep`, drawn once; the gradient shows until it
+     is. On view the candidates appear, the frontier draws through the
+     best of them, the two limits arrive, and the pick lights. */
+  .dark {
+    position: relative;
+    overflow: hidden;
+    color: #fff;
+    border-top-color: var(--deep-950);
+    background: radial-gradient(70% 90% at 70% 40%, hsl(160 40% 17%), hsl(158 36% 8%));
+  }
+  .deep-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .dark > :not(.deep-bg) {
+    position: relative;
+    z-index: 1;
+  }
+  .dark .lede {
+    color: hsl(0 0% 100% / 0.7);
+  }
+  .fr {
+    margin: 44px 0 0;
+    padding: 22px 24px 20px;
+    background: hsl(160 34% 5% / 0.45);
+    border: 1px solid hsl(100 60% 80% / 0.14);
+  }
+  .fr-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 22px;
+    margin-bottom: 18px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: hsl(0 0% 100% / 0.6);
+  }
+  .fr-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .fr-legend i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .k-cand {
+    background: hsl(0 0% 100% / 0.3);
+  }
+  .k-front {
+    background: hsl(178 60% 60%);
+  }
+  .k-pick {
+    background: var(--pick);
+  }
+  .fr-note {
+    margin-left: auto;
+    color: hsl(0 0% 100% / 0.4);
+  }
+  .fr svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    font-family: var(--mono);
+  }
+  .fr-axis {
+    fill: none;
+    stroke: hsl(0 0% 100% / 0.3);
+  }
+  .fr-ax {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    fill: hsl(0 0% 100% / 0.55);
+  }
+  .fr-zone {
+    fill: hsl(88 72% 60% / 0.1);
+    opacity: 0;
+    transition: opacity 700ms var(--ease) 1700ms;
+  }
+  .fr-zone-t {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    fill: var(--on-dark);
+    opacity: 0;
+    transition: opacity 500ms var(--ease) 1900ms;
+  }
+  .fr-rule {
+    fill: none;
+    stroke: var(--on-dark);
+    stroke-dasharray: 5 6;
+    opacity: 0;
+    transition: opacity 600ms var(--ease) 1300ms;
+  }
+  .fr-rule-t {
+    font-size: 11.5px;
+    fill: var(--on-dark);
+    opacity: 0;
+    transition: opacity 600ms var(--ease) 1400ms;
+  }
+  .fr-pt {
+    fill: hsl(0 0% 100% / 0.26);
+    opacity: 0;
+    transition: opacity 500ms var(--ease) calc(var(--i) * 50ms);
+  }
+  .fr-front {
+    fill: none;
+    stroke: hsl(178 60% 60%);
+    stroke-width: 1.6;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    transition: stroke-dashoffset 1400ms var(--ease) 500ms;
+  }
+  .fr-f {
+    opacity: 0;
+    transition: opacity 500ms var(--ease) calc(500ms + var(--i) * 150ms);
+  }
+  .fr-f circle {
+    fill: hsl(178 60% 60%);
+    stroke: hsl(160 34% 8%);
+    stroke-width: 2;
+  }
+  .fr-f text {
+    font-size: 12px;
+    fill: hsl(0 0% 100% / 0.82);
+  }
+  .fr-today circle {
+    fill: #fff;
+  }
+  .fr-pick circle {
+    fill: var(--pick);
+  }
+  .fr-pick text {
+    font-family: var(--hero-serif);
+    font-size: 19px;
+    fill: var(--pick);
+  }
+  .fr-pick .fr-ring {
+    fill: none;
+    stroke: var(--pick);
+    stroke-width: 1.4;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .fr[data-on='true'] .fr-ring {
+    animation: ring 2400ms var(--ease) 2200ms infinite;
+  }
+  @keyframes ring {
+    from {
+      transform: scale(0.5);
+      opacity: 1;
+    }
+    to {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+  }
+  .fr-f .fr-low-t {
+    font-size: 11px;
+    fill: var(--amber-500);
+  }
+  .fr[data-on='true'] .fr-zone,
+  .fr[data-on='true'] .fr-zone-t,
+  .fr[data-on='true'] .fr-rule-t,
+  .fr[data-on='true'] .fr-pt,
+  .fr[data-on='true'] .fr-f {
+    opacity: 1;
+  }
+  .fr[data-on='true'] .fr-rule {
+    opacity: 0.7;
+  }
+  .fr[data-on='true'] .fr-front {
+    stroke-dashoffset: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fr[data-on='true'] .fr-ring {
+      animation: none;
+    }
+  }
+
+  /* ══ ENGAGEMENT ═════════════════════════════════════════════
+     Five stages as one flush object. Each lights in turn on view; the
+     small figures show the pool narrowing from many candidates to a
+     shortlist to the one that ships. */
+  .pipe {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin-top: 46px;
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+  }
+  .pipe-step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 22px 22px 20px;
+    opacity: 0.3;
+    transition: opacity 700ms var(--ease) calc(var(--i) * 240ms + 100ms);
+  }
+  .pipe[data-on='true'] .pipe-step {
+    opacity: 1;
+  }
+  .pipe-step + .pipe-step {
+    border-left: 1px solid var(--line);
+  }
+  /* The hand-off between stages, sitting on the shared edge. */
+  .pipe-step + .pipe-step::before {
+    content: '→';
+    position: absolute;
+    left: -11px;
+    top: 26px;
+    padding-block: 5px;
+    width: 21px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1;
+    color: var(--leaf-700);
+    background: var(--surface);
+  }
+  .pipe-n {
+    font-family: var(--hero-serif);
+    font-size: 30px;
+    font-style: italic;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--leaf);
+  }
+  .pipe-art {
+    display: block;
+    width: 120px;
+    max-width: 100%;
+    height: 64px;
+    margin-top: 22px;
+    overflow: visible;
+    font-family: var(--mono);
+  }
+  .pipe-art text {
+    font-size: 8.5px;
+    fill: var(--teal-700);
+  }
+  .pa-dim {
+    fill: var(--n-200);
+  }
+  .pa-hot {
+    fill: var(--teal-500);
+  }
+  .pa-axis {
+    fill: none;
+    stroke: var(--n-400);
+  }
+  .pa-rule {
+    fill: none;
+    stroke: var(--leaf-700);
+    stroke-dasharray: 3 3;
+  }
+  .pa-zone {
+    fill: var(--leaf-200);
+  }
+  .pa-dot {
+    fill: var(--n-300);
+  }
+  .pa-dot.pa-out {
+    fill: var(--n-200);
+  }
+  .pa-dot.pa-on {
+    fill: var(--teal-500);
+  }
+  .pa-ring {
+    fill: none;
+    stroke: var(--teal-500);
+    stroke-dasharray: 2 4;
+  }
+  .pa-tick {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .pipe-step h3 {
+    margin-top: 20px;
+    font-family: var(--hero-serif);
+    font-size: 22.5px;
+    font-weight: 400;
+    letter-spacing: -0.014em;
+  }
+  .pipe-step p {
+    margin-top: 6px;
+    padding-bottom: 18px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--ink-3);
+    text-wrap: pretty;
+  }
+  .pipe-out {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px dashed var(--line-2);
+    font-size: 13.05px;
+    font-weight: 500;
+    color: var(--teal-800);
+  }
+  .pipe-out small {
+    display: block;
+    margin-bottom: 3px;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  @media (max-width: 900px) {
+    .pipe {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .pipe-step + .pipe-step {
+      border-left: 0;
+      border-top: 1px solid var(--line);
+    }
+    .pipe-step + .pipe-step::before {
+      display: none;
+    }
+  }
+
+  /* The ask, on the pine ground the handover card used to carry. */
+  .pipe-ask {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px 36px;
+    margin-top: 22px;
+    padding: 28px;
+    color: #fff;
+    background: hsl(158 34% 9%);
+  }
+  /* The button is outlined in the terminal green and fills with it
+     on hover. */
+  .pipe-ask .wipe {
+    color: var(--on-dark);
+    border-color: var(--on-dark);
+  }
+  .pipe-ask .wipe-fill {
+    background: var(--on-dark);
+  }
+  .pipe-ask .wipe:hover {
+    color: var(--ink);
+  }
+  /* One sentence per line. */
+  .pipe-ask p span {
+    display: block;
+  }
+  .pipe-ask p {
+    font-family: var(--hero-serif);
+    font-size: clamp(18px, 1.8vw, 22px);
+    line-height: 1.3;
+    letter-spacing: -0.014em;
+    text-wrap: balance;
+  }
+
+  /* ══ BEFORE AND AFTER ════════════════════════════════════════
+     One table: the situation, what it looks like today, what it
+     looks like after. */
+  .ba {
+    margin-top: 44px;
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+  }
+  .ba-row {
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 4fr) minmax(0, 4.4fr);
+    align-items: center;
+  }
+  .ba-row + .ba-row {
+    border-top: 1px solid var(--line);
+  }
+  .ba-row > span {
+    padding: 16px 22px;
+  }
+  .ba-head {
+    background: var(--n-50);
+  }
+  .ba-head > span {
+    padding-block: 11px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .ba-what {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-family: var(--hero-serif);
+    font-size: 18.9px;
+    line-height: 1.25;
+    letter-spacing: -0.012em;
+  }
+  .ba-icon {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    color: var(--leaf-700);
+  }
+  .ba-before {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--ink-3);
+  }
+  .ba-after {
+    position: relative;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    font-size: 13.5px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--teal-800);
+    background: hsl(178 38% 92% / 0.5);
+  }
+  .ba-row > .ba-after {
+    padding-left: 44px;
+  }
+  .ba-after::before {
+    content: '→';
+    position: absolute;
+    left: 18px;
+    font-family: var(--mono);
+    font-weight: 400;
+    color: var(--teal-500);
+  }
+  @media (max-width: 820px) {
+    .ba-head {
+      display: none;
+    }
+    .ba-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .ba-row > .ba-before {
+      padding-block: 0 14px;
+    }
+  }
+
+  /* ══ QUESTIONS ═════════════════════════════════════════════
+     An accordion on native <details>, the first open on load. Each
+     item opens on its own and eases open and shut (src/scripts/faq.ts).
+     The plus turns to a minus. */
+  .qs {
+    margin: 40px 0 0;
+    border-bottom: 1px solid var(--line-2);
+  }
+  .qs details {
+    border-top: 1px solid var(--line-2);
+  }
+  .qs summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 20px 0;
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--hero-serif);
+    font-size: 21.6px;
+    line-height: 1.3;
+    letter-spacing: -0.014em;
+    transition: color 300ms var(--ease);
+  }
+  .qs summary::-webkit-details-marker {
+    display: none;
+  }
+  .qs summary:hover {
+    color: var(--leaf-700);
+  }
+  .qs summary i {
+    position: relative;
+    flex: none;
+    width: 14px;
+    height: 14px;
+  }
+  .qs summary i::before,
+  .qs summary i::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1.5px;
+    margin-top: -0.75px;
+    background: currentColor;
+    transition: transform 400ms var(--ease);
+  }
+  .qs summary i::after {
+    transform: rotate(90deg);
+  }
+  .qs details[open]:not(.is-closing) summary i::after {
+    transform: none;
+  }
+  .qs details p {
+    max-width: 62ch;
+    padding-bottom: 24px;
+    font-size: 14.4px;
+    line-height: 1.72;
+    color: var(--ink-2);
+    text-wrap: pretty;
+    animation: answer-in 500ms var(--ease) both;
+  }
+  @keyframes answer-in {
+    from {
+      opacity: 0;
+      filter: blur(6px);
+      transform: translateY(8px);
+    }
+  }
+
+  /* ══ CLOSER: frosted glass on green strata ═══════════════════ */
+  .end {
+    position: relative;
+    overflow: hidden;
+    background: hsl(110 56% 84%);
+    color: var(--ink);
+  }
+  .end-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .end-in {
+    position: relative;
+    z-index: 1;
+    padding-block: clamp(79.2px, 9.9vw, 131.4px);
+  }
+  .glass {
+    max-width: 720px;
+    padding: clamp(30px, 4vw, 52px);
+    background: hsl(0 0% 100% / 0.58);
+    border: 1px solid hsl(0 0% 100% / 0.9);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    box-shadow: 0 30px 70px -40px hsl(150 50% 20% / 0.4);
+  }
+  .glass h2 {
+    max-width: 18ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(30px, 4vw, 48px);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.024em;
+    text-wrap: balance;
+  }
+  .glass p {
+    margin-top: 16px;
+    max-width: 50ch;
+    font-size: 14.85px;
+    line-height: 1.74;
+    color: var(--ink-2);
+  }
+</style>
