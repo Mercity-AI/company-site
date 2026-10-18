@@ -1910,15 +1910,14 @@ const faqs = [
     text-transform: uppercase;
     white-space: nowrap;
     color: #fff;
-    background: var(--indigo-600);
-    border: 1px solid var(--indigo-600);
-    transition:
-      background-color 400ms var(--ease),
-      border-color 400ms var(--ease);
+    /* Indigo at 70%, so the fill does not outweigh the panel; hover
+       brings it to full strength. */
+    background: color-mix(in srgb, var(--indigo-600) 70%, transparent);
+    border: 1px solid transparent;
+    transition: background-color 400ms var(--ease);
   }
   .log-go:hover {
-    background: var(--indigo-700);
-    border-color: var(--indigo-700);
+    background: var(--indigo-600);
   }
   .log-go span {
     transition: transform 400ms var(--ease);
