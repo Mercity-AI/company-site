@@ -580,7 +580,12 @@ the "Original size" tag over the figure. The hero's Qwen run is the
 log's 28-layer cut, not the released 30-layer one: Pranav found
 36 → 30 too small to show and did not want the deepest cut; its note
 "71–87% of reasoning scores kept" is the 28-layer retention range.
-The research section still shows the released 30-layer model.
+The research section's LaCo panel follows it (2026-10-18): title,
+facts (22.2% removed, 2.01× perplexity), the layer strip (eight
+collapsed; the log names merged layers only for 30, so which eight is
+illustrative) and the retention chart, which highlights 28 layers and
+starts its axis at 25% (chance on MMLU) to zoom in. The released
+weights stay `Qwen3-8B-LaCo-30L`, the only pruned model published.
 **The page runs at `section { --shell: 1300px }`**, the synthetic
 data page's width, so the readout's fixed 280px column holds every
 note on one line (`nowrap`) and all section edges line up; below
