@@ -1909,23 +1909,12 @@ const faqs = [
     letter-spacing: 0.14em;
     text-transform: uppercase;
     white-space: nowrap;
-    /* A light indigo fill with dark indigo type: filled, without the
-       weight of solid indigo. On hover, full indigo wipes in from the
-       left, the site's button motion. */
-    color: var(--indigo-700);
-    background:
-      linear-gradient(var(--indigo-600), var(--indigo-600)) left / 0% 100% no-repeat,
-      var(--indigo-100);
-    border: 1px solid var(--indigo-200);
-    transition:
-      background-size 350ms var(--ease),
-      border-color 350ms var(--ease),
-      color 300ms var(--ease);
+    color: var(--indigo-600);
+    border: 1px solid var(--line-2);
+    transition: border-color 400ms var(--ease);
   }
   .log-go:hover {
-    color: #fff;
-    background-size: 100% 100%;
-    border-color: var(--indigo-600);
+    border-color: var(--indigo-500);
   }
   .log-go span {
     transition: transform 400ms var(--ease);
