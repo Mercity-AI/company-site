@@ -257,8 +257,8 @@ const lacoWeights = ['Qwen3-8B-LaCo-30L'];
 /* ── The trade-off chart. c is cost per request and q is quality, both
    0 to 1; `front` points are on the frontier, in order from today's
    model down to the cheapest. Illustrative. ── */
-const FX = (c: number) => 70 + c * 1020;
-const FY = (q: number) => 350 - q * 320;
+const FX = (c: number) => 20 + c * 1070;
+const FY = (q: number) => 382 - q * 352;
 const BUDGET = 0.5;
 const FLOOR = 0.8;
 const front = [
@@ -716,7 +716,7 @@ const faqs = [
       <div class="split-head">
         <h2 class="h2 rv" data-rv style="--rv-delay:80ms">We optimize on your evals, then ship.</h2>
         <p class="lede rv" data-rv style="--rv-delay:160ms">
-          Every candidate is scored on your evaluation set. The cheapest one above your floor ships.
+          Every candidate is scored on your evaluation set.
         </p>
       </div>
 
@@ -727,17 +727,17 @@ const faqs = [
           <span><i class="k-pick"></i>ships</span>
           <span class="fr-note">illustration</span>
         </div>
-        <svg viewBox="0 0 1150 400" role="img" aria-label="Candidates plotted by cost per request and quality. A cost budget and a quality floor bound a target zone; the cheapest candidate inside it is the one that ships.">
-          <path class="fr-axis" d="M70 20V350H1100" />
-          <text class="fr-ax" x="70" y="12">Quality on your eval ↑</text>
-          <text class="fr-ax" x="1100" y="378" text-anchor="end">Cost per request →</text>
+        <svg viewBox="0 0 1150 440" role="img" aria-label="Candidates plotted by cost per request and quality. A cost budget and a quality floor bound a target zone; the cheapest candidate inside it is the one that ships.">
+          <path class="fr-axis" d="M20 20V382H1100" />
+          <text class="fr-ax" x="20" y="12">Quality on your eval ↑</text>
+          <text class="fr-ax" x="1100" y="410" text-anchor="end">Cost per request →</text>
 
-          <rect class="fr-zone" x="70" y="30" width={FX(BUDGET) - 70} height={FY(FLOOR) - 30} />
-          <path class="fr-rule fr-budget" d={`M${FX(BUDGET)} 30V350`} />
-          <text class="fr-rule-t" x={FX(BUDGET) + 10} y="344">Your cost and latency budget</text>
-          <path class="fr-rule fr-floor" d={`M70 ${FY(FLOOR)}H1100`} />
+          <rect class="fr-zone" x="20" y="30" width={FX(BUDGET) - 20} height={FY(FLOOR) - 30} />
+          <path class="fr-rule fr-budget" d={`M${FX(BUDGET)} 30V382`} />
+          <text class="fr-rule-t" x={FX(BUDGET) + 10} y="376">Your cost and latency budget</text>
+          <path class="fr-rule fr-floor" d={`M20 ${FY(FLOOR)}H1100`} />
           <text class="fr-rule-t" x="1096" y={FY(FLOOR) + 18} text-anchor="end">Your quality floor</text>
-          <text class="fr-zone-t" x="84" y="50">Target zone</text>
+          <text class="fr-zone-t" x="34" y="50">Target zone</text>
 
           {behind.map(([c, q], i) => <circle class="fr-pt" cx={FX(c)} cy={FY(q)} r="4" style={`--i:${i}`} />)}
           <path class="fr-front" d={frontD} pathLength="1" />
