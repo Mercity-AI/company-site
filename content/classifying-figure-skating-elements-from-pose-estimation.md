@@ -3,8 +3,8 @@ title: Classifying Figure Skating Elements from Pose Estimation
 slug: classifying-figure-skating-elements-from-pose-estimation
 publishedAt: '2026-07-27'
 summary: >-
-  We trained five architectures — recurrent, attention-based, and
-  graph-convolutional — to name figure skating elements from pose estimation
+  We trained five architectures (recurrent, attention-based, and
+  graph-convolutional) to name figure skating elements from pose estimation
   alone, and all five hit the same ceiling. Spins and step sequences classify
   almost perfectly; jumps that differ only by blade edge do not, because COCO-17
   has no keypoint below the ankle. Which class you predict matters roughly three
@@ -36,7 +36,7 @@ We also ran a first pass at temporal action localization, finding *where* elemen
 
 ## The problem, and how we split it
 
-If you have worked on action recognition before (given a video, classify sitting, walking, waving), you might reasonably assume figure skating is more of the same. It is not, and the gap is worth being specific about.
+If you have worked on action recognition before (given a video, classify sitting, walking, waving), you might reasonably assume figure skating is more of the same. It is not.
 
 The actions are fast and visually subtle. A jump completes in one to three seconds. Consider the two hardest classes in the dataset. A Flip and a Lutz look nearly identical: the skater glides backward, plants the toe pick of one blade into the ice, and rotates. The only difference is which edge of the gliding blade is in contact with the ice at the moment of takeoff: inside edge for a Flip, outside edge for a Lutz. That is a distinction measured in the tilt of one ankle, for a few frames, on a skater moving across the rink at speed. Trained judges dispute these calls regularly enough that the sport has a dedicated notation for a wrong-edge takeoff. A model that lumps all jumps together is not useful to anyone; the entire value of the task sits in correctly separating *which* jump it is.
 
@@ -126,7 +126,7 @@ Each step below is shown on the same real broadcast clip, using the video's own 
 
 ![step3_interpolation.gif](https://blog-cdn.mercity.ai/blog/classifying-figure-skating-elements-from-pose-estimation/step3_interpolation.gif)
 
-*Figure 6c. The left ankle is tracked; it disappears for the entire airborne phase, and a straight line bridges the gap (gold). The clip freezes the instant the ankle drops out — a reminder that the filled values through the jump are a guess, over exactly the frames that separate one jump from another.*
+*Figure 6c. The left ankle is tracked; it disappears for the entire airborne phase, and a straight line bridges the gap (gold). The clip freezes the instant the ankle drops out. This is a reminder that the filled values through the jump are a guess, over exactly the frames that separate one jump from another.*
 
 **Smoothing.** A Savitzky-Golay filter [[6]](https://doi.org/10.1021/ac60214a047) runs over each joint's x and y trajectory. It fits a low-order polynomial to a sliding window, which strips high-frequency detection jitter while preserving the shape of the underlying motion. That matters here because the sharp velocity changes at a jump takeoff are signal, not noise, and a blunter filter would flatten them.
 
@@ -146,7 +146,7 @@ Each step below is shown on the same real broadcast clip, using the video's own 
 
 *Figure 6f. Torso length (nose to hip) swings about 3.7× across the clip as the skater crouches, launches and nears the camera; dividing every coordinate by it flattens that to a constant 1.0. The filmstrip below shows ten frames going from varied raw sizes (top) to one normalized size (bottom).*
 
-After these six steps the skeleton is body-centred, scale-invariant, and temporally smooth: a 2D pose sequence of shape `(F, 17, 2)`, where F is the frame count. What it encodes is how the body is arranged, with the camera's contribution removed. None of this is glamorous, but it is where most of the usable signal is either kept or thrown away, and we came to treat cleaning as part of the model rather than as preprocessing beneath it.
+After these six steps the skeleton is body-centred, scale-invariant, and temporally smooth: a 2D pose sequence of shape `(F, 17, 2)`, where F is the frame count. What it encodes is how the body is arranged, with the camera's contribution removed. This is where most of the usable signal is either kept or thrown away, and we came to treat cleaning as part of the model rather than as preprocessing beneath it.
 
 ### Stage 3: Turning poses into features
 
@@ -200,7 +200,7 @@ The CTM [[11]](https://arxiv.org/abs/2505.05522) is the one architecture here th
 
 A human judge does not extract a verdict from a clip in a single pass. They watch the entry, form a provisional read, watch the takeoff, revise it, and settle on an answer after several passes over the same few seconds of footage. Ordinary feedforward networks have no equivalent of that: information flows through the layers exactly once, and the amount of computation spent is fixed by the architecture rather than by the difficulty of the input.
 
-The CTM restores that missing dimension. Rather than treating a forward pass as a single event, it unrolls an internal sequence of **thinking steps** over a fixed set of inputs. In our setup the convolutional backbone's temporal tokens become fixed key-value pairs, and at each thinking step the CTM cross-attends over them, updates its internal state, and produces a prediction. The clip does not change between steps; what changes is the model's own representation of it.
+The CTM adds those repeated passes. Rather than treating a forward pass as a single event, it unrolls an internal sequence of **thinking steps** over a fixed set of inputs. In our setup the convolutional backbone's temporal tokens become fixed key-value pairs, and at each thinking step the CTM cross-attends over them, updates its internal state, and produces a prediction. The clip does not change between steps; what changes is the model's own representation of it.
 
 Two mechanisms distinguish it from simply running a recurrent network in place. First, **each neuron keeps its own short history** and uses private weights to process that history, so a neuron's activation depends on its own recent trajectory rather than only on the current input. Second, the model's working representation is **neural synchronization** (how neurons' activity correlates with each other over the thinking steps) instead of a snapshot of activations at one instant. Timing between neurons becomes the thing that carries meaning, which is a deliberate borrowing from biological neural dynamics that most modern architectures discard.
 
@@ -245,7 +245,7 @@ Three things stand out in these tables.
 
 **Model size predicts nothing.** Parameter counts span 2.18M to 8.20M, a 3.8× range, while coarse macro-F1 spans only five points, from 0.800 to 0.851, ordered such that the two largest models sit at the bottom. Capacity is not the binding constraint here.
 
-The CTM is worth its own paragraph, since it was the architecture we had the highest hopes for. At 2.18M parameters it is 42% smaller than CNN + BiLSTM and it competes closely, taking the best fine-grained accuracy of anything we ran at 87.99%, while giving up a point of macro-F1 in each label space. That specific combination is informative: strong accuracy with weaker macro-F1 means the model is doing well on the frequent classes and less well on the rare ones. So the thinking loop gets competitive accuracy out of 42% fewer parameters, and the ground it gives up is on the rarest classes, where the data is thinnest.
+The CTM gets its own paragraph, since it was the architecture we had the highest hopes for. At 2.18M parameters it is 42% smaller than CNN + BiLSTM and it competes closely, taking the best fine-grained accuracy of anything we ran at 87.99%, while giving up a point of macro-F1 in each label space. That specific combination is informative: strong accuracy with weaker macro-F1 means the model is doing well on the frequent classes and less well on the rare ones. So the thinking loop gets competitive accuracy out of 42% fewer parameters, and the ground it gives up is on the rarest classes, where the data is thinnest.
 
 The adaptive-halting variant cannot be read as an adaptive-computation result at the setting we ran. With the iteration cap at 10 and the halting bias initialized to favour a longer budget, every sample used all ten steps: mean thinking steps on test came out at exactly 10.0 in both label spaces. The comparison between CTM-10 and CTM-10 + adaptive therefore measures the ponder-cost regularizer at fixed depth rather than learned depth. Testing whether halting behaviour emerges needs a higher cap, and we give these numbers without drawing a conclusion about adaptive computation from them.
 
@@ -341,19 +341,19 @@ Class imbalance compounds it. Even at coarse granularity, Salchow has 613 total 
 
 ## Temporal action localization
 
-Everything above assumes clips are already trimmed to a single action. Phase 2 removes that assumption: given a full untrimmed program, find where each element starts and ends, then classify it. We ran initial experiments here, and the result was clean enough to be worth reporting even at this stage.
+Everything above assumes clips are already trimmed to a single action. Phase 2 removes that assumption: given a full untrimmed program, find where each element starts and ends, then classify it. We ran initial experiments here, and the result was clean enough to report even at this stage.
 
 ### Data is the bottleneck here too
 
 SkatingVerse ships pre-trimmed clips and contains no temporal boundaries to learn from, because each clip *is* one action. For localization we needed footage where elements sit inside a longer timeline, along with ground truth for where they start and end. That came from two places: FS-Jump3D's multi-action combination clips, and a public corpus of 371 untrimmed competition programs with frame-precise takeoff and landing annotations covering 1,464 jumps and 373 spins. The corpus ships no video, since the footage is copyrighted competition broadcast, but it publishes video identifiers and frame numbers, so we reconstructed the footage from eleven YouTube broadcasts and aligned it against the annotations.
 
-One detail from that reconstruction would have silently destroyed the experiment. Every annotation in the corpus is a frame number at 25 fps, so we verified all eleven broadcasts were genuinely 25 fps before using them. A 30 fps download would have shifted every label in the corpus, by a growing amount as the program went on, with nothing about the training run looking obviously broken. Checking frame rates before trusting reconstructed footage is exactly the kind of step that never shows up in a paper and quietly decides whether the whole experiment means anything.
+One detail from that reconstruction would have silently destroyed the experiment. Every annotation in the corpus is a frame number at 25 fps, so we verified all eleven broadcasts were genuinely 25 fps before using them. A 30 fps download would have shifted every label in the corpus, by a growing amount as the program went on, with nothing about the training run looking obviously broken. Checking frame rates before trusting reconstructed footage rarely makes it into a paper, but without it the results here would mean nothing.
 
 The corpus also settled an open question from earlier work. It includes 338 labeled jump combinations, and their distribution is lopsided: the second jump is a Toeloop 92% of the time, and Loop-plus-Loop occurs exactly once in 338. An earlier exploratory classifier of ours had labeled nine of thirteen combination clips as Loop-plus-Loop. Against the real distribution, that was a classifier collapsing onto one class, not a finding.
 
 ### The setup
 
-We compared two ways of teaching a model where elements are, and it is worth being clear about how differently they treat the problem, because the second is not a refinement of the first. They are opposite answers to the question of what the model gets told.
+We compared two ways of teaching a model where elements are. They give opposite answers to the question of what the model gets told.
 
 **CTC (Connectionist Temporal Classification)** [[13]](https://doi.org/10.1145/1143844.1143891) is weak supervision. Borrowed from speech recognition, it is given only an ordered transcript of what happened in a clip (Axel, then Lutz, then Toeloop) and never a single frame number. It recovers the alignment itself by summing over every possible way that transcript could map onto the timeline. Background is not even a class in this setup; CTC's blank symbol covers the 98% of frames between elements. The appeal is obvious when your datasets have no boundary annotations, which is where we started.
 
@@ -386,11 +386,11 @@ Roughly 2% of the timeline contains an action. A model that predicts background 
 
 ### Per-frame supervision works, CTC does not
 
-The gap between the two is not a matter of degree.
+One method works and the other doesn't.
 
 | Loss | Elements found | Of those, fraction correct | Timestamp error |
 | --- | --- | --- | --- |
-| CTC | **0.7%** | 1.2% | — |
+| CTC | **0.7%** | 1.2% | n/a |
 | Per-frame supervision | **80.5%** | 82% | **0.08 s** (2 frames) |
 
 ![fig11_ctc_vs_dense.png](https://blog-cdn.mercity.ai/blog/classifying-figure-skating-elements-from-pose-estimation/fig11_ctc_vs_dense.jpg)
@@ -412,6 +412,10 @@ This remains a proof of concept, and the limits matter. The validation set is a 
 Pose-based skeleton features carry a figure skating clip a long way, but not all the way. Spins, step sequences, and Axel jumps land between 0.87 and 0.99 F1 on every architecture we tested; Flip, Lutz, and Toeloop sit between 0.57 and 0.79 across five architectures spanning a 3.8x parameter range, and the class being predicted matters roughly three times more than the model predicting it. The smallest sensible architecture won: CNN + BiLSTM at 3.77M parameters, ahead of a Transformer with twice the capacity and an identical backbone and head. The CTM, meanwhile, took the best fine-grained accuracy of anything we ran at 42% fewer parameters. Adding a rotation count is a separate problem again: every jump class drops between the 11- and 28-class spaces while the spins barely move. On localization, per-frame supervision reached 80.5% recall at 82% precision with 0.08-second timestamp accuracy, while CTC recovered almost nothing: its objective sums over every alignment equally, so it has no reason to prefer the correct one.
 
 Future work follows from where the ceiling actually sits, which is in the input. Raising pose extraction from 256 to 384 pixels moved the jump family by 8 to 17 points of F1, more than any architectural change here, and 640 recovers most of the takeoff and landing frames still being dropped. Past resolution, a Flip differs from a Lutz by which blade edge is on the ice, and COCO-17 has no keypoint below the ankle, so complementary non-skeleton features, optical flow or raw RGB around takeoff, are what would put that information in front of a model, with 3D pose lifting a second avenue. Rotation counting deserves a dedicated attempt, and the per-frame localization recipe extends directly to jump combinations. But the most persistent obstacle throughout was simply finding usable data: public skating datasets are scarce and not interchangeable: some ship trimmed clips with no boundaries, some publish frame numbers but no video, and label schemes differ enough that combining sources means reconciling taxonomies by hand. The class imbalance, meanwhile, is structural rather than fixable. Any team starting here should budget for data acquisition and verification as the main cost of the project, because that is what it turned out to be.
+
+## Building vision models for sport?
+
+Do you need pose estimation or action recognition on your own footage? [Contact us](/contact).
 
 ## References
 

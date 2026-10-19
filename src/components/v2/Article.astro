@@ -40,7 +40,10 @@ const showCover = Boolean(
       <span aria-hidden="true">←</span>
       {section}
     </a>
-    <span class="eyebrow rv" data-rv style="--rv-delay:60ms">{category}</span>
+    {/* Temporarily hide the redundant category eyebrow on research pages. */}
+    {section !== 'Research' && (
+      <span class="eyebrow rv" data-rv style="--rv-delay:60ms">{category}</span>
+    )}
     <h1 class="rv" data-rv style="--rv-delay:120ms">{title}</h1>
     <p class="art-lede rv" data-rv style="--rv-delay:180ms">{summary}</p>
     <div class="art-meta rv" data-rv style="--rv-delay:240ms">

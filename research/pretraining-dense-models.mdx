@@ -68,6 +68,8 @@ Figure 1. Final zero-shot scores for the four checkpoints on all nine benchmarks
 
 The sections below follow the order we ran the experiments: pretraining first, then the downstream and diagnostic experiments.
 
+The code is on [GitHub](https://github.com/Mercity-AI/MoE-Runs) and the pretrained checkpoints are on [Hugging Face](https://huggingface.co/collections/Mercity/pretrain-checkpoints).
+
 ## Why do this?
 
 New architecture ideas keep arriving from frontier labs, and they are almost always validated on very large models: wide, sparse, and trained on tens of billions of tokens or more. We wanted to know how these state-of-the-art techniques behave when you train a small language model instead, with an academic token budget and a single GPU. To test that, we picked two recent examples: Kimi Delta Attention (KDA), a linear-attention layer introduced in [Kimi Linear](https://arxiv.org/abs/2510.26692) and used in the [Kimi K3](https://arxiv.org/abs/2607.24653) mixture-of-experts model, and the [LongCat n-gram embedding tables](https://arxiv.org/abs/2601.21204), reported on **20B to 60B** parameter models. We have not found published results for either on a dense model near 1B parameters, so these runs report new numbers.
@@ -891,3 +893,7 @@ At 1B dense scale on 6B tokens, a well-tuned baseline is the model to beat, and 
 KDA at **8 of 32** layers matches the baseline within single-seed noise. The LongCat n-gram tables reproduce only as a depth-versus-tables trade in which depth wins: they come within **0.67** Shared-9 of the baseline at a compute discount, but against a properly trained baseline they win nothing on the suite (even LAMBADA, the task they target, goes to the baseline), and on a real downstream task they lose everywhere with no compensating strength. The one unambiguous win was QK normalization, which we added after the first baseline run. It fixed training stability and closed almost the entire loss gap to KDA, and it taught us the deepest lesson of the project: an unstable baseline can flip an architecture comparison and make the wrong model look like the winner, so the baseline has to be right before any cross-architecture claim means anything. Among the smaller results, attention is not zero-shot portable, most layers past the second are individually dispensable, and 4-bit compression is close to free.
 
 Each one of these conclusions is limited by the following factors. (1) Each configuration is a single pretraining seed and a single fine-tuning seed, so most gaps outside LAMBADA sit within one to two points of ordinary multiple-choice noise, and we have not measured seed-to-seed variation. (2) The two n-gram variants differ in both table share and layer count at once, so their per-benchmark deltas mix two effects, "tables displace knowledge" and "fewer layers store less", that we cannot separate with these runs alone. (3) The biggest is undertraining: all four models trained on **6B** tokens, roughly a third of the Chinchilla-optimal budget for 1B parameters, and none had flattened when training stopped, so a comparison of undertrained checkpoints can only say so much about how these architectures behave once fully trained.
+
+## Pretraining your own models?
+
+Do you need help pretraining or adapting language models? [Contact us](/contact).

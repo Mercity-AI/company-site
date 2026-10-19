@@ -38,9 +38,6 @@ const count = posts.length ? `${posts.length} posts · ${years}` : undefined;
           <div class="yr">
             <div class="yr-head rv" data-rv>
               <span class="yr-label">{year}</span>
-              <span class="yr-count">
-                {items.length} {items.length === 1 ? 'post' : 'posts'}
-              </span>
             </div>
             <div class="yr-rows">
               {items.map((p, i) => (
@@ -59,9 +56,6 @@ const count = posts.length ? `${posts.length} posts · ${years}` : undefined;
     margin-top: 61.2px;
   }
   .yr-head {
-    display: flex;
-    align-items: baseline;
-    gap: 12.6px;
     margin-bottom: 14.4px;
   }
   .yr-label {
@@ -70,11 +64,5 @@ const count = posts.length ? `${posts.length} posts · ${years}` : undefined;
     font-weight: 400;
     letter-spacing: -0.02em;
     line-height: 1;
-  }
-  .yr-count {
-    font-family: var(--mono);
-    font-size: 9.9px;
-    letter-spacing: 0.04em;
-    color: var(--n-400);
   }
 </style>
