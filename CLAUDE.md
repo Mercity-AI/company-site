@@ -224,7 +224,11 @@ Okabe-Ito palette) rather than the V2 square-cornered indigo/teal/amber
 system. Pranav has accepted that for this log.
 
 The second interactive log is `research/online-topic-guardrails-with-saes.mdx`,
-the SAE topic-guardrail detectors (draft: `SAE-Guardrails/blog_new/draft_alternative.md`).
+the SAE topic-guardrail detectors. Its text is the Notion page "(V3) Real-Time
+Topic Guardrails with Sparse Autoencoders" (2026-10-21), which replaced the
+earlier `SAE-Guardrails/blog_new/draft_alternative.md` wording; the title
+changed with it, the slug did not. Where Notion says "the table below" over a
+table that is now a `FigureViews`, the log says "the figure below".
 It follows the same pattern, with its own pieces:
 
 - **Charts** come from `SAE-Guardrails/blog_new/figures/make_interactive.py`

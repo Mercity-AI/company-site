@@ -1,5 +1,5 @@
 ---
-title: 'Online Topic Guardrails with Sparse Autoencoders: A Research Log'
+title: 'Real-Time Topic Guardrails with Sparse Autoencoders: A Research Log'
 slug: online-topic-guardrails-with-saes
 publishedAt: '2026-10-14'
 summary: >-
@@ -23,12 +23,11 @@ import DatasetViewer from "../src/components/DatasetViewer.astro";
 import DetectorRunsViewer from "../src/components/DetectorRunsViewer.astro";
 import DecodeDemo from "../src/components/DecodeDemo.astro";
 
-We tested whether small probes built on sparse autoencoder (SAE) features can catch an LLM drifting off topic while it is still writing. Each probe labels every token with one of seven business topics, so its label can switch between one sentence and the next when the topic changes. We trained small causal probes on the internal activations of Gemma 3 1B and Gemma 3 4B. 
+We built SAE probes that detect, when an LLM drifts off topic, in real time.
 
-Four in five of our records cover two to four topics. They move between topics in ordinary prose, with no heading to mark the change, so a probe scores well only if its labels switch where the response does. We gave the probes three kinds of inputs: 
+The probes read the model's internal activations and label every token it writes with one of 7 business topics, so the label can change between one sentence and the next. A guardrail built on them can catch an off-topic answer while the model is still writing it, instead of after the user has read it. We trained these small causal probes on Gemma 3 1B and Gemma 3 4B, and in the rest of this log we call them detectors.
 
-1. Two come from the Gemma Scope 2 SAEs: a fixed set of features, and a set chosen again for each token. 
-2. The third is the raw hidden states, which checks whether the SAE is needed at all. The figure below gives the best held-out macro-F1 for each kind of input, at both model sizes; its Table tab has the input widths and detector sizes.
+Most of our records (4 in 5) cover 2 to 4 topics. They change topic in ordinary prose, with no heading to mark the switch, so a detector scores well only if its labels switch where the response does. We gave the detectors 3 kinds of input. The first 2 come from the Gemma Scope 2 sparse autoencoders (SAEs): a fixed set of features, which we call static, and a set chosen again for each token, which we call dynamic. The third is the raw hidden states with no SAE, our test of whether the SAE is needed at all. The figure below gives the best held-out macro-F1 for each kind of input at both model sizes; its Table tab has the input widths and detector sizes.
 
 <FigureViews label="Figure 1" title="Best test macro-F1 for each detector input, at both model sizes">
 
@@ -58,16 +57,16 @@ Figure 1. Best test macro-F1 for each detector input, at both model sizes.
 </FigureViews>
 
 - **Raw hidden states do as well as SAE features.** Without the SAE, the best detector is within 0.6 points of the best SAE input at 1B (96.7 against 97.3) and ahead of it at 4B (97.5 against 97.1).
-- **A fixed SAE feature set chosen without labels breaks down at 4B.** Keeping the 150 most active features per layer drops the best detector from 96.2 at 1B to 92.4 at 4B. Choosing the same number of features with the topic labels brings it back to 96.4.
-- **Detectors trained only on teacher-written text carry over to the model's own writing.** With dynamic SAE features, 94 to 95 percent of the tokens Gemma generates are labelled with a topic the prompt asked for, at both model sizes and for all three detectors.
+- **A fixed SAE feature set chosen without labels breaks down at 4B.** With the 150 most active features per layer, the best detector scores 96.2 at 1B but only 92.4 at 4B. Choosing the same number of features with the topic labels brings it back to 96.4.
+- **Detectors trained on synthetic text transfer to the model's own writing.** The detectors learn only from text written by GPT-5.6 Luna. Run on responses Gemma generates itself, with dynamic SAE features, they label 94 to 95 percent of tokens with a topic the prompt asked for, at both model sizes and for all 3 detectors.
 
-The sections below follow the order in which we ran the experiments: the prefill experiments first, then the downstream and diagnostic ones.
+The sections below follow the order in which we ran the experiments.
 
-The code is on [GitHub](https://github.com/Mercity-AI/SAE-Guardrails) and the pretrained checkpoints are on [Hugging Face](https://huggingface.co/collections/Mercity/online-guardrails-using-sparse-autoencoders).
+The code is on [GitHub](https://github.com/Mercity-AI/SAE-Guardrails), and the trained detectors are on [Hugging Face](https://huggingface.co/collections/Mercity/online-guardrails-using-sparse-autoencoders-6ac602940468c62fefb2b9e8).
 
 ## Why do we need topical guardrails?
 
-A topical guardrail keeps a deployed assistant inside its remit. A billing assistant should answer billing questions, and a clinical assistant should stay clinical. Most deployments enforce this with a second model that classifies text: the user's prompt before generation, the assistant's response after it, or both. Checking the prompt is not enough, because a well-scoped question can still get an answer that wanders. An assistant asked to compare two health plans can finish the comparison and keep going. It moves into the tax treatment of the premiums, then the employer's leave policy, and no single sentence looks out of place. A classifier that reads the prompt never sees this drift.
+A topical guardrail stops a deployed assistant from answering outside its scope. A billing assistant should never give clinical advice, and a clinical assistant should never give legal advice. Most deployments ensure this with a second model that classifies text: the user's prompt before generation, the assistant's response after it, or both. When an assistant is asked to compare 2 health plans, it might finish the comparison and keep going. It might go on to the tax treatment of the premiums and then to the employer's leave policy, with each sentence looking reasonable on its own. A classifier that reads only the prompt never sees this drift.
 
 <figure class="article-figure">
 
@@ -81,45 +80,32 @@ Figure 2. The standard topical guardrail. A separate classifier reads the finish
 
 </figure>
 
-The classifier that checks the response sits outside the generating model, which limits it in three ways:
+The classifier that checks the response runs outside the generating model, and the health-plan example shows where that falls short. It sees the response only after it has been written, so on a streaming product the user has already read the tax advice by the time it is flagged. It gives a response one label, or a set of labels with no positions, so it cannot say where the comparison ended and the tax advice began. And it works from the words alone. "Risk management" means one thing in a clinical note and another in a loan review. The generating model has already resolved that from context, but a separate classifier has to resolve it again from the text.
 
-- **It does not see the generation as it happens.** The classifier reads the prompt or the finished response. A topic change in the middle of a response is caught only after it has been written and, on a streaming product, read.
-- **It labels whole texts.** A response that covers three topics gets one label, or a set of labels with no positions. It cannot say where the response moved from one topic to the next.
-- **It works from the words alone.** "Risk management" means one thing in a clinical note and another in a loan review. The generating model has already resolved that from context. A separate classifier has to resolve it again from the text.
+That design treats the generating model as a black box, even though the model has to keep track of its topic to write the response at all. Every token passes through a residual stream that later layers read to decide what comes next, and the topic is one of the things that stream encodes. Our starting idea was to read that stream directly. Because a small causal probe uses only the current and earlier tokens, it can label the topic of every token as the model produces it, see a change of topic as it happens, and say where in the response the change took place.
 
-That design treats the generating model as a black box, even though the model has to keep track of what it is writing about in order to write it. Every token passes through a residual stream that later layers read to decide what comes next, and topic is one of the things that stream encodes. Our starting idea was to read that stream directly. A small causal probe, one that uses only the current and earlier tokens, could label the topic of every token as the model produces it. It would see a change of topic as it happens and could say where in the response the change took place.
+Probes on activations and per-token labelling during generation both existed already, for other targets. [Anthropic's Constitutional Classifiers++](https://arxiv.org/abs/2601.04603) use linear probes on the model's activations as a first screen for jailbreaks. [Goodfire and Rakuten](https://www.goodfire.com/research/rakuten-sae-probes-for-pii-detection) label personal data token by token with probes on SAE features, and Goodfire also [catches reward hacking](https://www.goodfire.com/research/reward-hacking-activation-monitors) with probes on activations. [Qwen3Guard-Stream](https://arxiv.org/abs/2510.14276) labels each token as it is generated, but it is a separate model and its labels are safety categories. We had not seen both ideas combined for topic, in a probe that reads the generating model and whose label can switch partway through a response.
 
-Probes on activations and per-token labelling during generation both already existed, for other targets:
+We started with sparse autoencoder features rather than the raw hidden state. A hidden state mixes many concepts in every dimension, so a probe trained on it is hard to inspect, and its input grows with the width of the model. SAE features tend to represent one meaning each, so a guardrail built on them could be read and audited, and a small fixed set of them would keep the probe the same size at any model size.
 
-- [Anthropic's Constitutional Classifiers++](https://arxiv.org/abs/2601.04603) use linear probes on the model's activations as a first screen for jailbreaks.
-- [Goodfire and Rakuten](https://www.goodfire.com/research/rakuten-sae-probes-for-pii-detection) label personal data token by token with probes on SAE features.
-- Goodfire also [catches reward hacking](https://www.goodfire.com/research/reward-hacking-activation-monitors) with probes on activations.
-- [Qwen3Guard-Stream](https://arxiv.org/abs/2510.14276) labels each token as it is generated, but it is a separate model and its labels are safety categories.
+But the evidence for SAE probes is mixed. [Kantamneni et al.](https://arxiv.org/abs/2502.16681) and [Google DeepMind's interpretability team](https://www.alignmentforum.org/posts/4uXCAJNuPKtKBsi28/) found SAE probes no better than probes on raw activations, and often worse. Goodfire's [practical guide to SAEs](https://www.goodfire.com/blog/a-practical-guide-to-saes) recommends a plain probe when you already know the concept you are looking for, and a topic label is exactly that. So rather than assume the SAE helped, we trained the same detectors on the raw hidden states alongside the SAE features and let the comparison decide for this task.
 
-We had not seen the two combined for topic, in a probe that reads the generating model and whose label can switch partway through a response.
-
-We first reached for sparse autoencoder features rather than the raw hidden state, because a hidden state mixes many concepts in every dimension: a probe trained on it is hard to inspect, and its input grows with the width of the model. SAE features tend to carry one meaning each, so a guardrail built on them could be read and audited, and a small fixed set of them would keep the probe the same size at any model size.
-
-The Rakuten result pointed the same way. Their SAE probes held up better than raw-activation probes when trained on synthetic data and tested on real data, which was our situation exactly: our labels would come from synthetic text, and a deployed probe reads what the model writes for itself.
-
-The case for SAEs was not settled, though. [Kantamneni et al.](https://arxiv.org/abs/2502.16681) and [Google DeepMind's interpretability team](https://www.alignmentforum.org/posts/4uXCAJNuPKtKBsi28/) found SAE probes no better than probes on raw activations, and often worse. Goodfire's own [practical guide to SAEs](https://www.goodfire.com/blog/a-practical-guide-to-saes) recommends a plain probe when you already know the concept you are looking for, and a topic label is such a concept. So we did not want to assume the SAE helped. We trained the same detectors on the raw hidden states alongside the SAE features, so that the comparison would settle it for this task.
-
-This log measures how well such probes work, on two model sizes and three detector architectures, through four questions:
+We measured how well these detectors work at 2 model sizes and with 3 detector architectures. The experiments ask:
 
 - **Whether the SAE is needed.** The same detectors are trained on SAE features and on the raw hidden states the SAE reads, with everything else fixed.
-- **How to choose SAE features.** Three selection rules, one without labels and two with, at the same budget.
-- **Whether the detectors carry over to the model's own writing.** Only text written to order has a known topic for every token, so the detectors learn from teacher-written text. They then run, unchanged, on responses Gemma generates for itself.
-- **Where the detectors look and how they break.** Layer knockout, feature attribution, and four perturbations of the test records.
+- **How to choose SAE features.** We compare 3 selection rules at the same budget: 1 ignores the topic labels and 2 use them.
+- **Whether the detectors transfer to the model's own writing.** Only text we generated has a known topic for every token, so the detectors learn from text written by a teacher model, GPT-5.6 Luna. We then run them unchanged on responses Gemma generates for itself.
+- **Where the detectors look and how they break.** We use layer knockout, feature attribution, and 4 perturbations of the test records.
 
 ## A quick primer on sparse autoencoders
 
-A language model's hidden state at one layer is a vector of a few thousand numbers: 1,152 for Gemma 3 1B and 2,560 for Gemma 3 4B. The model stores far more concepts than it has dimensions, so each dimension carries a blend of many unrelated things. This is called [superposition](https://arxiv.org/abs/2209.10652), and it is why you cannot point at one dimension and say what it means.
+A language model's hidden state at one layer is a vector of a few thousand numbers: 1,152 for Gemma 3 1B and 2,560 for Gemma 3 4B. The model stores far more concepts than it has dimensions, so each dimension mixes many unrelated things. This is called [superposition](https://arxiv.org/abs/2209.10652), and it is why you cannot point at one dimension and say what it means.
 
-An autoencoder is a network trained to reproduce its input. It has two parts: an encoder maps the input to a new representation in a latent space, and a decoder maps that representation back to the input space. A [sparse autoencoder](https://transformer-circuits.pub/2023/monosemantic-features) makes the representation much wider than the input and forces almost all of it to be zero on any given input. It is trained on a large sample of the model's hidden states to reconstruct each one while keeping as few features active as possible.
+An autoencoder is a network trained to reproduce its input. It has 2 parts: an encoder maps the input to a new representation in a latent space, and a decoder maps that representation back to the input space. A [sparse autoencoder](https://transformer-circuits.pub/2023/monosemantic-features) makes that representation much wider than the input, and each of its entries is called a feature. It is trained on a large sample of the model's hidden states to reconstruct each one while keeping as few features active as possible, so on any given input almost all of them are zero.
 
-The SAE has room for many more features than the hidden state has dimensions, but only a handful may be on at once. So each feature tends to settle on one thing: a clinical term, a dollar amount, contract language. Each feature is a direction in the hidden state, with an encoder weight that detects it and a decoder weight that writes it back.
+With many more features than the hidden state has dimensions, and only a handful active at once, each feature tends to represent one thing: a clinical term, a dollar amount, contract language. Each feature is a direction in the hidden state, with an encoder weight that detects it and a decoder weight that writes it back.
 
-We use [Gemma Scope 2](https://deepmind.google/blog/gemma-scope-2-helping-the-ai-safety-community-deepen-understanding-of-complex-language-model-behavior), Google DeepMind's open set of SAEs trained on every layer of every Gemma 3 model, and specifically its residual-stream SAEs with 16,384 features.
+We use the residual-stream SAEs with 16,384 features from [Gemma Scope 2](https://deepmind.google/blog/gemma-scope-2-helping-the-ai-safety-community-deepen-understanding-of-complex-language-model-behavior), Google DeepMind's open set of SAEs trained on every layer of every Gemma 3 model.
 
 <figure class="article-figure">
 
@@ -135,13 +121,15 @@ Figure 3. One SAE layer. The encoder and its JumpReLU activation turn a dense hi
 
 ## How we set it up
 
+The setup is built so the detectors can run while Gemma writes. Each detector labels a token using only the activations of that token and the ones before it, so a guardrail built on them can flag an off-topic answer partway through, rather than after it is finished.
+
 ### The data
 
-The corpus consists of 10,000 synthetic conversations generated with [Simula](/research/building-simula-our-synthetic-data-generation-library), our synthetic data library, which follows the [reasoning-driven generation method of Davidson et al.](https://arxiv.org/abs/2603.29791) Simula plans coverage before it generates anything. A taxonomy defines the space of records and weighted strategies sample combinations from it. A generator model writes each record, and a critic model accepts or rejects it against structural rules.
+Each record is one exchange: a short user prompt and an assistant response of about 675 words on average, on 1 to 4 of 7 topics. The topics are Enterprise documents, General news & content, Customer service, Legal, Financial, HR & people operations, and Healthcare. A multi-topic response covers the first topic fully and then continues with the next in ordinary prose. It never returns to a finished topic and never announces the change with a heading. The prompt and the response are tagged inline with the same topics in the same order, and the tags become the per-token labels.
 
-For this dataset the taxonomy is hand-authored so that the topic sequence is the one controlled variable. Each record's topics, and their order, are fixed by the sampled combination before anything is written. The scenario and wording are left to the generator. This keeps the seven topics balanced and makes every ordered combination of topics reachable. GPT-5.6 Luna wrote and critiqued the records.
+The corpus is 10,000 of these records, generated with [Simula](/research/building-simula-our-synthetic-data-generation-library), our synthetic data library, which follows the [reasoning-driven generation method of Davidson et al.](https://arxiv.org/abs/2603.29791) Simula plans coverage before it generates anything: a taxonomy defines the space of records, and weighted strategies sample combinations from it. A generator model writes each record, and a critic model accepts or rejects it against structural rules.
 
-Each record is one exchange: a short user prompt and an assistant response of roughly 600 words, covering one to four topics. A multi-topic record covers the first topic fully and then moves to the next in ordinary prose. It never returns to a finished topic and never announces the change with a heading. Both prompt and response are segmented with inline tags, same topics in the same order, and the tags become the per-token labels. The seven topics are Enterprise documents, General news & content, Customer service, Legal, Financial, HR & people operations, and Healthcare. The viewer below holds 32 test records, eight for each topic count, with every topic span highlighted and the details of how each record was generated.
+For this dataset we wrote the taxonomy by hand, so the topic sequence is the one thing we set for each record. The sampled combination fixes a record's topics and their order before anything is written, and the generator chooses the scenario and the wording. Sampling this way keeps the 7 topics balanced and makes every ordered combination of topics reachable. GPT-5.6 Luna, the teacher model, wrote and critiqued the records. The viewer below shows 32 test records, 8 for each topic count, with every topic span highlighted and the details of how each record was generated.
 
 | | |
 | --- | --- |
@@ -171,7 +159,7 @@ Figure 4. Composition of the corpus.
 
 <figcaption>
 
-Browse 32 test records, eight for each topic count. Filter by the number of topics on the left; switch to "How it was generated" for the taxonomy draw, sampling strategy and the critic's verdict behind each record.
+Browse 32 test records, 8 for each topic count. Filter by the number of topics on the left; switch to "How it was generated" for the taxonomy draw, sampling strategy and the critic's verdict behind each record.
 
 </figcaption>
 
@@ -179,7 +167,7 @@ Browse 32 test records, eight for each topic count. Filter by the number of topi
 
 ### The pipeline
 
-The backbones are Gemma 1B and 4B from the [Gemma 3 family](https://arxiv.org/abs/2503.19786), frozen the entire time. For each token we take the residual stream at the last ten layers (16-25 for the 1B model and 24-33 for the 4B model). Each layer's state is encoded by its SAE, a feature stage reduces the result to the detector's input, and a small causal detector emits a topic label for that token. Only the detector is trained. The backbone runs in two modes, prefill and decode: the detectors are trained in the first and deployed in the second.
+We work with Gemma 1B and 4B from the [Gemma 3 family](https://arxiv.org/abs/2503.19786), and both stay frozen throughout. For each token we take the residual stream at the last 10 layers: layers 16 to 25 of the 1B model and 24 to 33 of the 4B. Each layer's state is encoded by its SAE, a feature stage reduces the result to the detector's input, and a small causal detector emits a topic label for that token. Only the detector is trained. Gemma runs in 2 modes, and we train the detectors in prefill and deploy them in decode.
 
 <figure class="article-figure">
 
@@ -193,16 +181,16 @@ Figure 5. The pipeline. Gemma 3 and its SAEs are frozen; each run picks one feat
 
 </figure>
 
-- **Prefill.** A conversation that already exists is passed through the backbone in a single forward pass, with the response teacher-forced. Every token's activations come out at once and every token has a known topic. All training happens in prefill.
-- **Decode.** The backbone generates its own response one token at a time. This is the deployment setting. Because the detectors are causal, the activations they see for a given token are computed the same way in both settings, so a detector trained in prefill can be run during decode without modification.
+- **Prefill.** Gemma reads a finished conversation in one forward pass, with the response teacher-forced. Every token's activations come out at once, and every token has a known topic. All training happens in prefill.
+- **Decode.** Gemma writes its own response one token at a time, which is how a guardrail runs in deployment. Because Gemma is causal, a token's activations are computed the same way in both modes, and because the detector is causal too, a detector trained in prefill can run during decode without modification.
 
 <figure class="article-figure">
 
-![Figure 6. Prefill and decode. In prefill a finished conversation goes through Gemma in one pass, and every token's predicted topic is compared with its tag. In decode Gemma writes one token per step and the detector labels each new token as it appears; there are no tags, so a response is scored against the topics its prompt asked for. Because the detector is causal, a token's activations are the same in both modes.](../public/research/online-topic-guardrails-with-saes/fig06_prefill_decode.png)
+![Figure 6. Prefill and decode. In prefill a finished conversation goes through Gemma in one pass, and every token's predicted topic is compared with its tag. In decode Gemma writes one token per step and the detector labels each new token as it appears; there are no tags, so a response is scored against the topics its prompt asked for. Because Gemma is causal, a token's activations are the same in both modes.](../public/research/online-topic-guardrails-with-saes/fig06_prefill_decode.png)
 
 <figcaption>
 
-Figure 6. Prefill and decode. In prefill a finished conversation goes through Gemma in one pass, and every token's predicted topic is compared with its tag. In decode Gemma writes one token per step and the detector labels each new token as it appears; there are no tags, so a response is scored against the topics its prompt asked for. Because the detector is causal, a token's activations are the same in both modes.
+Figure 6. Prefill and decode. In prefill a finished conversation goes through Gemma in one pass, and every token's predicted topic is compared with its tag. In decode Gemma writes one token per step and the detector labels each new token as it appears; there are no tags, so a response is scored against the topics its prompt asked for. Because Gemma is causal, a token's activations are the same in both modes.
 
 </figcaption>
 
@@ -210,37 +198,37 @@ Figure 6. Prefill and decode. In prefill a finished conversation goes through Ge
 
 ### Feature stages
 
-The feature stage turns the ten layers of SAE output into the detector's input. Static selection keeps the same small set of features for every token. The input stays 1,500 wide, the detector stays small, and every column is a named feature. The cost is that a token loses any important feature that was not chosen. Dynamic selection keeps each token's own strongest features, so nothing a token relies on is cut, at the cost of an input tens of thousands of columns wide. Raw skips the SAE and hands the detector the hidden states themselves, which tells us whether the SAE adds anything a learned projection of the hidden state could not.
+The feature stage turns the 10 layers of SAE output into the detector's input. Static selection keeps the same 1,500 features for every token, so the detector stays small and every column is a named feature, but a token loses any important feature that was not chosen. Dynamic selection keeps each token's own strongest features, so nothing a token relies on is cut, but the input is tens of thousands of columns wide. Raw passes the hidden states to the detector directly. We include it to test whether the SAE adds anything a learned projection of the hidden state could not.
 
-**Static selection** chooses features once. For each layer we keep 150 of the 16,384 SAE features and discard the rest, so every token is described by the same 1,500 columns. Which 150 to keep is decided by a selection rule, fitted on the training split only and then frozen. We use three rules.
+**Static selection** chooses features once. For each layer we keep 150 of the 16,384 SAE features and discard the rest, so every token is described by the same 1,500 columns. A selection rule, fitted on the training split only and then frozen, decides which 150 to keep:
 
-- **Summation** sums each feature's activation over all training tokens and keeps the 150 largest. It needs no labels. A feature that fires on every topic ranks as high as one that fires on exactly one. This is the rule used wherever the text says "static" without qualification.
-- **F-statistic** scores each feature by the ANOVA F-statistic against the token's topic: how far the feature's mean activation differs between topics, relative to its spread within a topic. It keeps the top 150. It uses the labels, scores one feature at a time, and is computed exactly in a single pass.
-- **Group lasso** fits a linear probe from all 16,384 features to the seven topics under a [group-lasso penalty](https://doi.org/10.1111/j.1467-9868.2005.00532.x) that deletes a feature's seven class weights together. The penalty is tuned until about 150 features survive per layer, and the survivors are kept. It uses the labels and scores features jointly. Some layers end with fewer than 150 survivors, so the total is 1,438 features at 1B and 1,489 at 4B.
+- **Summation** sums each feature's activation over all training tokens and keeps the 150 largest. It needs no labels, so a feature that fires on every topic ranks as high as one that fires on exactly one. This is the rule used wherever the text says "static" without qualification.
+- **F-statistic** scores each feature by the ANOVA F-statistic against the token's topic: how far the feature's mean activation differs between topics, relative to its spread within a topic. It keeps the 150 highest scorers. It uses the labels, scores each feature on its own, and is computed exactly in a single pass.
+- **Group lasso** fits a linear probe from all 16,384 features to the 7 topics under a [group-lasso penalty](https://doi.org/10.1111/j.1467-9868.2005.00532.x) that deletes a feature's 7 class weights together. The penalty is tuned until about 150 features per layer remain, and those are kept. It uses the labels and scores features jointly. Some layers end with fewer than 150, so the total is 1,438 features at 1B and 1,489 at 4B.
 
 <figure class="article-figure">
 
-![Figure 7. The three static selection rules on the same toy activations, keeping the top 3 of 6 features. Summation ranks features by total activation, so f1, which fires on every token, comes first, and the three it keeps are all Healthcare features. The F-statistic scores how far apart the two topics' activations sit relative to their spread, so f1 scores zero. Group lasso fits one probe and zeroes whole rows of its weights; here it keeps the same three features as the F-statistic.](../public/research/online-topic-guardrails-with-saes/fig07_static_rules.png)
+![Figure 7. The 3 static selection rules on the same toy activations, keeping the top 3 of 6 features. Summation ranks features by total activation, so f1, which fires on every token, comes first, and the 3 it keeps are all Healthcare features. The F-statistic scores how far apart the 2 topics' activations sit relative to their spread, so f1 scores zero. Group lasso fits one probe and zeroes whole rows of its weights; here it keeps the same 3 features as the F-statistic.](../public/research/online-topic-guardrails-with-saes/fig07_static_rules.png)
 
 <figcaption>
 
-Figure 7. The three static selection rules on the same toy activations, keeping the top 3 of 6 features. Summation ranks features by total activation, so f1, which fires on every token, comes first, and the three it keeps are all Healthcare features. The F-statistic scores how far apart the two topics' activations sit relative to their spread, so f1 scores zero. Group lasso fits one probe and zeroes whole rows of its weights; here it keeps the same three features as the F-statistic.
+Figure 7. The 3 static selection rules on the same toy activations, keeping the top 3 of 6 features. Summation ranks features by total activation, so f1, which fires on every token, comes first, and the 3 it keeps are all Healthcare features. The F-statistic scores how far apart the 2 topics' activations sit relative to their spread, so f1 scores zero. Group lasso fits one probe and zeroes whole rows of its weights; here it keeps the same 3 features as the F-statistic.
 
 </figcaption>
 
 </figure>
 
-**Dynamic selection** chooses features again for every token. Each token keeps its own 150 strongest features per layer. Each kept value is written into a column that permanently belongs to that feature, so a column always means the same thing while the set of non-zero columns changes from token to token. The columns are the union of every feature any training token picked, capped at the 6,000 most frequently picked per layer. The result is an input about 54,000 columns wide with roughly 1,380 non-zero entries per token.
+**Dynamic selection** chooses features again for every token. Each token keeps its own 150 strongest features per layer, and each kept value goes into a column reserved for that feature. A column always means the same thing; only which columns are non-zero changes from token to token. The columns are the union of every feature any training token picked, capped at the 6,000 most frequently picked per layer. The result is an input about 54,000 columns wide with roughly 1,380 non-zero entries per token.
 
-**Raw** skips the SAE. The ten residual states are concatenated and handed to the detector directly: 11,520 values per token at 1B and 25,600 at 4B. Nothing is selected and no column has a meaning that can be looked up.
+**Raw** skips the SAE. The 10 residual states are concatenated and passed to the detector directly: 11,520 values per token at 1B and 25,600 at 4B. Nothing is selected, and no column has a meaning that can be looked up.
 
 <figure class="article-figure">
 
-![Figure 8. The three feature stages on one layer, shown with 14 features and the top 3 per token instead of the top 150. Static selection keeps the same columns for every token, so a token whose strongest features fall outside them loses those features. Dynamic selection keeps each token's own strongest features and writes each one into the column that belongs to it. Raw skips the SAE and concatenates the ten hidden states: every value is used and no column has a name.](../public/research/online-topic-guardrails-with-saes/fig08_feature_stages.png)
+![Figure 8. The 3 feature stages on one layer, shown with 14 features and the top 3 per token instead of the top 150. Static selection keeps the same columns for every token, so a token whose strongest features fall outside them loses those features. Dynamic selection keeps each token's own strongest features and writes each one into the column that belongs to it. Raw skips the SAE and concatenates the 10 hidden states: every value is used and no column has a name.](../public/research/online-topic-guardrails-with-saes/fig08_feature_stages.png)
 
 <figcaption>
 
-Figure 8. The three feature stages on one layer, shown with 14 features and the top 3 per token instead of the top 150. Static selection keeps the same columns for every token, so a token whose strongest features fall outside them loses those features. Dynamic selection keeps each token's own strongest features and writes each one into the column that belongs to it. Raw skips the SAE and concatenates the ten hidden states: every value is used and no column has a name.
+Figure 8. The 3 feature stages on one layer, shown with 14 features and the top 3 per token instead of the top 150. Static selection keeps the same columns for every token, so a token whose strongest features fall outside them loses those features. Dynamic selection keeps each token's own strongest features and writes each one into the column that belongs to it. Raw skips the SAE and concatenates the 10 hidden states: every value is used and no column has a name.
 
 </figcaption>
 
@@ -248,15 +236,15 @@ Figure 8. The three feature stages on one layer, shown with 14 features and the 
 
 ### Detectors
 
-Three architectures are trained identically on every feature stage, and all three are strictly causal. Figure 9 shows how each one reads the tokens before the one it is labelling, and the configuration table under Training lists their settings.
+We train 3 architectures identically on every feature stage, and all 3 are strictly causal. Figure 9 shows which earlier tokens each detector reads when it labels a token, and the configuration table under Training lists their settings.
 
 <figure class="article-figure">
 
-![Figure 9. The three detector bodies, each drawn at the token t it is labelling. The GRU carries a running state forward, the Transformer attends to every earlier token, and ConvNeXt reads a window of past tokens that doubles with each block, to the last 379 tokens.](../public/research/online-topic-guardrails-with-saes/fig09_detectors.png)
+![Figure 9. The 3 detector bodies, each drawn at the token t it is labelling. The GRU carries a running state forward, the Transformer attends to every earlier token, and ConvNeXt reads a window of past tokens that doubles with each block, to the last 379 tokens.](../public/research/online-topic-guardrails-with-saes/fig09_detectors.png)
 
 <figcaption>
 
-Figure 9. The three detector bodies, each drawn at the token t it is labelling. The GRU carries a running state forward, the Transformer attends to every earlier token, and ConvNeXt reads a window of past tokens that doubles with each block, to the last 379 tokens.
+Figure 9. The 3 detector bodies, each drawn at the token t it is labelling. The GRU carries a running state forward, the Transformer attends to every earlier token, and ConvNeXt reads a window of past tokens that doubles with each block, to the last 379 tokens.
 
 </figcaption>
 
@@ -304,7 +292,12 @@ Every detector is trained with the settings below.
 | Learning rate | 3e-4 | 3e-4 | 1e-3 |
 | Training (shared) | [AdamW](https://arxiv.org/abs/1711.05101), 15 epochs, batch 16, weight decay 0.01, dropout 0.1, gradient norm clipped at 1.0 | Same | Same |
 
-After each epoch the detector is scored on the validation split, and the checkpoint with the best validation macro-F1 is the one we test. Every number in this log is from the held-out test split of 1,500 records. The viewer below has the training loss, validation macro-F1, token accuracy and gradient norm of all 30 detectors. Most detectors are still improving when training stops: 17 of the 30 reach their best validation score in the final epoch, and 23 in the last two. The exceptions are the weakest configurations. The 4B summation ConvNeXt peaks at 93.0 validation macro-F1 in epoch 9 and ends at 80.0, and the 4B summation GRU peaks at 88.0 in epoch 11 and ends at 83.2. Checkpoint selection keeps the peak in both cases, and the test scores in this log come from those epochs.
+After each epoch the detector is scored on the validation split, and the checkpoint with the best validation macro-F1 is the one we test. Every result in this log comes from the held-out test split of 1,500 records. Where the tokens have tags, we report 2 scores:
+
+- **Macro-F1**, the token-level F1 for each topic, averaged equally over the 7 topics.
+- **Overlap**, the intersection-over-union of the predicted and true tokens for each topic, averaged over topics. For the same predictions overlap is always lower than F1, because F1 counts each correctly labelled token twice and overlap counts it once. A topic with 90 correct tokens, 10 missed and 10 wrongly claimed has an F1 of 90 and an overlap of 82.
+
+The viewer below has the training loss, validation macro-F1, token accuracy and gradient norm of all 30 detectors. Most detectors are still improving when training stops: 17 of the 30 reach their best validation score in the final epoch, and 23 in the last 2. The exceptions are the weakest configurations. The 4B summation ConvNeXt peaks at 93.0 validation macro-F1 in epoch 9 and ends at 80.0. The 4B summation GRU peaks at 88.0 in epoch 11 and ends at 83.2. Checkpoint selection keeps the peak in both cases, and the test scores in this log come from those epochs.
 
 <figure class="article-figure">
 
@@ -318,24 +311,21 @@ Explore the training runs. Pick a backbone and detector on the left, toggle feat
 
 </figure>
 
-Features chosen with the labels are useful from the first epoch. After one epoch the 4B GRU is at 65.9 validation macro-F1 on summation features, and at 92.0 and 92.2 on F-statistic and group-lasso features, already above the 88.0 that summation reaches at its best. The Transformer's loss and gradient norm stay smooth, with a median gradient norm between 0.7 and 4 across its ten runs. The GRU's runs a few times higher. ConvNeXt's is far noisier: its median gradient norm before clipping ranges from 13 to nearly 1,000 across runs, and its loss spikes repeatedly. Clipping bounds each update, and ConvNeXt still finishes with the best validation score in six of the ten feature-stage and model-size pairs.
+Features chosen with the labels help from the first epoch. After epoch 1 the 4B GRU is at 65.9 validation macro-F1 on summation features, and at 92.0 and 92.2 on F-statistic and group-lasso features, already above the 88.0 that summation reaches at its best.
+
+The architectures also train differently. The Transformer's loss and gradient norm stay smooth, with a median gradient norm between 0.7 and 4 across its 10 runs, and the GRU's gradient norm runs a few times higher. ConvNeXt's is far noisier: its median gradient norm before clipping ranges from 13 to nearly 1,000 across runs, and its loss spikes repeatedly. Clipping bounds each update, and ConvNeXt still finishes with the best validation score in 6 of the 10 feature-stage and model-size pairs.
 
 ## Experiments and results
 
-We ran six experiments, each on both model sizes and all three detectors. All scores are percentages, and every number is from the held-out test split.
+We ran 6 experiments, each on both model sizes and all 3 detectors. All scores are percentages.
 
 ### Baselines
 
-The first question is whether SAE features carry a per-token topic signal at all, and whether picking features once is enough or each token needs its own.
+The first questions are whether SAE features encode a per-token topic signal at all, and whether one fixed set of features is enough or each token needs its own.
 
-> **Hypothesis:** Both feature stages should carry the signal. A fixed set, though, drops every feature it did not choose, so if some tokens rely on those features, per-token selection should score higher.
+> **Hypothesis:** Both feature stages should capture the signal. But a fixed set leaves out every feature it did not choose, so if some tokens rely on those features, per-token selection should score higher.
 
 We trained the detectors on static (summation) and dynamic features and scored them in prefill.
-
-We score each detector two ways:
-
-- **Macro-F1**, the token-level F1 for each topic, averaged equally over the seven topics.
-- **Overlap**, the intersection-over-union of the predicted and true tokens for each topic, averaged over topics. For the same predictions overlap is always the lower of the two, because F1 counts each correctly labelled token twice and overlap counts it once. A topic with 90 correct tokens, 10 missed and 10 wrongly claimed has an F1 of 90 and an overlap of 82.
 
 <FigureViews label="Figure 11" title="Static and dynamic selection at both model sizes">
 
@@ -364,13 +354,13 @@ Figure 11. Static and dynamic selection at both model sizes.
 
 </FigureViews>
 
-At 1B the two feature stages are close: static selection scores 94.3 to 96.2 macro-F1 and dynamic 94.0 to 97.3, so a fixed 1,500 of the 163,840 available features (16,384 per layer across ten layers) is already enough for 94 or better. At 4B they separate, as the hypothesis predicted. Every static detector scores lower than its 1B counterpart, while dynamic selection holds, with the ConvNeXt at 97.1 against 97.3 at 1B. The budget is the same 150 features per layer at both sizes, so either the wider 4B model needs more of them or summation is choosing the wrong ones. The feature-selection experiment below separates the two.
+At 1B the 2 feature stages score about the same: static selection 94.3 to 96.2 macro-F1 and dynamic 94.0 to 97.3. So a fixed 1,500 of the 163,840 available features (16,384 per layer across 10 layers) is already enough for 94 or better. At 4B they separate, as the hypothesis predicted. Every static detector scores lower than its 1B counterpart. Dynamic selection keeps ConvNeXt and the Transformer within a point of their 1B scores (ConvNeXt 97.1 against 97.3), but the dynamic GRU drops from 96.1 to 92.4. The budget is the same 150 features per layer at both sizes, so either the wider 4B model needs more of them or summation is choosing the wrong ones. The feature-selection experiment below tests which it is.
 
-ConvNeXt is the strongest detector in every configuration and gains the most from dynamic features (+4.7 macro-F1 at 4B). The Transformer barely moves at 1B (94.3 static, 94.0 dynamic) and gains about two points at 4B. The GRU is the most sensitive to a tight input: it has the lowest score in the table (87.4, static 4B) and recovers five points with dynamic features.
+The detectors also differ in how much the fixed feature set costs them. The GRU is the most sensitive: on static features at 4B it has the lowest score in the table (87.4), and dynamic features recover 5 points. ConvNeXt gains almost as much at 4B (+4.7 macro-F1) and is the strongest in every row. The Transformer barely changes at 1B (94.3 static, 94.0 dynamic) and gains about 2 points at 4B.
 
 #### By topic
 
-The averages hide which topics are hard. The figure below breaks the 4B overlap down by topic.
+Some topics are harder than others. The figure below breaks the 4B overlap down by topic.
 
 <FigureViews label="Figure 12" title="Per-topic overlap at 4B">
 
@@ -402,21 +392,21 @@ Figure 12. Per-topic overlap at 4B.
 
 </FigureViews>
 
-Enterprise documents and HR & people operations are the two lowest topics for every detector under both feature stages. Healthcare, General news and Legal are the highest. The low pair are the procedural, internal-process topics, and they share vocabulary: a memo about a staffing policy and an HR plan read alike. The gap between the easiest and hardest topic is 9 points for the static GRU and 3.5 for the dynamic ConvNeXt, so a stronger detector narrows the spread as well as raising the average.
+Enterprise documents and HR & people operations are the 2 lowest topics for nearly every detector. The exception is the static ConvNeXt, where Legal is lowest. The low pair are the procedural, internal-process topics, and they share vocabulary: a memo about a staffing policy and an HR plan read alike. With dynamic features, Healthcare, General news and Legal are the 3 highest. A stronger detector also narrows the spread between topics: the gap between the easiest and hardest topic is 9 points for the static GRU and 3.5 for the dynamic ConvNeXt.
 
 #### Prompt-and-response versus response-only supervision
 
-The prompt also carries a tagged span for each topic it asks about, so a detector can be supervised on response tokens only or on prompt and response together. Supervising both adds about 515,000 prompt tokens to the 8.2M response tokens in the loss and lets the detector label the user's turn. Prompt tokens are fewer and carry less context, so they could pull the response scores down.
+The prompt is tagged too, with a span for each topic it asks about, so a detector can be supervised on response tokens only or on prompt and response together. Supervising both adds about 515,000 prompt tokens to the 8.2M response tokens in the loss, and lets the detector label the user's turn. But prompt tokens are fewer and have less context, so they could pull the response scores down.
 
-> **Hypothesis:** If the topic signal in the response is strong enough, the extra prompt tokens should not hurt. Two-sided supervision should hold response scores roughly constant and add labels for the prompt at no cost.
+> **Hypothesis:** If the topic signal in the response is strong enough, the extra prompt tokens should not hurt. Supervising both should leave response scores roughly unchanged and add labels for the prompt at no cost.
 
 We trained every baseline both ways and compared them on the same response tokens.
 
-<FigureViews label="Figure 13" title="Overlap on response tokens under the two supervision regimes">
+<FigureViews label="Figure 13" title="Overlap on response tokens under the 2 supervision regimes">
 
 <div slot="graph">
 
-<div class="plot" data-plot="/research/assets/figures/online-topic-guardrails-with-saes/fig13_supervision.json" style="--plot-height: 480px" role="img" aria-label="Figure 13. Overlap on response tokens under the two supervision regimes."></div>
+<div class="plot" data-plot="/research/assets/figures/online-topic-guardrails-with-saes/fig13_supervision.json" style="--plot-height: 480px" role="img" aria-label="Figure 13. Overlap on response tokens under the 2 supervision regimes."></div>
 
 </div>
 
@@ -433,34 +423,34 @@ We trained every baseline both ways and compared them on the same response token
 
 <figcaption>
 
-Figure 13. Overlap on response tokens under the two supervision regimes.
+Figure 13. Overlap on response tokens under the 2 supervision regimes.
 
 </figcaption>
 
 </FigureViews>
 
-On response tokens the two supervision regimes give nearly the same result. Ten of the twelve differences are within 1.2 overlap points. The two larger ones are both at static 4B: the GRU gains 2.4 points and the ConvNeXt loses 2.1. So the hypothesis held: supervising the prompt costs nothing on the response and labels the user's turn as well, which is why every later experiment uses it.
+On response tokens the 2 supervision regimes give nearly the same result. Of the 12 differences, 10 are within 1.2 overlap points, and the 2 larger ones are both at static 4B: the GRU gains 2.4 points and the ConvNeXt loses 2.1. The hypothesis held. Supervising the prompt costs almost nothing on the response and labels the user's turn as well, so every later experiment uses it.
 
 We think the static 4B GRU gains because it carries a running state through the prompt before it reaches the response. With response-only supervision that state receives no gradient during the prompt. A loss on the prompt span teaches it to build a topic-aware state before the response begins. The Transformer can attend back to the prompt either way. We do not have a clear explanation for the ConvNeXt's drop.
 
-A separate point concerns which tokens are scored, not which are trained on. Scores over the prompt and response together are one to three points lower than scores on the response alone, because short prompt questions give the detector less context than long answers.
+Which tokens are scored also changes the numbers, separately from which are trained on. Scores over the prompt and response together are 1 to 3 points lower than scores on the response alone, because short prompt questions give the detector less context than long answers.
 
 ### Decode: running on Gemma's own writing
 
 Every prefill score comes from teacher-forced text that GPT-5.6 Luna wrote. In deployment the detector reads Gemma's own writing, which has no labels and a different style.
 
-> **Hypothesis:** Gemma's answers differ from the teacher's in length, structure and register. If the detectors learned the teacher's style as much as the topic, their scores should fall off hard on Gemma's writing.
+> **Hypothesis:** Gemma's answers differ from the teacher's in length, structure and register. If the detectors learned the teacher's style as much as the topic, their scores should drop sharply on Gemma's writing.
 
-We let Gemma generate on 1,000 test prompts, with the topic tags removed, and ran the activations through the prefill-trained detectors, unchanged. As a reference, the same detectors read the teacher's response to the same prompts.
+We let Gemma generate responses to 1,000 test prompts, with the topic tags removed, and ran the activations through the prefill-trained detectors without changing them. As a reference, the same detectors read the teacher's responses to the same prompts.
 
-Gemma's responses have no tags, so there is no per-token answer key to score against. We compare the detector's labels with the topics the prompt asked for instead. Take a prompt that asks about Financial and Legal, and a 1,000-token response the detector labels as 600 Financial, 350 Legal and 50 HR tokens.
+Gemma's responses have no tags, so there is no per-token answer key to score against. Instead, we compare the detector's labels with the topics the prompt asked for. Take a prompt that asks about Financial and Legal, and a 1,000-token response the detector labels as 600 Financial, 350 Legal and 50 HR tokens.
 
 - **Purity** is the percentage of response tokens labelled with a requested topic. In the example it is 95.
 - **Coverage** is the percentage of requested topics that receive at least a tenth of the tokens. Both requested topics clear that bar, so coverage is 100.
 - **Full coverage** is the percentage of responses in which every requested topic clears it. The example response would count toward it.
-- **Set precision** is the share of the topics the detector uses anywhere in a response that were actually requested. It is 67 here, since two of the three topics it used were requested. We use it when comparing the detectors below.
+- **Set precision** is the share of the topics the detector uses anywhere in a response that were actually requested. It is 67 here, since 2 of the 3 topics it used were requested. We use it when comparing the detectors below.
 
-Purity asks whether the labels stay faithful to the request: a guardrail that tags a quarter of an on-brief answer with an unrequested topic would raise constant false alarms. Coverage asks the opposite question, whether every requested topic shows up in the labels. Neither score separates the detector from the writer. A low purity can mean the detector mislabelled on-topic text or that Gemma wandered off-topic, and a low coverage can mean the detector missed a topic or that Gemma never wrote about it. The teacher's answers help separate the two, because they are known to cover every requested topic. If a detector reaches full coverage on the teacher's text but not on Gemma's, the missing topics are more likely missing from Gemma's answer than from the detector's reading.
+Purity measures whether the labels match the request: a guardrail that tagged 1/4 of an on-topic answer with an unrequested topic would raise constant false alarms. Coverage measures the reverse, whether every requested topic appears in the labels. Neither score can tell a detector error from a gap in Gemma's answer. A low purity can mean the detector mislabelled on-topic text or that Gemma wandered off topic, and a low coverage can mean the detector missed a topic or that Gemma never wrote about it. The teacher's answers help tell these cases apart, because they are known to cover every requested topic. If a detector reaches full coverage on the teacher's text but not on Gemma's, the missing topics are more likely missing from Gemma's answer than from the detector's reading.
 
 <FigureViews label="Figure 14" title="Decode scores on Gemma's own responses">
 
@@ -489,9 +479,11 @@ Figure 14. Decode scores on Gemma's own responses.
 
 </FigureViews>
 
-The hypothesis did not hold. The detectors never saw Gemma's writing during training, and Gemma does not write like the teacher: its responses average about 1,240 tokens against the teacher's 820. Even so, with dynamic features 94 to 95 percent of the tokens Gemma writes are labelled with a topic the prompt asked for, at both sizes and for all three detectors. Static features at 1B are a few points behind.
+The hypothesis did not hold. The detectors never saw Gemma's writing during training, and Gemma does not write like the teacher: its responses average about 1,240 tokens against the teacher's 820. Even so, with dynamic features 94 to 95 percent of the tokens Gemma writes are labelled with a topic the prompt asked for, at both sizes and for all 3 detectors. With static features at 1B, the GRU and ConvNeXt are a few points behind.
 
-The demo below replays ten of these responses. It shows Gemma's answer and GPT's reference answer to the same prompt, highlights each token with its topic, and pauses at every switch. Gemma's labels come from the 4B ConvNeXt on dynamic features.
+Static selection at 4B is the exception. The GRU labels 31 percent of Gemma's tokens with topics nobody asked for, and the ConvNeXt fully covers only 1/3 of the prompts. This was the weakest configuration in prefill too, but the gap is larger here. On the teacher's text the GRU trailed dynamic selection by 5 points of macro-F1; on Gemma's text it trails by 25 points of purity. The Transformer stays at 90 purity. Choosing the features with the labels fixes this, as the feature-selection experiment shows.
+
+The demo below replays 10 of these responses. It shows Gemma's answer and the teacher's reference answer to the same prompt, highlights each token with its topic, and pauses at every switch. Gemma's labels come from the 4B ConvNeXt on dynamic features.
 
 <figure class="article-figure">
 
@@ -499,13 +491,11 @@ The demo below replays ten of these responses. It shows Gemma's answer and GPT's
 
 <figcaption>
 
-Ten test prompts, with Gemma's and GPT's answers labelled token by token. Press Play on either answer: the bars show the topic mix of the last 20 tokens and shift at each switch, and the faded bar is the mix just before it.
+10 test prompts, with Gemma's and GPT's answers labelled token by token. Press Play on either answer: the bars show the topic mix of the last 20 tokens and shift at each switch, and the faded bar is the mix just before it.
 
 </figcaption>
 
 </figure>
-
-Static selection at 4B is the exception. The GRU labels 31 percent of Gemma's tokens with topics nobody asked for, and the ConvNeXt fully covers only a third of the prompts. This was the weakest configuration in prefill too, but the gap is larger here: for the GRU, a five-point macro-F1 gap to dynamic selection on teacher text widens to 25 points of purity on Gemma's text. The Transformer is the detector that holds up, at 90 purity. Choosing the features with the labels repairs this, as the feature-selection experiment shows.
 
 #### Coverage and the number of topics
 
@@ -523,7 +513,7 @@ Figure 15. Full coverage against the number of topics in the prompt.
 
 </figure>
 
-Full coverage is near 100 for single-topic prompts. For four-topic prompts it falls to between 34 and 62 in every configuration except static selection at 4B, which drops further. Raising the generation limit from 1,500 to 8,000 tokens did not change this. Gemma stops by itself well short of the limit, and its longest response is about 2,160 tokens.
+Full coverage is near 100 for 1-topic prompts. For 4-topic prompts it falls to between 34 and 62 in every configuration except static selection at 4B, which drops further. Raising the generation limit from 1,500 to 8,000 tokens did not change this. Gemma stops by itself well short of the limit, and its longest response is about 2,160 tokens.
 
 To tell detector error from Gemma skipping topics, we ran the static detectors on the teacher's answers to the same prompts.
 
@@ -556,25 +546,27 @@ Figure 16. Static detectors on the teacher's text and on Gemma's own.
 
 </FigureViews>
 
-On the teacher's text the detectors reach full coverage of 95 or better, so they find every topic when the text contains it. On Gemma's text, purity falls by 4 to 10 points for the 1B detectors and full coverage falls by about 30. The 4B GRU and ConvNeXt fall much further, the static 4B failure described above. The coverage drop is mostly Gemma answering fewer of the topics in a crowded prompt. One four-topic record asked for an HR development plan tied to a technology story, with costs and legal considerations. Gemma spent about two-thirds of its response on the HR plan and skimmed the other three. The GRU reported mostly HR, the Transformer caught HR and Financial, and the ConvNeXt touched all four.
+On the teacher's text the detectors reach full coverage of 95 or better, so they find every topic when the text contains it. On Gemma's text, purity falls by 4 to 10 points for the 1B detectors and full coverage by about 30. The 4B GRU and ConvNeXt fall much further, the static 4B failure described above. Most of the coverage drop comes from Gemma answering fewer of the topics in a crowded prompt.
+
+A 4-topic record, for example, asked for an HR development plan tied to a technology story, with costs and legal considerations. Gemma spent about 2/3 of its response on the HR plan and skimmed the other 3. The GRU reported mostly HR, the Transformer caught HR and Financial, and the ConvNeXt touched all 4.
 
 #### How each detector reads generated text
 
-The GRU changes its predicted topic on about 1 percent of adjacent tokens and labels a response as long contiguous blocks. It commits to the dominant topic, which gives it the highest set precision (up to 77) and the lowest coverage on crowded prompts. The Transformer switches on 10 to 20 percent of adjacent tokens. It names nearly every requested topic at least once, and also the most unrequested ones, so its set precision is the lowest (49 to 58). ConvNeXt switches on 8 to 14 percent of adjacent tokens and spreads its labels across the requested topics most evenly, which is why it leads on coverage with dynamic features. Set precision ranges from 49 to 77 across all configurations. The label set has seven topics and no "none of these", so connective text and filler have to be assigned somewhere.
+The 3 detectors trade set precision against coverage in different ways. The GRU changes its predicted topic on about 1 percent of adjacent tokens and labels a response as long contiguous blocks. It commits to the dominant topic, which gives it the highest set precision (up to 77) and the lowest coverage on crowded prompts. The Transformer switches on 10 to 20 percent of adjacent tokens. It names nearly every requested topic at least once, and also the most unrequested ones, so its set precision is the lowest (49 to 58). ConvNeXt switches on 8 to 14 percent of adjacent tokens and spreads its labels across the requested topics most evenly, which is why it leads on coverage with dynamic features. Set precision ranges from 49 to 77 across all configurations. The label set has 7 topics and no "none of these", so connective text and filler have to be assigned somewhere.
 
 ### No-SAE ablation
 
 A high score on SAE features does not show that the SAE helps, because the same signal may be readable straight from the hidden state the SAE encodes.
 
-> **Hypothesis:** If the residual stream already carries the topic in a form a small detector can read, raw hidden states should do at least as well as the best SAE input, and the gap should be widest where the fixed budget was tightest.
+> **Hypothesis:** If the residual stream already encodes the topic in a form a small detector can read, raw hidden states should do at least as well as the best SAE input, and their lead over static selection should be widest where the fixed budget was tightest.
 
-We replaced the SAE features with the raw hidden states and repeated the baseline and decode experiments, with the split, supervision, detectors and training recipe unchanged. Besides the same prefill and decode scores, we compare detector size, since the raw input is far wider than a static SAE input.
+We replaced the SAE features with the raw hidden states and repeated the baseline and decode experiments, with the split, supervision, detectors and training recipe unchanged. Alongside the same prefill and decode scores, we compare detector size, since the raw input is far wider than a static SAE input.
 
-<FigureViews label="Figure 17" title="The three feature stages at both model sizes">
+<FigureViews label="Figure 17" title="The 3 feature stages at both model sizes">
 
 <div slot="graph">
 
-<div class="plot" data-plot="/research/assets/figures/online-topic-guardrails-with-saes/fig17_nosae.json" style="--plot-height: 640px" role="img" aria-label="Figure 17. The three feature stages at both model sizes."></div>
+<div class="plot" data-plot="/research/assets/figures/online-topic-guardrails-with-saes/fig17_nosae.json" style="--plot-height: 640px" role="img" aria-label="Figure 17. The 3 feature stages at both model sizes."></div>
 
 </div>
 
@@ -595,15 +587,13 @@ We replaced the SAE features with the raw hidden states and repeated the baselin
 
 <figcaption>
 
-Figure 17. The three feature stages at both model sizes.
+Figure 17. The 3 feature stages at both model sizes.
 
 </figcaption>
 
 </FigureViews>
 
-Raw hidden states are the best input for the GRU and the Transformer at both sizes and for ConvNeXt at 4B. The one configuration where an SAE input leads is ConvNeXt at 1B, where dynamic selection is 0.6 points ahead of raw. Against static selection the gain from dropping the SAE grows with the model: 1.0 to 3.7 overlap points at 1B and 5.4 to 15.2 at 4B, with the GRU gaining the most at both sizes.
-
-So the hypothesis held: the SAE surfaces nothing that was otherwise unavailable, and a fixed budget throws some of it away.
+Raw hidden states are the best input for the GRU and the Transformer at both sizes, and for ConvNeXt at 4B. The one configuration where an SAE input leads is ConvNeXt at 1B, where dynamic selection is 0.6 macro-F1 points ahead of raw. Measured in overlap against static selection, the gain from dropping the SAE grows with the model: 1.0 to 3.7 points at 1B and 5.4 to 15.2 at 4B, with the GRU gaining the most at both sizes. The hypothesis held: the SAE adds no topic information that the hidden state did not already have, and a fixed budget throws some of it away.
 
 <FigureViews label="Figure 18" title="Raw and dynamic detectors on Gemma's own responses">
 
@@ -632,15 +622,15 @@ Figure 18. Raw and dynamic detectors on Gemma's own responses.
 
 </FigureViews>
 
-Under decode the raw GRU and ConvNeXt hold purity at 95 to 96 and reach the highest full coverage at 4B. The raw Transformer is uneven: it drops to 88 purity at 4B and 64 full coverage at 1B.
+Under decode, the raw GRU and ConvNeXt score 95 to 96 purity and reach the highest full coverage at 4B. The raw Transformer is uneven: it drops to 88 purity at 4B and 64 full coverage at 1B.
 
-These results agree with a line of recent work on SAEs for downstream tasks. [Kantamneni et al.](https://arxiv.org/abs/2502.16681) tested SAE probes against probes on raw activations under data scarcity, class imbalance, label noise and covariate shift, and found no setting where SAEs consistently won. [Google DeepMind's interpretability team](https://www.alignmentforum.org/posts/4uXCAJNuPKtKBsi28/) reported that SAE probes underperformed linear probes at detecting harmful intent out of distribution, and deprioritised SAE research as a result. [AxBench](https://arxiv.org/abs/2501.17148) found simple baselines ahead of SAEs for concept detection. The contrasting result is [Goodfire and Rakuten's PII detector](https://www.goodfire.com/research/rakuten-sae-probes-for-pii-detection), where SAE probes held up across the shift from synthetic to real data better than raw-activation probes did. Our decode experiment is a shift of that kind, from one writer to another, and in it raw activations held up at least as well as SAE features.
+These results match recent work on SAEs for downstream tasks. [Kantamneni et al.](https://arxiv.org/abs/2502.16681) tested SAE probes against probes on raw activations under data scarcity, class imbalance, label noise and covariate shift, and found no setting where SAEs consistently won. [Google DeepMind's interpretability team](https://www.alignmentforum.org/posts/4uXCAJNuPKtKBsi28/) reported that SAE probes underperformed linear probes at detecting harmful intent out of distribution, and deprioritised SAE research as a result. [AxBench](https://arxiv.org/abs/2501.17148) found simple baselines ahead of SAEs for concept detection. The contrasting result is [Goodfire and Rakuten's PII detector](https://www.goodfire.com/research/rakuten-sae-probes-for-pii-detection), where SAE probes transferred from synthetic to real data better than raw-activation probes did. Our decode experiment is a shift of that kind, from one writer to another, and there raw activations transferred at least as well as SAE features.
 
-What the SAE does buy is size and legibility. A static detector is 1.4M to 3.6M parameters at either backbone, because its input is always 1,500 wide (Figure 10). A raw detector's input is ten times the hidden width, so it grows with the backbone. At inference the static SAE stage needs only the selected encoder rows, 1.73M parameters at 1B and 3.84M at 4B, against 378M and 839M for the ten SAEs loaded whole. And every static input column is a feature that can be looked up, which the raw vector's columns are not.
+The SAE does give a smaller detector and named inputs. A static detector is 1.4M to 3.6M parameters at either model size, because its input is always 1,500 wide (Figure 10). A raw detector's input is 10 times the hidden width, so it grows with the model. At inference the static SAE stage needs only the selected encoder rows, 1.73M parameters at 1B and 3.84M at 4B, against 378M and 839M for the 10 SAEs loaded whole. And every static input column is a named feature that can be looked up; the raw vector's columns are not.
 
 ### Feature selection
 
-Summation picks features by how much they fire, without looking at the labels, so a feature that fires on every topic ranks as high as one that marks a single topic.
+Baselines left one question open: did static selection fail at 4B because 150 features per layer are too few, or because summation picks the wrong ones? Summation ranks features by how much they fire, without looking at the labels, so a feature that fires on every topic ranks as high as one that marks a single topic.
 
 > **Hypothesis:** If label-blind selection is what costs the static detectors accuracy, choosing features with the labels at the same budget should recover it. Group lasso, which picks features that work together, should also beat the F-statistic, which ranks each feature on its own.
 
@@ -675,9 +665,11 @@ Figure 19. Test macro-F1 under each selection rule.
 
 </FigureViews>
 
-At 4B the GRU goes from 87.4 to 96.4, and the Transformer and ConvNeXt each gain about three points. All three 4B detectors land level with their 1B counterparts. The budget did not change, so the drop from 1B to 4B in the baselines came from the rule. At 1B, where summation was already close, the GRU gains two points, the Transformer one, and ConvNeXt none.
+At 4B the GRU goes from 87.4 to 96.4, and the Transformer and ConvNeXt each gain about 3 points. Every 4B detector now scores within a point of its 1B counterpart. The budget did not change, so the drop from 1B to 4B in the baselines came from the rule. At 1B, where summation was already close, the GRU gains 2 points, the Transformer 1, and ConvNeXt none.
 
-The second half of the hypothesis did not hold. The two supervised rules are within 0.4 points of each other in every row, and each leads in about half. Group lasso gets there on slightly fewer features. The F-statistic is the cheaper of the two: one deterministic pass, no hyperparameters. Set against the no-SAE result, supervised static selection matches raw for two of the three detectors at 4B (GRU 96.4 against 96.3, Transformer 95.0 against 94.9) with 1,500 inputs instead of 25,600. ConvNeXt is the exception: raw leads 97.5 to 95.5, and neither rule closes it.
+The second half of the hypothesis did not hold. The 2 supervised rules are within 0.4 points of each other in every row, and each leads in about half. Group lasso reaches the same scores with slightly fewer features (1,438 and 1,489). The F-statistic is the cheaper rule: a single deterministic pass and no hyperparameters.
+
+Compared with the no-SAE ablation, static features chosen with the labels match raw hidden states for 2 of the 3 detectors at 4B. The GRU scores 96.4 against 96.3 and the Transformer 95.0 against 94.9, with 1,500 inputs instead of 25,600. ConvNeXt is the exception: raw leads 97.5 to 95.5, and neither rule closes that gap.
 
 <FigureViews label="Figure 20" title="Decode scores under each selection rule">
 
@@ -708,20 +700,22 @@ Figure 20. Decode scores under each selection rule.
 
 </FigureViews>
 
-The 4B static detectors that failed under decode are repaired. GRU purity goes from 69 to 95 and full coverage from 50 to 82. ConvNeXt full coverage goes from 34 to 81. The effect is larger on generated text than on teacher text: for the 4B GRU, 9 macro-F1 points in prefill against 26 points of purity in decode. Between the supervised rules there is a pattern by detector. Group lasso scores higher for the GRU and ConvNeXt in every decode comparison. The F-statistic scores higher for the Transformer in three of four. Every number here is a single run, so differences this small may not hold up on a rerun.
+The 4B static detectors that failed under decode are repaired. GRU purity goes from 69 to 95 and full coverage from 50 to 82, and ConvNeXt full coverage goes from 34 to 81. The effect is larger on generated text than on teacher text: for the 4B GRU, 9 macro-F1 points in prefill against 26 points of purity in decode. Which supervised rule scores higher depends on the detector. Group lasso scores higher for the GRU and ConvNeXt in every decode comparison, and the F-statistic scores higher for the Transformer in 3 of 4. Every number here is a single run, so differences this small may not repeat on a rerun.
 
 ### Where the detectors look
 
-Scores alone do not say which layers or features a detector relies on, and the selection rule could change that as much as it changes the score. A detector that leans on one layer is fragile: if that layer's signal shifts, the detector fails with it. We measured this with two methods, run on every trained detector:
+A detector that depends heavily on one layer is fragile: if that layer's signal shifts, the detector fails with it. Scores alone do not show which layers or features a detector depends on, and the selection rule could change that as much as it changes the score. We measured that dependence on every trained detector:
 
-- **Layer knockout.** We zero one layer's block of input features, re-score on the test split, and repeat for each of the ten layers. A layer's knockout drop is the overlap lost when it is zeroed. The largest drop shows the detector's worst case, and the sum of the ten drops shows how much it depends on individual layers overall.
-- **Attribution.** We compute [gradient-times-input](https://arxiv.org/abs/1704.02685) for each response token's correct-topic logit, which measures how much each input feature pushed the detector toward the right topic. Within the layer with the largest knockout drop, we zero the ten highest-ranked features and, separately, the ten lowest-ranked.
+- **Layer knockout.** We zero one layer's block of input features, re-score on the test split, and repeat for each of the 10 layers. A layer's knockout drop is the overlap lost when it is zeroed. The largest drop shows the detector's worst case, and the sum of the 10 drops shows how much it depends on individual layers overall.
+- **Attribution.** We compute [gradient-times-input](https://arxiv.org/abs/1704.02685) for each response token's correct-topic logit, which measures how much each input feature pushed the detector toward the right topic. Within the layer with the largest knockout drop, we zero the 10 highest-ranked features and, separately, the 10 lowest-ranked.
 
 > **Hypothesis:** The selection rule should change what a detector depends on, not only how well it scores. And if gradient attribution is trustworthy, zeroing its top-ranked features should hurt far more than zeroing its bottom-ranked ones.
 
-We also check whether the two methods agree across layers, by the rank correlation between each layer's share of the attribution and its knockout drop.
+We also check whether the 2 methods agree on which layers are important, using the rank correlation between each layer's share of the attribution and its knockout drop.
 
 #### Layer knockout
+
+The figure below gives the overlap each detector loses when the layer it depends on most is zeroed.
 
 <FigureViews label="Figure 21" title="The cost of losing the layer each detector depends on most">
 
@@ -752,19 +746,19 @@ Figure 21. The cost of losing the layer each detector depends on most.
 
 </FigureViews>
 
-The 4B summation GRU loses 32.5 overlap points when layer 29 is removed, and layers 25 and 31 cost it another 20.1 and 29.4. Under the F-statistic the same detector's worst layer costs 1.2. Dynamic features are the most even: no detector at either size loses more than 4.7 points to any one layer. Raw is similarly spread at 4B (4.4 at worst), with the 1B raw Transformer the exception at 11.4. Among the static rules, the F-statistic gives the lowest worst case at 4B for every detector. Group lasso sits between summation and the F-statistic, and for the 1B ConvNeXt it is the most concentrated rule (13.6).
+The selection rule changes how much a detector depends on any single layer. The 4B summation GRU loses 32.5 overlap points when layer 29 is removed, and layers 25 and 31 cost it another 20.1 and 29.4. Under the F-statistic the same detector's worst layer costs 1.2. Dynamic features are the most even: no detector at either size loses more than 4.7 points to any one layer. Raw is similarly spread at 4B (4.4 at worst), with the 1B raw Transformer the exception at 11.4. Among the static rules, the F-statistic gives the lowest worst case at 4B for every detector. Group lasso concentrates a detector's dependence more than the F-statistic does in 5 of the 6 cases, and for the 1B ConvNeXt it is the most concentrated rule (13.6).
 
-<FigureViews label="Figure 22" title="Summed knockout damage for the three static rules">
+<FigureViews label="Figure 22" title="Summed knockout damage for the 3 static rules">
 
 <div slot="graph">
 
-<div class="plot" data-plot="/research/assets/figures/online-topic-guardrails-with-saes/fig22_knockout_total.json" style="--plot-height: 360px" role="img" aria-label="Figure 22. Summed knockout damage for the three static rules."></div>
+<div class="plot" data-plot="/research/assets/figures/online-topic-guardrails-with-saes/fig22_knockout_total.json" style="--plot-height: 360px" role="img" aria-label="Figure 22. Summed knockout damage for the 3 static rules."></div>
 
 </div>
 
 <div slot="table">
 
-| Overlap lost, summed over the ten layers | Detector | Summation | F-statistic | Group lasso |
+| Overlap lost, summed over the 10 layers | Detector | Summation | F-statistic | Group lasso |
 | --- | --- | --- | --- | --- |
 | 1B | GRU | 40.3 | 17.7 | 20.5 |
 | 1B | Transformer | 42.3 | 26.5 | 35.2 |
@@ -777,7 +771,7 @@ The 4B summation GRU loses 32.5 overlap points when layer 29 is removed, and lay
 
 <figcaption>
 
-Figure 22. Summed knockout damage for the three static rules.
+Figure 22. Summed knockout damage for the 3 static rules.
 
 </figcaption>
 
@@ -795,29 +789,31 @@ Figure 23. Overlap lost per layer, for each detector and selection rule.
 
 </figure>
 
-For five of the six detectors the supervised rules lower the total. The 4B GRU goes from 124.9 to 4.2. Our reading is that the topic signal sits in more than one of the ten layers. A detector reading label-selected features can use the other layers when one is removed, and a detector reading the loudest features cannot.
+For 5 of the 6 detectors the supervised rules lower the total across the 10 layers, and the 4B GRU goes from 124.9 to 4.2. The 1B ConvNeXt is the exception: its total rises from 14.8 under summation to 33.4 under group lasso, almost all of it on layer 16, and its score rises slightly too. We think the topic signal is spread across several of the 10 layers. A detector reading label-selected features can use the other layers when one is removed, and a detector reading the most active features cannot.
 
-The 1B ConvNeXt runs the other way. Its total rises from 14.8 under summation to 33.4 under group lasso, almost all of it on layer 16, and its score rises slightly too. The rule also changes which layers are read (Figure 23). Under summation the GRU's largest drops are on late layers: 23 and 25 at 1B, and 25, 29 and 31 at 4B. Under group lasso at 1B all three detectors depend most on layer 16, the earliest of the ten.
+The rule also changes which layers are read (Figure 23). Under summation the GRU's largest drops are on late layers: 23 and 25 at 1B, and 25, 29 and 31 at 4B. Under group lasso at 1B all 3 detectors depend most on layer 16, the earliest of the 10.
 
 #### Attribution
 
+Attribution ranks the features inside a layer. The figure below shows the cost of zeroing the 10 highest-ranked and the 10 lowest-ranked features in each detector's most important layer.
+
 <figure class="article-figure">
 
-<div class="plot" data-plot="/research/assets/figures/online-topic-guardrails-with-saes/fig24_attr_topk.json" style="--plot-height: 640px" role="img" aria-label="Figure 24. Overlap points lost when the ten highest-attributed features of the top layer are zeroed (solid) and when the ten lowest are (hatched)."></div>
+<div class="plot" data-plot="/research/assets/figures/online-topic-guardrails-with-saes/fig24_attr_topk.json" style="--plot-height: 640px" role="img" aria-label="Figure 24. Overlap points lost when the 10 highest-attributed features of the top layer are zeroed (solid) and when the 10 lowest are (hatched)."></div>
 
 <figcaption>
 
-Figure 24. Overlap points lost when the ten highest-attributed features of the top layer are zeroed (solid) and when the ten lowest are (hatched).
+Figure 24. Overlap points lost when the 10 highest-attributed features of the top layer are zeroed (solid) and when the 10 lowest are (hatched).
 
 </figcaption>
 
 </figure>
 
-Zeroing the ten highest-attributed features of the most important layer costs between 0.1 and 10.3 overlap points. Zeroing the ten lowest costs at most 0.16, and in several cases nothing. The top ten cost more than the bottom ten in all 18 detector-and-rule combinations, so inside a layer the attribution ranking identifies the features the detector uses.
+Zeroing the 10 highest-attributed features of the most important layer costs between 0.1 and 10.3 overlap points. Zeroing the 10 lowest costs at most 0.16, and in several cases nothing. The top 10 cost more than the bottom 10 in all 18 detector-and-rule combinations, so inside a layer the attribution ranking identifies the features the detector uses.
 
-Zeroing the 75 lowest-attributed features under group lasso costs at most 0.8 points, so about half of each layer's 150 features contribute almost nothing. The static input could probably be made smaller still.
+Zeroing the 75 lowest-attributed features under group lasso costs at most 0.8 points, so about half of each layer's 150 features contribute almost nothing, and the static input could probably be smaller.
 
-For dynamic features the attribution is spread thinly: the 100 most important columns out of 54,000 hold 6 to 16 percent of the total, and it takes about 5,000 columns to reach two-thirds.
+For dynamic features the attribution is spread thinly: the 100 most important columns out of 54,000 account for 6 to 16 percent of the total, and it takes about 5,000 columns to reach 2/3.
 
 | Attribution vs knockout, by rule | Mean rank correlation | Top layer agrees |
 | --- | --- | --- |
@@ -837,38 +833,38 @@ Figure 25. Agreement between attribution and knockout on which layers matter, pe
 
 </figure>
 
-Across layers the attribution is less dependable. Under summation a layer's share of attribution has almost no relation to its knockout drop. Under group lasso the two agree on the most important layer in five of six cases. Attribution sums absolute contributions, so a layer with large activations earns a large share whether or not the detector needs it. Summation picks features precisely for their large activations, which is why its attribution and knockout disagree most. We therefore rank layers by knockout.
+Across layers the attribution is less dependable. Under summation a layer's share of attribution has almost no relation to its knockout drop. Under group lasso the 2 methods agree on the most important layer in 5 of 6 cases. Attribution sums absolute contributions, so a layer with large activations earns a large share whether or not the detector needs it. Summation picks features precisely for their large activations, which is why its attribution and knockout disagree most. We therefore rank layers by knockout.
 
-### Four ways to break it
+### Robustness to edited responses
 
-The test records are as clean as the training records, which real responses often are not. Topics come in the order the prompt asked for, every requested topic is answered, and nothing off-topic is mixed in. We edited the test records in four ways and re-scored the trained detectors on each edited record against its own clean original, running both versions through Gemma separately. Each edit takes away one thing a detector might lean on besides the text in front of it: the absence of off-topic text, the agreement between prompt and response, or the order of the topics.
+The test records are as clean as the training records: topics come in the order the prompt asked for, every requested topic is answered, and nothing off-topic is mixed in. Responses in deployment are often messier. We edited the test records in 4 ways and re-scored the trained detectors on each edited record against its own clean original, running both versions through Gemma separately. Each edit breaks one regularity a detector could use besides the text in front of it. Insertion adds off-topic text where there was none, removal breaks the agreement between prompt and response, and reordering breaks the order of the topics.
 
-- **Insertion.** An editor model, GPT-5.6 Terra, splices off-topic asides of a few sentences each into the seams between topics. Each aside is either a light joke (a pun, wordplay or an absurd fun fact) or plain small talk about the weather, food, travel or animals, and none touches any of the seven topics. The asides are excluded from scoring.
+- **Insertion.** An editor model, GPT-5.6 Terra, splices off-topic asides of a few sentences each into the seams between topics. Each aside is either a light joke (a pun, wordplay or an absurd fun fact) or plain small talk about the weather, food, travel or animals, and none touches any of the 7 topics. The asides are excluded from scoring.
 - **Removal.** One requested topic is deleted from the response and left in the prompt.
-- **Reordering.** The response's topic passages are shuffled so that none sits where the prompt's order would put it.
+- **Reordering.** The response's topic passages are shuffled so that none is where the prompt's order would put it.
 - **Substitution.** One topic's response passage is replaced with a genuine passage on the same topic from a different test record. Topic and position are unchanged, so this is the control.
 
-> **Hypothesis:** If the detectors read the topic from the text in front of them, they should lose little under any of the four edits, and nothing under substitution.
+> **Hypothesis:** If the detectors read the topic from the text in front of them, they should lose little under any of the 4 edits, and nothing under substitution.
 
 <figure class="article-figure">
 
-![Figure 26. The four edits on one three-topic test record. Insertion adds off-topic asides between passages, removal deletes a passage the prompt still asks for, reordering shuffles the passages out of the prompt's order, and substitution swaps in a same-topic passage from another record as a control.](../public/research/online-topic-guardrails-with-saes/fig26_perturb_edits.png)
+![Figure 26. The 4 edits on one 3-topic test record. Insertion adds off-topic asides between passages, removal deletes a passage the prompt still asks for, reordering shuffles the passages out of the prompt's order, and substitution swaps in a same-topic passage from another record as a control.](../public/research/online-topic-guardrails-with-saes/fig26_perturb_edits.png)
 
 <figcaption>
 
-Figure 26. The four edits on one three-topic test record. Insertion adds off-topic asides between passages, removal deletes a passage the prompt still asks for, reordering shuffles the passages out of the prompt's order, and substitution swaps in a same-topic passage from another record as a control.
+Figure 26. The 4 edits on one 3-topic test record. Insertion adds off-topic asides between passages, removal deletes a passage the prompt still asks for, reordering shuffles the passages out of the prompt's order, and substitution swaps in a same-topic passage from another record as a control.
 
 </figcaption>
 
 </figure>
 
-For every edit we report the change in macro-F1 between the clean record and the edited one. Removal and insertion each get one more score. After a removal, the hallucination rate is the share of response tokens still labelled with the removed topic. After an insertion, separability measures how well a threshold on the detector's confidence tells real tokens from inserted ones, as an AUROC where 50 is chance.
+For every edit we report the change in macro-F1 between the clean record and the edited one, and for 2 of the edits an extra score. After a removal, the hallucination rate is the share of response tokens still labelled with the removed topic. After an insertion, separability measures how well a threshold on the detector's confidence tells real tokens from inserted ones, as an AUROC where 50 is chance.
 
-<FigureViews label="Figure 27" title="The four perturbations, dynamic features">
+<FigureViews label="Figure 27" title="The 4 perturbations, dynamic features">
 
 <div slot="graph">
 
-<div class="plot" data-plot="/research/assets/figures/online-topic-guardrails-with-saes/fig27_perturbations.json" style="--plot-height: 460px" role="img" aria-label="Figure 27. The four perturbations, dynamic features."></div>
+<div class="plot" data-plot="/research/assets/figures/online-topic-guardrails-with-saes/fig27_perturbations.json" style="--plot-height: 460px" role="img" aria-label="Figure 27. The 4 perturbations, dynamic features."></div>
 
 </div>
 
@@ -889,15 +885,17 @@ For every edit we report the change in macro-F1 between the clean record and the
 
 <figcaption>
 
-Figure 27. The four perturbations, dynamic features.
+Figure 27. The 4 perturbations, dynamic features.
 
 </figcaption>
 
 </FigureViews>
 
-The largest loss is 5 macro-F1 points. Substitution is flat, which says the detectors read the topic from the text in front of them and not from the specific request in the prompt. ConvNeXt loses the least under every edit, never more than 1.1 points. The Transformer is the most sensitive to reordering (−5.0 at 1B) and among the least sensitive to insertion. The GRU loses the most under removal (−3.8 at 4B) and is equally affected by reordering at 4B.
+No edit costs more than 5 macro-F1 points. Substitution is flat, which indicates that the detectors read the topic from the text in front of them and not from the specific request in the prompt. ConvNeXt loses the least under every edit, never more than 1.1 points. The Transformer is the most sensitive to reordering (−5.0 at 1B) and among the least sensitive to insertion. The GRU loses the most under removal (−3.8 at 4B) and is equally affected by reordering at 4B.
 
 #### Insertion
+
+The figure below compares insertion across feature stages, as the change in macro-F1 on the real tokens.
 
 <FigureViews label="Figure 28" title="Insertion across feature stages">
 
@@ -928,7 +926,7 @@ Figure 28. Insertion across feature stages.
 
 </FigureViews>
 
-The worst case is 3.6 points, and most of the loss falls on one topic, General news & content. The loss is in precision, not recall. The detectors keep finding the real topic tokens, but they label the text around each aside as General news, the topic closest to a joke or a remark about the weather. For the 1B F-statistic GRU, General news precision falls from 84 to 61 while the other topics move by a point or two. The Transformer is the steadiest, never losing more than 1.3 points. As in decode, there is no "none" label, so an inserted token has to be given one of the seven topics. Whether a threshold on confidence could reject it instead depends on the detector.
+The worst case is 3.6 points, and most of the loss falls on one topic, General news & content. The loss is in precision, not recall. The detectors keep finding the real topic tokens, but they label the text around each aside as General news, the topic closest to a joke or a remark about the weather. For the 1B F-statistic GRU, General news precision falls from 84 to 61 while the other topics change by 1 or 2 points. The Transformer is the steadiest, never losing more than 1.3 points. As in decode, there is no "none" label, so an inserted token has to be given one of the 7 topics. Whether a threshold on confidence could reject it instead depends on the detector.
 
 <FigureViews label="Figure 29" title="How well detector confidence separates real tokens from inserted ones">
 
@@ -956,9 +954,11 @@ Figure 29. How well detector confidence separates real tokens from inserted ones
 
 </FigureViews>
 
-For the GRU and Transformer, separability is 80 to 91 in most configurations. The dynamic ConvNeXt scores 54 and 51: it labels an inserted joke with about the same confidence as a paragraph of contract law. Its confidence cannot be used to flag inserted text, even though it is the most accurate detector and loses the least under every edit. Group lasso is the only feature stage where all three detectors are at 80 or above at both sizes.
+For the GRU and the Transformer, separability is 80 to 91 in most configurations. The dynamic ConvNeXt scores 54 and 51: it labels an inserted joke with about the same confidence as a paragraph of contract law. So its confidence cannot be used to flag inserted text, even though it is the most accurate detector and loses the least under every edit. Group lasso is the only feature stage where all 3 detectors are at 80 or above at both sizes.
 
 #### Removal
+
+The figure below gives the share of response tokens that each detector still labels with the removed topic.
 
 <FigureViews label="Figure 30" title="Hallucination rate after a requested topic is removed from the response">
 
@@ -986,21 +986,28 @@ Figure 30. Hallucination rate after a requested topic is removed from the respon
 
 </FigureViews>
 
-When a topic is in the prompt and missing from the response, the detectors still assign it to 1 to 4 percent of response tokens. The rate depends on which topic was removed. Enterprise documents is hallucinated on 7 to 8 percent of tokens, two to three times more than any other topic, and it is the same topic that was hardest to separate in the baselines. Healthcare is hallucinated on 1 to 2 percent. ConvNeXt hallucinates least often, and when it does, its confidence is between 90 and 100 percent, consistent with its flat confidence under insertion.
+When a topic is in the prompt and missing from the response, the detectors still assign it to 1 to 4 percent of response tokens. The rate depends on which topic was removed. Enterprise documents is hallucinated on 7 to 8 percent of tokens, 2 to 3 times more than any other topic, and it is the same topic that was hardest to separate in the baselines. Healthcare is hallucinated on 1 to 2 percent. ConvNeXt hallucinates least often, and when it does, its confidence is between 90 and 100 percent, consistent with its flat confidence under insertion.
 
 #### Reordering
 
-The Transformer loses up to 5.0 macro-F1 and 8.2 overlap points when the response's topics come in a different order from the prompt's. ConvNeXt loses about one point. The Transformer can attend back to the prompt, and the training data always answers topics in the order they were asked. ConvNeXt reads a local window and has no access to that regularity. Under the static supervised rules the split is the same: the Transformer loses three to four points and ConvNeXt one. By topic, Enterprise documents and HR are again the most affected, and Healthcare and General news the least.
+The Transformer loses up to 5.0 macro-F1 and 8.2 overlap points when the response's topics come in a different order from the prompt's, and ConvNeXt loses about 1 point. The Transformer can attend back to the prompt, and the training data always answers topics in the order they were asked. ConvNeXt reads only the last 379 tokens, so for most of a response the prompt falls outside its window and it cannot use that ordering. Under the static supervised rules the split is the same: the Transformer loses 3 to 4 points and ConvNeXt 1. By topic, Enterprise documents and HR are again the most affected, and Healthcare and General news the least.
 
 ## Conclusion
 
-A small causal detector can label the topic of every token an LLM writes by reading its residual stream. It reaches 96 to 97 macro-F1 on seven business topics, and it carries over to text the model generates for itself. The sparse autoencoder is not what makes this possible, since raw hidden states do as well or better. What a static SAE feature set offers is the same accuracy from a detector up to ten times smaller, with inputs that have names, on the condition that the features are chosen using the labels. The rules that do this are a one-pass statistic and a penalised linear probe.
+A small causal detector can label the topic of every token an LLM writes by reading its residual stream. It reaches 96 to 97 macro-F1 on 7 business topics, and it transfers to text the model generates for itself. The sparse autoencoder is not what makes this possible, since raw hidden states do as well or better. A static SAE feature set gives the same accuracy from a detector up to 10 times smaller, with named inputs, if the features are chosen using the labels. The F-statistic, a one-pass statistic, and group lasso, a penalised linear probe, both do this.
 
-Several directions follow from these results: (1) training the detectors on the backbone's own generations instead of teacher-written text, since the decode gap may largely be a difference in writing style; (2) adding a "none" class or a calibrated abstention threshold, so filler and off-topic text can be rejected instead of assigned; (3) using the detected features to [steer or stop generation](https://www.goodfire.com/research/understanding-and-steering-llama-3), not only to observe it; (4) selecting features jointly with the detector, or for robustness to a second writer; (5) larger and customer-defined topic sets; (6) other model families, larger models and wider SAE dictionaries.
+Several directions follow from these results:
+
+- Training the detectors on the model's own generations instead of teacher-written text, since the decode gap may largely be a difference in writing style.
+- Adding a "none" class or a calibrated abstention threshold, so filler and off-topic text can be rejected instead of assigned.
+- Using the detected features to [steer or stop generation](https://www.goodfire.com/research/understanding-and-steering-llama-3), not only to observe it.
+- Selecting features jointly with the detector, or for robustness to a second writer.
+- Testing larger and customer-defined topic sets.
+- Testing other model families, larger models and wider SAE dictionaries.
 
 ## Building guardrails for your own models?
 
-Do your models need guardrails? [Contact us](/contact).
+If you're deploying an assistant that has to stay within its scope, [contact us](/contact).
 
 ## References
 
