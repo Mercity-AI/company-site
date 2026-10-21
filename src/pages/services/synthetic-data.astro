@@ -1308,7 +1308,7 @@ const faqs = [
       <div class="faq rv" data-rv style="--rv-delay:160ms">
         {
           faqs.map((f) => (
-            <details>
+            <details data-faq>
               <summary>
                 {f.q}
                 <span class="plus" aria-hidden="true"></span>
@@ -1801,6 +1801,12 @@ const faqs = [
       io.observe(g);
     });
   })();
+</script>
+
+<script>
+  import { initFaq } from '@/scripts/faq';
+
+  initFaq();
 </script>
 
 <style>
@@ -3930,7 +3936,7 @@ const faqs = [
   .plus::after {
     transform: rotate(90deg);
   }
-  .faq details[open] .plus {
+  .faq details[open]:not(.is-closing) .plus {
     transform: rotate(45deg);
   }
   .faq details p {
