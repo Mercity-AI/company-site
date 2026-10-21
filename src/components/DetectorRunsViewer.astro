@@ -1,0 +1,115 @@
+---
+/* Training logs for the SAE guardrail detectors: one curve per feature
+   stage, for the chosen backbone and detector. Same frame and styles as
+   RunsViewer (the pretraining log's), with its own data and controls. */
+import '@/styles/runs-viewer.css';
+interface Props { src: string }
+const { src } = Astro.props;
+const id = `druns-${crypto.randomUUID()}`;
+const smoothId = `${id}-smooth`;
+---
+
+<detector-runs-viewer id={id} class="runs-viewer runs-viewer--detectors" data-src={src} aria-label="Interactive detector training runs">
+  <div class="frame">
+    <div class="viz">
+      <aside class="side" aria-label="Feature stages">
+        <div class="side-hd"><h2>Training logs</h2><button type="button" class="show-all" data-viewer="show-all">Show all</button></div>
+        <div class="run-list" data-viewer="runs" role="group" aria-label="Show or hide feature stages"></div>
+        <div class="ctls">
+          <div class="ctl"><span class="ctl-lbl">Model</span><div class="seg" data-k="size">
+            <button type="button" data-v="1b">Gemma 1B</button><button type="button" data-v="4b">Gemma 4B</button>
+          </div></div>
+          <div class="ctl"><span class="ctl-lbl">Detector</span><div class="seg" data-k="det">
+            <button type="button" data-v="gru">GRU</button><button type="button" data-v="transformer">Transformer</button><button type="button" data-v="convnext">ConvNeXt</button>
+          </div></div>
+          <div class="ctl"><span class="ctl-lbl">Range</span><div class="seg" data-k="range">
+            <button type="button" data-v="all">All</button><button type="button" data-v="warm">After epoch 1</button><button type="button" data-v="tail">Last 5</button>
+          </div></div>
+          <div class="ctl ctl-smooth">
+            <label class="ctl-lbl" for={smoothId}>Smooth</label>
+            <input id={smoothId} data-viewer="smooth" type="range" min="0" max="0.99" step="0.01">
+            <span class="num" data-viewer="smooth-v"></span>
+          </div>
+          <label class="check"><input data-viewer="log" type="checkbox"><span>Log y</span></label>
+        </div>
+      </aside>
+
+      <div class="main">
+        <div class="bar">
+          <div class="tabs" data-viewer="tabs" role="tablist" aria-label="Metric"></div>
+        </div>
+        <div class="stage">
+          <div class="carousel" data-viewer="carousel"></div>
+          <nav class="pager" data-viewer="pager" aria-label="Plots"></nav>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="viewer-status" role="status">Loading training runs…</p>
+  <noscript>Enable JavaScript to explore the training runs.</noscript>
+</detector-runs-viewer>
+
+<script>
+  class DetectorRunsViewer extends HTMLElement {
+    private observer?: IntersectionObserver;
+    private controller?: AbortController;
+
+    connectedCallback() {
+      this.observer = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          this.observer?.disconnect();
+          void this.load();
+        }
+      }, { rootMargin: '400px' });
+      this.observer.observe(this);
+    }
+
+    private async load() {
+      this.controller?.abort();
+      this.controller = new AbortController();
+      const signal = this.controller.signal;
+      const status = this.querySelector<HTMLElement>('.viewer-status')!;
+      status.hidden = false;
+      status.textContent = 'Loading training runs…';
+      try {
+        const { init_detector_runs_viewer } = await import('@/scripts/detector-runs-viewer.js');
+        await init_detector_runs_viewer(this, this.dataset.src!, signal);
+        status.hidden = true;
+      } catch {
+        if (signal.aborted) return;
+        status.textContent = 'Training runs could not be loaded. ';
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.textContent = 'Retry';
+        retry.addEventListener('click', () => void this.load(), { once: true });
+        status.append(retry);
+      }
+    }
+
+    disconnectedCallback() {
+      this.observer?.disconnect();
+      this.controller?.abort();
+    }
+  }
+  if (!customElements.get('detector-runs-viewer')) customElements.define('detector-runs-viewer', DetectorRunsViewer);
+</script>
+
+<style is:global>
+  /* One colour per feature stage, as in the article's figures. */
+  .v2-prose .runs-viewer--detectors {
+    --s1: #999999; --s2: #E69F00; --s3: #CC79A7; --s4: #56B4E9; --s5: #333333;
+    height: 600px;
+  }
+  .v2-prose .runs-viewer--detectors .viz { grid-template-columns: 236px minmax(0, 1fr); }
+  .v2-prose .runs-viewer--detectors .side-hd .show-all {
+    border: 0; background: none; padding: 2px 0; font-size: 12px; color: var(--ink-3);
+    cursor: pointer; border-bottom: 1px solid transparent;
+  }
+  .v2-prose .runs-viewer--detectors .side-hd .show-all:hover { color: var(--ink); border-color: var(--ink-3); }
+  .v2-prose .runs-viewer--detectors .ctls { gap: 10px; }
+  @media (max-width: 760px) {
+    .v2-prose .runs-viewer--detectors { height: 700px; }
+    .v2-prose .runs-viewer--detectors .viz { grid-template-columns: minmax(0, 1fr); }
+    .v2-prose .runs-viewer--detectors .ctl:not(.ctl-smooth) { grid-column: 1 / -1; }
+  }
+</style>

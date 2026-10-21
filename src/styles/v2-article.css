@@ -187,6 +187,8 @@
    of the column, centred on it, so the runs viewer keeps its sidebar and
    multi-panel plots stay readable. */
 .v2-prose .runs-viewer,
+.v2-prose .dataset-viewer,
+.v2-prose .decode-demo,
 .v2-prose .plot {
   position: relative;
   left: 50%;

@@ -37,6 +37,7 @@ tools as they ship (see *Still placeholder* below). Treat design changes on
 | `/services/synthetic-data` | The synthetic data service page, on `V2Layout`, under the nav's Services dropdown. See *Synthetic data service*. |
 | `/services/llm-guardrails` | Harsh's LLM guardrails and security page, on `V2Layout`, under the nav's Services dropdown. Unpublished on 2026-10-02 (Pranav: "it does not look good"), reworked and republished 2026-10-07. |
 | `/services/model-optimization` | The model optimization service page, on `V2Layout`, under the nav's Services dropdown. In review on the `model-optimization` branch (from PR #10). See *Model optimization service*. |
+
 | `/about` | On `V2Layout`. Quiet page; every figure computed from the collections. See *About*. |
 | `/contact` | On `V2Layout`. Form plus a Calendly band. See *Contact*. |
 
@@ -223,6 +224,31 @@ pretraining log (merged 2026-09-30, PR #6):
 These figures keep their own look (rounded frames, pill toggles, the
 Okabe-Ito palette) rather than the V2 square-cornered indigo/teal/amber
 system. Pranav has accepted that for this log.
+
+The second interactive log is `research/online-topic-guardrails-with-saes.mdx`,
+the SAE topic-guardrail detectors. Its text is the Notion page "(V3) Real-Time
+Topic Guardrails with Sparse Autoencoders" (2026-10-21), which replaced the
+earlier `SAE-Guardrails/blog_new/draft_alternative.md` wording; the title
+changed with it, the slug did not. Where Notion says "the table below" over a
+table that is now a `FigureViews`, the log says "the figure below".
+It follows the same pattern, with its own pieces:
+
+- **Charts** come from `SAE-Guardrails/blog_new/figures/make_interactive.py`
+  (same numbers and Okabe-Ito entity colours as its `gen_figures.py`),
+  written to `public/research/assets/figures/online-topic-guardrails-with-saes/`.
+  Score bars start at a floor (50, or 30/40) via Plotly's `base`, so the
+  axis states where it starts. Diagrams (figures 2, 3, 5–9, 26) stay PNGs
+  in `public/research/online-topic-guardrails-with-saes/`.
+- **Viewers**, each lazy-loading JSON from
+  `public/research/assets/data/online-topic-guardrails-with-saes/`
+  (written by that repo's `export_site_data.py`):
+  `DetectorRunsViewer` (backbone × detector, five feature-stage curves,
+  reusing `runs-viewer.css`), `DatasetViewer` (32 test records) and
+  `DecodeDemo` (Gemma vs GPT switch playback; `layout="a"` is side by
+  side, `"b"` one row per answer, the one in use).
+
+The older `building-llm-guardrails-with-saes.md` is a different study
+(prompt-level probes) and stays.
 
 `pnpm test` runs the Node tests in `tests/` (delta colours, the runs
 viewer's log-axis ticks).
