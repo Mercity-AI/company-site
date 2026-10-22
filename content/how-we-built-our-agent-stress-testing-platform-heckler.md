@@ -19,7 +19,7 @@ image: >-
   https://blog-cdn.mercity.ai/blog/how-we-built-our-agent-stress-testing-platform-heckler/results-across-three-agents.jpg
 ---
 
-<video controls playsinline preload="auto" width="1920" height="1080" aria-label="Heckler product demo" poster="https://blog-cdn.mercity.ai/blog/how-we-built-our-agent-stress-testing-platform-heckler/heckler-demo-v3-poster.jpg" src="https://blog-cdn.mercity.ai/blog/how-we-built-our-agent-stress-testing-platform-heckler/heckler-demo-v3.mp4">
+<video controls playsinline preload="auto" width="1920" height="1080" aria-label="Heckler product demo" poster="https://blog-cdn.mercity.ai/blog/how-we-built-our-agent-stress-testing-platform-heckler/heckler-demo-v4-poster.jpg" src="https://blog-cdn.mercity.ai/blog/how-we-built-our-agent-stress-testing-platform-heckler/heckler-demo-v4.mp4">
 </video>
 
 We built a system that attacks your “*so-called production-grade agents*” and checks whether they follow the policies in their own system prompt. We pointed it at three agents we built. In over 80% of the conversations they broke a policy they had been given.
