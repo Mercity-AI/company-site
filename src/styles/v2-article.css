@@ -161,6 +161,55 @@
   max-width: 100%;
   border: 0;
 }
+/* Article videos (src/scripts/article-videos.ts): the frame carries a
+   loading indicator while the video fetches or buffers. It waits 250ms
+   before showing, so a fast load never flashes it. */
+.v2-prose .video-frame {
+  position: relative;
+  margin: 1.9em auto;
+}
+.v2-prose .video-frame > video {
+  width: 100%;
+  margin: 0;
+}
+.v2-prose .video-loading {
+  position: absolute;
+  inset: 1px;
+  display: grid;
+  place-items: center;
+  background: hsl(240 14% 10% / 0.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms var(--ease);
+}
+/* A dark tile under the ring keeps it legible on light frames. */
+.v2-prose .video-loading::before {
+  content: '';
+  grid-area: 1 / 1;
+  width: 64px;
+  height: 64px;
+  background: hsl(240 14% 10% / 0.72);
+}
+.v2-prose .video-loading::after {
+  content: '';
+  grid-area: 1 / 1;
+  width: 28px;
+  height: 28px;
+  border: 2px solid rgb(255 255 255 / 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: video-spin 900ms linear infinite;
+}
+.v2-prose .video-frame[data-loading='true'] .video-loading {
+  opacity: 1;
+  transition: opacity 600ms var(--ease) 250ms;
+}
+@keyframes video-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .v2-prose .video-loading::after { animation-duration: 2.4s; }
+}
 /* Explicit research captions use the body font at 80% of its size. */
 .v2-prose .article-figure > figcaption {
   margin: 12px 0 0;
