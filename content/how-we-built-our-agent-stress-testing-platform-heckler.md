@@ -16,7 +16,7 @@ tags:
 category: LLM Evaluations
 isTopPick: false
 image: >-
-  https://blog-cdn.mercity.ai/blog/how-we-built-our-agent-stress-testing-platform-heckler/results-across-three-agents.jpg
+  https://blog-cdn.mercity.ai/blog/how-we-built-our-agent-stress-testing-platform-heckler/heckler-demo-v4-poster.jpg
 ---
 
 <video controls playsinline preload="auto" width="1920" height="1080" aria-label="Heckler product demo" poster="https://blog-cdn.mercity.ai/blog/how-we-built-our-agent-stress-testing-platform-heckler/heckler-demo-v4-poster.jpg" src="https://blog-cdn.mercity.ai/blog/how-we-built-our-agent-stress-testing-platform-heckler/heckler-demo-v4.mp4">
