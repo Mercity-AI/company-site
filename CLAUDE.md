@@ -236,9 +236,22 @@ It follows the same pattern, with its own pieces:
 - **Charts** come from `SAE-Guardrails/blog_new/figures/make_interactive.py`
   (same numbers and Okabe-Ito entity colours as its `gen_figures.py`),
   written to `public/research/assets/figures/online-topic-guardrails-with-saes/`.
-  Score bars start at a floor (50, or 30/40) via Plotly's `base`, so the
-  axis states where it starts. Diagrams (figures 2, 3, 5–9, 26) stay PNGs
-  in `public/research/online-topic-guardrails-with-saes/`.
+  Score bars start at a floor via Plotly's `base`, so the axis states
+  where it starts. Pranav's rule (Slack review, 2026-10-21: "start at 80",
+  "start at 70"): each panel's floor is the round number just under its
+  lowest bar, so differences are visible, with a tick on the floor.
+  Macro-F1 sits at 80, overlap at 70, purity and coverage at 60, full
+  coverage at 30 (0 on figure 15's 4B row, which has a 7.2); parameter
+  counts, points lost and deltas start at 0. Panels showing the same
+  metric share a range (figure 12). These floors were set in the JSON by
+  hand on 2026-10-30, so regenerating from `make_interactive.py` undoes
+  them. Figure 4 is two specs in a `.plot-pair` (side by side, stacked
+  under 640px): topics per record as bars in a blue ramp, and topic
+  balance as a spider chart centred at 3,000, which Pranav asked for. The
+  site's Plotly bundle has no polar traces, so the spider is `scatter`
+  traces on hidden, scale-locked axes; its vertex colours are the topic
+  colours of `DatasetViewer` and `DecodeDemo`. Diagrams (figures 2, 3,
+  5–9, 26) stay PNGs in `public/research/online-topic-guardrails-with-saes/`.
 - **Viewers**, each lazy-loading JSON from
   `public/research/assets/data/online-topic-guardrails-with-saes/`
   (written by that repo's `export_site_data.py`):

@@ -253,6 +253,28 @@
   min-height: var(--plot-height, 440px);
   margin-bottom: 24px;
 }
+/* two plots that share one figure but not a scale: side by side at the
+   plots' breakout width, stacked on phones. */
+.v2-prose .plot-pair {
+  position: relative;
+  left: 50%;
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  gap: 24px;
+  width: min(874.8px, 90vw - 36px);
+  margin: 2.2em 0 24px;
+  transform: translateX(-50%);
+}
+.v2-prose .plot-pair .plot {
+  left: auto;
+  min-width: 0;
+  width: auto;
+  margin: 0;
+  transform: none;
+}
+@media (max-width: 640px) {
+  .v2-prose .plot-pair { grid-template-columns: 1fr; }
+}
 .v2-prose .plot[data-plot-state='rendering'] .scatterlayer,
 .v2-prose .plot[data-plot-state='rendering'] .barlayer,
 .v2-prose .plot[data-plot-state='rendering'] .heatmaplayer,
