@@ -46,15 +46,12 @@ interface NavChild {
   label: string;
   note: string;
 }
-interface NavLink {
-  href: string;
-  label: string;
-  children?: NavChild[];
-}
+/* A link with children is only a dropdown: it has no page of its own,
+   so it carries no href. */
+type NavLink = { href: string; label: string } | { label: string; children: NavChild[] };
 
 const navLinks: NavLink[] = [
   {
-    href: '/services/synthetic-data',
     label: 'Services',
     children: [
       {
@@ -77,7 +74,6 @@ const navLinks: NavLink[] = [
   { href: '/research', label: 'Research' },
   { href: '/blog', label: 'Blog' },
   {
-    href: '/open-source/simula',
     label: 'Open source',
     children: [{ href: '/open-source/simula', label: 'Simula', note: 'Deliberate synthetic data generation' }],
   },
@@ -371,14 +367,14 @@ const current = (href: string) => (root(href) === section ? 'page' : undefined);
         <nav class="v2-links" aria-label="Primary">
           {
             navLinks.map((l) =>
-              l.children ? (
+              'children' in l ? (
                 <div class="v2-drop">
-                  <a href={l.href} class="v2-drop-trigger" aria-haspopup="true" aria-current={current(l.href)}>
+                  <button type="button" class="v2-drop-trigger" aria-haspopup="true" aria-current={current(l.children[0].href)}>
                     {l.label}
                     <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
                       <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
-                  </a>
+                  </button>
                   <div class="v2-drop-panel">
                     <div class="v2-drop-card">
                       {l.children.map((c) => (
@@ -415,17 +411,21 @@ const current = (href: string) => (root(href) === section ? 'page' : undefined);
       <div class="v2-menu" id="v2-menu" data-menu hidden>
         <nav class="shell v2-menu-in" aria-label="Primary, mobile">
           {
-            navLinks.map((l) => (
-              <>
+            navLinks.map((l) =>
+              'children' in l ? (
+                <>
+                  <span class="v2-menu-group">{l.label}</span>
+                  {l.children.map((c) => (
+                    <a href={c.href} class="v2-menu-sub">
+                      {c.label}
+                      <span>{c.note}</span>
+                    </a>
+                  ))}
+                </>
+              ) : (
                 <a href={l.href}>{l.label}</a>
-                {l.children?.map((c) => (
-                  <a href={c.href} class="v2-menu-sub">
-                    {c.label}
-                    <span>{c.note}</span>
-                  </a>
-                ))}
-              </>
-            ))
+              )
+            )
           }
           <a href="/contact" class="v2-menu-contact">Contact us</a>
         </nav>
@@ -599,6 +599,17 @@ const current = (href: string) => (root(href) === section ? 'page' : undefined);
       .v2-nav[data-scrolled='true'] .v2-links > a,
       .v2-nav[data-scrolled='true'] .v2-drop-trigger {
         font-size: 13.05px;
+      }
+      /* The trigger is a button that only opens its menu: strip the
+         button chrome, and keep the arrow cursor since a click goes
+         nowhere. */
+      .v2-drop-trigger {
+        padding: 0;
+        border: 0;
+        background: none;
+        font-family: inherit;
+        line-height: inherit;
+        cursor: default;
       }
       .v2-links > a::after,
       .v2-drop-trigger::after {
@@ -777,7 +788,8 @@ const current = (href: string) => (root(href) === section ? 'page' : undefined);
            beats the shell's own mobile padding rule. */
         padding: 10.8px 18.59px 18px;
       }
-      .v2-menu-in a {
+      .v2-menu-in a,
+      .v2-menu-in .v2-menu-group {
         padding-block: 12.6px;
         border-bottom: 1px solid var(--line);
         font-size: 14.4px;
@@ -1059,6 +1071,13 @@ const current = (href: string) => (root(href) === section ? 'page' : undefined);
         update();
         window.addEventListener('scroll', update, { passive: true });
         window.addEventListener('v2scroll', update);
+
+        /* Dropdown triggers open on hover or focus. Safari and touch
+           screens do not focus a clicked button, so focus it here; the
+           menu then stays open until focus moves elsewhere. */
+        nav.querySelectorAll('.v2-drop-trigger').forEach((t) => {
+          t.addEventListener('click', () => t.focus());
+        });
 
         /* Mobile menu */
         const btn = nav.querySelector('[data-menu-toggle]');
