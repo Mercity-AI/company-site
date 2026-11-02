@@ -17,7 +17,7 @@ tags:
   - LLM Evaluations
 category: LLM Guardrails
 isTopPick: false
-image: /blog/can-a-decision-model-guard-a-customer-facing-agent/guard-flow.png
+image: /blog/can-a-decision-model-guard-a-customer-facing-agent/cover.png
 ---
 
 Decision models are a new introduction to the AI space and almost EVERYONE wants to include them in their pipeline. Typesafe's [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev) and Cloudflare's [Clef](https://developers.cloudflare.com/changelog/post/2026-10-01-clef-workers-ai/) both came out in the last two months, and frameworks have already adapted these models into their APIs. You give one a piece of text and a set of yes/no questions, and it returns a probability for each answer in about a second. It writes no text at all, so it is cheap, fast and always returns an answer in the shape you asked for.
