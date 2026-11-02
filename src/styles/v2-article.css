@@ -161,6 +161,13 @@
   max-width: 100%;
   border: 0;
 }
+/* Interactive figures (src/scripts/article-embeds.ts): as wide as the
+   text, as tall as the figure's own page. */
+.v2-prose iframe.article-embed {
+  display: block;
+  width: 100%;
+  margin: 1.9em 0;
+}
 /* Article videos (src/scripts/article-videos.ts): the frame carries a
    loading indicator while the video fetches or buffers. It waits 250ms
    before showing, so a fast load never flashes it. */
