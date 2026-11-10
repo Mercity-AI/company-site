@@ -5,9 +5,9 @@ publishedAt: '2026-11-02'
 summary: >-
   We put two decision models, Typesafe's Jev and Cloudflare's Clef, and a
   general model with reasoning in front of five customer-facing agents in
-  Heckler and scored 5,620 replies against an answer key. Decision models make
-  a usable first filter, but they score many violations too low to block, and
-  most of their false alarms come from how the policy was written.
+  Heckler and scored 5,620 replies against an answer key. Decision models make a
+  usable first filter, but they score many violations too low to block, and most
+  of their false alarms come from how the policy was written.
 authors:
   - name: Harsh Trivedi
 tags:
@@ -17,7 +17,8 @@ tags:
   - LLM Evaluations
 category: LLM Guardrails
 isTopPick: false
-image: /blog/can-a-decision-model-guard-a-customer-facing-agent/cover.png
+image: >-
+  https://blog-cdn.mercity.ai/blog/can-a-decision-model-guard-a-customer-facing-agent/cover.jpg
 ---
 
 Decision models are a new introduction to the AI space and almost EVERYONE wants to include them in their pipeline. Typesafe's [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev) and Cloudflare's [Clef](https://developers.cloudflare.com/changelog/post/2026-10-01-clef-workers-ai/) both came out in the last two months, and frameworks have already adapted these models into their APIs. You give one a piece of text and a set of yes/no questions, and it returns a probability for each answer in about a second. It writes no text at all, so it is cheap, fast and always returns an answer in the shape you asked for.
@@ -40,7 +41,7 @@ A decision model fits the slot better on paper. It checks a reply against dozens
 
 But a decision model can't read a system prompt and enforce it. The instructions have to become a policy first: short, separate rules, each answerable yes or no about a single reply. In our setup every rule starts with "The reply must" or "The reply must not" and becomes one question: does this reply break this rule? If the highest score reaches the threshold, the reply is blocked under that rule.
 
-![How the guard works: the system prompt becomes a policy of short "The reply must" and "The reply must not" rules, each rule becomes one question, and the decision model scores the agent's reply and the customer message against every rule. If the highest score reaches the threshold, the reply is blocked and that rule is the reason; otherwise the customer sees it. The system prompt, the agent's tools and earlier turns are never shown to the guard.](/blog/can-a-decision-model-guard-a-customer-facing-agent/guard-flow.png)
+![How the guard works: the system prompt becomes a policy of short "The reply must" and "The reply must not" rules, each rule becomes one question, and the decision model scores the agent's reply and the customer message against every rule. If the highest score reaches the threshold, the reply is blocked and that rule is the reason; otherwise the customer sees it. The system prompt, the agent's tools and earlier turns are never shown to the guard.](https://blog-cdn.mercity.ai/blog/can-a-decision-model-guard-a-customer-facing-agent/guard-flow.jpg)
 
 The guard sees only the agent's reply and the customer message it answers, never the system prompt, the tools or the earlier turns, the same one-message setup LiteLLM's guardrail uses. **That limit comes up in almost every result below.** To tell a weak model from a setup that doesn't give it what it needs, we gave GPT-6.1 Terra, run with low reasoning, exactly the same input and asked for a score from 0 to 100 on each rule, scaled to match. Where Terra does better, reasoning is the likely reason. Where it fails the same way, the setup is.
 

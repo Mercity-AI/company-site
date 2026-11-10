@@ -17,7 +17,8 @@ tags:
   - AI Security
 category: LLM Guardrails
 isTopPick: false
-image: /blog/how-to-use-decision-models-as-guardrails/cover.jpg
+image: >-
+  https://blog-cdn.mercity.ai/blog/how-to-use-decision-models-as-guardrails/cover.jpg
 ---
 
 import GuardrailThresholds from '../src/components/GuardrailThresholds.astro';
@@ -54,7 +55,7 @@ So how does a decision model work? Every call has two parts. The first is the **
 
 <figure class="article-figure">
 
-![A state and three typed questions go into a decision model, which returns an answer with a probability for each: team other (0.85), risk 5 (0.71), override yes (0.97).](/blog/how-to-use-decision-models-as-guardrails/decision-model-call.png)
+![A state and three typed questions go into a decision model, which returns an answer with a probability for each: team other (0.85), risk 5 (0.71), override yes (0.97).](https://blog-cdn.mercity.ai/blog/how-to-use-decision-models-as-guardrails/decision-model-call.jpg)
 
 <figcaption>A decision model takes a state and a set of typed questions, and returns a probability for every possible answer.</figcaption>
 
@@ -139,7 +140,7 @@ Decision models won't replace your security or guardrail pipeline. They're a lay
 
 <figure class="article-figure">
 
-![The user's message passes an input guardrail into the agent; the agent's tool calls pass a tool-call guardrail on the way to its tools; its reply passes an output guardrail on the way back to the user. All three guardrails send a state and questions to one decision model and get a score back for each question.](/blog/how-to-use-decision-models-as-guardrails/guardrail-checkpoints.png)
+![The user's message passes an input guardrail into the agent; the agent's tool calls pass a tool-call guardrail on the way to its tools; its reply passes an output guardrail on the way back to the user. All three guardrails send a state and questions to one decision model and get a score back for each question.](https://blog-cdn.mercity.ai/blog/how-to-use-decision-models-as-guardrails/guardrail-checkpoints.jpg)
 
 <figcaption>The input, tool-call and output guardrails each send a state and their questions to the same decision model.</figcaption>
 
@@ -189,7 +190,7 @@ By now you've seen that a decision model only knows what you send it. So how wel
 
 <figure class="article-figure">
 
-![Is the answer in the text you send? Left, checks a decision model can make from the text alone, each with a high score: a prompt injection (0.97), a role-play jailbreak (0.93), a secret leaked in the reply (0.95) and a refund call that does not match the request (0.89). Right, checks that need context outside the text: a reply reading out a home address needs to know whether the user verified their identity, a jailbreak split across five turns needs the earlier turns, a second refund needs to know whether the first was paid, and a 60-day return window needs the returns policy.](/blog/how-to-use-decision-models-as-guardrails/cover.jpg)
+![Is the answer in the text you send? Left, checks a decision model can make from the text alone, each with a high score: a prompt injection (0.97), a role-play jailbreak (0.93), a secret leaked in the reply (0.95) and a refund call that does not match the request (0.89). Right, checks that need context outside the text: a reply reading out a home address needs to know whether the user verified their identity, a jailbreak split across five turns needs the earlier turns, a second refund needs to know whether the first was paid, and a 60-day return window needs the returns policy.](https://blog-cdn.mercity.ai/blog/how-to-use-decision-models-as-guardrails/cover.jpg)
 
 <figcaption>Checks a decision model can answer from the text alone, and checks that need more context or a slower model.</figcaption>
 
