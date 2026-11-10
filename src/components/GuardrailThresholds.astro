@@ -1,0 +1,492 @@
+---
+/* One guardrail question, two thresholds: example messages on a 0–1 score
+   axis, split into allow / review / block by two draggable lines. Used by
+   the "How to use decision models as guardrails" post.
+
+   The figure is rendered here in its starting state, so it reads without
+   JavaScript; the script only moves the lines and recolours the dots.
+   Colours sit on classes, not SVG presentation attributes, since var()
+   does not work in those. */
+interface Message {
+  text: string;
+  score: number;
+  /** true when the message breaks the rule */
+  bad: boolean;
+}
+interface Preset {
+  label: string;
+  review: number;
+  block: number;
+}
+interface Props {
+  title: string;
+  question: string;
+  messages: Message[];
+  /** what a rule-breaking / clean message is called, e.g. "injection" */
+  badLabel?: string;
+  goodLabel?: string;
+  /** stat labels */
+  missLabel?: string;
+  wrongLabel?: string;
+  presets?: Preset[];
+  review?: number;
+  block?: number;
+  /** index of the message shown in the read-out line at first */
+  selected?: number;
+  note?: string;
+}
+
+const {
+  title,
+  question,
+  messages,
+  badLabel = 'injection',
+  goodLabel = 'harmless',
+  missLabel = 'injections let through',
+  wrongLabel = 'harmless messages blocked',
+  presets = [
+    { label: 'Lenient', review: 0.6, block: 0.95 },
+    { label: 'Balanced', review: 0.5, block: 0.85 },
+    { label: 'Strict', review: 0.3, block: 0.7 },
+  ],
+  review = 0.5,
+  block = 0.85,
+  selected = 0,
+  note,
+} = Astro.props;
+
+/* Plot geometry, in viewBox units. */
+const W = 640, H = 150, L = 16, R = 624, T = 26, B = 112;
+const X = (v: number) => L + v * (R - L);
+const outcome = (s: number) => (s >= block ? 'block' : s >= review ? 'review' : 'allow');
+
+/* Stack dots that would overlap into lanes above the axis. */
+const lanes: number[] = [];
+const dots = messages.map((m) => {
+  let lane = 0;
+  while (lanes[lane] !== undefined && m.score - lanes[lane] < 0.06) lane++;
+  lanes[lane] = m.score;
+  return { ...m, cx: X(m.score), cy: B - 22 - lane * 26, out: outcome(m.score) };
+});
+
+const zones = [
+  { key: 'allow', from: L, to: X(review), label: 'ALLOW' },
+  { key: 'review', from: X(review), to: X(block), label: 'REVIEW' },
+  { key: 'block', from: X(block), to: R, label: 'BLOCK' },
+];
+const ticks = [0, 0.25, 0.5, 0.75, 1];
+
+const bad = messages.filter((m) => m.bad);
+const good = messages.filter((m) => !m.bad);
+const miss = bad.filter((m) => outcome(m.score) === 'allow').length;
+const wrong = good.filter((m) => outcome(m.score) === 'block').length;
+const sent = messages.filter((m) => outcome(m.score) === 'review').length;
+const sel = dots[selected];
+const isPreset = (p: Preset) => Math.abs(p.review - review) < 0.001 && Math.abs(p.block - block) < 0.001;
+---
+
+<guardrail-thresholds
+  class="gt"
+  data-review={review}
+  data-block={block}
+  data-selected={selected}
+  data-bad-label={badLabel}
+  data-good-label={goodLabel}
+>
+  <div class="gt-head">
+    <span class="gt-q" aria-hidden="true">Q</span>
+    <div>
+      <p class="gt-title">{title}</p>
+      <p class="gt-question">&ldquo;{question}&rdquo;</p>
+    </div>
+  </div>
+
+  <div class="gt-row">
+    <p class="gt-vals">
+      <span><i class="gt-key review"></i>Review at <b data-gt="vR">{review.toFixed(2)}</b></span>
+      <span><i class="gt-key block"></i>Block at <b data-gt="vB">{block.toFixed(2)}</b></span>
+    </p>
+    <div class="gt-seg" role="group" aria-label="Threshold presets">
+      {presets.map((p) => (
+        <button type="button" data-review={p.review} data-block={p.block} aria-pressed={isPreset(p) ? 'true' : 'false'}>
+          {p.label}
+        </button>
+      ))}
+    </div>
+  </div>
+
+  <div class="gt-chart">
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      role="group"
+      aria-label={`Scores of ${messages.length} example messages on a scale from 0 to 1, with draggable review and block thresholds`}
+    >
+      {zones.map((z) => (
+        <rect class={`gt-zone ${z.key}`} data-zone={z.key} x={z.from} y={T} width={z.to - z.from} height={B - T} />
+      ))}
+      {zones.map((z) => (
+        <text
+          class={`gt-zl ${z.key}`}
+          data-zl={z.key}
+          x={(z.from + z.to) / 2}
+          y={T - 8}
+          text-anchor="middle"
+          style={z.to - z.from < 56 ? 'display:none' : undefined}
+        >{z.label}</text>
+      ))}
+      <line class="gt-axis" x1={L} x2={R} y1={B} y2={B} />
+      {ticks.map((v) => (
+        <>
+          <line class="gt-axis" x1={X(v)} x2={X(v)} y1={B} y2={B + 4} />
+          <text class="gt-tick" x={X(v)} y={B + 18} text-anchor={v === 0 ? 'start' : v === 1 ? 'end' : 'middle'}>{v}</text>
+        </>
+      ))}
+      {dots.map((d, i) => (
+        <circle
+          class:list={['gt-dot', d.bad ? 'bad' : 'good', d.out, { sel: i === selected }]}
+          cx={d.cx}
+          cy={d.cy}
+          r={i === selected ? 9.5 : 8}
+          data-score={d.score}
+          data-bad={d.bad ? '1' : '0'}
+          data-text={d.text}
+        >
+          <title>{d.text} ({d.bad ? badLabel : goodLabel}, {d.score.toFixed(2)})</title>
+        </circle>
+      ))}
+      {[
+        { key: 'r', cls: 'review', v: review, label: 'Review threshold' },
+        { key: 'b', cls: 'block', v: block, label: 'Block threshold' },
+      ].map((h) => (
+        <g
+          class={`gt-handle ${h.cls}`}
+          data-handle={h.key}
+          tabindex="0"
+          role="slider"
+          aria-label={h.label}
+          aria-valuemin="0"
+          aria-valuemax="1"
+          aria-valuenow={h.v.toFixed(2)}
+        >
+          <line x1={X(h.v)} x2={X(h.v)} y1={T - 2} y2={B} />
+          <circle class="gt-grip" cx={X(h.v)} cy={B} r="7" />
+        </g>
+      ))}
+    </svg>
+  </div>
+
+  <p class="gt-read" data-gt="read" aria-live="polite">
+    <span class={`gt-pill ${sel.out}`}>{sel.out}</span>
+    <q>{sel.text}</q>
+    <span class="gt-kind">{sel.bad ? badLabel : goodLabel} &middot; {sel.score.toFixed(2)}</span>
+  </p>
+
+  <div class="gt-stats">
+    <div><p class="gt-big fail" data-gt="miss">{miss} of {bad.length}</p><p class="gt-sm">{missLabel}</p></div>
+    <div><p class="gt-big fail" data-gt="wrong">{wrong} of {good.length}</p><p class="gt-sm">{wrongLabel}</p></div>
+    <div><p class="gt-big rev" data-gt="sent">{sent} of {messages.length}</p><p class="gt-sm">sent to a slower check</p></div>
+  </div>
+
+  {note && <p class="gt-note">{note}</p>}
+</guardrail-thresholds>
+
+<script>
+  type Out = 'allow' | 'review' | 'block';
+
+  class GuardrailThresholds extends HTMLElement {
+    connectedCallback() {
+      const svg = this.querySelector('svg')!;
+      const L = 16, R = 624, GAP = 0.05;
+      const X = (v: number) => L + v * (R - L);
+      const st = { r: Number(this.dataset.review), b: Number(this.dataset.block) };
+      let sel = Number(this.dataset.selected) || 0;
+      const badLabel = this.dataset.badLabel!;
+      const goodLabel = this.dataset.goodLabel!;
+
+      const dots = [...svg.querySelectorAll<SVGCircleElement>('.gt-dot')];
+      const msgs = dots.map((d) => ({ score: Number(d.dataset.score), bad: d.dataset.bad === '1', text: d.dataset.text! }));
+      const zone = (k: Out) => svg.querySelector<SVGRectElement>(`[data-zone="${k}"]`)!;
+      const zlabel = (k: Out) => svg.querySelector<SVGTextElement>(`[data-zl="${k}"]`)!;
+      const handles = {
+        r: svg.querySelector<SVGGElement>('[data-handle="r"]')!,
+        b: svg.querySelector<SVGGElement>('[data-handle="b"]')!,
+      };
+      const field = (k: string) => this.querySelector<HTMLElement>(`[data-gt="${k}"]`)!;
+      const presets = [...this.querySelectorAll<HTMLButtonElement>('.gt-seg button')];
+      const out = (s: number): Out => (s >= st.b ? 'block' : s >= st.r ? 'review' : 'allow');
+
+      const draw = () => {
+        const { r, b } = st;
+        const spans: [Out, number, number][] = [['allow', L, X(r)], ['review', X(r), X(b)], ['block', X(b), R]];
+        for (const [k, from, to] of spans) {
+          zone(k).setAttribute('x', String(from));
+          zone(k).setAttribute('width', String(to - from));
+          const t = zlabel(k);
+          t.setAttribute('x', String((from + to) / 2));
+          t.style.display = to - from < 56 ? 'none' : '';
+        }
+        for (const [key, v] of [['r', r], ['b', b]] as const) {
+          const g = handles[key];
+          const x = String(X(v));
+          const ln = g.querySelector('line')!;
+          ln.setAttribute('x1', x);
+          ln.setAttribute('x2', x);
+          g.querySelector('circle')!.setAttribute('cx', x);
+          g.setAttribute('aria-valuenow', v.toFixed(2));
+        }
+        let miss = 0, wrong = 0, sent = 0, bad = 0, good = 0;
+        msgs.forEach((m, i) => {
+          const o = out(m.score);
+          m.bad ? bad++ : good++;
+          if (o === 'review') sent++;
+          if (m.bad && o === 'allow') miss++;
+          if (!m.bad && o === 'block') wrong++;
+          const d = dots[i];
+          d.classList.remove('allow', 'review', 'block');
+          d.classList.add(o);
+          d.classList.toggle('sel', i === sel);
+          d.setAttribute('r', i === sel ? '9.5' : '8');
+        });
+        field('vR').textContent = r.toFixed(2);
+        field('vB').textContent = b.toFixed(2);
+        field('miss').textContent = `${miss} of ${bad}`;
+        field('wrong').textContent = `${wrong} of ${good}`;
+        field('sent').textContent = `${sent} of ${msgs.length}`;
+
+        const m = msgs[sel];
+        const o = out(m.score);
+        const read = field('read');
+        const pill = read.querySelector('.gt-pill')!;
+        pill.className = `gt-pill ${o}`;
+        pill.textContent = o;
+        read.querySelector('q')!.textContent = m.text;
+        read.querySelector('.gt-kind')!.textContent = `${m.bad ? badLabel : goodLabel} · ${m.score.toFixed(2)}`;
+
+        for (const btn of presets) {
+          const on = Math.abs(Number(btn.dataset.review) - r) < 0.001 && Math.abs(Number(btn.dataset.block) - b) < 0.001;
+          btn.setAttribute('aria-pressed', String(on));
+        }
+      };
+
+      const round = (v: number) => Math.round(v * 100) / 100;
+      const set = (k: 'r' | 'b', v: number) => {
+        v = round(v);
+        if (k === 'r') st.r = Math.min(Math.max(v, 0.01), st.b - GAP);
+        else st.b = Math.max(Math.min(v, 0.99), st.r + GAP);
+        st.r = round(st.r);
+        st.b = round(st.b);
+        draw();
+      };
+
+      dots.forEach((d, i) => {
+        const pick = (e: Event) => { e.stopPropagation(); sel = i; draw(); };
+        d.addEventListener('pointerdown', pick);
+        d.addEventListener('mouseenter', pick);
+      });
+
+      for (const key of ['r', 'b'] as const) {
+        handles[key].addEventListener('keydown', (e) => {
+          const step = e.shiftKey ? 0.05 : 0.01;
+          const d = ({ ArrowLeft: -step, ArrowDown: -step, ArrowRight: step, ArrowUp: step } as Record<string, number>)[e.key];
+          if (d === undefined) return;
+          e.preventDefault();
+          set(key, st[key] + d);
+        });
+      }
+
+      let drag: 'r' | 'b' | null = null;
+      const val = (e: PointerEvent) => {
+        const rc = svg.getBoundingClientRect();
+        return (((e.clientX - rc.left) / rc.width) * 640 - L) / (R - L);
+      };
+      svg.addEventListener('pointerdown', (e) => {
+        const v = val(e);
+        drag = Math.abs(v - st.r) <= Math.abs(v - st.b) ? 'r' : 'b';
+        svg.setPointerCapture(e.pointerId);
+        set(drag, v);
+      });
+      svg.addEventListener('pointermove', (e) => { if (drag) set(drag, val(e)); });
+      const stop = () => { drag = null; };
+      svg.addEventListener('pointerup', stop);
+      svg.addEventListener('pointercancel', stop);
+
+      for (const btn of presets) {
+        btn.addEventListener('click', () => {
+          st.r = Number(btn.dataset.review);
+          st.b = Number(btn.dataset.block);
+          draw();
+        });
+      }
+
+      draw();
+    }
+  }
+
+  if (!customElements.get('guardrail-thresholds')) customElements.define('guardrail-thresholds', GuardrailThresholds);
+</script>
+
+<style>
+  .gt {
+    --gt-allow: hsl(158 72% 29%);
+    --gt-allow-bg: hsl(152 46% 94%);
+    --gt-review: hsl(31 92% 36%);
+    --gt-review-bg: var(--amber-100);
+    --gt-block: hsl(356 63% 51%);
+    --gt-block-bg: hsl(356 82% 96%);
+    display: block;
+    margin: 2.2em 0 0;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+  /* .v2-prose p sets a bottom margin at the same specificity as one class. */
+  .gt.gt p { margin: 0; }
+
+  .gt-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    background: var(--ground);
+  }
+  .gt-q {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--indigo-200);
+    background: var(--surface);
+    color: var(--indigo-700);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .gt-title { font-weight: 600; font-size: 13.5px; letter-spacing: -0.01em; }
+  .gt-question { font-size: 12.5px; color: var(--ink-3); }
+
+  .gt-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .gt-vals { display: flex; gap: 16px; font-size: 12.5px; color: var(--ink-2); }
+  .gt-vals b { font-family: var(--mono); font-weight: 500; color: var(--ink); }
+  .gt-key {
+    display: inline-block;
+    width: 10px;
+    height: 2px;
+    margin-right: 7px;
+    vertical-align: 3px;
+  }
+  .gt-key.review { background: var(--gt-review); }
+  .gt-key.block { background: var(--ink); }
+
+  .gt-seg { display: inline-flex; border: 1px solid var(--line); }
+  .gt-seg button {
+    font: inherit;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.02em;
+    border: 0;
+    background: var(--surface);
+    color: var(--ink-3);
+    padding: 5px 11px;
+    cursor: pointer;
+  }
+  .gt-seg button + button { border-left: 1px solid var(--line); }
+  .gt-seg button:hover { color: var(--ink); }
+  .gt-seg button[aria-pressed='true'] { background: var(--ink); color: var(--surface); }
+
+  .gt-chart { padding: 10px 16px 0; }
+  .gt svg { display: block; width: 100%; height: auto; touch-action: none; cursor: ew-resize; user-select: none; }
+  .gt svg text { font-family: var(--mono); font-size: 10px; fill: var(--ink-3); }
+  .gt .gt-zl { letter-spacing: 0.06em; }
+  .gt .gt-zl.allow { fill: var(--gt-allow); }
+  .gt .gt-zl.review { fill: var(--gt-review); }
+  .gt .gt-zl.block { fill: var(--gt-block); }
+  .gt-zone.allow { fill: var(--gt-allow-bg); }
+  .gt-zone.review { fill: var(--gt-review-bg); }
+  .gt-zone.block { fill: var(--gt-block-bg); }
+  .gt-axis { stroke: var(--line-2); }
+
+  .gt-dot { cursor: pointer; stroke-width: 2; fill: var(--surface); }
+  .gt-dot.sel { stroke-width: 3.5; }
+  .gt-dot.allow { stroke: var(--gt-allow); }
+  .gt-dot.review { stroke: var(--gt-review); }
+  .gt-dot.block { stroke: var(--gt-block); }
+  .gt-dot.bad.allow { fill: var(--gt-allow); }
+  .gt-dot.bad.review { fill: var(--gt-review); }
+  .gt-dot.bad.block { fill: var(--gt-block); }
+
+  .gt-handle line { stroke-width: 2; stroke-dasharray: 4 3; }
+  .gt-handle.review line { stroke: var(--gt-review); }
+  .gt-handle.block line { stroke: var(--ink); }
+  .gt-grip { fill: var(--surface); stroke-width: 2; }
+  .gt-handle.review .gt-grip { stroke: var(--gt-review); }
+  .gt-handle.block .gt-grip { stroke: var(--ink); }
+  .gt-handle:focus { outline: none; }
+  .gt-handle:focus-visible .gt-grip { stroke: var(--indigo-500); stroke-width: 3; }
+
+  .gt.gt .gt-read {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 40px;
+    margin: 4px 16px 12px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    background: var(--ground);
+    font-size: 13px;
+  }
+  .gt-read q { color: var(--ink); quotes: '\201C' '\201D'; }
+  .gt-kind { margin-left: auto; color: var(--ink-3); font-family: var(--mono); font-size: 11px; white-space: nowrap; }
+  .gt-pill {
+    flex-shrink: 0;
+    min-width: 58px;
+    padding: 3px 7px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-align: center;
+    text-transform: uppercase;
+  }
+  .gt-pill.allow { background: var(--gt-allow-bg); color: var(--gt-allow); }
+  .gt-pill.review { background: var(--gt-review-bg); color: var(--gt-review); }
+  .gt-pill.block { background: var(--gt-block-bg); color: var(--gt-block); }
+
+  .gt-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--line);
+  }
+  .gt-stats > div { padding: 10px 16px 12px; }
+  .gt-stats > div + div { border-left: 1px solid var(--line); }
+  .gt-big { font-family: var(--mono); font-size: 19px; font-weight: 500; letter-spacing: -0.02em; }
+  .gt-big.fail { color: var(--gt-block); }
+  .gt-big.rev { color: var(--gt-review); }
+  .gt-sm { font-size: 12px; line-height: 1.35; color: var(--ink-3); }
+
+  .gt-note {
+    padding: 10px 16px;
+    border-top: 1px solid var(--line);
+    font-size: 12.5px;
+    color: var(--ink-3);
+  }
+
+  @media (max-width: 520px) {
+    .gt-kind { display: none; }
+    .gt-big { font-size: 16px; }
+    .gt-stats > div { padding: 8px 10px 10px; }
+    .gt svg text { font-size: 17px; }
+  }
+</style>

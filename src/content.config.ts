@@ -24,7 +24,7 @@ const postSchema = z.object({
 });
 
 const posts = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './content' }),
+  loader: glob({ pattern: '**/*.{md,mdx}', base: './content' }),
   schema: postSchema,
 });
 
