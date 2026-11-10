@@ -751,7 +751,9 @@ silently.
   pipeline via `processor: unified({...})` from `@astrojs/markdown-remark`
   (Astro 7's default, Sätteri, would drop the math, highlighting, anchor
   and table plugins), and `compressHTML: true` keeps Astro 5's whitespace
-  handling. The upgrade was checked by diffing every built page against
+  handling. `markdown.syntaxHighlight: false` keeps Shiki off: it ran
+  ahead of `rehype-highlight` and painted every code block github-dark
+  until 2026-11-10. The upgrade was checked by diffing every built page against
   the Astro 5 build: same pages, same text, same math and table markup.
 - **Build into `dist/`, not another drive.** Astro 7 moves assets with a
   rename, so `pnpm build --outDir` pointing at a different volume (e.g.

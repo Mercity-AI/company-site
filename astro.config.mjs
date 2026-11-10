@@ -59,6 +59,10 @@ export default defineConfig({
   // remark/rehype plugins (math, highlighting, heading anchors, scrollable
   // tables), so it stays on the unified pipeline. MDX inherits it.
   markdown: {
+    // Code blocks are coloured by rehype-highlight with the site palette in
+    // v2-article.css. Astro's default Shiki would run first and paint them
+    // github-dark, which rehype-highlight then skips.
+    syntaxHighlight: false,
     processor: unified({
       remarkPlugins: [remarkMath],
       rehypePlugins: [
