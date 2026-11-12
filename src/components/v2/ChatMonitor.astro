@@ -12,6 +12,11 @@
  * Behind it, a fine grid fills the graphic's column, tinted indigo while
  * the answer is in scope and easing to amber once it drifts.
  *
+ * Each loop plays in order: the question arrives, then the answer box,
+ * then the answer streams into it. At the end all three fade together.
+ * Unwritten words are `visibility: hidden`, not just transparent, so they
+ * cannot be selected or flash in between loops.
+ *
  * Words stand in for tokens; the exchange is illustrative. Plays while in
  * view, holds, fades and loops. Reduced motion shows the caught state.
  */
@@ -54,12 +59,6 @@ const switchAt = legal.split(' ').length;
       <span>Off topic: Financial. Caught {CAUGHT_AFTER} tokens after the drift, stopped before the user read it.</span>
     </div>
   </div>
-
-  <div class="cm-foot" aria-hidden="true">
-    <span><i class="sw sw-legal"></i>Legal, in scope</span>
-    <span><i class="sw sw-off"></i>Financial, off topic</span>
-    <span class="cm-foot-n">Labelled token by token, while it is written</span>
-  </div>
 </div>
 
 <script>
@@ -91,7 +90,7 @@ const switchAt = legal.split(' ').length;
     if (reduce || !('IntersectionObserver' in window)) {
       ws.slice(0, stopAt).forEach((w) => w.classList.add('on'));
       setTag(true);
-      root.classList.add('asked', 'live');
+      root.classList.add('asked', 'boxed', 'live');
       drift(true);
       caught();
       return;
@@ -104,15 +103,20 @@ const switchAt = legal.split(' ').length;
     function reset() {
       ws.forEach((w) => w.classList.remove('on'));
       i = 0;
-      root.classList.remove('fade', 'caught', 'asked', 'live');
+      root.classList.remove('fade', 'caught', 'asked', 'boxed', 'live');
       drift(false);
       setTag(false);
     }
 
-    // The question arrives as one block, then the answer starts.
+    // The question arrives as one block, then the empty answer box, then
+    // the answer starts streaming into it.
     function ask() {
       root.classList.add('asked');
-      timer = window.setTimeout(tick, 750);
+      timer = window.setTimeout(box, 650);
+    }
+    function box() {
+      root.classList.add('boxed');
+      timer = window.setTimeout(tick, 600);
     }
 
     function tick() {
@@ -142,7 +146,8 @@ const switchAt = legal.split(' ').length;
         const vis = entries.some((e) => e.isIntersecting);
         if (vis && !running) {
           running = true;
-          timer = window.setTimeout(root.classList.contains('asked') ? tick : ask, 500);
+          const next = root.classList.contains('boxed') ? tick : root.classList.contains('asked') ? box : ask;
+          timer = window.setTimeout(next, 500);
         } else if (!vis && running) {
           running = false;
           clearTimeout(timer);
@@ -163,6 +168,7 @@ const switchAt = legal.split(' ').length;
     width: 100%;
     display: flex;
     flex-direction: column;
+    user-select: none;
   }
   .cm > :not(.cm-bg) {
     position: relative;
@@ -240,11 +246,26 @@ const switchAt = legal.split(' ').length;
     line-height: 1.45;
   }
 
+  /* The answer box comes in after the question, empty, and fades out
+     with it at the end of the loop. */
   .cm-a {
     margin-top: 16.2px;
     border: 1px solid var(--line);
     background: var(--surface);
-    transition: border-color 400ms var(--ease);
+    opacity: 0;
+    transform: translateY(10px);
+    transition:
+      opacity 450ms var(--ease),
+      transform 600ms var(--ease),
+      border-color 400ms var(--ease);
+  }
+  .boxed .cm-a {
+    opacity: 1;
+    transform: none;
+  }
+  .cm.fade .cm-a {
+    opacity: 0;
+    transition: opacity 500ms var(--ease);
   }
   .caught .cm-a {
     border-color: hsl(34 70% 60%);
@@ -315,6 +336,7 @@ const switchAt = legal.split(' ').length;
   }
   .w {
     opacity: 0;
+    visibility: hidden;
     padding-block: 2px;
     transition:
       opacity 160ms var(--ease),
@@ -322,6 +344,7 @@ const switchAt = legal.split(' ').length;
   }
   .w.on {
     opacity: 1;
+    visibility: visible;
   }
   .w-legal.on {
     background: var(--legal-tint);
@@ -333,11 +356,12 @@ const switchAt = legal.split(' ').length;
   /* Once caught, the part never shown stays as faint placeholder bars. */
   .caught .w:not(.on) {
     opacity: 1;
+    visibility: visible;
     color: transparent;
     background: linear-gradient(var(--n-100), var(--n-100)) 0 55% / 100% 7px no-repeat;
     transition: opacity 500ms var(--ease) 300ms;
   }
-  .fade .w {
+  .cm.fade .w {
     opacity: 0;
     transition: opacity 500ms var(--ease);
   }
@@ -374,44 +398,11 @@ const switchAt = legal.split(' ').length;
     vertical-align: 0.05em;
   }
 
-  .cm-foot {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 7.2px 18px;
-    margin-top: 16.2px;
-    font-family: var(--mono);
-    font-size: 9.9px;
-    color: var(--ink-2);
-  }
-  .cm-foot span {
-    display: inline-flex;
-    align-items: center;
-    gap: 7.2px;
-  }
-  .sw {
-    width: 14px;
-    height: 8px;
-  }
-  .sw-legal {
-    background: hsl(243 75% 59% / 0.24);
-  }
-  .sw-off {
-    background: hsl(34 88% 63% / 0.45);
-  }
-  .cm-foot-n {
-    margin-left: auto;
-    color: var(--ink-3);
-  }
   @media (prefers-reduced-motion: reduce) {
-    .cm-q {
+    .cm-q,
+    .cm-a {
       opacity: 1;
       transform: none;
-    }
-  }
-  @media (max-width: 620px) {
-    .cm-foot-n {
-      margin-left: 0;
     }
   }
 </style>

@@ -9,15 +9,6 @@ import { entryToRow, estimateReadingTime, formatShortDate, getResearchUrl, sortP
 
 const entries = sortPostsByPublishedDate(await getCollection('research'));
 const [lead, ...rest] = entries;
-
-const years = entries.length
-  ? [...new Set([entries.at(-1)!.data.publishedAt.getFullYear(), entries[0].data.publishedAt.getFullYear()])].join('–')
-  : '';
-const parts = [
-  papers.length ? `${papers.length} ${papers.length === 1 ? 'paper' : 'papers'}` : '',
-  entries.length ? `${entries.length} ${entries.length === 1 ? 'log' : 'logs'}` : '',
-].filter(Boolean);
-const count = parts.length ? `${parts.join(' · ')}${years ? ` · ${years}` : ''}` : undefined;
 ---
 
 <V2Layout
@@ -28,8 +19,12 @@ const count = parts.length ? `${parts.join(' · ')}${years ? ` · ${years}` : ''
   <ListHead
     eyebrow="Research"
     title="What we tried, what held up, and why."
-    lede="Long-form logs of our own experiments, implementation detail included, because that is reliably the part every other write-up leaves out and the part you need in order to reproduce it."
-    count={count}
+    lede={[
+      'Published papers and long-form logs of our own experiments, implementation detail included,',
+      'because that is the part every other write-up leaves out and the part you need to reproduce it.',
+    ]}
+    ledeWidth="820px"
+    tight={papers.length > 0}
   />
 
   {
@@ -115,6 +110,12 @@ const count = parts.length ? `${parts.join(' · ')}${years ? ` · ${years}` : ''
     font-weight: 400;
     line-height: 1.16;
     letter-spacing: -0.02em;
+  }
+
+  /* Follows the head closely: the head and this band each keep about
+     half their usual space (Pranav, 2026-11-12). */
+  .papers-band {
+    padding-top: clamp(30.36px, 3.62vw, 47.72px);
   }
 
   /* ── Papers: two to a row; a paper alone spans both (PaperBlock) */

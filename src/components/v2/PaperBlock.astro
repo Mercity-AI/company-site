@@ -1,7 +1,8 @@
 ---
 /**
- * One paper on /research: kicker, serif title, summary, authors and
- * links (arXiv, GitHub, research log). `wide` spans the grid and puts
+ * One paper on /research: serif title, summary, authors and links
+ * (arXiv, GitHub, research log). No eyebrow over the title (Pranav,
+ * 2026-11-12). `wide` spans the grid and puts
  * the paper's graphic beside the copy.
  *
  * The copy column sits on `facetsAmber` from public/v2-backdrops.js, pale
@@ -19,6 +20,12 @@ interface Props {
 }
 
 const { paper, wide = false, delay = 0, seed = 1 }: Props = Astro.props;
+
+// A title with a colon breaks after it: the claim on the first line, the
+// method from the second (Pranav, 2026-11-12).
+const colon = paper.title.indexOf(': ');
+const titleLead = colon > 0 ? paper.title.slice(0, colon + 1) : '';
+const titleRest = colon > 0 ? paper.title.slice(colon + 2) : paper.title;
 ---
 
 <article
@@ -29,12 +36,10 @@ const { paper, wide = false, delay = 0, seed = 1 }: Props = Astro.props;
   <div class="paper-body">
   <canvas class="paper-bg" data-backdrop="facetsAmber" data-seed={seed} data-dpr="1" aria-hidden="true"></canvas>
   <div class="paper-copy">
-  <span class="paper-kicker">
-    {paper.venue} <i aria-hidden="true">·</i> {paper.date}
-  </span>
   <h3>
     <a href={paper.href} target="_blank" rel="noopener noreferrer">
-      {paper.title}
+      {titleLead && <span class="t-lead">{titleLead} </span>}
+      <span class="t-rest">{titleRest}</span>
     </a>
   </h3>
   <p>{paper.summary}</p>
@@ -112,27 +117,14 @@ const { paper, wide = false, delay = 0, seed = 1 }: Props = Astro.props;
     border-color: var(--ink-3);
     box-shadow: 0 4px 9px -7px hsl(240 14% 10% / 0.07);
   }
-  .paper-kicker {
-    font-family: var(--mono);
-    font-size: 9.9px;
-    font-weight: 500;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--indigo-600);
-  }
-  .paper-kicker i {
-    margin-inline: 5.4px;
-    font-style: normal;
-    color: var(--n-300);
-  }
   .paper h3 {
-    margin-top: 14.4px;
     font-family: var(--hero-serif);
     font-size: clamp(21.6px, 2.16vw, 26.1px);
     font-weight: 400;
     line-height: 1.2;
     letter-spacing: -0.015em;
-    text-wrap: pretty;
+    /* Balance, not pretty: pretty still left "monitoring" alone. */
+    text-wrap: balance;
   }
   .paper h3 a {
     text-decoration: underline;
@@ -143,6 +135,19 @@ const { paper, wide = false, delay = 0, seed = 1 }: Props = Astro.props;
   }
   .paper h3 a:hover {
     text-decoration-color: currentColor;
+  }
+  /* The part up to the colon holds one line wherever the column has room
+     for it; narrower, the title just balances. */
+  @media (min-width: 1000px) {
+    .t-lead {
+      display: block;
+      white-space: nowrap;
+    }
+    /* Its own block, or balance does not reach it and a word is left alone. */
+    .t-rest {
+      display: block;
+      text-wrap: balance;
+    }
   }
   .paper p {
     margin-top: 12.6px;
@@ -197,7 +202,8 @@ const { paper, wide = false, delay = 0, seed = 1 }: Props = Astro.props;
   .paper-wide {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    /* 5.5 : 6.5, not 5 : 7, so "…monitor at decode:" fits one line. */
+    grid-template-columns: minmax(0, 5.5fr) minmax(0, 6.5fr);
   }
   /* The graphic's column: white under the graphic's own ground, a rule
      between it and the copy. */

@@ -10,18 +10,26 @@ interface Props {
   /** An array puts each sentence on its own line, as on the home page. */
   lede: string | string[];
   count?: string;
+  /** Widest the lede may run; set it when each line must hold on one row. */
+  ledeWidth?: string;
+  /** Less room under the head, for a page whose first band follows closely. */
+  tight?: boolean;
 }
 
-const { eyebrow, title, lede, count }: Props = Astro.props;
+const { eyebrow, title, lede, count, ledeWidth, tight }: Props = Astro.props;
 ---
 
-<section class="list-head">
+<section class:list={['list-head', { tight }]}>
   <div class="shell">
     {eyebrow && <span class="eyebrow rv" data-rv>{eyebrow}</span>}
     <h1 class="rv" data-rv style="--rv-delay:80ms">{title}</h1>
     {
       Array.isArray(lede) ? (
-        <p class="lede lede-lines rv" data-rv style="--rv-delay:160ms">
+        <p
+          class="lede lede-lines rv"
+          data-rv
+          style={`--rv-delay:160ms${ledeWidth ? `;max-width:${ledeWidth}` : ''}`}
+        >
           {lede.map((line) => <span>{line}</span>)}
         </p>
       ) : (
@@ -41,6 +49,9 @@ const { eyebrow, title, lede, count }: Props = Astro.props;
 <style>
   .list-head {
     padding-block: clamp(50.4px, 6.3vw, 86.4px) clamp(43.2px, 5.4vw, 68.4px);
+  }
+  .list-head.tight {
+    padding-bottom: clamp(22.68px, 2.84vw, 35.91px);
   }
   .list-head h1 {
     margin-top: 14.4px;
