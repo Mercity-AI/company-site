@@ -830,10 +830,10 @@
       grain(ctx, w, h, 10, true);
     },
 
-    facets(ctx, w, h, seed) {
+    facets(ctx, w, h, seed, stops = WARM, ground = INK, shade = [0.05, 0.07], grainAmt = 20) {
       const r = rng(seed);
       const fbm = makeNoise(seed);
-      ctx.fillStyle = css(INK);
+      ctx.fillStyle = css(ground);
       ctx.fillRect(0, 0, w, h);
       const s = Math.max(22, w / 11);
       for (let y = -1; y < h / (s * 0.5) + 2; y++) {
@@ -842,7 +842,7 @@
           const cy = y * s * 0.5;
           let t = (cx / w) * 0.55 + (cy / h) * 0.6;
           t += (fbm(cx / 220, cy / 220, 3) - 0.5) * 0.24;
-          ctx.fillStyle = css(ramp(WARM, t));
+          ctx.fillStyle = css(ramp(stops, t));
           ctx.beginPath();
           ctx.moveTo(cx, cy - s * 0.52);
           ctx.lineTo(cx + s * 0.52, cy);
@@ -850,11 +850,28 @@
           ctx.lineTo(cx - s * 0.52, cy);
           ctx.closePath();
           ctx.fill();
-          ctx.fillStyle = `rgba(0,0,0,${0.05 + r() * 0.07})`;
+          ctx.fillStyle = `rgba(0,0,0,${shade[0] + r() * shade[1]})`;
           ctx.fill();
         }
       }
-      grain(ctx, w, h, 20, true);
+      grain(ctx, w, h, grainAmt, true);
+    },
+
+    // facets in cream: the same stacked diamonds, kept to a narrow band
+    // of pale amber and cream with a faint shade per tile, so it can sit
+    // under a whole card with ink on top. The ground of the paper block's
+    // copy column on /research.
+    facetsAmber(ctx, w, h, seed) {
+      GEN.facets(
+        ctx,
+        w,
+        h,
+        seed,
+        [hsl2rgb(40, 70, 97), hsl2rgb(37, 78, 93), hsl2rgb(34, 82, 89), hsl2rgb(32, 80, 85)],
+        hsl2rgb(38, 70, 95),
+        [0.008, 0.018],
+        6
+      );
     },
 
     curves(ctx, w, h, seed) {

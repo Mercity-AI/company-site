@@ -149,9 +149,32 @@ motion, built from three components in `src/components/v2/`:
   `fig01_x.png`): the research logs open with their cover figure, most
   blog posts don't.
 
-`/research` leads with the newest log as a two-column card (image left
-at `5.5fr`, copy right at `6.5fr`) and lists the rest under "Earlier".
+`/research` opens with **Papers** (arXiv papers, above the logs), then
+the logs under a "Research logs" heading: the newest as a two-column card
+(image left at `5.5fr`, copy right at `6.5fr`), the rest under "Earlier".
 `/blog` groups by year with a serif year label and mono count.
+
+**Papers** are typed in by hand in `src/data/papers.ts` and drawn by
+`src/components/v2/PaperBlock.astro`, two to a row. A paper left alone on
+its row spans the width as copy at `5fr` beside its graphic at `7fr`, so
+the grid never has a hole. The copy column sits on `facetsAmber` (pale
+cream facets in `public/v2-backdrops.js`); links carry the arXiv and
+GitHub marks as inline SVG. Harsh chose this on 2026-11-12 after a
+comparison of eleven grounds; rejected on the way: an indigo border and
+top rule, a full amber wash, the home hero's `blurlight`, the Simula
+`plate` ("Simula's scheme"), and art showing around the figure ("looks
+like a misplaced image").
+
+The SAE paper's graphic is `ChatMonitor.astro`, modelled on the first
+GIF on goodfire.com/language: a user question arrives as one bubble (with
+a tail, as in a messaging app); an assistant scoped to Legal answers, word
+by word, each word highlighted by topic as it is written; it drifts into
+tax, the words turn amber, and four tokens later the stream stops with a
+note. A fine grid behind it eases from indigo to amber on the drift. It
+loops while in view. The exchange is illustrative. Rejected before it: the
+paper's own prefill/decode figure, a prefill-versus-decode token diagram,
+a four-stage pipeline strip ("too much going on"), a labelled sentence and
+a score chart.
 
 **Cover images are contained, never cropped.** Both the row thumbnail and
 the lead card use `object-fit: contain` on a white (`--surface`) frame,

@@ -1,0 +1,417 @@
+---
+/**
+ * The paper's idea as a live chat, for its block on /research.
+ *
+ * An assistant scoped to Legal answers a lease question. Its answer
+ * streams in and the monitor labels every token as it is written. Partway
+ * through, the answer drifts into tax: the monitor flips to Financial,
+ * those tokens turn amber (the site's colour for an exception), and a few
+ * tokens later the stream is stopped, with a note saying where the drift
+ * was caught. The rest of the answer is never shown.
+ *
+ * Behind it, a fine grid fills the graphic's column, tinted indigo while
+ * the answer is in scope and easing to amber once it drifts.
+ *
+ * Words stand in for tokens; the exchange is illustrative. Plays while in
+ * view, holds, fades and loops. Reduced motion shows the caught state.
+ */
+const question = 'Can I end my office lease early?';
+const legal =
+  'Usually, yes. Most commercial leases have a break clause that lets you leave early with written notice, often 60 to 90 days. Check whether it sets a fee or a fixed date.';
+const offTopic = 'A break fee is normally a deductible business expense, and prepaid rent may be refundable.';
+const CAUGHT_AFTER = 4; // off-topic tokens written before the stop
+const words = [
+  ...legal.split(' ').map((w) => ({ w, t: 'legal' })),
+  ...offTopic.split(' ').map((w) => ({ w, t: 'off' })),
+];
+const switchAt = legal.split(' ').length;
+---
+
+<div
+  class="cm"
+  data-cm
+  data-switch={switchAt}
+  data-stop={switchAt + CAUGHT_AFTER}
+  role="img"
+  aria-label="A chat with an assistant scoped to legal questions. Its answer about ending a lease streams in, labelled Legal token by token. When it drifts into tax advice the monitor labels those tokens Financial, flags them as off topic, and stops the answer a few tokens later."
+>
+  <div class="cm-bg" aria-hidden="true">
+    <i class="cm-bg-in"></i>
+    <i class="cm-bg-off"></i>
+  </div>
+
+  <div class="cm-q" aria-hidden="true">{question}</div>
+
+  <div class="cm-a" aria-hidden="true">
+    <div class="cm-head">
+      <span class="cm-scope">Scope <b>Legal</b></span>
+      <span class="cm-tag" data-cm-tag><i></i><span data-cm-tag-t>Legal</span></span>
+    </div>
+    <p class="cm-text">
+      {words.map((k) => <span class:list={['w', `w-${k.t}`]}>{k.w} </span>)}
+    </p>
+    <div class="cm-stop" data-cm-stop>
+      <span>Off topic: Financial. Caught {CAUGHT_AFTER} tokens after the drift, stopped before the user read it.</span>
+    </div>
+  </div>
+
+  <div class="cm-foot" aria-hidden="true">
+    <span><i class="sw sw-legal"></i>Legal, in scope</span>
+    <span><i class="sw sw-off"></i>Financial, off topic</span>
+    <span class="cm-foot-n">Labelled token by token, while it is written</span>
+  </div>
+</div>
+
+<script>
+  const STEP = 80;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  document.querySelectorAll<HTMLElement>('[data-cm]').forEach((root) => {
+    const ws = Array.from(root.querySelectorAll<HTMLElement>('.w'));
+    const tag = root.querySelector<HTMLElement>('[data-cm-tag]')!;
+    const tagT = root.querySelector<HTMLElement>('[data-cm-tag-t]')!;
+    const switchAt = Number(root.dataset.switch);
+    const stopAt = Number(root.dataset.stop);
+
+    const setTag = (off: boolean) => {
+      const t = off ? 'off' : 'legal';
+      if (tag.dataset.t === t) return;
+      tag.dataset.t = t;
+      tagT.textContent = off ? 'Financial' : 'Legal';
+      tag.classList.remove('flip');
+      void tag.offsetWidth;
+      tag.classList.add('flip');
+    };
+
+    function caught() {
+      root.classList.add('caught');
+    }
+    const drift = (on: boolean) => root.classList.toggle('drift', on);
+
+    if (reduce || !('IntersectionObserver' in window)) {
+      ws.slice(0, stopAt).forEach((w) => w.classList.add('on'));
+      setTag(true);
+      root.classList.add('asked', 'live');
+      drift(true);
+      caught();
+      return;
+    }
+
+    let i = 0;
+    let timer = 0;
+    let running = false;
+
+    function reset() {
+      ws.forEach((w) => w.classList.remove('on'));
+      i = 0;
+      root.classList.remove('fade', 'caught', 'asked', 'live');
+      drift(false);
+      setTag(false);
+    }
+
+    // The question arrives as one block, then the answer starts.
+    function ask() {
+      root.classList.add('asked');
+      timer = window.setTimeout(tick, 750);
+    }
+
+    function tick() {
+      root.classList.add('live');
+      if (i < stopAt) {
+        ws[i].classList.add('on');
+        setTag(i >= switchAt);
+        if (i === switchAt) drift(true);
+        i += 1;
+        // A beat on the first off-topic token, as the monitor flips.
+        timer = window.setTimeout(tick, i === switchAt + 1 ? STEP * 4 : STEP);
+        return;
+      }
+      caught();
+      timer = window.setTimeout(() => {
+        root.classList.add('fade');
+        timer = window.setTimeout(() => {
+          reset();
+          timer = window.setTimeout(ask, 500);
+        }, 600);
+      }, 4200);
+    }
+
+    reset();
+    const io = new IntersectionObserver(
+      (entries) => {
+        const vis = entries.some((e) => e.isIntersecting);
+        if (vis && !running) {
+          running = true;
+          timer = window.setTimeout(root.classList.contains('asked') ? tick : ask, 500);
+        } else if (!vis && running) {
+          running = false;
+          clearTimeout(timer);
+        }
+      },
+      { threshold: 0.45 }
+    );
+    io.observe(root);
+  });
+</script>
+
+<style>
+  .cm {
+    --legal: hsl(243 75% 59%);
+    --legal-tint: hsl(243 75% 59% / 0.14);
+    --off: hsl(34 84% 53%);
+    --off-tint: hsl(34 88% 63% / 0.28);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .cm > :not(.cm-bg) {
+    position: relative;
+  }
+
+  /* The pattern: a fine grid over the whole graphic column (the nearest
+     positioned ancestor), in two layers that crossfade on drift. */
+  .cm-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .cm-bg i {
+    position: absolute;
+    inset: 0;
+    transition: opacity 1400ms var(--ease);
+  }
+  .cm-bg-in {
+    background:
+      radial-gradient(120% 90% at 85% 15%, hsl(243 75% 59% / 0.07), transparent 70%),
+      linear-gradient(hsl(243 55% 60% / 0.13) 1px, transparent 1px) 0 0 / 18px 18px,
+      linear-gradient(90deg, hsl(243 55% 60% / 0.13) 1px, transparent 1px) 0 0 / 18px 18px;
+  }
+  .cm-bg-off {
+    opacity: 0;
+    background:
+      radial-gradient(120% 90% at 85% 15%, hsl(34 88% 60% / 0.12), transparent 70%),
+      linear-gradient(hsl(34 75% 50% / 0.18) 1px, transparent 1px) 0 0 / 18px 18px,
+      linear-gradient(90deg, hsl(34 75% 50% / 0.18) 1px, transparent 1px) 0 0 / 18px 18px;
+  }
+  .drift .cm-bg-off {
+    opacity: 1;
+  }
+  .drift .cm-bg-in {
+    opacity: 0;
+  }
+
+  /* The question: a dark square chip on the right, as a user turn. It
+     arrives as one block at the start of each loop. */
+  .cm-q {
+    opacity: 0;
+    transform: translateY(10px);
+    transition:
+      opacity 450ms var(--ease),
+      transform 600ms var(--ease);
+  }
+  .asked .cm-q {
+    opacity: 1;
+    transform: none;
+  }
+  .fade .cm-q {
+    opacity: 0;
+    transition: opacity 500ms var(--ease);
+  }
+  /* A tail on the top-right corner, pointing to the user's side, as in a
+     messaging app. The chip steps in by its width so it stays in frame. */
+  .cm-q::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -9px;
+    width: 10px;
+    height: 11px;
+    background: var(--ink);
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+  }
+  .cm-q {
+    margin-right: 9px;
+    align-self: flex-end;
+    max-width: 80%;
+    padding: 9px 12.6px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 13.05px;
+    line-height: 1.45;
+  }
+
+  .cm-a {
+    margin-top: 16.2px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    transition: border-color 400ms var(--ease);
+  }
+  .caught .cm-a {
+    border-color: hsl(34 70% 60%);
+  }
+  .cm-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 14.4px;
+    border-bottom: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 9.9px;
+  }
+  .cm-scope {
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .cm-scope b {
+    margin-left: 4px;
+    font-weight: 500;
+    color: var(--indigo-600);
+  }
+  /* The monitor's live label for the newest token. */
+  .cm-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6.3px;
+    font-weight: 500;
+    color: var(--ink);
+    opacity: 0;
+    transition: opacity 300ms var(--ease);
+  }
+  .live .cm-tag {
+    opacity: 1;
+  }
+  .cm-tag i {
+    width: 7px;
+    height: 7px;
+    background: var(--legal);
+    transition: background-color 250ms var(--ease);
+  }
+  .cm-tag[data-t='off'] {
+    color: var(--amber-800);
+  }
+  .cm-tag[data-t='off'] i {
+    background: var(--off);
+  }
+  .cm-tag.flip span {
+    animation: cm-flip 450ms var(--ease);
+  }
+  @keyframes cm-flip {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+
+  /* The answer. Unwritten words keep their space, so nothing reflows;
+     each written word is marked with its label like a highlighter. */
+  .cm-text {
+    margin: 0;
+    padding: 12.6px 14.4px 15.3px;
+    font-size: 13.5px;
+    line-height: 1.9;
+    color: var(--ink-2);
+  }
+  .w {
+    opacity: 0;
+    padding-block: 2px;
+    transition:
+      opacity 160ms var(--ease),
+      background-color 300ms var(--ease);
+  }
+  .w.on {
+    opacity: 1;
+  }
+  .w-legal.on {
+    background: var(--legal-tint);
+  }
+  .w-off.on {
+    background: var(--off-tint);
+    color: var(--ink);
+  }
+  /* Once caught, the part never shown stays as faint placeholder bars. */
+  .caught .w:not(.on) {
+    opacity: 1;
+    color: transparent;
+    background: linear-gradient(var(--n-100), var(--n-100)) 0 55% / 100% 7px no-repeat;
+    transition: opacity 500ms var(--ease) 300ms;
+  }
+  .fade .w {
+    opacity: 0;
+    transition: opacity 500ms var(--ease);
+  }
+
+  /* The verdict, slid in under the answer when the stream stops. */
+  .cm-stop {
+    max-height: 0;
+    overflow: hidden;
+    font-family: var(--mono);
+    font-size: 10.35px;
+    line-height: 1.5;
+    color: var(--amber-800);
+    background: hsl(34 82% 92% / 0.7);
+    border-top: 1px solid transparent;
+    transition:
+      max-height 450ms var(--ease),
+      border-color 450ms var(--ease);
+  }
+  .cm-stop span {
+    display: block;
+    padding: 9px 14.4px;
+  }
+  .caught .cm-stop {
+    max-height: 90px;
+    border-top-color: hsl(34 70% 75%);
+  }
+  .cm-stop span::before {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 8px;
+    background: var(--off);
+    vertical-align: 0.05em;
+  }
+
+  .cm-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7.2px 18px;
+    margin-top: 16.2px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    color: var(--ink-2);
+  }
+  .cm-foot span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7.2px;
+  }
+  .sw {
+    width: 14px;
+    height: 8px;
+  }
+  .sw-legal {
+    background: hsl(243 75% 59% / 0.24);
+  }
+  .sw-off {
+    background: hsl(34 88% 63% / 0.45);
+  }
+  .cm-foot-n {
+    margin-left: auto;
+    color: var(--ink-3);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cm-q {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @media (max-width: 620px) {
+    .cm-foot-n {
+      margin-left: 0;
+    }
+  }
+</style>
