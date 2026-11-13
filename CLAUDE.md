@@ -32,9 +32,7 @@ tools as they ship (see *Still placeholder* below). Treat design changes on
 | `/design.html` | Design lab. Static file in `public/`, no Astro layout. |
 | `/research`, `/research/[slug]` | Listing and logs, on `V2Layout`. Logs are `.md` or `.mdx`. See *Research and Blog*. |
 | `/blog`, `/blog-post/[slug]` | Listing and posts, on `V2Layout`. Same components. |
-| `/open-source/simula` | The Simula product page, on `V2Layout`. See *Simula*. |
-| `/open-source/simula-v2` | A rewrite of the Simula page, told as why and how we built it. `noindex`, for comparison until it replaces `/open-source/simula`. See *Simula v2*. |
-| `/open-source/simula-v3` | Third pass at the Simula page (2026-11-13, Pranav: redo copy and style). Sets the open-source page system, kept apart from the service pages on purpose (Harsh: the pinned blur hero, strata and frosted closer belong to services): a one-viewport hero on the home page's `contour` map (the open-source cards' generator) with records landing on it as teal squares, `pip install simula-gen` as a dark copyable CTA beside Read the docs, plain grounds, drawn figures in a pinned six-step walkthrough, and a terminal closer. Harsh prefers it to v2; Pranav: "Looks good!" (2026-11-13). Hero: headline "Generate synthetic data / with complete domain / coverage - with *Simula*" (Harsh's wording, in sentence case at his request, spaced hyphen as he wrote it; *Simula* in italic `--indigo-600`), one span per line from 720px up (`nowrap`). Harsh's rule for every headline: never a short trailing line ("never lag"); each line is full or about three quarters of the longest. It replaced "An open-source framework that generates large, diverse synthetic datasets for training models." The paragraph under it opens "Simula is a state-of-the-art synthetic data framework." ("state-of-the-art" left the headline but stays in the paragraph; keep examples out of the explanatory copy, the ticket example lives only in the figures; no "offline" on the quickstart) (Harsh, 2026-11-13, after Pranav: "Don't try to be catchy, try to be clear and descriptive", the tagline is the first thing people read). The headline must say what Simula is; the paragraph under it says how it works. The whole page had a directness pass the same day: plain words over the pipeline's jargon (branch, not leaf/node/mix; writing plan, not meta-prompt), short sentences, no magazine lines. Under the buttons, one mono line: "Generate 10,000 training records for about $22." (Harsh, 2026-11-13: copy after Claude Hopkins's *Scientific Advertising*, the aim is to get people to use Simula; the $22 is our own e-commerce run, taxonomy included, sourced in the cost section). It replaced the "Free and MIT licensed…" line. Rejected headlines: "A synthetic data framework that covers every case, by design." ("doesn't hit the spot"), the $22 claim alone as the headline, and "Simula is an open-source framework for synthetic training data."; the squares on the map join their nearest neighbours as they land (Pranav); the `pip install` box is dark with a copy icon. Order: hero → how it works → the problem (240 tickets dropped onto the 8 ticket categories: piled up when prompted directly, spread evenly with Simula) → roles and cost → lineage → numbers → commands → closer. Simula is now on PyPI as `simula-gen` (docs: simula.readthedocs.io), so v3 installs with `pip install simula-gen` and its closer runs the docs' quickstart; v1's "not on PyPI" note is out of date. The `contour` hero is shared with the home page's Research card. Rejected: the full pipeline diagram in the hero, a dot-grid ground, a repo bar, and the arXiv link (the paper is Google's, not ours). Facts from the Simula repo's `optimizations` branch; sources listed in the page's header comment. `noindex`, out of the sitemap. |
+| `/open-source/simula` | The Simula product page, on `V2Layout`, rebuilt 2026-11-13. The only Simula page: the drafts at `/open-source/simula-v2` and `/open-source/simula-v3` redirect here (`redirects` in `astro.config.mjs`). See *Simula*. |
 | `/services/synthetic-data` | The synthetic data service page, on `V2Layout`, under the nav's Services dropdown. See *Synthetic data service*. |
 | `/services/llm-guardrails` | Harsh's LLM guardrails and security page, on `V2Layout`, under the nav's Services dropdown. Unpublished on 2026-10-02 (Pranav: "it does not look good"), reworked and republished 2026-10-07. |
 | `/services/model-optimization` | The model optimization service page, on `V2Layout`, under the nav's Services dropdown. In review on the `model-optimization` branch (from PR #10). See *Model optimization service*. |
@@ -42,20 +40,23 @@ tools as they ship (see *Still placeholder* below). Treat design changes on
 | `/about` | On `V2Layout`. Quiet page; every figure computed from the collections. See *About*. |
 | `/contact` | On `V2Layout`. Form plus a Calendly band. See *Contact*. |
 
-`/open-source/simula-v2` and `/design.html` are `noindex` and excluded
-from the sitemap. They are working surfaces, not shipping pages.
+`/design.html` is `noindex` and outside the sitemap: a working
+surface, not a shipping page. No other page is hidden.
 
 ## Kept on purpose
 
 Pranav asked for these to stay when the V1 remnants were cleared
-(2026-10-02). Do not remove them in a cleanup:
+(2026-10-02). Do not remove them in a cleanup. (The two Simula pages
+were on this list until 2026-11-13, when Harsh made the rebuilt page
+the only one: "no hidden things". The old page and the v2 draft are in
+git history before commit `612e96a`.)
 
-- **Both Simula pages**, `/open-source/simula` and `/open-source/simula-v2`:
-  still being worked on, and no winner yet.
 - **`/design.html`**, the design lab, kept as a tool.
 - **The root images** (`banner.png`, `banner copy.png`, `image.png`,
   `no-background-logo*.png`) and **`public/simula-demo.mp4`** (the source
-  of the CDN copy the Simula pages play). Not referenced, may be used.
+  of the CDN demo video; the Simula page dropped it on 2026-11-13 because
+  its opening seconds read as an empty, broken frame). Not referenced,
+  may be used.
 - **`nginx.conf`**, since production runs on our own server.
 - **`ASTRO_ALLOWED_HOSTS_ISSUE_REPORT.md`** and the `forceAllowAllHostsPlugin`
   workaround in `astro.config.mjs`, until the bug is confirmed fixed.
@@ -297,130 +298,8 @@ stale frames. That is the pane, not the site. Check with the pane open.
 
 ## Simula (`/open-source/simula`)
 
-The library's product page, on `V2Layout`. Its one loud element is the
-hero plate (`plate` generator + the wordmark in Fraunces italic); after
-that the page is type, rules and two teal data figures. Nine sections,
-alternating ground and tint: hero → premise (three ideas + `leafgrid`)
-→ pipeline (five stages as one flush bordered object, numbered because
-order matters, each ending in its artifact filename in teal) → one data
-point (a five-step trace with a 1px rail: mix → meta-prompt → record →
-critic → lineage) → three model roles (cards with a serif figure) →
-running it (install, the five CLI commands, the demo video in a plain
-dark frame, the minimum viable YAML) → evaluation (2×2 with rules) →
-numbers from the 1K run (a bordered stat grid, teal serif numerals) plus
-limits → closer.
-
-**Every number and artifact is real**, taken from the research log's
-1,000-row job-posting run and 10K e-commerce run, and from the README.
-The one illustrative line is the meta-prompt text in the trace; the row
-it produces is the actual row from the log. Simula is **not on PyPI**
-(the `simula` package there is unrelated) — install is from the repo.
-
-The demo video is the CDN copy of `public/simula-demo.mp4` (a terminal
-running `simula run`), with `public/simula-demo-poster.jpg` extracted at
-14s. It is muted, looped, `preload="none"`, and only plays while ≥35%
-in view; reduced-motion leaves it on the poster.
-
-Code samples are pre-tokenised HTML strings (`tok-k` keys indigo,
-`tok-s`/`tok-n` values teal, `tok-c` quiet) on the same `--n-900` ground
-as the research log's code blocks. The page's `<ol>`s carry their own
-numbering, so they reset `list-style` themselves — the layout only
-resets `ul`.
-
-## Simula v2 (`/open-source/simula-v2`)
-
-A rewrite of the Simula page. Pranav found v1 too loose: the `leafgrid`
-figure did not read, and the trace left a wide empty column. The copy is
-told in the first person, as the story of how we built it: client work
-kept hitting the same problems, so we wrote one library. Eight sections:
-
-hero (the same `plate`, headline "Open-sourcing the pipeline we use to
-generate training data for clients.", a GitHub mark on the GitHub
-button and a page icon on "Read how we built it", no facts line) → **the idea** (the coverage map, see
-below) → **why we built it** (a full-width ledger:
-five problems from client work, each with its example from the log on
-the left and what Simula does on the right, config keys as teal chips;
-unnumbered) → **how it works** (heading "How Simula works, step by
-step."; the step text describes Simula in general, and only the lede
-says the examples follow one row of shopper searches; no filenames on
-the cards. A flush bordered object, explanation left at `4fr`, the
-example right at `7fr`:
-taxonomy tree, weighted strategies with teal bars drawn to scale, the
-three briefs with the picked one marked, the record with its verdicts,
-the lineage; each step is tagged with its model role, which replaces
-v1's roles section) → running it (unchanged from v1, which Pranav
-liked) → evaluation → the 1,000-row numbers and limits → closer.
-
-Every example is from the research log. The three briefs are the log's
-own example round, with the second marked picked as the log has it.
-The lineage omits `complexified`, because the log's row says `true`
-while its record is a short five-field query.
-
-**No eyebrows on this page.** Pranav had every section label removed,
-the hero's included ("I don't like those eyebrows at all"), and section
-headings start flush (`section .h2 { margin-top: 0 }`). The hero plate
-is 45:32 (5:4 made 12.5% wider at the same height) in a
-`6.375fr / 5.625fr` grid, because he did not want it near-square. The
-copy has been scanned against the Claudisms banlist (em dashes,
-"real", "worth", "stay", mannered verbs like "jammed" or "steer") and
-comes back clean; rescan after any copy edit. The factor-and-tree
-explanation is told once, in the map's lede; the first ledger item
-gives the consequence (1,739 of 1,740 leaves) and step 01 the expansion
-procedure (children proposed twice, a second call merges and prunes)
-instead of repeating it.
-
-**The hero's token figure is Pranav's.** "Hundreds of billions of
-tokens" is his number (2026-09-27). The research log says "tens of
-millions", so the "Why" lede no longer quotes a token count or the
-number of client projects; he does not want the project count shown. The closer offers the
-offline example first (stand-in model, no API key, nothing to pay),
-then help setting it up or generating large datasets.
-
-When it replaces v1: move the file over `simula.astro`, set `path`, drop
-`noindex`, and take `simula-v2` out of the sitemap filter in
-`astro.config`.
-
-**The coverage map** (`src/components/v2/CoverageTree.astro`) is its own
-full-width tinted band between the hero and "why we built it": one
-description → 3 named factors → 6 named branches → 18 unlabeled leaves,
-drawn left to right. The names are plausible, from the e-commerce
-example, not the run's taxonomy: the tree is a picture of the idea.
-Built in JS so labels are real pixels at any width; below 600px the
-description stacks above the tree. It plays once when 45% of the SVG
-is in view, on the Web Animations API, about 4s: root, then each level
-draws out of the last, then the leaves fill teal one at a time in a
-fixed shuffle that visits the factors in turn. An axis runs under the
-tree from the description to the right edge, ticked at each level
-(description, factors, branches, leaves) with an open arrowhead at the
-end; it crosses at a steady linear pace during the draw and arrives
-with the leaves. Reduced motion shows the finished state. Labels have
-a halo in the band colour so links pass behind them. One mono caption
-line under it, nothing else.
-
-**This page runs 5% wider than the site.** `section { --shell: 1207.5px }`
-in the page's style widens every section's `.shell` (the nav and footer
-are in the layout and keep 1150px). Pranav asked for it so the map's
-description, "Shopper searches paired with structured extractions.",
-sits on two lines; the description block is `min(300px, 27%)` of the
-figure for the same reason.
-
-Three earlier versions were rejected in one session, in this order:
-the run's full 2,358-node taxonomy on a canvas with hover, counters and
-a traced row ("literally ugly"); a small unlabeled 1→3→9→27 tree beside
-the "why" heading ("too constrained", dots too small, no names); and a
-4→12→29 version with every leaf labelled, column headers, a traced row
-in indigo, a running count, a legend and a replay button ("way too
-busy"). Keep it at this size.
-
-The "How it works" flow still uses the research log's example row
-(`waterproof trail running shoes … nothing neon`), which is not in the
-run's dataset, and the log's node names (`trail_running`,
-`known_item_hunt`), which are not the run's (`Trail Running Shoes`,
-`exploratory_shopping › gift_browsing …`). The run's outputs are outside
-the repo at `/Volumes/E/Mercity Work/syn-data-gen/runs/v0_ecommerce_search_extraction`
-(taxonomy, dataset, `llm_calls.jsonl`, `eval_report.json`: 1,739 of 1,740
-leaves reached). `item-4681-3147e13a` is a clean real row to swap in if
-the flow should be one actual row end to end.
+Rebuilt 2026-11-13 after Pranav asked for new copy and style, reviewed
+at `/open-source/simula-v3` and moved here the same day. Sets the open-source page system, kept apart from the service pages on purpose (Harsh: the pinned blur hero, strata and frosted closer belong to services): a one-viewport hero on the home page's `contour` map (the open-source cards' generator) with records landing on it as teal squares, `pip install simula-gen` as a dark copyable CTA beside Read the docs, plain grounds, drawn figures in a pinned six-step walkthrough, and a terminal closer. Harsh chose it over the old page and the v2 draft; Pranav: "Looks good!" (2026-11-13). Hero: headline "Generate synthetic data / with complete domain / coverage - with *Simula*" (Harsh's wording, in sentence case at his request, spaced hyphen as he wrote it; *Simula* in italic `--indigo-600`), one span per line from 720px up (`nowrap`). Harsh's rule for every headline: never a short trailing line ("never lag"); each line is full or about three quarters of the longest. It replaced "An open-source framework that generates large, diverse synthetic datasets for training models." The paragraph under it opens "Simula is a state-of-the-art synthetic data framework." ("state-of-the-art" left the headline but stays in the paragraph; keep examples out of the explanatory copy, the ticket example lives only in the figures; no "offline" on the quickstart) (Harsh, 2026-11-13, after Pranav: "Don't try to be catchy, try to be clear and descriptive", the tagline is the first thing people read). The headline must say what Simula is; the paragraph under it says how it works. The whole page had a directness pass the same day: plain words over the pipeline's jargon (branch, not leaf/node/mix; writing plan, not meta-prompt), short sentences, no magazine lines. Under the buttons, one mono line: "Generate 10,000 training records for about $22." (Harsh, 2026-11-13: copy after Claude Hopkins's *Scientific Advertising*, the aim is to get people to use Simula; the $22 is our own e-commerce run, taxonomy included, sourced in the cost section). It replaced the "Free and MIT licensed…" line. Rejected headlines: "A synthetic data framework that covers every case, by design." ("doesn't hit the spot"), the $22 claim alone as the headline, and "Simula is an open-source framework for synthetic training data."; the squares on the map join their nearest neighbours as they land (Pranav); the `pip install` box is dark with a copy icon. Order: hero → how it works → the problem (240 tickets dropped onto the 8 ticket categories: piled up when prompted directly, spread evenly with Simula) → roles and cost → lineage → numbers → commands → closer. Simula is now on PyPI as `simula-gen` (docs: simula.readthedocs.io), so the page installs with `pip install simula-gen` and its closer runs the docs' quickstart; the old page's "not on PyPI" note no longer applies. The `contour` hero is shared with the home page's Research card. Rejected: the full pipeline diagram in the hero, a dot-grid ground, a repo bar, and the arXiv link (the paper is Google's, not ours). Facts from the Simula repo's `optimizations` branch; sources listed in the page's header comment.
 
 ## Synthetic data service (`/services/synthetic-data`)
 
@@ -741,8 +620,11 @@ A variant switcher is supported but currently unused:
 
 | Generator | Where | What it says |
 |---|---|---|
-| `plate` | Hero | The repo's own identity — white italic type on grained indigo cloth — drawn on-system. Per-pixel fbm weave, a darker pool where the wordmark sits, heavy mono grain. The wordmark is HTML on top. |
-| `leafgrid` | Premise | Coverage with a denominator: every taxonomy leaf is a cell, one band per factor, sampled leaves fill teal, hollow cells were never reached. |
+| `contour` | Hero, full bleed | A topographic map, faded out under the copy; records land on it as teal squares that link to their neighbours. Shared with the home page's Research card. |
+
+`plate` (the Simula repo's indigo cloth, wordmark on top) is on the
+synthetic data page. `leafgrid` was the old Simula page's premise
+figure and is now unused.
 
 Also available, currently unused: `blurfield`, `convergence`, `facets`,
 `curves`, `ridgeline`, `halftone`, `sdGap`, `sdCurriculum`, `sdFanout`,
