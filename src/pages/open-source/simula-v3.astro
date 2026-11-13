@@ -1,0 +1,2480 @@
+---
+/**
+ * Simula, third pass (2026-11-13). Pranav: "Can you redo the simula page
+ * on our site? Ts old and doesn't look good", copy and style both.
+ *
+ * The open-source page system. Service pages own the pinned scroll
+ * hero, the strata grounds and the frosted closer; open-source pages
+ * use none of them. Instead:
+ *   - A one-viewport hero on the home page's `contour` map (the
+ *     generator its open-source cards use), faded out under the copy,
+ *     with a small live graphic of the product on it. Here: records
+ *     landing on the map as teal squares.
+ *   - The clone command as a CTA with a copy button, beside GitHub.
+ *   - Plain grounds: no shaders, strata or dot grids.
+ *   - Drawn figures for each step of how it works.
+ * Rejected on 2026-11-13 (Harsh): the full pipeline diagram in the
+ * hero ("a little too much upfront"), a dot-grid ground, and a repo
+ * bar with licence, version and the arXiv link. The arXiv paper is
+ * Google's, which Simula is named after, not ours.
+ *   - A terminal closer that types out the install and first run.
+ * Keep these for the next open-source page (PromptKeep) and nowhere
+ * else.
+ *
+ * Facts come from the `optimizations` branch of Mercity-AI/Simula
+ * (README, DOCS.md, notes/CHANGELOG.md, notes/testing-notes.md,
+ * examples/support_tickets.yaml), as of commit 0073402:
+ *   - 10,000-row e-commerce run (2026-06-25): 13,000 attempts, 10,985
+ *     accepted, 10,000 final; ~$4.79 strategic build + ~$16.9 for
+ *     generation (48,447 calls), ~$22 in all; ~5 h at 48 concurrent
+ *     calls; 9,625 distinct key-sets; 0 empty lineage; 5 exact
+ *     duplicate queries.
+ *   - 1,000-row job-posting run (2026-06-14): 100% leaf coverage on all
+ *     four factors (16, 28, 29, 20 leaves).
+ *   - November support-ticket benchmark: about $0.85 per 1,000 tickets
+ *     on the combined path with the critic on, 95–97% accepted; with
+ *     situations, no near-duplicates in 10,000 tickets for about 4% of
+ *     the run's cost, Vendi 42 → 51 at 1,000.
+ *   - The strategy skew warning text is the one DOCS.md prints.
+ * Illustrative: the hero's records and verdicts, the situations list,
+ * the critic exchange and the coverage comparison. Factor names and
+ * level-1 nodes are from the ticket example's config; the trees show
+ * three branches of each factor.
+ *
+ * Copy is scanned against the Claudisms banlist: no em dashes in copy,
+ * no "real", "worth", "honest", "quietly", "carry", "hold". Rescan
+ * after edits.
+ */
+import V2Layout from '@/layouts/V2Layout.astro';
+
+const GITHUB_URL = 'https://github.com/Mercity-AI/Simula';
+const SERVICE_URL = '/services/synthetic-data';
+const DOCS_URL = 'https://simula.readthedocs.io/en/latest/index.html';
+const INSTALL = 'pip install simula-gen';
+
+const GH_PATH =
+  'M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z';
+
+/* ── The tree both figures draw: five factors from the ticket example,
+   three level-1 nodes each, three leaves under each node. ── */
+const TREE = [
+  { f: 'category', short: 'category', b: ['billing', 'bug_report', 'how_to'] },
+  { f: 'priority', short: 'priority', b: ['low', 'high', 'urgent'] },
+  { f: 'sentiment', short: 'sentiment', b: ['neutral', 'frustrated', 'angry'] },
+  { f: 'customer_context', short: 'customer', b: ['free', 'pro', 'enterprise'] },
+  { f: 'ticket_style', short: 'style', b: ['chat fragment', 'standard message', 'log-heavy report'] },
+];
+const R3 = [0, 1, 2];
+const curve = (x1: number, y1: number, x2: number, y2: number) => {
+  const m = (x1 + x2) / 2;
+  return `M${x1} ${y1}C${m} ${y1} ${m} ${y2} ${x2} ${y2}`;
+};
+type Geo = { root: [number, number]; fx: number; fy0: number; fdy: number; bx: number; bdy: number; lx: number; ldy: number; row?: boolean };
+const layout = (g: Geo) =>
+  TREE.map((t, i) => {
+    const fy = g.fy0 + i * g.fdy;
+    return {
+      ...t,
+      i,
+      fy,
+      root: curve(g.root[0], g.root[1], g.fx, fy),
+      branches: t.b.map((name, j) => {
+        const by = fy + (j - 1) * g.bdy;
+        return {
+          name,
+          j,
+          by,
+          link: curve(g.fx, fy, g.bx, by),
+          // In a row, a branch's three leaves sit side by side on its
+          // line; otherwise they fan out in a short column.
+          leaves: R3.map((k) => {
+            if (g.row) {
+              const lx = g.lx + k * 14;
+              return { k, lx, ly: by, link: `M${g.bx} ${by}H${lx - 4}` };
+            }
+            const ly = by + (k - 1) * g.ldy;
+            return { k, lx: g.lx, ly, link: curve(g.bx, by, g.lx - 3, ly) };
+          }),
+        };
+      }),
+    };
+  });
+
+/* Hero: records landing across the map. A jittered 12 × 7 grid over
+   the right of the hero, so the squares spread evenly; the script
+   reveals them in a fixed shuffle. Seeded, so the picture is stable. */
+const DOTS = (() => {
+  let t = 2611;
+  const rnd = () => (t = (t * 1103515245 + 12345) % 2147483648) / 2147483648;
+  const out: { x: number; y: number; o: number }[] = [];
+  for (let r = 0; r < 7; r++)
+    for (let c = 0; c < 12; c++) {
+      if (rnd() < 0.18) continue;
+      out.push({ x: 470 + c * 42 + (rnd() - 0.5) * 26, y: 70 + r * 72 + (rnd() - 0.5) * 34, o: rnd() });
+    }
+  return out.sort((a, b) => a.o - b.o).map((d, k) => ({ ...d, k }));
+})();
+// Each square links to the two nearest squares already down, if they
+// are close, so the map fills as one connected net.
+const LINKS = DOTS.flatMap((d) =>
+  DOTS.filter((e) => e.k < d.k)
+    .map((e) => ({ e, dist: Math.hypot(e.x - d.x, e.y - d.y) }))
+    .filter((c) => c.dist < 110)
+    .sort((a, b) => a.dist - b.dist)
+    .slice(0, 2)
+    .map(({ e }) => ({ k: d.k, x1: e.x, y1: e.y, x2: d.x, y2: d.y })),
+);
+
+/* Walkthrough tree, in a 720 × 430 viewBox. Step 3 lights one path
+   per factor; `pick` is the level-1 node and `leaf` its leaf label. */
+const SG: Geo = { root: [26, 215], fx: 160, fy0: 35, fdy: 90, bx: 300, bdy: 26, lx: 410, ldy: 0, row: true };
+const stageTree = layout(SG);
+const PICK = [
+  { j: 0, leaf: 'charged for removed seats' },
+  { j: 1, leaf: 'team blocked before a client deadline' },
+  { j: 1, leaf: 'second follow-up' },
+  { j: 1, leaf: 'agency owner · writer picks below' },
+  { j: 1, leaf: 'short, two paragraphs' },
+];
+
+/* ── The problem. 240 tickets dropped onto a map of the ticket
+   example's eight categories, twice: asked of a model directly, they
+   pile up in a few places; sampled from Simula's map, they cover
+   every category evenly. Positions are seeded, so the picture is
+   stable. Illustrative. ── */
+const CATS = ['billing', 'account_access', 'bug_report', 'outage_performance', 'how_to', 'feature_request', 'integrations_api', 'security_privacy'];
+const ZW = 140;
+const ZH = 160;
+const ZY = 18;
+const zone = (c: number) => ({ x: (c % 4) * ZW, y: ZY + Math.floor(c / 4) * ZH });
+const scatter = (counts: number[], spread: number, seed: number) => {
+  let t = seed;
+  const rnd = () => (t = (t * 1103515245 + 12345) % 2147483648) / 2147483648;
+  const gauss = () => Math.sqrt(-2 * Math.log(rnd() || 1e-9)) * Math.cos(6.2832 * rnd());
+  const dots: { x: number; y: number; d: number }[] = [];
+  counts.forEach((n, c) => {
+    const z = zone(c);
+    const cx = z.x + ZW * (0.36 + rnd() * 0.28);
+    const cy = z.y + ZH * (0.42 + rnd() * 0.2);
+    for (let k = 0; k < n; k++) {
+      let x;
+      let y;
+      if (spread) {
+        // Even cover: a jittered grid over the zone.
+        const cols = 6;
+        const r = Math.floor(k / cols);
+        const rows = Math.ceil(n / cols);
+        x = z.x + 16 + ((k % cols) + 0.5) * ((ZW - 32) / cols) + (rnd() - 0.5) * 12;
+        y = z.y + 34 + (r + 0.5) * ((ZH - 50) / rows) + (rnd() - 0.5) * 12;
+      } else {
+        x = cx + gauss() * 7;
+        y = cy + gauss() * 6;
+      }
+      dots.push({ x: +x.toFixed(1), y: +y.toFixed(1), d: Math.round(rnd() * 900) });
+    }
+  });
+  return dots;
+};
+const piles = [
+  {
+    name: 'Prompting a model directly',
+    dots: scatter([152, 61, 18, 0, 9, 0, 0, 0], 0, 4021),
+    reached: 4,
+    foot: '152 tickets are one billing complaint, reworded',
+    notes: [
+      { c: 0, t: '“billed twice”', sub: '×152' },
+      { c: 1, t: '“can’t log in”', sub: '×61' },
+    ],
+  },
+  {
+    name: 'Sampling from Simula’s map',
+    dots: scatter([30, 30, 30, 30, 30, 30, 30, 30], 1, 7753),
+    reached: 8,
+    foot: '30 tickets in every category, each about something different',
+    sim: true,
+    notes: [
+      { c: 6, t: '“duplicate webhook”' },
+      { c: 1, t: '“SSO login loop”' },
+      { c: 7, t: '“SOC 2 audit logs”' },
+    ],
+  },
+];
+
+/* ── How it works: six steps. ── */
+const steps = [
+  {
+    title: 'Map the space',
+    role: 'strategic model',
+    body: 'The strategic model reads your description, lists the factors the data should vary along, and grows each factor into a tree of subtopics. Each level is reviewed before the next is built. You can also write the factors yourself.',
+    file: 'taxonomy.json',
+  },
+  {
+    title: 'Decide how often',
+    role: 'strategic model',
+    body: 'Strategies set how often each branch is used and which combinations are never allowed. Before generating anything, Simula runs 5,000 test draws and warns you when a strategy pushes a factor more than 5 points away from the weights you set.',
+    file: 'strategies.json',
+  },
+  {
+    title: 'Pick what each record is about',
+    role: 'code',
+    body: 'For every record, code picks one branch from each factor’s tree, by weight. The model never chooses the topic, which is what keeps coverage even. You can stop code at a level and let the writer pick the details below it.',
+    file: 'taxonomy_mix',
+  },
+  {
+    title: 'Give each record its own case',
+    role: 'bulk model',
+    body: 'Records on the same branch tend to tell the same obvious story. Simula writes a list of distinct situations for each branch in one call, and every record gets its own. In one of our runs this removed near-duplicates from 10,000 records for about 4% extra cost.',
+    file: 'situations.jsonl',
+  },
+  {
+    title: 'Write against a schema',
+    role: 'bulk model',
+    body: 'The bulk model writes each record from its picks and its situation, one at a time or five per call. Every record must match your JSON schema. A record that fails is repaired once, then dropped.',
+    file: 'dataset.raw.jsonl',
+  },
+  {
+    title: 'Judge, refine, trim',
+    role: 'critic model',
+    body: 'The critic model accepts or rejects each record and gives a reason. Rejected records are fixed and checked again. Simula then removes duplicates and trims the set to your target size, keeping the records that cover branches nothing else covers.',
+    file: 'dataset.final.jsonl',
+  },
+];
+
+// The skew example from DOCS.md: 5,000 test mixes against tree weights.
+const skew = [
+  { name: 'low', mix: 23, tree: 30 },
+  { name: 'medium', mix: 26, tree: 35 },
+  { name: 'high', mix: 38, tree: 25, warn: true },
+  { name: 'urgent', mix: 13, tree: 10 },
+];
+
+const situations = [
+  'An agency removed six seats mid-cycle and the next invoice still billed all twenty.',
+  'A contractor’s seat is still charged a week after the admin deleted the account.',
+  'A downgrade from Pro left three guest seats on the annual renewal.',
+  'Two workspaces were merged and the removed members are billed in both.',
+];
+
+const mixIn = [
+  ['category', 'billing › seat changes › charged for removed seats'],
+  ['priority', 'high › team blocked before a client deadline'],
+  ['sentiment', 'frustrated › second follow-up'],
+  ['customer_context', 'pro › agency owner'],
+  ['situation', 'An agency removed six seats mid-cycle…'],
+];
+const record = [
+  { k: 'subject', v: '"Still billed for removed seats"' },
+  { k: 'body', v: '"Following up again. We removed 6 seats on the 3rd…"' },
+  { k: 'channel', v: '"email"' },
+  { k: 'customer_tier', v: '"pro"' },
+  { k: 'category', v: '"billing"' },
+  { k: 'priority', v: '"high"' },
+  { k: 'sentiment', v: '"frustrated"' },
+  { k: 'escalate', v: 'false' },
+];
+
+const funnel = [
+  { label: 'attempts', n: 13000 },
+  { label: 'accepted', n: 10985 },
+  { label: 'final', n: 10000 },
+];
+
+/* ── Model roles and the 10,000-row run's bill. ── */
+const roles = [
+  { name: 'Strategic model', does: 'Builds the tree and the strategies.', when: 'Runs once per dataset. A strong model costs little here.' },
+  { name: 'Bulk model', does: 'Writes the situations and the records, and fixes rejected ones.', when: 'Runs for every record and uses most of the tokens. A fast, lighter model works.' },
+  { name: 'Critic model', does: 'Accepts or rejects each record and says why.', when: 'Runs for every record, and again after each fix.' },
+];
+const BILL = { plan: 4.79, write: 16.9 };
+const billTotal = BILL.plan + BILL.write;
+
+/* ── Lineage: one row of dataset.final.jsonl, values shortened. ── */
+const lineage = [
+  { k: 'id', v: '"row-04812"' },
+  { k: 'record', v: '{ ticket: {…}, labels: {…} }', dim: true },
+  { k: 'taxonomy_mix', v: '{ category: "billing › seat changes › …", … }', hl: true },
+  { k: 'strategy_id', v: '"billing_heavy"', hl: true },
+  { k: 'meta_prompt', v: '"Plan: a second follow-up from an agency owner…"', hl: true },
+  { k: 'generator_model', v: '"deepseek/deepseek-v4-flash"', hl: true },
+  { k: 'critic_verdicts', v: '[{ verdict: "accept", explanation: "…" }]', hl: true },
+  { k: 'schema_valid', v: 'true' },
+  { k: 'accepted', v: 'true' },
+];
+const files = [
+  { f: 'taxonomy.json', d: 'The tree and its node weights', stop: true },
+  { f: 'strategies.json', d: 'Weights and banned combinations', stop: true },
+  { f: 'situations.jsonl', d: 'One situation per record' },
+  { f: 'meta_prompts.jsonl', d: 'One writing plan per record', stop: true },
+  { f: 'dataset.final.jsonl', d: 'The rows, with lineage' },
+  { f: 'llm_calls.jsonl', d: 'Every prompt and response, as it returns' },
+  { f: 'eval_report.json', d: 'Dedupe, coverage, diversity' },
+  { f: 'cost_summary.json', d: 'Tokens and spend by role and task' },
+];
+
+/* ── Measured. ── */
+const measured = [
+  { fig: '42 → 51', line: 'Vendi diversity score of 1,000 tickets, before and after situations', src: 'Ticket benchmark, Nov 2026' },
+  { fig: '96%', line: 'of 10,000 search-extraction rows have a unique set of keys (9,625)', src: 'E-commerce run, DeepSeek V4' },
+  { fig: '0', line: 'near-duplicates in 10,000 tickets with situations on, for about 4% extra cost', src: 'Ticket benchmark, Nov 2026' },
+  { fig: '$0.85', line: 'per 1,000 tickets, five per call with the critic on, 95–97% accepted', src: 'Ticket benchmark, GLM 5.3 Flash' },
+  { fig: '100%', line: 'of the tree’s leaves covered in a 1,000-row run, on all four factors', src: 'Job-posting run' },
+  { fig: '0', line: 'rows without lineage in either run; 5 exact duplicates in 10,000', src: 'Both runs, audited' },
+];
+const limits = [
+  { t: 'Coverage counts what was requested.', d: 'The default report checks which branches each record was asked to cover. Set coverage_mode: reassign to have the critic check each record independently.' },
+  { t: 'A label can disagree with its text.', d: 'A record can read differently from the label it was given. Run a pilot of 5–7% of the target and check the labels.' },
+  { t: 'Runs on one machine.', d: 'Generation runs in parallel on one machine, not across a cluster. Every role calls an OpenAI-compatible chat endpoint.' },
+  { t: 'CLI only, text only.', d: 'No web UI, database or training harness.' },
+];
+
+const commands = [
+  { c: 'simula validate config.yaml', d: 'Checks the config and schema. No model calls.' },
+  { c: 'simula taxonomy config.yaml', d: 'Builds the tree, so you can read it first.' },
+  { c: 'simula generate config.yaml --stop-after strategies', d: 'Stops once strategies are written. Edit, then rerun.' },
+  { c: 'simula generate config.yaml', d: 'Picks up from the files on disk and writes the rows.' },
+  { c: 'simula evaluate config.yaml', d: 'Dedupe, coverage and the eval report.' },
+];
+
+const term = [
+  { p: '$', t: INSTALL },
+  { p: '#', t: 'quickstart.yaml from the docs: every role on the fake model', c: true },
+  { p: '$', t: 'simula run quickstart.yaml' },
+  { p: '›', t: 'Building taxonomy', o: true },
+  { p: '', t: 'Taxonomy: 2 factors, depth 2', o: true },
+  { p: '›', t: 'Generating 7 attempts (target 5)', o: true },
+  { p: '', t: 'Accepted 7 → 5 final (target 5, trim enabled)', o: true },
+  { p: '', t: 'Run complete: 5 final records', o: true },
+  { p: '', t: 'Artifacts: runs/quickstart', o: true },
+];
+---
+
+<V2Layout
+  title="Simula: open-source synthetic data generation"
+  description="Simula maps the space of a dataset as a taxonomy, samples every record from that map, has a critic judge each one and keeps the lineage of every row. Python, MIT licensed."
+  path="/open-source/simula-v3"
+  image="/simula-og.jpg"
+  noindex
+>
+  <!-- ═══ HERO: the map, and records landing on it ══════════════════ -->
+  <section class="os-hero">
+    <canvas class="os-map" data-backdrop="contour" data-seed="2611" data-dpr="1" aria-hidden="true"></canvas>
+    <svg class="os-dots" data-dots viewBox="0 0 1000 600" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
+      <g class="os-links">
+        {LINKS.map((l) => <line x1={l.x1.toFixed(1)} y1={l.y1.toFixed(1)} x2={l.x2.toFixed(1)} y2={l.y2.toFixed(1)} pathLength="1" data-k={l.k} />)}
+      </g>
+      {DOTS.map((d) => <rect x={(d.x - 5).toFixed(1)} y={(d.y - 5).toFixed(1)} width="10" height="10" data-k={d.k} />)}
+    </svg>
+    <div class="shell os-in">
+      <div class="os-copy">
+        <h1 class="rv" data-rv style="--rv-delay:80ms"><span>Generate synthetic data</span> <span>with complete domain</span> <span>coverage - with <em>Simula</em></span></h1>
+        <p class="rv" data-rv style="--rv-delay:160ms">
+          Simula is a state-of-the-art synthetic data framework. Describe the data you need in one paragraph, and it
+          maps every case the dataset should cover, has a model write each record, has a second model check it, and
+          saves where every row came from.
+        </p>
+        <div class="os-actions rv" data-rv style="--rv-delay:240ms">
+          <a class="wipe" href={DOCS_URL} target="_blank" rel="noopener noreferrer">
+            <span class="wipe-fill"></span>
+            <span class="wipe-label">Read the docs</span>
+            <span class="wipe-label" aria-hidden="true">↗</span>
+          </a>
+          <button class="clone" type="button" data-copy={INSTALL} aria-label="Copy the install command">
+            <code><span>$</span> {INSTALL}</code>
+            <span class="clone-ic"><svg class="ic-copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" /><path d="M10.5 3.5v-1h-8v8h1" /></svg><svg class="ic-done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" /></svg></span>
+          </button>
+        </div>
+        <div class="os-more rv" data-rv style="--rv-delay:320ms">
+          <a class="quiet" href={GITHUB_URL} target="_blank" rel="noopener noreferrer"><svg class="gh" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d={GH_PATH} /></svg>View on GitHub<span aria-hidden="true">↗</span></a>
+          <a class="quiet" href="#how">How it works<span aria-hidden="true">↓</span></a>
+        </div>
+        <p class="os-proof rv" data-rv style="--rv-delay:380ms">
+          Generate 10,000 training records for about $22.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ HOW IT WORKS: a pinned walkthrough ═══════════════════════ -->
+  <section class="band paper paper-tint" id="how">
+    <div class="shell">
+      <div class="split-head">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">How Simula builds a dataset.</h2>
+      </div>
+
+      <div class="how" data-how>
+        <div class="how-pin">
+          <div class="stage" data-stage data-step="0" data-vsticky="96">
+            <div class="stage-bar">
+              <span class="stage-file" data-stage-file>{steps[0].file}</span>
+              <span class="stage-dots" aria-hidden="true">
+                {steps.map((_, i) => <i class:list={[i === 0 && 'is-on']} data-stage-dot />)}
+              </span>
+            </div>
+
+            <!-- 01 and 03 share the tree -->
+            <div class="stage-tree" aria-hidden="true">
+              <svg viewBox="0 0 720 430">
+                <circle class="st-nd lv0" cx={SG.root[0]} cy={SG.root[1]} r="5" />
+                {
+                  stageTree.map((f, i) => (
+                    <g class:list={['st-f', `f${i}`]}>
+                      <path class="st-ln lv1" d={f.root} />
+                      {f.branches.map((b) => (
+                        <g class:list={['st-b', PICK[i].j === b.j && 'is-pick']}>
+                          <path class="st-ln lv2" d={b.link} />
+                          {b.leaves.map((l) => (
+                            <path class:list={['st-ln lv3', PICK[i].j === b.j && l.k === 1 && 'is-pick']} d={l.link} />
+                          ))}
+                        </g>
+                      ))}
+                    </g>
+                  ))
+                }
+                {
+                  stageTree.map((f, i) => (
+                    <g class:list={['st-f', `f${i}`]}>
+                      <circle class="st-nd lv1" cx={SG.fx} cy={f.fy} r="4.5" />
+                      <text class="st-lf lv1" x={SG.fx} y={f.fy - 11} text-anchor="middle">{f.f}</text>
+                      {f.branches.map((b) => (
+                        <g class:list={['st-b', PICK[i].j === b.j && 'is-pick']}>
+                          <circle class="st-nd lv2" cx={SG.bx} cy={b.by} r="3.5" />
+                          <text class="st-lb lv2" x={SG.bx + 8} y={b.by - 5}>{b.name}</text>
+                          {b.leaves.map((l) => (
+                            <rect class:list={['st-leaf lv3', PICK[i].j === b.j && l.k === 1 && 'is-pick']} x={l.lx - 3} y={l.ly - 3} width="6" height="6" />
+                          ))}
+                          {PICK[i].j === b.j && (
+                            <text class="st-pick" x={SG.lx + 40} y={b.by + 4}>{PICK[i].leaf}</text>
+                          )}
+                        </g>
+                      ))}
+                    </g>
+                  ))
+                }
+                <text class="st-root" x={SG.root[0] - 4} y={SG.root[1] + 22}>description</text>
+              </svg>
+            </div>
+
+            <div class="scene" data-scene="0">
+              <p class="scene-foot">Three levels deep, three subtopics per node, each level reviewed.</p>
+            </div>
+
+            <!-- 02 weight -->
+            <div class="scene sc-weight" data-scene="1">
+              <p class="scene-title">priority, in 5,000 test mixes</p>
+              <ul class="skew">
+                {
+                  skew.map((s, i) => (
+                    <li class:list={[s.warn && 'is-warn']} style={`--i:${i};--w:${s.mix};--t:${s.tree}`}>
+                      <span class="skew-k">{s.name}</span>
+                      <span class="skew-track">
+                        <span class="skew-bar" />
+                        <span class="skew-tree" />
+                      </span>
+                      <span class="skew-n">
+                        {s.mix}% <small>tree {s.tree}%</small>
+                      </span>
+                    </li>
+                  ))
+                }
+              </ul>
+              <p class="skew-warn">
+                <b>Warning:</b> strategies skew 'priority': … high 38% of mixes (tree weight 25%) (strategies restricting
+                it: high_stakes). Edit strategies.json if the tree weights are the shares you want.
+              </p>
+              <p class="scene-foot">Bar: the share drawn. Tick: the weight you set.</p>
+            </div>
+
+            <div class="scene" data-scene="2">
+              <p class="scene-foot">One branch per factor, picked by weight, for every record.</p>
+            </div>
+
+            <!-- 04 situations -->
+            <div class="scene sc-sit" data-scene="3">
+              <div class="sit-leaf">
+                <span class="sit-sq" aria-hidden="true"></span>
+                billing <i>›</i> seat changes <i>›</i> <b>charged for removed seats</b>
+              </div>
+              <ol class="sits">
+                {
+                  situations.map((s, i) => (
+                    <li class:list={[i === 0 && 'is-pick']} style={`--i:${i}`}>
+                      <span>{s}</span>
+                      {i === 0 && <em>→ attempt 4,812</em>}
+                    </li>
+                  ))
+                }
+              </ol>
+              <p class="scene-foot">Situations illustrative. One list per branch, one situation per record.</p>
+            </div>
+
+            <!-- 05 write -->
+            <div class="scene sc-write" data-scene="4">
+              <div class="wr">
+                <ul class="wr-in">
+                  {
+                    mixIn.map(([k, v], i) => (
+                      <li style={`--i:${i}`}>
+                        <span>{k}</span>
+                        {v}
+                      </li>
+                    ))
+                  }
+                </ul>
+                <svg class="wr-arrow" viewBox="0 0 40 200" aria-hidden="true">
+                  <path d="M2 20C24 20 18 100 38 100M2 60C24 60 18 100 38 100M2 100H38M2 140C24 140 18 100 38 100M2 180C24 180 18 100 38 100" />
+                </svg>
+                <ul class="wr-out">
+                  {
+                    record.map((r, i) => (
+                      <li style={`--i:${i + 5}`}>
+                        <span class="wr-k">{r.k}</span>
+                        <span class="wr-v">{r.v}</span>
+                        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" /></svg>
+                      </li>
+                    ))
+                  }
+                </ul>
+              </div>
+              <p class="scene-foot">Picks and situation in, a record out, every field checked against the schema.</p>
+            </div>
+
+            <!-- 06 judge -->
+            <div class="scene sc-judge" data-scene="5">
+              <div class="verdicts">
+                <p class="vd vd-no" style="--i:0">
+                  <b>critic: reject</b> The subject is too vague to triage from: it names no invoice and no seat count.
+                </p>
+                <p class="vd vd-fix" style="--i:1"><b>bulk: refine</b> Subject: “Invoice still bills 20 seats after we removed 6”</p>
+                <p class="vd vd-yes" style="--i:2"><b>critic: accept</b></p>
+              </div>
+              <ul class="funnel">
+                {
+                  funnel.map((f, i) => (
+                    <li style={`--i:${i + 3};--w:${((f.n / funnel[0].n) * 100).toFixed(1)}`}>
+                      <span class="funnel-k">{f.label}</span>
+                      <span class="funnel-track"><span class="funnel-bar" /></span>
+                      <span class="funnel-n">{f.n.toLocaleString('en-US')}</span>
+                    </li>
+                  ))
+                }
+              </ul>
+              <p class="scene-foot">Exchange illustrative. Funnel from our 10,000-row e-commerce run.</p>
+            </div>
+          </div>
+        </div>
+
+        <ol class="how-steps">
+          {
+            steps.map((s, i) => (
+              <li class="how-step" data-how-step={i}>
+                <span class="how-n">{String(i + 1).padStart(2, '0')}</span>
+                <h3>{s.title}</h3>
+                <span class="how-role">{s.role}</span>
+                <p>{s.body}</p>
+                <code class="how-file">{s.file}</code>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ THE PROBLEM ═══════════════════════════════════════════════ -->
+  <section class="band" id="problem">
+    <div class="shell">
+      <div class="split-head">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Simula fixes the repetition problem in synthetic data.</h2>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          Simula plans what every record will cover before any of them is written. Without that plan, a model prompted a
+          thousand times keeps returning its most likely answer, and the same few records come back reworded.
+        </p>
+      </div>
+
+      <div class="pile" data-play>
+        {
+          piles.map((p, k) => (
+            <figure class:list={['pile-panel rv', p.sim && 'is-sim']} data-rv style={`--rv-delay:${120 + k * 120}ms`}>
+              <figcaption class="pile-head">
+                <span class="pile-name">{p.name}</span>
+                <span class="pile-count">
+                  <b>{p.reached}</b> of 8 categories
+                </span>
+              </figcaption>
+              <svg viewBox={`0 0 ${ZW * 4} ${ZY + ZH * 2}`} role="img" aria-label={`240 tickets, ${p.foot}.`}>
+                {CATS.map((c, i) => {
+                  const z = zone(i);
+                  return (
+                    <g class="pz">
+                      <rect x={z.x + 3} y={z.y + 3} width={ZW - 6} height={ZH - 6} />
+                      <text x={z.x + 12} y={z.y + 20}>{c}</text>
+                    </g>
+                  );
+                })}
+                <g class="pd">
+                  {p.dots.map((d) => (
+                    <circle cx={d.x} cy={d.y} r="3.2" style={`--dx:${(280 - d.x).toFixed(0)}px;--dy:${(178 - d.y).toFixed(0)}px;--d:${d.d + k * 250}ms`} />
+                  ))}
+                </g>
+                {p.notes.map((n, i) => {
+                  const z = zone(n.c);
+                  const y = z.y + ZH - 16;
+                  const w = Math.min(ZW - 16, (n.t.length + (n.sub ? n.sub.length + 1 : 0)) * 5.9 + 14);
+                  return (
+                    <g class="pn" style={`--i:${i + k}`}>
+                      <rect x={z.x + 8} y={y - 13} width={w.toFixed(0)} height="19" />
+                      <text x={z.x + 14} y={y}>
+                        {n.t}
+                        {n.sub && <tspan dx="5">{n.sub}</tspan>}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+              <p class="pile-foot">240 tickets · {p.foot}</p>
+            </figure>
+          ))
+        }
+      </div>
+      <p class="pile-note">Illustration. Each dot is a ticket, placed by what it is about.</p>
+    </div>
+  </section>
+
+  <!-- ═══ ROLES AND THE BILL ═══════════════════════════════════════ -->
+  <section class="band paper paper-tint" id="roles">
+    <div class="shell">
+      <div class="split-head">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">A strong model plans, a lighter model writes, a third model checks.</h2>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          Planning runs once per dataset, so most of the cost is in writing and checking. Use three different models
+          or the same one for all three.
+        </p>
+      </div>
+
+      <div class="roles">
+        {
+          roles.map((r, i) => (
+            <div class="role rv" data-rv style={`--rv-delay:${80 + i * 80}ms`}>
+              <h3>{r.name}</h3>
+              <p>{r.does}</p>
+              <p class="role-when">{r.when}</p>
+            </div>
+          ))
+        }
+      </div>
+
+      <figure class="bill rv" data-rv data-play>
+        <div class="bill-head">
+          <span>What our own 10,000-row run cost</span>
+          <b>${billTotal.toFixed(0)}</b>
+        </div>
+        <div class="bill-bar" aria-hidden="true">
+          <span class="bill-plan" style={`--w:${((BILL.plan / billTotal) * 100).toFixed(1)}`}></span>
+          <span class="bill-write" style={`--w:${((BILL.write / billTotal) * 100).toFixed(1)}`}></span>
+        </div>
+        <div class="bill-legend">
+          <span class="bl-plan"><i></i>Tree and strategies, strategic <b>${BILL.plan.toFixed(2)}</b></span>
+          <span class="bl-write"><i></i>48,447 calls to write and judge, bulk and critic <b>${BILL.write.toFixed(2)}</b></span>
+        </div>
+        <figcaption>Our own run, June 2026: 10,000 e-commerce search queries with structured extractions, about five hours.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ═══ LINEAGE (ink) ════════════════════════════════════════════ -->
+  <section class="band ink" id="lineage">
+    <div class="shell">
+      <div class="split-head">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Every row says where it came from.</h2>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          Each row stores the branches it was built from, the strategy, the writing plan and the critic’s verdict. When a
+          label looks wrong, you can trace it back.
+        </p>
+      </div>
+
+      <div class="lin">
+        <figure class="lin-row rv" data-rv>
+          <figcaption>dataset.final.jsonl · one row, values shortened</figcaption>
+          <pre><code>{'{'}
+{lineage.map((l) => (
+  <span class:list={['lin-l', l.hl && 'is-hl', l.dim && 'is-dim']}>  <span class="lin-k">"{l.k}"</span>: <span class="lin-v">{l.v}</span>,
+</span>
+))}{'}'}</code></pre>
+        </figure>
+
+        <div class="lin-files rv" data-rv style="--rv-delay:120ms">
+          <p class="lin-files-head">runs/support_tickets/</p>
+          <ul>
+            {
+              files.map((f) => (
+                <li class:list={[f.stop && 'is-stop']}>
+                  <code>{f.f}</code>
+                  <span>{f.d}</span>
+                  {f.stop && <em>--stop-after</em>}
+                </li>
+              ))
+            }
+          </ul>
+          <p class="lin-files-foot">
+            Every stage is saved as a file. Stop after the taxonomy, strategies or writing plans, edit the file and rerun:
+            Simula continues from there.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ MEASURED ═════════════════════════════════════════════════ -->
+  <section class="band paper paper-tint" id="numbers">
+    <div class="shell">
+      <div class="split-head">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">What our runs measured.</h2>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          From two of our runs and a November benchmark on support tickets. The run notes are in the repo.
+        </p>
+      </div>
+
+      <dl class="ledger">
+        {
+          measured.map((m, i) => (
+            <div class="ledger-cell rv" data-rv style={`--rv-delay:${60 + i * 60}ms`}>
+              <dt>{m.fig}</dt>
+              <dd>
+                {m.line}
+                <small>{m.src}</small>
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+
+      <div class="limits">
+        <h3 class="limits-h rv" data-rv>Limits</h3>
+        <ul>
+          {
+            limits.map((l, i) => (
+              <li class="rv" data-rv style={`--rv-delay:${60 + i * 60}ms`}>
+                <b>{l.t}</b>
+                <span>{l.d}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ COMMANDS ═════════════════════════════════════════════════ -->
+  <section class="band" id="run">
+    <div class="shell">
+      <div class="split-head">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Five commands and one config file.</h2>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          That’s all you need! A description and a model for each role. Everything else has a default.
+        </p>
+      </div>
+
+      <div class="run">
+        <div class="rv" data-rv>
+          <ul class="cmds">
+            {
+              commands.map((c) => (
+                <li>
+                  <code>{c.c}</code>
+                  <span>{c.d}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+        <pre class="code rv" data-rv style="--rv-delay:120ms"><code><span class="tok-c"># config.yaml: the minimum</span>
+<span class="tok-k">description</span>: <span class="tok-s">"Concise Q&A pairs about practical ML concepts."</span>
+
+<span class="tok-k">schema</span>:
+  <span class="tok-k">type</span>: <span class="tok-s">object</span>
+  <span class="tok-k">required</span>: [<span class="tok-s">"input"</span>, <span class="tok-s">"output"</span>]
+  <span class="tok-k">properties</span>:
+    <span class="tok-k">input</span>:  {'{'} <span class="tok-k">type</span>: <span class="tok-s">string</span> {'}'}
+    <span class="tok-k">output</span>: {'{'} <span class="tok-k">type</span>: <span class="tok-s">string</span> {'}'}
+
+<span class="tok-k">models</span>:
+  <span class="tok-k">strategic</span>: {'{'} <span class="tok-k">model</span>: <span class="tok-s">"deepseek/deepseek-v4-pro"</span> {'}'}
+  <span class="tok-k">bulk</span>:      {'{'} <span class="tok-k">model</span>: <span class="tok-s">"deepseek/deepseek-v4-flash"</span> {'}'}
+  <span class="tok-k">critic</span>:    {'{'} <span class="tok-k">model</span>: <span class="tok-s">"deepseek/deepseek-v4-flash"</span> {'}'}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CLOSER: the terminal ═════════════════════════════════════ -->
+  <section class="term-band ink" id="start">
+    <div class="shell term-in">
+      <div class="term-copy rv" data-rv>
+        <h2>Install it and run the quickstart.</h2>
+        <p>
+          The quickstart uses a fake model, so it needs no API key and costs nothing. Install it with pip install
+          simula-gen; the command is simula.
+        </p>
+        <div class="os-actions">
+          <a class="btn-light" href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d={GH_PATH} /></svg>
+            View on GitHub <span aria-hidden="true">↗</span>
+          </a>
+          <a class="quiet quiet-dark" href={DOCS_URL} target="_blank" rel="noopener noreferrer">Read the docs<span aria-hidden="true">↗</span></a>
+          <a class="quiet quiet-dark" href={SERVICE_URL}>Have us generate the data<span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+
+      <figure class="term rv" data-rv style="--rv-delay:120ms" data-play>
+        <div class="term-bar">
+          <span aria-hidden="true"><i></i><i></i><i></i></span>
+          <b>~/code</b>
+          <button type="button" data-copy={term.filter((l) => l.p === '$').map((l) => l.t).join('\n')}><em data-copy-label>copy</em></button>
+        </div>
+        <pre><code>{term.map((l, i) => (
+  <span class:list={['term-l', l.c && 'is-c', l.o && 'is-o']} style={`--i:${i}`}><span class="term-p">{l.p}</span> {l.t}
+</span>
+))}<span class="term-l term-cursor" style={`--i:${term.length}`}><span class="term-p">$</span> <i></i></span></code></pre>
+      </figure>
+    </div>
+  </section>
+</V2Layout>
+
+<script is:inline>
+  /* ── Copy buttons: the repo bar's clone command and the terminal. ── */
+  document.querySelectorAll('[data-copy]').forEach((btn) => {
+    const label = btn.querySelector('[data-copy-label]');
+    btn.addEventListener('click', () => {
+      navigator.clipboard?.writeText(btn.dataset.copy).then(() => {
+        btn.dataset.copied = 'true';
+        if (label) label.textContent = 'copied';
+        setTimeout(() => {
+          delete btn.dataset.copied;
+          if (label) label.textContent = 'copy';
+        }, 1600);
+      });
+    });
+  });
+
+  /* ── Hero: records land on the map one at a time, in the shuffle
+     the frontmatter set; once all are down they hold, clear and start
+     again. Runs only on screen. Reduced motion shows them all. ── */
+  (() => {
+    const svg = document.querySelector('[data-dots]');
+    if (!svg) return;
+    const dots = [...svg.querySelectorAll('rect')].sort((a, b) => a.dataset.k - b.dataset.k);
+    const links = [...svg.querySelectorAll('line')];
+    const linksOf = dots.map((_, k) => links.filter((l) => +l.dataset.k === k));
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      [...dots, ...links].forEach((d) => d.classList.add('is-on'));
+      return;
+    }
+    let n = 0;
+    let timer = 0;
+    let running = false;
+    const tick = () => {
+      if (!running) return;
+      if (n < dots.length) {
+        dots[n].classList.add('is-on', 'is-new');
+        linksOf[n].forEach((l) => l.classList.add('is-on'));
+        if (n) dots[n - 1].classList.remove('is-new');
+        n += 1;
+        timer = setTimeout(tick, 650);
+      } else {
+        dots[n - 1].classList.remove('is-new');
+        timer = setTimeout(() => {
+          svg.classList.add('is-clearing');
+          timer = setTimeout(() => {
+            [...dots, ...links].forEach((d) => d.classList.remove('is-on'));
+            svg.classList.remove('is-clearing');
+            n = 0;
+            timer = setTimeout(tick, 700);
+          }, 900);
+        }, 5000);
+      }
+    };
+    new IntersectionObserver((e) => {
+      const on = e[0].isIntersecting;
+      if (on === running) return;
+      running = on;
+      clearTimeout(timer);
+      if (on) timer = setTimeout(tick, 1400);
+    }).observe(svg);
+  })();
+
+  /* ── Play once: [data-play] gets data-on when well in view. ── */
+  (() => {
+    const els = [...document.querySelectorAll('[data-play]')];
+    if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      els.forEach((el) => (el.dataset.on = 'true'));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) =>
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          e.target.dataset.on = 'true';
+          io.unobserve(e.target);
+        }),
+      { threshold: 0.35 }
+    );
+    els.forEach((el) => io.observe(el));
+  })();
+
+  /* ── The walkthrough: the step whose text sits nearest the stage's
+     middle is current, once the first step passes 70% of the screen. ── */
+  (() => {
+    const how = document.querySelector('[data-how]');
+    if (!how) return;
+    const stage = how.querySelector('[data-stage]');
+    const steps = [...how.querySelectorAll('[data-how-step]')];
+    const dots = [...stage.querySelectorAll('[data-stage-dot]')];
+    const file = stage.querySelector('[data-stage-file]');
+    const names = steps.map((s) => s.querySelector('.how-file').textContent);
+    let cur = -1;
+    const update = () => {
+      const vh = window.innerHeight;
+      const sr = stage.getBoundingClientRect();
+      const mid = sr.height && sr.top < vh ? sr.top + sr.height / 2 : vh * 0.5;
+      let best = 0;
+      let bestD = Infinity;
+      steps.forEach((s, i) => {
+        const r = s.getBoundingClientRect();
+        if (r.top > vh * 0.7) return;
+        const d = Math.abs(r.top + Math.min(r.height, 200) / 2 - mid);
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+        }
+      });
+      if (best === cur) return;
+      cur = best;
+      stage.dataset.step = String(best);
+      steps.forEach((s, i) => s.classList.toggle('is-on', i === best));
+      dots.forEach((d, i) => d.classList.toggle('is-on', i <= best));
+      file.textContent = names[best];
+    };
+    let raf = 0;
+    const req = () => {
+      if (!raf)
+        raf = requestAnimationFrame(() => {
+          raf = 0;
+          update();
+        });
+    };
+    window.addEventListener('scroll', () => (document.documentElement.dataset.vscroll ? null : req()), { passive: true });
+    window.addEventListener('v2scroll', req);
+    window.addEventListener('resize', req);
+    update();
+  })();
+
+</script>
+
+<style>
+  /* ── Page tokens: lavender-leaning neutrals, an indigo-violet accent ── */
+  section {
+    --n-50: hsl(250 40% 98.8%);
+    --n-100: hsl(250 34% 96.6%);
+    --n-200: hsl(250 22% 90%);
+    --n-300: hsl(250 14% 81%);
+    --line: hsl(250 22% 90%);
+    --line-2: hsl(250 14% 81%);
+    --ink: hsl(248 30% 10%);
+    --ink-2: hsl(248 16% 27%);
+    --ink-3: hsl(248 9% 44%);
+    --vi: hsl(252 62% 54%);
+    --vi-200: hsl(252 70% 88%);
+    --vi-700: hsl(252 56% 38%);
+    --ink-bg: hsl(248 32% 9%);
+    --shell: 1300px;
+  }
+
+  /* ── Grounds: plain light and tinted bands, and a near-black ink
+     ground for the lineage section and the terminal closer. ── */
+  .paper {
+    background-color: var(--n-50);
+  }
+  .paper-tint {
+    background-color: var(--n-100);
+  }
+  .ink {
+    color: #fff;
+    border-top-color: var(--ink-bg);
+    background: radial-gradient(80% 120% at 75% 30%, hsl(250 34% 15%), var(--ink-bg));
+  }
+  .ink .lede {
+    color: hsl(0 0% 100% / 0.7);
+  }
+
+  /* ── Shared bits ── */
+  section .h2 {
+    margin-top: 0;
+  }
+  .lede {
+    text-wrap: pretty;
+  }
+  ol,
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  figure {
+    margin: 0;
+  }
+  code,
+  pre {
+    font-family: var(--mono);
+  }
+  .split-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 44ch);
+    gap: 18px clamp(36px, 5vw, 72px);
+    align-items: end;
+  }
+  .split-head .h2 {
+    max-width: 24ch;
+  }
+  .split-head .lede {
+    margin-top: 0;
+    padding-bottom: 5.4px;
+  }
+  @media (max-width: 860px) {
+    .split-head {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .quiet {
+    display: inline-flex;
+    align-items: center;
+    gap: 7.2px;
+    font-family: var(--mono);
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    transition: color 300ms var(--ease);
+  }
+  .quiet span {
+    transition: transform 400ms var(--ease);
+  }
+  .quiet:hover {
+    color: var(--vi-700);
+  }
+  .quiet:hover span {
+    transform: translate(2px, 2px);
+  }
+  figure figcaption,
+  .cov-note,
+  .scene-foot {
+    font-family: var(--mono);
+    font-size: 10.35px;
+    line-height: 1.65;
+    color: var(--ink-3);
+  }
+
+  /* ══ HERO ════════════════════════════════════════════════════
+     One viewport. The home page's `contour` map fills it, faded out
+     under the copy, and records land on it as teal squares. */
+  .os-hero {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    min-height: calc(100vh - var(--nav-h));
+    min-height: calc(100svh - var(--nav-h));
+    background: var(--n-50);
+  }
+  .os-map,
+  .os-dots {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .os-map {
+    opacity: 0.62;
+    -webkit-mask-image: linear-gradient(100deg, transparent 22%, #000 62%);
+    mask-image: linear-gradient(100deg, transparent 22%, #000 62%);
+  }
+  .os-dots {
+    -webkit-mask-image: linear-gradient(100deg, transparent 38%, #000 58%);
+    mask-image: linear-gradient(100deg, transparent 38%, #000 58%);
+  }
+  .os-links line {
+    stroke: var(--teal-500);
+    stroke-width: 1.2;
+    stroke-opacity: 0.55;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    transition: stroke-dashoffset 900ms var(--ease);
+  }
+  .os-links line.is-on {
+    stroke-dashoffset: 0;
+  }
+  .os-dots.is-clearing line {
+    stroke-opacity: 0;
+    transition: stroke-opacity 800ms;
+  }
+  .os-dots rect {
+    fill: var(--teal-500);
+    stroke: var(--surface);
+    stroke-width: 2;
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    transform: scale(0.3);
+    transition:
+      opacity 500ms var(--ease),
+      transform 500ms var(--ease),
+      fill 600ms var(--ease);
+  }
+  .os-dots rect.is-on {
+    opacity: 1;
+    transform: none;
+  }
+  .os-dots rect.is-new {
+    fill: var(--vi);
+    transform: scale(1.35);
+  }
+  .os-dots.is-clearing rect {
+    opacity: 0;
+    transition-duration: 800ms;
+  }
+  .os-in {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    padding-block: 48px 72px;
+  }
+  .os-copy {
+    max-width: 820px;
+  }
+  /* The headline says what Simula is; the hook under it is the
+     measured claim (Hopkins: specifics over slogans). */
+  .os-copy h1 {
+    max-width: none;
+    font-family: var(--hero-serif);
+    font-size: clamp(34px, 3.9vw, 54px);
+    font-weight: 400;
+    line-height: 1.04;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+  /* Three lines of about equal length (Harsh: no short last line,
+     a line is full or about three quarters): "Generate synthetic
+     data" / "with complete domain" / "coverage - with Simula", the
+     name in italic indigo. Below 720px the lines wrap freely. */
+  .os-copy h1 em {
+    font-style: italic;
+    color: var(--indigo-600);
+  }
+  @media (min-width: 720px) {
+    .os-copy h1 span {
+      display: block;
+      white-space: nowrap;
+    }
+  }
+  .os-copy p {
+    margin-top: 26px;
+    max-width: 52ch;
+    font-size: clamp(15px, 1.3vw, 16.4px);
+    line-height: 1.74;
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+  .os-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px 16px;
+    margin-top: 34px;
+  }
+  .gh {
+    width: 14px;
+    height: 14px;
+  }
+  .quiet .gh {
+    width: 13px;
+    height: 13px;
+    color: var(--ink);
+  }
+  /* The install command: dark, like a terminal line, with a copy icon
+     that turns into a tick once copied. Same height as the button. */
+  .clone {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    max-width: 100%;
+    padding: 12px 12px 12px 16px;
+    background: var(--n-900);
+    border: 1px solid var(--n-900);
+    font: inherit;
+    color: #fff;
+    cursor: pointer;
+    transition: background 300ms var(--ease);
+  }
+  .clone code {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 12px;
+    color: #fff;
+  }
+  .clone code span {
+    color: hsl(172 60% 64%);
+  }
+  .clone-ic {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    color: hsl(0 0% 100% / 0.6);
+    transition: color 300ms var(--ease);
+  }
+  .clone-ic svg {
+    grid-area: 1 / 1;
+    width: 15px;
+    height: 15px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition:
+      opacity 250ms var(--ease),
+      transform 250ms var(--ease);
+  }
+  .clone .ic-done {
+    opacity: 0;
+    transform: scale(0.6);
+    stroke: hsl(172 60% 64%);
+    stroke-width: 1.8;
+  }
+  .clone[data-copied] .ic-copy {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  .clone[data-copied] .ic-done {
+    opacity: 1;
+    transform: none;
+  }
+  .clone:hover {
+    background: var(--navy);
+  }
+  .clone:hover .clone-ic {
+    color: #fff;
+  }
+  .os-proof {
+    margin-top: 22px !important;
+    max-width: 60ch;
+    font-family: var(--mono);
+    font-size: 10.8px !important;
+    line-height: 1.7 !important;
+    color: var(--ink-3) !important;
+  }
+  .os-more {
+    display: flex;
+    gap: 28px;
+    margin-top: 30px;
+  }
+  @media (max-width: 760px) {
+    .os-map {
+      -webkit-mask-image: linear-gradient(180deg, transparent 40%, #000 85%);
+      mask-image: linear-gradient(180deg, transparent 40%, #000 85%);
+    }
+    .os-dots {
+      display: none;
+    }
+  }
+
+  /* ══ THE PROBLEM ═════════════════════════════════════════════
+     240 tickets fall onto the eight categories. On the left they pile
+     into dark blobs and most of the map stays empty; on the right they
+     cover it evenly. A few callouts say what the tickets are. */
+  .pile {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 46px;
+  }
+  .pile-panel {
+    padding: 22px 22px 18px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .pile-panel.is-sim {
+    border-color: var(--ink);
+  }
+  .pile-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .pile-name {
+    font-family: var(--hero-serif);
+    font-size: 21px;
+    color: var(--ink);
+  }
+  .pile-count {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-3);
+  }
+  .pile-count b {
+    font-family: var(--hero-serif);
+    font-size: 24px;
+    font-weight: 400;
+    color: var(--ink);
+  }
+  .is-sim .pile-count b {
+    color: var(--teal-700);
+  }
+  .pile svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    font-family: var(--mono);
+  }
+  .pz rect {
+    fill: var(--n-50);
+    stroke: var(--line);
+  }
+  .pz text {
+    font-size: 9.6px;
+    fill: var(--ink-3);
+  }
+  .pd circle {
+    fill: var(--teal-500);
+    fill-opacity: 0.5;
+    transform: translate(var(--dx), var(--dy)) scale(0.2);
+    opacity: 0;
+    transition:
+      transform 900ms var(--ease) var(--d),
+      opacity 400ms var(--ease) var(--d);
+  }
+  .pile-panel:not(.is-sim) .pd circle {
+    fill: hsl(248 20% 40%);
+    fill-opacity: 0.35;
+  }
+  .pile[data-on='true'] .pd circle {
+    transform: none;
+    opacity: 1;
+  }
+  .pn rect {
+    fill: var(--surface);
+    stroke: var(--ink);
+    stroke-width: 0.8;
+  }
+  .pn text {
+    font-size: 9.8px;
+    fill: var(--ink);
+  }
+  .pn tspan {
+    fill: var(--amber-800);
+    font-weight: 600;
+  }
+  .is-sim .pn text {
+    fill: var(--teal-800);
+  }
+  .pn {
+    opacity: 0;
+    transition: opacity 500ms var(--ease);
+  }
+  .pile[data-on='true'] .pn {
+    opacity: 1;
+    transition-delay: calc(1500ms + var(--i) * 200ms);
+  }
+  .pile-foot {
+    margin-top: 12px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-3);
+  }
+  .pile-note {
+    margin-top: 12px;
+    font-family: var(--mono);
+    font-size: 10.35px;
+    color: var(--ink-3);
+  }
+  @media (max-width: 860px) {
+    .pile {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* ══ HOW IT WORKS ════════════════════════════════════════════ */
+  .how {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: clamp(28px, 4vw, 64px);
+    margin-top: 46px;
+  }
+  .how-pin {
+    position: relative;
+  }
+  .stage {
+    position: sticky;
+    top: 96px;
+    height: min(560px, calc(100vh - 140px));
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+    box-shadow: 0 30px 70px -52px hsl(250 40% 20% / 0.4);
+    overflow: hidden;
+  }
+  :global(html[data-vscroll]) .stage {
+    position: relative;
+    top: 0;
+  }
+  .stage-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 42px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  .stage-file {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--vi-700);
+  }
+  .stage-dots {
+    display: flex;
+    gap: 6px;
+  }
+  .stage-dots i {
+    width: 18px;
+    height: 2px;
+    background: var(--line-2);
+    transition: background 400ms var(--ease);
+  }
+  .stage-dots i.is-on {
+    background: var(--vi);
+  }
+  .scene,
+  .stage-tree {
+    position: absolute;
+    inset: 42px 0 0;
+    padding: 30px 34px 24px;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition:
+      opacity 450ms var(--ease),
+      transform 450ms var(--ease),
+      visibility 0s linear 450ms;
+  }
+  .stage-tree {
+    padding: 34px 30px 52px;
+    justify-content: center;
+  }
+  .stage-tree svg {
+    width: 100%;
+    height: 100%;
+    font-family: var(--mono);
+  }
+  .stage[data-step='0'] [data-scene='0'],
+  .stage[data-step='1'] [data-scene='1'],
+  .stage[data-step='2'] [data-scene='2'],
+  .stage[data-step='3'] [data-scene='3'],
+  .stage[data-step='4'] [data-scene='4'],
+  .stage[data-step='5'] [data-scene='5'],
+  .stage[data-step='0'] .stage-tree,
+  .stage[data-step='2'] .stage-tree {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition:
+      opacity 450ms var(--ease) 120ms,
+      transform 450ms var(--ease) 120ms,
+      visibility 0s;
+  }
+  .scene-foot {
+    margin-top: auto;
+    padding-top: 14px;
+  }
+  .scene-title {
+    margin-bottom: 18px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  /* Children of the current scene arrive one after another. */
+  .scene li,
+  .scene .vd {
+    opacity: 0;
+    transform: translateX(-6px);
+    transition:
+      opacity 400ms var(--ease),
+      transform 400ms var(--ease);
+  }
+  .stage[data-step='1'] [data-scene='1'] li,
+  .stage[data-step='3'] [data-scene='3'] li,
+  .stage[data-step='4'] [data-scene='4'] li,
+  .stage[data-step='5'] [data-scene='5'] li,
+  .stage[data-step='5'] [data-scene='5'] .vd {
+    opacity: 1;
+    transform: none;
+    transition-delay: calc(200ms + var(--i) * 90ms);
+  }
+
+  /* 01 / 03: the tree. On 01 it grows level by level; on 03 one path
+     per factor lights and every other branch steps back. */
+  .st-ln {
+    fill: none;
+    stroke: var(--n-300);
+    stroke-width: 1;
+    transition:
+      opacity 500ms var(--ease),
+      stroke 400ms var(--ease),
+      stroke-width 400ms var(--ease);
+  }
+  .st-nd {
+    fill: var(--surface);
+    stroke: var(--n-300);
+    stroke-width: 1.2;
+    transition: all 400ms var(--ease);
+  }
+  .st-nd.lv0 {
+    fill: var(--vi);
+    stroke: var(--vi);
+  }
+  .st-root,
+  .st-lf {
+    font-size: 12px;
+    font-weight: 600;
+    fill: var(--vi-700);
+    paint-order: stroke;
+    stroke: var(--surface);
+    stroke-width: 4px;
+  }
+  .st-lb {
+    font-size: 11px;
+    fill: var(--ink-3);
+    paint-order: stroke;
+    stroke: var(--surface);
+    stroke-width: 4px;
+    transition: fill 400ms var(--ease);
+  }
+  .st-leaf {
+    fill: var(--surface);
+    stroke: var(--n-300);
+    transition: all 400ms var(--ease);
+  }
+  .st-pick {
+    font-size: 11.5px;
+    fill: var(--teal-700);
+    opacity: 0;
+    transition: opacity 400ms var(--ease);
+  }
+  .stage .lv0,
+  .stage .lv1,
+  .stage .lv2,
+  .stage .lv3 {
+    opacity: 0;
+  }
+  .stage[data-step='0'] .lv0,
+  .stage[data-step='0'] .lv1,
+  .stage[data-step='0'] .lv2,
+  .stage[data-step='0'] .lv3,
+  .stage[data-step='2'] .lv0,
+  .stage[data-step='2'] .lv1,
+  .stage[data-step='2'] .lv2,
+  .stage[data-step='2'] .lv3 {
+    opacity: 1;
+  }
+  .stage[data-step='0'] .lv1 {
+    transition-delay: 350ms;
+  }
+  .stage[data-step='0'] .lv2 {
+    transition-delay: 750ms;
+  }
+  .stage[data-step='0'] .lv3 {
+    transition-delay: 1150ms;
+  }
+  .stage[data-step='2'] .st-b:not(.is-pick) .st-ln,
+  .stage[data-step='2'] .st-b:not(.is-pick) .st-nd,
+  .stage[data-step='2'] .st-b:not(.is-pick) .st-leaf,
+  .stage[data-step='2'] .st-b .st-ln.lv3:not(.is-pick),
+  .stage[data-step='2'] .st-b .st-leaf:not(.is-pick) {
+    opacity: 0.22;
+  }
+  .stage[data-step='2'] .st-f > .st-ln.lv1,
+  .stage[data-step='2'] .st-b.is-pick > .st-ln.lv2,
+  .stage[data-step='2'] .st-ln.lv3.is-pick {
+    stroke: var(--vi);
+    stroke-width: 2;
+  }
+  .stage[data-step='2'] .st-f > .st-nd.lv1,
+  .stage[data-step='2'] .st-b.is-pick > .st-nd {
+    fill: var(--vi);
+    stroke: var(--vi);
+  }
+  .stage[data-step='2'] .st-b.is-pick > .st-lb {
+    fill: var(--ink);
+  }
+  .stage[data-step='2'] .st-leaf.is-pick {
+    fill: var(--teal-500);
+    stroke: var(--teal-500);
+  }
+  .stage[data-step='2'] .st-pick {
+    opacity: 1;
+    transition-delay: 500ms;
+  }
+
+  /* 02 skew */
+  .skew li {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr) 132px;
+    gap: 14px;
+    align-items: center;
+    padding: 12px 0;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .skew-track {
+    position: relative;
+    height: 18px;
+    background: var(--n-100);
+  }
+  .skew-bar {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: calc(var(--w) * 2%);
+    background: var(--teal-500);
+  }
+  .is-warn .skew-bar {
+    background: var(--amber-500);
+  }
+  .skew-tree {
+    position: absolute;
+    top: -5px;
+    bottom: -5px;
+    left: calc(var(--t) * 2%);
+    width: 2px;
+    background: var(--ink);
+  }
+  .skew-n small {
+    color: var(--ink-3);
+    font-size: 10.5px;
+  }
+  .skew-warn {
+    margin-top: 18px;
+    padding: 12px 14px;
+    background: var(--amber-100);
+    border-left: 2px solid var(--amber-500);
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--amber-800);
+  }
+
+  /* 04 situations: one leaf, a rail, four cases branching off it. */
+  .sit-leaf {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink-3);
+  }
+  .sit-leaf i {
+    font-style: normal;
+  }
+  .sit-leaf b {
+    font-weight: 500;
+    color: var(--teal-700);
+  }
+  .sit-sq {
+    width: 10px;
+    height: 10px;
+    background: var(--teal-500);
+  }
+  .sits {
+    margin: 4px 0 0 4px;
+    padding-top: 6px;
+    border-left: 1px solid var(--vi-200);
+  }
+  .sits li {
+    position: relative;
+    margin: 12px 0 0 28px;
+    padding: 12px 16px;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    background: var(--n-50);
+    border: 1px solid var(--line);
+  }
+  .sits li::before {
+    content: '';
+    position: absolute;
+    left: -29px;
+    top: 50%;
+    width: 28px;
+    border-top: 1px solid var(--vi-200);
+  }
+  .sits .is-pick {
+    color: var(--ink);
+    background: var(--surface);
+    border-color: var(--vi);
+  }
+  .sits .is-pick::before {
+    border-top: 2px solid var(--vi);
+  }
+  .sits em {
+    display: block;
+    margin-top: 4px;
+    font-style: normal;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--vi-700);
+  }
+
+  /* 05 write: ingredients in, fields out, each ticked. */
+  .wr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1.1fr);
+    gap: 12px;
+    align-items: center;
+  }
+  .wr-in li {
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    background: var(--n-50);
+    border-left: 2px solid var(--vi);
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--teal-700);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .wr-in li span {
+    display: block;
+    font-size: 9.9px;
+    color: var(--vi-700);
+  }
+  .wr-arrow {
+    width: 40px;
+    height: 200px;
+  }
+  .wr-arrow path {
+    fill: none;
+    stroke: var(--vi-200);
+    stroke-width: 1.2;
+  }
+  .wr-out {
+    padding: 10px 14px;
+    border: 1px solid var(--ink);
+  }
+  .wr-out li {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr) 14px;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--line);
+    font-family: var(--mono);
+    font-size: 11.5px;
+  }
+  .wr-out li:last-child {
+    border-bottom: 0;
+  }
+  .wr-k {
+    color: var(--vi-700);
+  }
+  .wr-v {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--teal-700);
+  }
+  .wr-out svg {
+    width: 13px;
+    height: 13px;
+    fill: none;
+    stroke: var(--teal-500);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* 06 judge */
+  .verdicts {
+    display: grid;
+    gap: 8px;
+  }
+  .vd {
+    padding: 12px 16px;
+    font-size: 14.6px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    border-left: 2px solid var(--line-2);
+    background: var(--n-50);
+  }
+  .vd b {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .vd-no {
+    border-left-color: var(--amber-500);
+  }
+  .vd-yes {
+    border-left-color: var(--teal-500);
+  }
+  .vd-yes b {
+    color: var(--teal-700);
+  }
+  .funnel {
+    margin-top: 22px;
+  }
+  .funnel li {
+    display: grid;
+    grid-template-columns: 70px minmax(0, 1fr) 64px;
+    gap: 12px;
+    align-items: center;
+    padding: 7px 0;
+    font-family: var(--mono);
+    font-size: 12.4px;
+  }
+  .funnel-track {
+    height: 12px;
+  }
+  .funnel-bar {
+    display: block;
+    height: 100%;
+    width: calc(var(--w) * 1%);
+    background: var(--teal-500);
+  }
+  .funnel-n {
+    text-align: right;
+    color: var(--ink);
+  }
+
+  /* Steps: tall enough that each takes its turn at the stage. */
+  .how-steps {
+    padding-bottom: 18vh;
+  }
+  .how-step {
+    min-height: 62vh;
+    padding-top: 6px;
+    opacity: 0.38;
+    transition: opacity 450ms var(--ease);
+  }
+  .how-step:first-child {
+    min-height: 44vh;
+  }
+  .how-step.is-on {
+    opacity: 1;
+  }
+  .how-n {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--vi);
+  }
+  .how-step h3 {
+    margin-top: 10px;
+    font-family: var(--hero-serif);
+    font-size: clamp(24px, 2.4vw, 30px);
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+  }
+  .how-role {
+    display: inline-block;
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .how-step p {
+    margin-top: 14px;
+    max-width: 46ch;
+    font-size: 15px;
+    line-height: 1.74;
+    color: var(--ink-2);
+  }
+  .how-file {
+    display: inline-block;
+    margin-top: 14px;
+    font-size: 11px;
+    color: var(--teal-700);
+  }
+  @media (max-width: 900px) {
+    .how {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+    }
+    .how-pin {
+      position: sticky;
+      top: var(--nav-h);
+      z-index: 2;
+    }
+    .stage {
+      position: relative;
+      top: 0;
+      height: 50svh;
+    }
+    .scene {
+      padding: 14px 16px 10px;
+      overflow: hidden;
+      zoom: 0.72;
+    }
+    .stage-tree {
+      padding: 10px;
+    }
+    .scene-foot {
+      display: none;
+    }
+    .how-steps {
+      padding-top: 24px;
+    }
+    .how-step,
+    .how-step:first-child {
+      min-height: 64svh;
+    }
+    .wr {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .wr-in,
+    .wr-arrow {
+      display: none;
+    }
+  }
+
+  /* ══ ROLES AND THE BILL ══════════════════════════════════════ */
+  .roles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 46px;
+    border-top: 1px solid var(--ink);
+  }
+  .role {
+    display: flex;
+    flex-direction: column;
+    padding: 20px 26px 22px 0;
+  }
+  .role + .role {
+    padding-left: 26px;
+    border-left: 1px solid var(--line);
+  }
+  .role h3 {
+    font-family: var(--hero-serif);
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 1.25;
+  }
+  .role p {
+    margin-top: 10px;
+    font-size: 14.4px;
+    line-height: 1.65;
+    color: var(--ink-2);
+  }
+  .role-when {
+    margin-top: auto !important;
+    padding-top: 14px;
+    font-size: 13.6px !important;
+    color: var(--ink-3) !important;
+  }
+  .bill {
+    margin-top: 40px;
+    padding: 24px 26px 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .bill-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .bill-head b {
+    font-family: var(--hero-serif);
+    font-size: 44px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    text-transform: none;
+    color: var(--teal-700);
+  }
+  .bill-bar {
+    display: flex;
+    gap: 3px;
+    height: 22px;
+    margin-top: 14px;
+  }
+  .bill-bar span {
+    width: 0;
+    transition: width 1100ms var(--ease);
+  }
+  .bill[data-on='true'] .bill-bar span {
+    width: calc(var(--w) * 1%);
+  }
+  .bill-plan {
+    background: var(--vi);
+  }
+  .bill-write {
+    background: var(--teal-500);
+    transition-delay: 300ms !important;
+  }
+  .bill-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 32px;
+    margin: 14px 0 12px;
+    font-size: 13.5px;
+    color: var(--ink-2);
+  }
+  .bill-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .bill-legend i {
+    width: 10px;
+    height: 10px;
+  }
+  .bl-plan i {
+    background: var(--vi);
+  }
+  .bl-write i {
+    background: var(--teal-500);
+  }
+  .bill-legend b {
+    font-family: var(--mono);
+    font-weight: 500;
+    color: var(--ink);
+  }
+  @media (max-width: 860px) {
+    .roles {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .role,
+    .role + .role {
+      padding: 18px 0;
+      border-left: 0;
+      border-bottom: 1px solid var(--line);
+    }
+  }
+
+  /* ══ LINEAGE (ink) ═══════════════════════════════════════════ */
+  .lin {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 16px;
+    margin-top: 46px;
+  }
+  .lin-row {
+    padding: 20px 24px;
+    background: hsl(248 40% 4% / 0.6);
+    border: 1px solid hsl(250 60% 85% / 0.14);
+  }
+  .lin-row figcaption {
+    color: hsl(0 0% 100% / 0.5);
+    margin-bottom: 14px;
+  }
+  .lin-row pre {
+    margin: 0;
+    overflow-x: auto;
+    font-size: 12.4px;
+    line-height: 1.95;
+    color: hsl(0 0% 100% / 0.55);
+  }
+  .lin-l {
+    display: block;
+  }
+  .lin-k,
+  .lin-v {
+    color: hsl(0 0% 100% / 0.6);
+  }
+  .lin-l.is-hl .lin-k {
+    color: hsl(250 90% 84%);
+  }
+  .lin-l.is-hl .lin-v {
+    color: hsl(172 60% 70%);
+  }
+  .lin-l.is-dim {
+    opacity: 0.6;
+  }
+  .lin-files {
+    padding: 20px 24px;
+    border: 1px solid hsl(250 60% 85% / 0.14);
+  }
+  .lin-files-head {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: hsl(0 0% 100% / 0.55);
+  }
+  .lin-files ul {
+    margin-top: 10px;
+  }
+  .lin-files li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2px 12px;
+    padding: 9px 0;
+    border-top: 1px solid hsl(0 0% 100% / 0.08);
+  }
+  .lin-files code {
+    font-size: 12px;
+    color: #fff;
+  }
+  .lin-files span {
+    grid-column: 1;
+    font-size: 12.6px;
+    color: hsl(0 0% 100% / 0.6);
+  }
+  .lin-files em {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    font-style: normal;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: hsl(250 90% 84%);
+  }
+  .lin-files-foot {
+    margin-top: 14px;
+    font-size: 13px;
+    line-height: 1.65;
+    color: hsl(0 0% 100% / 0.72);
+  }
+  @media (max-width: 900px) {
+    .lin {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* ══ MEASURED ════════════════════════════════════════════════ */
+  .ledger {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 46px 0 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .ledger-cell {
+    padding: 24px 26px 22px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .ledger-cell:nth-child(3n) {
+    border-right: 0;
+  }
+  .ledger-cell:nth-last-child(-n + 3) {
+    border-bottom: 0;
+  }
+  .ledger dt {
+    font-family: var(--hero-serif);
+    font-size: clamp(40px, 4.4vw, 56px);
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--teal-700);
+  }
+  .ledger dd {
+    margin: 14px 0 0;
+    font-size: 14.4px;
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+  .ledger small {
+    display: block;
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-3);
+  }
+  .limits {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
+    gap: 24px;
+    margin-top: 40px;
+  }
+  .limits-h {
+    font-family: var(--hero-serif);
+    font-size: 24px;
+    font-weight: 400;
+  }
+  .limits ul {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 32px;
+  }
+  .limits li {
+    padding: 14px 0;
+    border-top: 1px solid var(--line-2);
+  }
+  .limits b {
+    display: block;
+    font-weight: 500;
+    font-size: 14.4px;
+  }
+  .limits span {
+    display: block;
+    margin-top: 4px;
+    font-size: 13.8px;
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+  @media (max-width: 900px) {
+    .ledger {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .ledger-cell,
+    .ledger-cell:nth-child(3n),
+    .ledger-cell:nth-last-child(-n + 3) {
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .ledger-cell:nth-child(2n) {
+      border-right: 0;
+    }
+    .limits,
+    .limits ul {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  @media (max-width: 560px) {
+    .ledger {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .ledger-cell {
+      border-right: 0 !important;
+    }
+  }
+
+  /* ══ COMMANDS ════════════════════════════════════════════════ */
+  .run {
+    display: grid;
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+    gap: 16px clamp(24px, 3vw, 40px);
+    margin-top: 46px;
+  }
+  /* The command list stretches to the config file's height, its rows
+     sharing the space, so both columns end on the same line. */
+  .run > div:first-child {
+    display: flex;
+    flex-direction: column;
+  }
+  .cmds {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--ink);
+  }
+  .cmds li {
+    flex: 1;
+    align-items: center;
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    gap: 16px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .cmds code {
+    font-size: 11.8px;
+    color: var(--vi-700);
+  }
+  .cmds span {
+    font-size: 13.6px;
+    color: var(--ink-2);
+  }
+  .code {
+    margin: 0;
+    padding: 20px 22px;
+    overflow-x: auto;
+    background: var(--n-900);
+    color: hsl(240 20% 88%);
+    font-size: 12.2px;
+    line-height: 1.85;
+  }
+  .tok-k {
+    color: hsl(243 90% 80%);
+  }
+  .tok-s,
+  .tok-n {
+    color: hsl(172 60% 64%);
+  }
+  .tok-c {
+    color: hsl(240 10% 56%);
+  }
+  @media (max-width: 900px) {
+    .run {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .cmds li {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 4px;
+    }
+  }
+
+  /* ══ CLOSER: the terminal ════════════════════════════════════ */
+  .term-band {
+    padding-block: clamp(72px, 9vw, 120px);
+  }
+  .term-in {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 32px clamp(36px, 5vw, 80px);
+    align-items: center;
+  }
+  .term-copy h2 {
+    max-width: 14ch;
+    font-family: var(--hero-serif);
+    font-size: clamp(32px, 4vw, 50px);
+    font-weight: 400;
+    line-height: 1.08;
+    letter-spacing: -0.024em;
+    text-wrap: balance;
+  }
+  .term-copy p {
+    margin-top: 18px;
+    max-width: 46ch;
+    font-size: 14.85px;
+    line-height: 1.74;
+    color: hsl(0 0% 100% / 0.7);
+  }
+  .btn-light {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 13.5px 23.4px;
+    background: #fff;
+    color: var(--ink);
+    border: 1px solid #fff;
+    font-size: 9.9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transition:
+      background 300ms var(--ease),
+      color 300ms var(--ease);
+  }
+  .btn-light svg {
+    width: 14px;
+    height: 14px;
+  }
+  .btn-light:hover {
+    background: transparent;
+    color: #fff;
+  }
+  .quiet-dark {
+    color: hsl(0 0% 100% / 0.75);
+  }
+  .quiet-dark:hover {
+    color: #fff;
+  }
+  .term {
+    background: hsl(248 40% 4%);
+    border: 1px solid hsl(250 60% 85% / 0.16);
+    box-shadow: 0 40px 80px -50px #000;
+  }
+  .term-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    height: 38px;
+    padding: 0 14px;
+    border-bottom: 1px solid hsl(0 0% 100% / 0.08);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: hsl(0 0% 100% / 0.5);
+  }
+  .term-bar > span {
+    display: flex;
+    gap: 6px;
+  }
+  .term-bar > span i {
+    width: 9px;
+    height: 9px;
+    border: 1px solid hsl(0 0% 100% / 0.25);
+  }
+  .term-bar b {
+    font-weight: 400;
+  }
+  .term-bar button {
+    margin-left: auto;
+    padding: 4px 8px;
+    background: none;
+    border: 1px solid hsl(0 0% 100% / 0.16);
+    color: hsl(0 0% 100% / 0.75);
+    font: inherit;
+    cursor: pointer;
+  }
+  .term-bar button em {
+    font-style: normal;
+    font-size: 9.9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .term-bar button:hover {
+    border-color: #fff;
+    color: #fff;
+  }
+  .term pre {
+    margin: 0;
+    padding: 20px 22px 24px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 2;
+    color: #fff;
+  }
+  .term-l {
+    display: block;
+    opacity: 0;
+    transform: translateY(4px);
+    transition:
+      opacity 300ms var(--ease),
+      transform 300ms var(--ease);
+  }
+  .term[data-on='true'] .term-l {
+    opacity: 1;
+    transform: none;
+    transition-delay: calc(300ms + var(--i) * 420ms);
+  }
+  .term-p {
+    color: hsl(250 90% 80%);
+  }
+  .term-l.is-c {
+    color: hsl(172 60% 64%);
+  }
+  .term-l.is-c .term-p {
+    color: hsl(172 60% 64%);
+  }
+  .term-l.is-o {
+    color: hsl(0 0% 100% / 0.62);
+  }
+  .term-cursor i {
+    display: inline-block;
+    width: 8px;
+    height: 15px;
+    vertical-align: -2px;
+    background: #fff;
+    animation: blink 1s steps(1) infinite;
+  }
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+  @media (max-width: 900px) {
+    .term-in {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

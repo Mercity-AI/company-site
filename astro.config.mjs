@@ -45,7 +45,7 @@ export default defineConfig({
   integrations: [
     mdx(),
     sitemap({
-      filter: (page) => !/\/simula-v2\/?$/.test(page),
+      filter: (page) => !/\/simula-v[23]\/?$/.test(page),
     }),
   ],
   vite: {
