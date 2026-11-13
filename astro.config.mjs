@@ -31,6 +31,9 @@ export default defineConfig({
   compressHTML: true,
   redirects: {
     '/v2': '/',
+    // Earlier drafts of the Simula page; /open-source/simula replaced them.
+    '/open-source/simula-v2': '/open-source/simula',
+    '/open-source/simula-v3': '/open-source/simula',
     '/blog-post/laco-layer-pruning-for-qwen3-8b-our-research-log':
       '/research/laco-layer-pruning-for-qwen3-8b-our-research-log',
     '/blog-post/lcm-lora-distillation-training-fast-diffusion-models':
@@ -44,9 +47,7 @@ export default defineConfig({
   },
   integrations: [
     mdx(),
-    sitemap({
-      filter: (page) => !/\/simula-v2\/?$/.test(page),
-    }),
+    sitemap(),
   ],
   vite: {
     plugins: [forceAllowAllHostsPlugin],
