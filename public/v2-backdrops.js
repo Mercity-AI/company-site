@@ -925,7 +925,7 @@
       }
     },
 
-    contour(ctx, w, h, seed) {
+    contour(ctx, w, h, seed, ink) {
       ctx.fillStyle = css(PAPER);
       ctx.fillRect(0, 0, w, h);
       const fbm = makeNoise(seed);
@@ -950,7 +950,9 @@
       for (let k = 1; k < BANDS; k++) {
         const segs = marchingSquares(values, gw, gh, lo + (hi - lo) * (k / BANDS), []);
         if (!segs.length) continue;
-        ctx.strokeStyle = `hsl(243 62% ${70 - k * 1.7}% / ${0.34 + k * 0.032})`;
+        ctx.strokeStyle = ink
+          ? `hsl(240 6% ${22 - k * 1.2}% / ${0.26 + k * 0.034})`
+          : `hsl(243 62% ${70 - k * 1.7}% / ${0.34 + k * 0.032})`;
         ctx.beginPath();
         for (let i = 0; i < segs.length; i += 4) {
           ctx.moveTo(segs[i] * sx, segs[i + 1] * sy);
@@ -958,7 +960,13 @@
         }
         ctx.stroke();
       }
-      grain(ctx, w, h, 9, true);
+      if (!ink) grain(ctx, w, h, 9, true);
+    },
+
+    // The same map in black ink, no grain, for a crisp black-and-white
+    // ground (the Simula hero).
+    contourInk(ctx, w, h, seed) {
+      GEN.contour(ctx, w, h, seed, true);
     },
 
     ridgeline(ctx, w, h, seed) {
@@ -1430,11 +1438,126 @@
     },
   };
 
+  /* ── Animated contour ───────────────────────────────────────────
+     <canvas data-backdrop="contourInk" data-animate="600">: the ink
+     contour map, live. After the delay (ms) the canvas gets .is-live
+     (the page fades it in) and the lines start flowing fast, then ease
+     to a slow drift: the levels creep and the field slides. Pauses off
+     screen; reduced motion gets one still frame. */
+  function animateContour(cv) {
+    const fbm = makeNoise(Number(cv.dataset.seed) || 1);
+    const ctx = cv.getContext('2d');
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const delay = Number(cv.dataset.animate) || 0;
+    const BANDS = 15;
+    const GW = 150;
+    let w = 0, h = 0, gh = 40, sx = 1, sy = 1, lo = 0, hi = 1, values = null;
+    let phase = 0, ox = 0, t0 = 0, lastDraw = 0, raf = 0, visible = false, started = false;
+
+    function sample() {
+      for (let y = 0; y < gh; y++)
+        for (let x = 0; x < GW; x++) values[y * GW + x] = fbm(x / 19 + ox, y / 19 + ox * 0.4, 4);
+    }
+    function size() {
+      const dpr = Math.min(window.devicePixelRatio || 1, Number(cv.dataset.dpr) || 1.5);
+      w = Math.max(1, Math.round(cv.clientWidth * dpr));
+      h = Math.max(1, Math.round(cv.clientHeight * dpr));
+      cv.width = w;
+      cv.height = h;
+      gh = Math.max(40, Math.round((GW * h) / w));
+      sx = w / GW;
+      sy = h / gh;
+      values = new Float32Array(GW * gh);
+      sample();
+      lo = Infinity;
+      hi = -Infinity;
+      for (let i = 0; i < values.length; i++) {
+        if (values[i] < lo) lo = values[i];
+        if (values[i] > hi) hi = values[i];
+      }
+    }
+    // Levels sit at (k + phase) / BANDS, so as the phase runs they rise
+    // through the field; each fades out at the ends of the range, so a
+    // level leaving at the top and one arriving at the bottom never pop.
+    function frame() {
+      sample();
+      ctx.clearRect(0, 0, w, h);
+      ctx.lineWidth = Math.max(1, w / 900);
+      ctx.lineCap = 'round';
+      const f = phase - Math.floor(phase);
+      for (let k = 0; k <= BANDS; k++) {
+        const u = (k + f) / BANDS;
+        if (u <= 0 || u >= 1) continue;
+        const segs = marchingSquares(values, GW, gh, lo + (hi - lo) * u, []);
+        if (!segs.length) continue;
+        const edge = Math.min(1, u * 3, (1 - u) * 3);
+        ctx.strokeStyle = `hsl(240 6% ${(22 - u * 18).toFixed(1)}% / ${((0.26 + u * 0.5) * edge).toFixed(3)})`;
+        ctx.beginPath();
+        for (let i = 0; i < segs.length; i += 4) {
+          ctx.moveTo(segs[i] * sx, segs[i + 1] * sy);
+          ctx.lineTo(segs[i + 2] * sx, segs[i + 3] * sy);
+        }
+        ctx.stroke();
+      }
+    }
+    // Speeds ease from fast to settled over SETTLE seconds, then hold
+    // exactly constant (an exponential never quite arrives, so the map
+    // looked like it kept slowing down).
+    const LEVEL = [0.9, 0.0364]; // levels per second
+    const DRIFT = [0.45, 0.0104]; // noise units per second
+    const SETTLE = 3.5;
+    function loop(now) {
+      raf = 0;
+      if (!visible) return;
+      raf = requestAnimationFrame(loop);
+      if (!t0) t0 = lastDraw = now;
+      const t = (now - t0) / 1000;
+      if (now - lastDraw < 1000 / 30 - 2) return;
+      const dt = Math.min(0.1, (now - lastDraw) / 1000);
+      lastDraw = now;
+      const e = Math.pow(1 - Math.min(1, t / SETTLE), 3);
+      phase += (LEVEL[1] + (LEVEL[0] - LEVEL[1]) * e) * dt;
+      ox += (DRIFT[1] + (DRIFT[0] - DRIFT[1]) * e) * dt;
+      frame();
+    }
+    function play() {
+      if (!raf && visible && started && !still) {
+        lastDraw = performance.now();
+        raf = requestAnimationFrame(loop);
+      }
+    }
+
+    size();
+    frame();
+    setTimeout(() => {
+      started = true;
+      cv.classList.add('is-live');
+      play();
+    }, still ? 0 : delay);
+    new IntersectionObserver((en) => {
+      visible = en[0].isIntersecting;
+      play();
+    }).observe(cv);
+    let rt;
+    window.addEventListener('resize', () => {
+      clearTimeout(rt);
+      rt = setTimeout(() => {
+        size();
+        frame();
+      }, 200);
+    });
+    return true;
+  }
+
   /* ── Wiring ─────────────────────────────────────────────────────── */
   const canvases = Array.from(document.querySelectorAll('[data-backdrop]'));
   if (!canvases.length) return;
 
   function draw(cv) {
+    if (cv.dataset.animate !== undefined && cv.dataset.backdrop === 'contourInk') {
+      if (!cv.dataset.live) cv.dataset.live = String(animateContour(cv));
+      return;
+    }
     const gen = GEN[cv.dataset.backdrop];
     if (!gen) return;
     const dpr = Math.min(window.devicePixelRatio || 1, Number(cv.dataset.dpr) || 1.5);

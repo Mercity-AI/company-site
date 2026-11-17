@@ -103,30 +103,6 @@ const layout = (g: Geo) =>
     };
   });
 
-/* Hero: records landing across the map. A jittered 12 × 7 grid over
-   the right of the hero, so the squares spread evenly; the script
-   reveals them in a fixed shuffle. Seeded, so the picture is stable. */
-const DOTS = (() => {
-  let t = 2611;
-  const rnd = () => (t = (t * 1103515245 + 12345) % 2147483648) / 2147483648;
-  const out: { x: number; y: number; o: number }[] = [];
-  for (let r = 0; r < 7; r++)
-    for (let c = 0; c < 12; c++) {
-      if (rnd() < 0.18) continue;
-      out.push({ x: 470 + c * 42 + (rnd() - 0.5) * 26, y: 70 + r * 72 + (rnd() - 0.5) * 34, o: rnd() });
-    }
-  return out.sort((a, b) => a.o - b.o).map((d, k) => ({ ...d, k }));
-})();
-// Each square links to the two nearest squares already down, if they
-// are close, so the map fills as one connected net.
-const LINKS = DOTS.flatMap((d) =>
-  DOTS.filter((e) => e.k < d.k)
-    .map((e) => ({ e, dist: Math.hypot(e.x - d.x, e.y - d.y) }))
-    .filter((c) => c.dist < 110)
-    .sort((a, b) => a.dist - b.dist)
-    .slice(0, 2)
-    .map(({ e }) => ({ k: d.k, x1: e.x, y1: e.y, x2: d.x, y2: d.y })),
-);
 
 /* Walkthrough tree, in a 720 × 430 viewBox. Step 3 lights one path
    per factor; `pick` is the level-1 node and `leaf` its leaf label. */
@@ -359,16 +335,10 @@ const term = [
 >
   <!-- ═══ HERO: the map, and records landing on it ══════════════════ -->
   <section class="os-hero">
-    <canvas class="os-map" data-backdrop="contour" data-seed="2611" data-dpr="1" aria-hidden="true"></canvas>
-    <svg class="os-dots" data-dots viewBox="0 0 1000 600" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
-      <g class="os-links">
-        {LINKS.map((l) => <line x1={l.x1.toFixed(1)} y1={l.y1.toFixed(1)} x2={l.x2.toFixed(1)} y2={l.y2.toFixed(1)} pathLength="1" data-k={l.k} />)}
-      </g>
-      {DOTS.map((d) => <rect x={(d.x - 5).toFixed(1)} y={(d.y - 5).toFixed(1)} width="10" height="10" data-k={d.k} />)}
-    </svg>
+    <canvas class="os-map" data-backdrop="contourInk" data-seed="2611" data-dpr="2" data-animate="600" aria-hidden="true"></canvas>
     <div class="shell os-in">
       <div class="os-copy">
-        <h1 class="rv" data-rv style="--rv-delay:80ms"><span>Generate synthetic data</span> <span>with complete domain</span> <span>coverage - with <em>Simula</em></span></h1>
+        <h1 class="rv" data-rv style="--rv-delay:80ms"><span>Generate synthetic data</span> <span>with maximum domain</span> <span>coverage - with <a class="h1-name" href={GITHUB_URL} target="_blank" rel="noopener noreferrer"><em>Simula</em></a></span></h1>
         <p class="rv" data-rv style="--rv-delay:160ms">
           Simula is a state-of-the-art synthetic data framework. Describe the data you need in one paragraph, and it
           maps every case the dataset should cover, has a model write each record, has a second model check it, and
@@ -389,9 +359,6 @@ const term = [
           <a class="quiet" href={GITHUB_URL} target="_blank" rel="noopener noreferrer"><svg class="gh" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d={GH_PATH} /></svg>View on GitHub<span aria-hidden="true">↗</span></a>
           <a class="quiet" href="#how">How it works<span aria-hidden="true">↓</span></a>
         </div>
-        <p class="os-proof rv" data-rv style="--rv-delay:380ms">
-          Generate 10,000 training records for about $22.
-        </p>
       </div>
     </div>
   </section>
@@ -638,7 +605,6 @@ const term = [
           ))
         }
       </div>
-      <p class="pile-note">Illustration. Each dot is a ticket, placed by what it is about.</p>
     </div>
   </section>
 
@@ -741,10 +707,7 @@ const term = [
           measured.map((m, i) => (
             <div class="ledger-cell rv" data-rv style={`--rv-delay:${60 + i * 60}ms`}>
               <dt>{m.fig}</dt>
-              <dd>
-                {m.line}
-                <small>{m.src}</small>
-              </dd>
+              <dd>{m.line}</dd>
             </div>
           ))
         }
@@ -856,52 +819,6 @@ const term = [
       });
     });
   });
-
-  /* ── Hero: records land on the map one at a time, in the shuffle
-     the frontmatter set; once all are down they hold, clear and start
-     again. Runs only on screen. Reduced motion shows them all. ── */
-  (() => {
-    const svg = document.querySelector('[data-dots]');
-    if (!svg) return;
-    const dots = [...svg.querySelectorAll('rect')].sort((a, b) => a.dataset.k - b.dataset.k);
-    const links = [...svg.querySelectorAll('line')];
-    const linksOf = dots.map((_, k) => links.filter((l) => +l.dataset.k === k));
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      [...dots, ...links].forEach((d) => d.classList.add('is-on'));
-      return;
-    }
-    let n = 0;
-    let timer = 0;
-    let running = false;
-    const tick = () => {
-      if (!running) return;
-      if (n < dots.length) {
-        dots[n].classList.add('is-on', 'is-new');
-        linksOf[n].forEach((l) => l.classList.add('is-on'));
-        if (n) dots[n - 1].classList.remove('is-new');
-        n += 1;
-        timer = setTimeout(tick, 650);
-      } else {
-        dots[n - 1].classList.remove('is-new');
-        timer = setTimeout(() => {
-          svg.classList.add('is-clearing');
-          timer = setTimeout(() => {
-            [...dots, ...links].forEach((d) => d.classList.remove('is-on'));
-            svg.classList.remove('is-clearing');
-            n = 0;
-            timer = setTimeout(tick, 700);
-          }, 900);
-        }, 5000);
-      }
-    };
-    new IntersectionObserver((e) => {
-      const on = e[0].isIntersecting;
-      if (on === running) return;
-      running = on;
-      clearTimeout(timer);
-      if (on) timer = setTimeout(tick, 1400);
-    }).observe(svg);
-  })();
 
   /* ── Play once: [data-play] gets data-on when well in view. ── */
   (() => {
@@ -1087,61 +1004,32 @@ const term = [
     min-height: calc(100svh - var(--nav-h));
     background: var(--n-50);
   }
-  .os-map,
-  .os-dots {
+  .os-map {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
   }
+  /* The contour map fades in after the headline, rising out of a
+     slight zoom while its lines flow quickly and settle into a slow
+     drift (public/v2-backdrops.js, animateContour). */
   .os-map {
-    opacity: 0.62;
+    opacity: 0;
+    transform: scale(1.04);
     -webkit-mask-image: linear-gradient(100deg, transparent 22%, #000 62%);
     mask-image: linear-gradient(100deg, transparent 22%, #000 62%);
-  }
-  .os-dots {
-    -webkit-mask-image: linear-gradient(100deg, transparent 38%, #000 58%);
-    mask-image: linear-gradient(100deg, transparent 38%, #000 58%);
-  }
-  .os-links line {
-    stroke: var(--teal-500);
-    stroke-width: 1.2;
-    stroke-opacity: 0.55;
-    stroke-dasharray: 1;
-    stroke-dashoffset: 1;
-    transition: stroke-dashoffset 900ms var(--ease);
-  }
-  .os-links line.is-on {
-    stroke-dashoffset: 0;
-  }
-  .os-dots.is-clearing line {
-    stroke-opacity: 0;
-    transition: stroke-opacity 800ms;
-  }
-  .os-dots rect {
-    fill: var(--teal-500);
-    stroke: var(--surface);
-    stroke-width: 2;
-    opacity: 0;
-    transform-box: fill-box;
-    transform-origin: center;
-    transform: scale(0.3);
     transition:
-      opacity 500ms var(--ease),
-      transform 500ms var(--ease),
-      fill 600ms var(--ease);
+      opacity 2000ms var(--ease),
+      transform 3200ms var(--ease);
   }
-  .os-dots rect.is-on {
-    opacity: 1;
+  .os-map.is-live {
+    opacity: 0.85;
     transform: none;
   }
-  .os-dots rect.is-new {
-    fill: var(--vi);
-    transform: scale(1.35);
-  }
-  .os-dots.is-clearing rect {
-    opacity: 0;
-    transition-duration: 800ms;
+  @media (prefers-reduced-motion: reduce) {
+    .os-map {
+      transition: none;
+    }
   }
   .os-in {
     position: relative;
@@ -1152,8 +1040,7 @@ const term = [
   .os-copy {
     max-width: 820px;
   }
-  /* The headline says what Simula is; the hook under it is the
-     measured claim (Hopkins: specifics over slogans). */
+  /* The headline says what Simula is. */
   .os-copy h1 {
     max-width: none;
     font-family: var(--hero-serif);
@@ -1165,11 +1052,38 @@ const term = [
   }
   /* Three lines of about equal length (Harsh: no short last line,
      a line is full or about three quarters): "Generate synthetic
-     data" / "with complete domain" / "coverage - with Simula", the
+     data" / "with maximum domain" / "coverage - with Simula", the
      name in italic indigo. Below 720px the lines wrap freely. */
   .os-copy h1 em {
     font-style: italic;
     color: var(--indigo-600);
+  }
+  /* The name links to the repo. Its underline draws in slowly once
+     the headline has revealed, and thickens on hover. */
+  .h1-name {
+    text-decoration: none;
+    background: linear-gradient(currentColor, currentColor) left bottom / 0% 2px no-repeat;
+    color: var(--indigo-600);
+    transition:
+      background-size 1600ms var(--ease) 900ms,
+      color 300ms var(--ease);
+  }
+  .rv[data-visible='true'] .h1-name {
+    background-size: 100% 2px;
+  }
+  .h1-name:hover,
+  .h1-name:focus-visible {
+    color: var(--indigo-700);
+    background-size: 100% 3px;
+    transition:
+      background-size 300ms var(--ease),
+      color 300ms var(--ease);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .h1-name {
+      background-size: 100% 2px;
+      transition: none;
+    }
   }
   @media (min-width: 720px) {
     .os-copy h1 span {
@@ -1268,14 +1182,6 @@ const term = [
   .clone:hover .clone-ic {
     color: #fff;
   }
-  .os-proof {
-    margin-top: 22px !important;
-    max-width: 60ch;
-    font-family: var(--mono);
-    font-size: 10.8px !important;
-    line-height: 1.7 !important;
-    color: var(--ink-3) !important;
-  }
   .os-more {
     display: flex;
     gap: 28px;
@@ -1285,9 +1191,6 @@ const term = [
     .os-map {
       -webkit-mask-image: linear-gradient(180deg, transparent 40%, #000 85%);
       mask-image: linear-gradient(180deg, transparent 40%, #000 85%);
-    }
-    .os-dots {
-      display: none;
     }
   }
 
@@ -1394,12 +1297,6 @@ const term = [
     margin-top: 12px;
     font-family: var(--mono);
     font-size: 10.5px;
-    color: var(--ink-3);
-  }
-  .pile-note {
-    margin-top: 12px;
-    font-family: var(--mono);
-    font-size: 10.35px;
     color: var(--ink-3);
   }
   @media (max-width: 860px) {
@@ -2193,13 +2090,6 @@ const term = [
     font-size: 14.4px;
     line-height: 1.6;
     color: var(--ink-2);
-  }
-  .ledger small {
-    display: block;
-    margin-top: 10px;
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--ink-3);
   }
   .limits {
     display: grid;
