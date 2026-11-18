@@ -292,18 +292,12 @@ const files = [
 
 /* ── Measured. ── */
 const measured = [
-  { fig: '42 → 51', line: 'Vendi diversity score of 1,000 tickets, before and after situations', src: 'Ticket benchmark, Nov 2026' },
-  { fig: '96%', line: 'of 10,000 search-extraction rows have a unique set of keys (9,625)', src: 'E-commerce run, DeepSeek V4' },
   { fig: '0', line: 'near-duplicates in 10,000 tickets with situations on, for about 4% extra cost', src: 'Ticket benchmark, Nov 2026' },
+  { fig: '42 → 51', line: 'Vendi score, a measure of variation between records, on 1,000 tickets before and after situations', src: 'Ticket benchmark, Nov 2026' },
+  { fig: '96%', line: 'of 10,000 search-extraction rows have a unique set of keys (9,625)', src: 'E-commerce run, DeepSeek V4' },
   { fig: '$0.85', line: 'per 1,000 tickets, five per call with the critic on, 95–97% accepted', src: 'Ticket benchmark, GLM 5.3 Flash' },
   { fig: '100%', line: 'of the tree’s leaves covered in a 1,000-row run, on all four factors', src: 'Job-posting run' },
   { fig: '0', line: 'rows without lineage in either run; 5 exact duplicates in 10,000', src: 'Both runs, audited' },
-];
-const limits = [
-  { t: 'Coverage counts what was requested.', d: 'The default report checks which branches each record was asked to cover. Set coverage_mode: reassign to have the critic check each record independently.' },
-  { t: 'A label can disagree with its text.', d: 'A record can read differently from the label it was given. Run a pilot of 5–7% of the target and check the labels.' },
-  { t: 'Runs on one machine.', d: 'Generation runs in parallel on one machine, not across a cluster. Every role calls an OpenAI-compatible chat endpoint.' },
-  { t: 'CLI only, text only.', d: 'No web UI, database or training harness.' },
 ];
 
 const commands = [
@@ -316,7 +310,7 @@ const commands = [
 
 const term = [
   { p: '$', t: INSTALL },
-  { p: '#', t: 'quickstart.yaml from the docs: every role on the fake model', c: true },
+  { p: '#', t: 'quickstart.yaml from the docs', c: true },
   { p: '$', t: 'simula run quickstart.yaml' },
   { p: '›', t: 'Building taxonomy', o: true },
   { p: '', t: 'Taxonomy: 2 factors, depth 2', o: true },
@@ -338,11 +332,11 @@ const term = [
     <canvas class="os-map" data-backdrop="contourInk" data-seed="2611" data-dpr="2" data-animate="600" aria-hidden="true"></canvas>
     <div class="shell os-in">
       <div class="os-copy">
-        <h1 class="rv" data-rv style="--rv-delay:80ms"><span>Generate synthetic data</span> <span>with maximum domain</span> <span>coverage - with <a class="h1-name" href={GITHUB_URL} target="_blank" rel="noopener noreferrer"><em>Simula</em></a></span></h1>
+        <h1 class="rv" data-rv style="--rv-delay:80ms"><span>Generate synthetic data</span> <span>with maximum domain coverage</span> <span>- with <a class="h1-name" href={GITHUB_URL} target="_blank" rel="noopener noreferrer"><em>Simula</em></a></span></h1>
         <p class="rv" data-rv style="--rv-delay:160ms">
-          Simula is a state-of-the-art synthetic data framework. Describe the data you need in one paragraph, and it
-          maps every case the dataset should cover, has a model write each record, has a second model check it, and
-          saves where every row came from.
+          <span class="os-first">Simula is a state-of-the-art open-source synthetic data generation framework.</span>
+          Describe the data you need in one paragraph, and it maps every case the dataset should cover, has a model
+          write each record, has a second model check it, and saves where every row came from.
         </p>
         <div class="os-actions rv" data-rv style="--rv-delay:240ms">
           <a class="wipe" href={DOCS_URL} target="_blank" rel="noopener noreferrer">
@@ -359,6 +353,66 @@ const term = [
           <a class="quiet" href={GITHUB_URL} target="_blank" rel="noopener noreferrer"><svg class="gh" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d={GH_PATH} /></svg>View on GitHub<span aria-hidden="true">↗</span></a>
           <a class="quiet" href="#how">How it works<span aria-hidden="true">↓</span></a>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ THE PROBLEM ═══════════════════════════════════════════════ -->
+  <section class="band" id="problem">
+    <div class="shell">
+      <div class="split-head">
+        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Simula fixes the repetition problem in synthetic data.</h2>
+        <p class="lede rv" data-rv style="--rv-delay:160ms">
+          Prompt a model a thousand times and it keeps giving its most likely answer, so the same few records come
+          back reworded. Simula plans what every record covers before any is written, so each one is about something
+          different.
+        </p>
+      </div>
+
+      <div class="pile" data-play>
+        {
+          piles.map((p, k) => (
+            <figure class:list={['pile-panel rv', p.sim && 'is-sim']} data-rv style={`--rv-delay:${120 + k * 120}ms`}>
+              <figcaption class="pile-head">
+                <span class="pile-name">{p.name}</span>
+                <span class="pile-count">
+                  <b>{p.reached}</b> of 8 categories
+                </span>
+              </figcaption>
+              <svg viewBox={`0 0 ${ZW * 4} ${ZY + ZH * 2}`} role="img" aria-label={`240 tickets, ${p.foot}.`}>
+                {CATS.map((c, i) => {
+                  const z = zone(i);
+                  return (
+                    <g class="pz">
+                      <rect x={z.x + 3} y={z.y + 3} width={ZW - 6} height={ZH - 6} />
+                      <text x={z.x + 12} y={z.y + 20}>{c}</text>
+                    </g>
+                  );
+                })}
+                <g class="pd">
+                  {p.dots.map((d) => (
+                    <circle cx={d.x} cy={d.y} r="3.2" style={`--dx:${(280 - d.x).toFixed(0)}px;--dy:${(178 - d.y).toFixed(0)}px;--d:${d.d + k * 250}ms`} />
+                  ))}
+                </g>
+                {p.notes.map((n, i) => {
+                  const z = zone(n.c);
+                  const y = z.y + ZH - 16;
+                  const w = Math.min(ZW - 16, (n.t.length + (n.sub ? n.sub.length + 1 : 0)) * 5.9 + 14);
+                  return (
+                    <g class="pn" style={`--i:${i + k}`}>
+                      <rect x={z.x + 8} y={y - 13} width={w.toFixed(0)} height="19" />
+                      <text x={z.x + 14} y={y}>
+                        {n.t}
+                        {n.sub && <tspan dx="5">{n.sub}</tspan>}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+              <p class="pile-foot">240 tickets · {p.foot}</p>
+            </figure>
+          ))
+        }
       </div>
     </div>
   </section>
@@ -549,67 +603,8 @@ const term = [
     </div>
   </section>
 
-  <!-- ═══ THE PROBLEM ═══════════════════════════════════════════════ -->
-  <section class="band" id="problem">
-    <div class="shell">
-      <div class="split-head">
-        <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Simula fixes the repetition problem in synthetic data.</h2>
-        <p class="lede rv" data-rv style="--rv-delay:160ms">
-          Simula plans what every record will cover before any of them is written. Without that plan, a model prompted a
-          thousand times keeps returning its most likely answer, and the same few records come back reworded.
-        </p>
-      </div>
-
-      <div class="pile" data-play>
-        {
-          piles.map((p, k) => (
-            <figure class:list={['pile-panel rv', p.sim && 'is-sim']} data-rv style={`--rv-delay:${120 + k * 120}ms`}>
-              <figcaption class="pile-head">
-                <span class="pile-name">{p.name}</span>
-                <span class="pile-count">
-                  <b>{p.reached}</b> of 8 categories
-                </span>
-              </figcaption>
-              <svg viewBox={`0 0 ${ZW * 4} ${ZY + ZH * 2}`} role="img" aria-label={`240 tickets, ${p.foot}.`}>
-                {CATS.map((c, i) => {
-                  const z = zone(i);
-                  return (
-                    <g class="pz">
-                      <rect x={z.x + 3} y={z.y + 3} width={ZW - 6} height={ZH - 6} />
-                      <text x={z.x + 12} y={z.y + 20}>{c}</text>
-                    </g>
-                  );
-                })}
-                <g class="pd">
-                  {p.dots.map((d) => (
-                    <circle cx={d.x} cy={d.y} r="3.2" style={`--dx:${(280 - d.x).toFixed(0)}px;--dy:${(178 - d.y).toFixed(0)}px;--d:${d.d + k * 250}ms`} />
-                  ))}
-                </g>
-                {p.notes.map((n, i) => {
-                  const z = zone(n.c);
-                  const y = z.y + ZH - 16;
-                  const w = Math.min(ZW - 16, (n.t.length + (n.sub ? n.sub.length + 1 : 0)) * 5.9 + 14);
-                  return (
-                    <g class="pn" style={`--i:${i + k}`}>
-                      <rect x={z.x + 8} y={y - 13} width={w.toFixed(0)} height="19" />
-                      <text x={z.x + 14} y={y}>
-                        {n.t}
-                        {n.sub && <tspan dx="5">{n.sub}</tspan>}
-                      </text>
-                    </g>
-                  );
-                })}
-              </svg>
-              <p class="pile-foot">240 tickets · {p.foot}</p>
-            </figure>
-          ))
-        }
-      </div>
-    </div>
-  </section>
-
   <!-- ═══ ROLES AND THE BILL ═══════════════════════════════════════ -->
-  <section class="band paper paper-tint" id="roles">
+  <section class="band" id="roles">
     <div class="shell">
       <div class="split-head">
         <h2 class="h2 rv" data-rv style="--rv-delay:80ms">A strong model plans, a lighter model writes, a third model checks.</h2>
@@ -713,19 +708,6 @@ const term = [
         }
       </dl>
 
-      <div class="limits">
-        <h3 class="limits-h rv" data-rv>Limits</h3>
-        <ul>
-          {
-            limits.map((l, i) => (
-              <li class="rv" data-rv style={`--rv-delay:${60 + i * 60}ms`}>
-                <b>{l.t}</b>
-                <span>{l.d}</span>
-              </li>
-            ))
-          }
-        </ul>
-      </div>
     </div>
   </section>
 
@@ -735,7 +717,7 @@ const term = [
       <div class="split-head">
         <h2 class="h2 rv" data-rv style="--rv-delay:80ms">Five commands and one config file.</h2>
         <p class="lede rv" data-rv style="--rv-delay:160ms">
-          That’s all you need! A description and a model for each role. Everything else has a default.
+          A description and a model for each role. Everything else has a default.
         </p>
       </div>
 
@@ -776,8 +758,8 @@ const term = [
       <div class="term-copy rv" data-rv>
         <h2>Install it and run the quickstart.</h2>
         <p>
-          The quickstart uses a fake model, so it needs no API key and costs nothing. Install it with pip install
-          simula-gen; the command is simula.
+          Need it across a cluster, or would you rather we build the dataset for you?
+          <a class="term-ask" href="/contact">Talk to us<span aria-hidden="true">→</span></a>
         </p>
         <div class="os-actions">
           <a class="btn-light" href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
@@ -800,6 +782,18 @@ const term = [
 </span>
 ))}<span class="term-l term-cursor" style={`--i:${term.length}`}><span class="term-p">$</span> <i></i></span></code></pre>
       </figure>
+    </div>
+  </section>
+
+  <!-- ═══ NOTE: why we built it, on white ═══════════════════════════ -->
+  <section class="love-band">
+    <div class="shell term-love rv" data-rv>
+      <p>
+        We built Simula for our own client work. We have generated more than 300 billion tokens across client
+        engagements, and 60 to 70% of the work was the same on every project. Simula puts that work in one library.
+      </p>
+      <span class="love-line">Made with love</span>
+      <svg class="love-heart" viewBox="0 0 24 24" aria-hidden="true"><path fill="hsl(354 78% 64%)" d="M12 21s-7.5-4.6-9.6-9.3C.9 8.4 2.9 4.5 6.6 4.1c2.1-.2 3.9.8 5.4 2.7 1.5-1.9 3.3-2.9 5.4-2.7 3.7.4 5.7 4.3 4.2 7.6C19.5 16.4 12 21 12 21z" /></svg>
     </div>
   </section>
 </V2Layout>
@@ -1016,8 +1010,11 @@ const term = [
   .os-map {
     opacity: 0;
     transform: scale(1.04);
-    -webkit-mask-image: linear-gradient(100deg, transparent 22%, #000 62%);
-    mask-image: linear-gradient(100deg, transparent 22%, #000 62%);
+    /* Fade stops sit so the end of "with maximum domain coverage"
+       (about 57% across at 1487px) lands on a map at about two
+       thirds strength, as the shorter headline did at 22/62. */
+    -webkit-mask-image: linear-gradient(100deg, transparent 30%, #000 70%);
+    mask-image: linear-gradient(100deg, transparent 30%, #000 70%);
     transition:
       opacity 2000ms var(--ease),
       transform 3200ms var(--ease);
@@ -1050,10 +1047,10 @@ const term = [
     letter-spacing: -0.03em;
     text-wrap: balance;
   }
-  /* Three lines of about equal length (Harsh: no short last line,
-     a line is full or about three quarters): "Generate synthetic
-     data" / "with maximum domain" / "coverage - with Simula", the
-     name in italic indigo. Below 720px the lines wrap freely. */
+  /* Three lines: "Generate synthetic data" / "with maximum domain
+     coverage" / "- with Simula" (Pranav, 2026-11-18: only the name on
+     the last line), the name in italic indigo. Below 720px the lines
+     wrap freely. */
   .os-copy h1 em {
     font-style: italic;
     color: var(--indigo-600);
@@ -1083,6 +1080,17 @@ const term = [
     .h1-name {
       background-size: 100% 2px;
       transition: none;
+    }
+  }
+  /* The first sentence of the paragraph sits on its own line, and
+     on one line from 760px up (about 610px wide, past the 52ch the
+     rest of the paragraph wraps at). */
+  .os-first {
+    display: block;
+  }
+  @media (min-width: 760px) {
+    .os-first {
+      white-space: nowrap;
     }
   }
   @media (min-width: 720px) {
@@ -2091,38 +2099,6 @@ const term = [
     line-height: 1.6;
     color: var(--ink-2);
   }
-  .limits {
-    display: grid;
-    grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
-    gap: 24px;
-    margin-top: 40px;
-  }
-  .limits-h {
-    font-family: var(--hero-serif);
-    font-size: 24px;
-    font-weight: 400;
-  }
-  .limits ul {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0 32px;
-  }
-  .limits li {
-    padding: 14px 0;
-    border-top: 1px solid var(--line-2);
-  }
-  .limits b {
-    display: block;
-    font-weight: 500;
-    font-size: 14.4px;
-  }
-  .limits span {
-    display: block;
-    margin-top: 4px;
-    font-size: 13.8px;
-    line-height: 1.6;
-    color: var(--ink-2);
-  }
   @media (max-width: 900px) {
     .ledger {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2135,10 +2111,6 @@ const term = [
     }
     .ledger-cell:nth-child(2n) {
       border-right: 0;
-    }
-    .limits,
-    .limits ul {
-      grid-template-columns: minmax(0, 1fr);
     }
   }
   @media (max-width: 560px) {
@@ -2219,6 +2191,42 @@ const term = [
   .term-band {
     padding-block: clamp(72px, 9vw, 120px);
   }
+  /* Why we built it, on its own white band after the closer: a
+     personal note, so it is set in the headline serif, italic, then
+     a heart. */
+  .love-band {
+    padding-block: clamp(72px, 9vw, 112px);
+    background: var(--surface);
+  }
+  .term-love {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .term-love p {
+    max-width: 40ch;
+    font-family: var(--hero-serif);
+    font-style: italic;
+    font-size: clamp(20px, 2vw, 26px);
+    font-weight: 400;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+  .love-line {
+    margin-top: 30px;
+    font-family: var(--hero-serif);
+    font-style: italic;
+    font-size: clamp(17px, 1.5vw, 20px);
+    color: var(--ink-3);
+  }
+  .love-heart {
+    width: 34px;
+    height: 34px;
+    margin-top: 14px;
+  }
   .term-in {
     display: grid;
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
@@ -2240,6 +2248,21 @@ const term = [
     font-size: 14.85px;
     line-height: 1.74;
     color: hsl(0 0% 100% / 0.7);
+  }
+  .term-ask {
+    display: inline-flex;
+    gap: 6px;
+    color: #fff;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+    white-space: nowrap;
+  }
+  .term-ask span {
+    transition: transform 400ms var(--ease);
+  }
+  .term-ask:hover span {
+    transform: translateX(3px);
   }
   .btn-light {
     display: inline-flex;

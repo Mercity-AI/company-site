@@ -1503,8 +1503,8 @@
     // Speeds ease from fast to settled over SETTLE seconds, then hold
     // exactly constant (an exponential never quite arrives, so the map
     // looked like it kept slowing down).
-    const LEVEL = [0.9, 0.0364]; // levels per second
-    const DRIFT = [0.45, 0.0104]; // noise units per second
+    const LEVEL = [0.81, 0.0364]; // levels per second
+    const DRIFT = [0.405, 0.0104]; // noise units per second
     const SETTLE = 3.5;
     function loop(now) {
       raf = 0;
