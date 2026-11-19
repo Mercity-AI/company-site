@@ -7,7 +7,17 @@
  * pages keep the original shell. No ClientRouter here either, so the
  * backdrop generators run on a plain page load.
  */
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { DEFAULT_OG_IMAGE, SITE_DESCRIPTION, SITE_NAME, SITE_URL, absoluteImage, fullTitle } from '@/utils/seo';
+
+// public/ files keep their names, and nginx (and so Cloudflare) caches .js as
+// immutable for a year. The script URL carries a hash of its contents, so an
+// edited backdrops file gets a new URL instead of the cached old one.
+const backdropsVersion = createHash('sha256')
+  .update(readFileSync('public/v2-backdrops.js'))
+  .digest('hex')
+  .slice(0, 10);
 
 interface Props {
   title?: string;
@@ -459,7 +469,7 @@ const current = (href: string) => (root(href) === section ? 'page' : undefined);
           </div>
           <div class="v2-foot-col">
             <span class="v2-foot-h">Connect</span>
-            <a href="https://x.com/Pranav2278" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+            <a href="https://x.com/MercityAI" target="_blank" rel="noopener noreferrer">Twitter / X</a>
             <a href="https://www.linkedin.com/company/mercity-ai/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
             <a href="https://github.com/Mercity-AI/" target="_blank" rel="noopener noreferrer">GitHub</a>
             <a href="mailto:pranav@mercity.io">pranav@mercity.io</a>
@@ -1102,6 +1112,6 @@ const current = (href: string) => (root(href) === section ? 'page' : undefined);
       })();
     </script>
 
-    <script is:inline src="/v2-backdrops.js"></script>
+    <script is:inline src={`/v2-backdrops.js?v=${backdropsVersion}`}></script>
   </body>
 </html>

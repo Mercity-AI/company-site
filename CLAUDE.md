@@ -684,6 +684,15 @@ silently.
   like a bug (it happened to the skating chips). Put fill and stroke on
   the shapes as attributes too, with literal colours: `var()` does not
   work in SVG presentation attributes.
+- **Files in `public/` are cached for a year.** nginx sends
+  `Cache-Control: public, immutable` with a 1-year expiry for every
+  `.js`, `.css` and image, and Cloudflare keeps that copy (we have no
+  API token to purge it). Only `/_astro/` names are hashed, so a public
+  file edited in place stays stale for visitors. `V2Layout` loads
+  `/v2-backdrops.js?v=<hash of the file>` for this reason; the Simula
+  hero's animation was missing in production until 2026-11-19 because
+  the old script was cached. Give any other public file that changes in
+  place a new name or the same kind of query string.
 - **Astro inlines small stylesheets** into the HTML instead of emitting a
   `.css` chunk. Grepping only `dist/_astro/*.css` will make a page's CSS look
   missing when it is present.
