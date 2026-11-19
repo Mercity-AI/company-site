@@ -27,6 +27,8 @@ That idea became a category only two months ago. TypeSafe launched [Jev](https:/
 
 **TL;DR:** Change a strong small LLM as little as you can: freeze the base and LM head, train LoRA so it reads option probabilities from its own label logits in one pass, calibrate on held-out data, and route only the least certain questions to thinking. Data drove most of our gains, and 60 steps of RL repaired the thinking that chain training had hurt while cutting thinking tokens by more than half.
 
+**Both models are open weights on Hugging Face**, each with a full model card: the 4B, [decision-model-qwen3.5-4b](https://huggingface.co/Mercity/decision-model-qwen3.5-4b), and the 2B, [decision-model-minicpm5-2b-lora](https://huggingface.co/Mercity/decision-model-minicpm5-2b-lora).
+
 ## What Is a Decision Model?
 
 A decision model takes a **state** (a ticket, an email, a tool call, a JSON record) and a set of **typed questions** about it, and returns a probability for every possible answer, with no generated text. That makes it a classifier whose labels arrive with each request, and most models use Jev's names for the three question types: **choice** picks one option from a list, **score** places the state on an ordered scale, and **noul** is a yes/no question that returns a single probability.
@@ -95,7 +97,7 @@ One model can then cover cheap routine decisions and the occasional one that nee
 
 ## How We Trained Our Own Decision Model
 
-We set out to build a Jev-style typed decision model that could also think, and to do it on hardware a mid-sized team can rent: a single A100 80GB, from October 30 to November 1, 2026. All code, data, logs and checkpoints are in our public [Hugging Face bucket](https://huggingface.co/buckets/Mercity/Desicion-Model-Custom), and we are preparing the final model for a proper open-weight release.
+We set out to build a Jev-style typed decision model that could also think, and to do it on hardware a mid-sized team can rent: a single A100 80GB, from October 30 to November 1, 2026. All code, data, logs and checkpoints are in our public [Hugging Face bucket](https://huggingface.co/buckets/Mercity/Desicion-Model-Custom), and both final models are released as open weights: the [4B](https://huggingface.co/Mercity/decision-model-qwen3.5-4b) and the [2B](https://huggingface.co/Mercity/decision-model-minicpm5-2b-lora).
 
 The result is one model with two modes. The **fast readout** restricts the next token to the option letters and reads their probabilities in one pass, in about 40 ms. **Thinking mode** writes a reasoning chain and then reads the same letters, so a router can answer from the fast readout and send only the least certain questions to thinking.
 
@@ -286,4 +288,4 @@ The chains that cost money in routing also make compliance easier. Enterprises w
 
 All of this happened in two months, as decision models went from one launch to an ecosystem with public recipes, and the change to the LLM can stay small: frozen weights, LoRA and a readout over your labels. What remains hard is the same as for any model: data that covers your real traffic, calibration you can trust, and evals built on your own decisions.
 
-That is the work we do at Mercity: building custom models, synthetic data and evals for product and enterprise teams. Everything from this project is in our [Hugging Face bucket](https://huggingface.co/buckets/Mercity/Desicion-Model-Custom), the open-weight release is on its way, and if you want a decision model trained on your own policies and data, [talk to us](https://www.mercity.ai/contact).
+That is the work we do at Mercity: building custom models, synthetic data and evals for product and enterprise teams. Everything from this project is in our [Hugging Face bucket](https://huggingface.co/buckets/Mercity/Desicion-Model-Custom), both models are open weights ([4B](https://huggingface.co/Mercity/decision-model-qwen3.5-4b), [2B](https://huggingface.co/Mercity/decision-model-minicpm5-2b-lora)), and if you want a decision model trained on your own policies and data, [talk to us](https://www.mercity.ai/contact).
