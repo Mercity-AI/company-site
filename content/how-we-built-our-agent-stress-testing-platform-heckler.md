@@ -1,6 +1,5 @@
 ---
 title: How We Built Our Agent Stress Testing Platform - Heckler
-seoTitle: 'Heckler: How We Built a Stress-Testing Platform for LLM Agents'
 metaDescription: >-
   We built Heckler to stress-test LLM agents against their own policies and ran
   it on bank, SaaS and health agents. Over 80% of chats broke a policy.
@@ -34,7 +33,7 @@ You can test out Heckler here:
 
 - Site: [https://heckler.mercity.ai](https://heckler.mercity.ai)
 - Repo: [https://github.com/Mercity-AI/heckler](https://github.com/Mercity-AI/heckler)
-- Simula, the open-source synthetic data engine that writes Heckler's scenarios: [https://github.com/Mercity-AI/Simula](https://github.com/Mercity-AI/Simula)
+- Simula, our synthetic data engine that we used to generate the attack surface: [https://github.com/Mercity-AI/Simula](https://github.com/Mercity-AI/Simula)
 
 ## Why Do You Even Need to Stress-Test Your Agent?
 
