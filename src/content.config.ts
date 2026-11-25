@@ -15,6 +15,9 @@ const postSchema = z.object({
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   summary: z.string().max(500),
+  // Optional search snippet. When set, it replaces the summary in the meta
+  // description only; the dek on the page and the blog cards keep the summary.
+  metaDescription: z.string().max(160).optional(),
   authors: z.array(authorSchema).min(1),
   tags: z.array(z.string()).default([]),
   category: z.string().default('Research'),

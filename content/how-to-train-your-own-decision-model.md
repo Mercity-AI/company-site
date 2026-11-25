@@ -1,5 +1,8 @@
 ---
 title: How to Train Your Own Decision Model With Minimal Changes to an LLM
+metaDescription: >-
+  We trained a 4B LLM into a decision model on one A100 in under three days.
+  Readout accuracy rose from 62.7% to 72.5%, and to 81.8% with thinking.
 slug: how-to-train-your-own-decision-model
 publishedAt: '2026-11-19'
 summary: >-
@@ -23,11 +26,17 @@ We trained a 4B LLM to be a decision model on one A100 in under three days. Trai
 
 That took very little change to the model, because decision models are glorified classifiers. They read text and pick among labels, and a pretrained LLM already carries the internal states to make that call, so **all it needs is to learn to decide in the language of your labels**. That is why we kept the base weights and LM head frozen, let LoRA adapters do the learning, added no new head, and read every answer from the option-label logits.
 
-That idea became a category only two months ago. TypeSafe launched [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev) on September 15, and within weeks there was an open-weight answer from Cloudflare, a "thinking" decision model from Fastino, a 421M encoder from an independent researcher that crossed 19,000 GitHub stars in five days, and a [community leaderboard](https://huggingface.co/spaces/multimodalart/jev-decision-index) with more than 170 entries. That pace is why so many teams want their own, and why most writing on training one is still a launch post or a model card.
+That idea became a category, which TypeSafe calls System One models, only two months ago. TypeSafe launched [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev) on September 15, and within weeks there was an open-weight answer from Cloudflare, a "thinking" decision model from Fastino, a 421M encoder from an independent researcher that crossed 19,000 GitHub stars in five days, and a [community leaderboard](https://huggingface.co/spaces/multimodalart/jev-decision-index) with more than 170 entries. That pace is why so many teams want their own, and why most writing on training one is still a launch post or a model card.
 
 **TL;DR:** Change a strong small LLM as little as you can: freeze the base and LM head, train LoRA so it reads option probabilities from its own label logits in one pass, calibrate on held-out data, and route only the least certain questions to thinking. Data drove most of our gains, and 60 steps of RL repaired the thinking that chain training had hurt while cutting thinking tokens by more than half.
 
-**Both models are open weights on Hugging Face**, each with a full model card: the 4B, [decision-model-qwen3.5-4b](https://huggingface.co/Mercity/decision-model-qwen3.5-4b), and the 2B, [decision-model-minicpm5-2b-lora](https://huggingface.co/Mercity/decision-model-minicpm5-2b-lora).
+**What we released:**
+
+- [decision-model-qwen3.5-4b](https://huggingface.co/Mercity/decision-model-qwen3.5-4b): the 4B decision model, open weights under Apache 2.0
+- [decision-model-minicpm5-2b-lora](https://huggingface.co/Mercity/decision-model-minicpm5-2b-lora): the 2B LoRA version, also Apache 2.0
+- [decision-model-data](https://huggingface.co/datasets/Mercity/decision-model-data): the typed decision examples we trained on, with each row's source and license
+- [Hugging Face bucket](https://huggingface.co/buckets/Mercity/Desicion-Model-Custom): code, logs, every checkpoint and the full technical report
+- [policy-nli-decision-model-4b-lora](https://huggingface.co/Mercity/policy-nli-decision-model-4b-lora): the 4B fine-tuned further to check an assistant's reply against a policy, trained on our [Policy NLI](https://huggingface.co/datasets/Mercity/policy-nli) dataset
 
 ## What Is a Decision Model?
 
@@ -43,7 +52,7 @@ A pretrained LLM already reads labels from a prompt, so many decision models are
 
 </figure>
 
-Because the output is a probability over options you defined, it works like a smart if-statement: your code blocks, routes or escalates on the number, and the model cannot return an unoffered label or malformed JSON. It is also cheap: Jev charges \$0.042 per million input tokens and nothing for output, against \$0.20 to \$10 per million for general LLMs. We compared them with classifiers and LLM judges in our post on [using decision models as security guardrails](https://www.mercity.ai/blog-post/how-to-use-decision-models-as-guardrails).
+Because the output is a probability over options you defined, it works like a smart if-statement: your code blocks, routes or escalates on the number, and the model cannot return an unoffered label or malformed JSON. It is also cheap: Jev charges \$0.042 per million input tokens and nothing for output, against \$0.20 to \$10 per million for general LLMs. We compared them with classifiers and LLM judges in our post on [using decision models as security guardrails](/blog-post/how-to-use-decision-models-as-guardrails).
 
 ## Should You Train Your Own Decision Model?
 
@@ -137,7 +146,7 @@ for model in ["Qwen/Qwen3-4B", "Qwen/Qwen3.5-4B"]:
 
 That loop changed our plan. We expected to use Qwen3-4B, but **Qwen3.5-4B** was 5 to 7 points better on the fast readout for natural-language sets, and its first chain was right 97% of the time on procedural tasks against 87%. The probe also showed the cost: chains about three times longer (median 1,801 tokens against 553), which set every compute budget after that.
 
-The switch also changed what LoRA had to touch. Qwen3.5-4B is a hybrid whose 24 of 32 layers are Gated DeltaNet linear attention, and default LoRA configs target only standard attention and MLP projections, so we also put **rank-32 LoRA adapters on the linear-attention projections**. On any hybrid, check which modules your adapters touch. Our [LoRA guide](https://www.mercity.ai/blog-post/guide-to-fine-tuning-llms-with-lora-and-qlora) covers the basics.
+The switch also changed what LoRA had to touch. Qwen3.5-4B is a hybrid whose 24 of 32 layers are Gated DeltaNet linear attention, and default LoRA configs target only standard attention and MLP projections, so we also put **rank-32 LoRA adapters on the linear-attention projections**. On any hybrid, check which modules your adapters touch. Our [LoRA guide](/blog-post/guide-to-fine-tuning-llms-with-lora-and-qlora) covers the basics.
 
 ### Step 2: Build Training Data That Covers the Whole Space
 
@@ -270,9 +279,9 @@ The recipe transfers down a size with one twist. On a 2B version built on MiniCP
 
 Leaderboards are where most evaluation starts, and they disagree with each other. Depending on the board and the week, the top spot has belonged to GLiDE, StartLux, Clef or vLLM Semantic Router's d3, and many headline numbers are self-reported runs on public subsets. Community efforts like the [Decision Index reproduction kit](https://github.com/everettjf/decision-index) and the [Jev Atlas](https://ekazakos.github.io/jev-atlas/) help, but none of them measures your policies.
 
-That gap is why the eval that matters is built from real decisions your team has made. Measure **calibration as well as accuracy** on it, compare models with a paired bootstrap on the same questions to know whether a 1-point gain is real, and read outputs by hand, which is how we found that chains guessing at dataset conventions were right only 53 to 57% of the time, against about 90% for the rest. We wrote a longer guide on [building custom evals for LLMs](https://www.mercity.ai/blog-post/how-to-build-custom-ai-evals-for-llms).
+That gap is why the eval that matters is built from real decisions your team has made. Measure **calibration as well as accuracy** on it, compare models with a paired bootstrap on the same questions to know whether a 1-point gain is real, and read outputs by hand, which is how we found that chains guessing at dataset conventions were right only 53 to 57% of the time, against about 90% for the rest. We wrote a longer guide on [building custom evals for LLMs](/blog-post/how-to-build-custom-ai-evals-for-llms).
 
-Offline evals still miss live traffic, so run the model in **shadow mode** before it blocks anything, logging its decisions next to what actually happened. If your decisions face customers, [Heckler](https://heckler.mercity.ai) can generate the conversations to test it against.
+Offline evals still miss live traffic, so run the model in **shadow mode** before it blocks anything, logging its decisions next to what actually happened. If your decisions face customers, [Heckler](https://heckler.mercity.ai) can generate the conversations to test it against, and our study of [whether a decision model can guard a customer-facing agent](/blog-post/can-a-decision-model-guard-a-customer-facing-agent) shows what that testing finds.
 
 ## Cost, Infrastructure and Compliance in Production
 

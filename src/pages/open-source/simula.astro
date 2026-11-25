@@ -154,7 +154,8 @@ const scatter = (counts: number[], spread: number, seed: number) => {
   });
   return dots;
 };
-const piles = [
+type PileNote = { c: number; t: string; sub?: string };
+const piles: { name: string; dots: ReturnType<typeof scatter>; reached: number; foot: string; sim?: boolean; notes: PileNote[] }[] = [
   {
     name: 'Prompting a model directly',
     dots: scatter([152, 61, 18, 0, 9, 0, 0, 0], 0, 4021),

@@ -1,9 +1,13 @@
 ---
 title: Can a Decision Model Guard a Customer-Facing Agent?
+metaDescription: >-
+  Jev blocked 33% of rule-breaking replies and Clef 12%. A reasoning model
+  caught 82% but blocked 43% of clean ones. What we found testing 5,620 agent
+  replies.
 slug: can-a-decision-model-guard-a-customer-facing-agent
 publishedAt: '2026-11-02'
 summary: >-
-  We put two decision models, Typesafe's Jev and Cloudflare's Clef, and a
+  We put two decision models, TypeSafe's Jev and Cloudflare's Clef, and a
   general model with reasoning in front of five customer-facing agents in
   Heckler and scored 5,620 replies against an answer key. Decision models make a
   usable first filter, but they score many violations too low to block, and most
@@ -21,17 +25,21 @@ image: >-
   https://blog-cdn.mercity.ai/blog/can-a-decision-model-guard-a-customer-facing-agent/cover.jpg
 ---
 
-Decision models are a new introduction to the AI space and almost EVERYONE wants to include them in their pipeline. Typesafe's [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev) and Cloudflare's [Clef](https://developers.cloudflare.com/changelog/post/2026-10-01-clef-workers-ai/) both came out in the last two months, and frameworks have already adapted these models into their APIs. You give one a piece of text and a set of yes/no questions, and it returns a probability for each answer in about a second. It writes no text at all, so it is cheap, fast and always returns an answer in the shape you asked for.
+We tested whether a decision model can guard a customer-facing agent. We put TypeSafe's [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev), Cloudflare's [Clef](https://developers.cloudflare.com/changelog/post/2026-10-01-clef-workers-ai/) and GPT-6.1 Terra, a general model with reasoning, in front of five agents (a bank, a SaaS desk, a clinic, an insurer and an HR assistant) in [Heckler](https://heckler.mercity.ai), our stress-testing platform, and scored 5,620 replies from 964 conversations against an answer key. The public comparisons we found test decision models on tool calling and routing, so we tested the job a guard does: enforcing a policy across multi-turn customer conversations.
 
-That makes a decision model look like the obvious guard for a customer-facing agent: turn the agent's rules into questions, check every reply before the customer sees it, and block the ones that break a rule. The public comparisons we found test decision models on tool calling and routing, so we tested the job a guard does: enforcing a policy across multi-turn customer conversations. We put Jev, Clef and a general-purpose model with reasoning, GPT-6.1 Terra, in front of five customer-facing agents in [Heckler](https://heckler.mercity.ai), our stress-testing platform ([code](https://github.com/Mercity-AI/heckler)), and scored 5,620 agent replies against an answer key.
+**Our answer is no, at least not on their own.** At their thresholds Jev blocked 33% of rule-breaking replies and Clef 12%, while Terra caught 82% but also blocked 43% of clean replies. Decision models rank bad replies above clean ones well enough to be a first filter, and they catch mistakes written in the reply itself. But they often recognise a violation and score it too low to block, and most of their false alarms come from rules that can't be judged from a single reply. A general model with reasoning reads intent better, but it scores nearly everything near 0 or 1, so no threshold makes it a usable gate either. Most of what improved the guards came from how the policy was written and tuned.
 
-**Our answer is no, at least not on their own.** Decision models rank bad replies above clean ones well enough to be a first filter, and they catch mistakes written in the reply itself. But they often recognise a violation and score it too low to block, and most of their false alarms come from rules that can't be judged from a single reply. A general model with reasoning reads intent better, but it scores nearly everything near 0 or 1, so no threshold makes it a usable gate either. Most of what improved the guards came from how the policy was written and tuned.
+**What we used and released:**
+
+- [Heckler](https://heckler.mercity.ai), the stress-testing platform we ran every conversation in, and [how we built it](/blog-post/how-we-built-our-agent-stress-testing-platform-heckler)
+- [Heckler code on GitHub](https://github.com/Mercity-AI/heckler), including the decision-model guard integration used here
+- Related: [Policy NLI](https://huggingface.co/datasets/Mercity/policy-nli), 30,668 labelled (reply, policy) pairs, and the guards trained on it: [policy-nli-modernbert-large](https://huggingface.co/Mercity/policy-nli-modernbert-large) and [policy-nli-decision-model-4b-lora](https://huggingface.co/Mercity/policy-nli-decision-model-4b-lora)
 
 ## Can Decision Models Replace Security Guardrails?
 
 A language model answers a question by writing text. A decision model skips the writing. You send it a piece of text, called the state, and a list of typed questions, and it answers each one directly: a probability for a yes/no question, a score for a scale, a choice from a fixed list. Nothing is generated, so there is nothing to parse.
 
-Typesafe built Jev for the small, bounded decisions inside software that teams currently hand to a full LLM call: is this ticket a refund request, should this go to a person, does this message contain an instruction it shouldn't? Each answer costs a fraction of a generated reply, so you can ask many questions about every message, which is what makes them interesting as guards.
+TypeSafe built Jev for the small, bounded decisions inside software that teams currently hand to a full LLM call: is this ticket a refund request, should this go to a person, does this message contain an instruction it shouldn't? Each answer costs a fraction of a generated reply, so you can ask many questions about every message, which is what makes them interesting as guards.
 
 ### Why a guard is the obvious use
 
@@ -154,6 +162,8 @@ Terra also shared the decision models' limits. It could only check the rules the
 <iframe class="article-embed" src="/blog/can-a-decision-model-guard-a-customer-facing-agent/seven-replies-three-guards.html" title="Seven replies, three guards: how Jev, Clef and Terra scored each" loading="lazy" height="779"></iframe>
 
 ## How to Use a Decision Model as a Guard
+
+For a step-by-step setup, see our guide to [using decision models as security guardrails](/blog-post/how-to-use-decision-models-as-guardrails). To build one on your own policies, see [how to train your own decision model](/blog-post/how-to-train-your-own-decision-model).
 
 Decision models still have a place in front of an agent. Jev beat chance on every agent, it was strong on mistakes you can see in the text, and it is cheap and fast enough to run on every reply. Our results point to a setup in layers, where the decision model does that part and something else covers the rest.
 
