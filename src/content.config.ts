@@ -15,6 +15,10 @@ const postSchema = z.object({
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   summary: z.string().max(500),
+  // Optional search overrides. When set, they replace the title and summary
+  // in the <title> tag and meta description only; the page itself is unchanged.
+  seoTitle: z.string().max(70).optional(),
+  metaDescription: z.string().max(160).optional(),
   authors: z.array(authorSchema).min(1),
   tags: z.array(z.string()).default([]),
   category: z.string().default('Research'),

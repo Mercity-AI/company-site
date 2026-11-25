@@ -1,5 +1,9 @@
 ---
 title: How We Built Our Agent Stress Testing Platform - Heckler
+seoTitle: 'Heckler: How We Built a Stress-Testing Platform for LLM Agents'
+metaDescription: >-
+  We built Heckler to stress-test LLM agents against their own policies and ran
+  it on bank, SaaS and health agents. Over 80% of chats broke a policy.
 slug: how-we-built-our-agent-stress-testing-platform-heckler
 publishedAt: '2026-10-22'
 summary: >-
@@ -30,6 +34,7 @@ You can test out Heckler here:
 
 - Site: [https://heckler.mercity.ai](https://heckler.mercity.ai)
 - Repo: [https://github.com/Mercity-AI/heckler](https://github.com/Mercity-AI/heckler)
+- Simula, the open-source synthetic data engine that writes Heckler's scenarios: [https://github.com/Mercity-AI/Simula](https://github.com/Mercity-AI/Simula)
 
 ## Why Do You Even Need to Stress-Test Your Agent?
 
@@ -140,7 +145,7 @@ Claude Opus 5.5 played the users and graded the conversations. Claude Sonnet 5.5
 
 Each model ran a different agent with a different prompt and a different scenario set, so this is not a model-versus-model leaderboard. It shows how three deployments performed, each in its own setting.
 
-## Over 80% of Conversations Broke an Important Policy.
+## Over 80% of Conversations Broke an Important Policy
 
 Across 26 graded conversations that we tested, no agent was jailbroken and only 5 passed with zero violations. The agents handled prompt injections and emergencies well. They failed on precise policy details: leaking information through grammar, inventing product details, hinting at outcomes they had refused, printing internal tool calls and skipping steps the policy required.
 
@@ -203,6 +208,8 @@ Your agent will break on its own rules, with its own users. Heckler finds those 
 
 Related reading from Mercity:
 
+- [Can a Decision Model Guard a Customer-Facing Agent?](/blog-post/can-a-decision-model-guard-a-customer-facing-agent), where we used Heckler to test decision models as guards
+- [How to Use Decision Models as Security Guardrails](/blog-post/how-to-use-decision-models-as-guardrails)
 - [Guide to building an Enterprise Grade Customer Support Chatbot Using LLMs](/blog-post/guide-to-building-an-enterprise-grade-customer-support-chatbot-using-llms)
 - [Comprehensive Guide to Integrating Tools and APIs with Language Models](/blog-post/guide-to-integrating-tools-and-apis-with-language-models)
 - [Using ChatGPT to build Synthetic Datasets](/blog-post/using-chatgpt-to-build-synthetic-datasets)

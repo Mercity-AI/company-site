@@ -1,9 +1,13 @@
 ---
 title: Can a Decision Model Guard a Customer-Facing Agent?
+seoTitle: Can Jev or Clef Guard an AI Agent? We Tested 5,620 Replies
+metaDescription: >-
+  We tested Jev, Clef and a reasoning model as guards on 5,620 replies from five
+  customer-facing agents. Decision models work as a first filter, not alone.
 slug: can-a-decision-model-guard-a-customer-facing-agent
 publishedAt: '2026-11-02'
 summary: >-
-  We put two decision models, Typesafe's Jev and Cloudflare's Clef, and a
+  We put two decision models, TypeSafe's Jev and Cloudflare's Clef, and a
   general model with reasoning in front of five customer-facing agents in
   Heckler and scored 5,620 replies against an answer key. Decision models make a
   usable first filter, but they score many violations too low to block, and most
@@ -21,19 +25,23 @@ image: >-
   https://blog-cdn.mercity.ai/blog/can-a-decision-model-guard-a-customer-facing-agent/cover.jpg
 ---
 
-Decision models are a new introduction to the AI space and almost EVERYONE wants to include them in their pipeline. Typesafe's [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev) and Cloudflare's [Clef](https://developers.cloudflare.com/changelog/post/2026-10-01-clef-workers-ai/) both came out in the last two months, and frameworks have already adapted these models into their APIs. You give one a piece of text and a set of yes/no questions, and it returns a probability for each answer in about a second. It writes no text at all, so it is cheap, fast and always returns an answer in the shape you asked for.
+We tested whether a decision model can guard a customer-facing agent. We put TypeSafe's [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev), Cloudflare's [Clef](https://developers.cloudflare.com/changelog/post/2026-10-01-clef-workers-ai/) and GPT-6.1 Terra, a general model with reasoning, in front of five agents (a bank, a SaaS desk, a clinic, an insurer and an HR assistant) in [Heckler](https://heckler.mercity.ai), our stress-testing platform, and scored 5,620 replies from 964 conversations against an answer key. The public comparisons we found test decision models on tool calling and routing, so we tested the job a guard does: enforcing a policy across multi-turn customer conversations.
 
-That makes a decision model look like the obvious guard for a customer-facing agent: turn the agent's rules into questions, check every reply before the customer sees it, and block the ones that break a rule. The public comparisons we found test decision models on tool calling and routing, so we tested the job a guard does: enforcing a policy across multi-turn customer conversations. We put Jev, Clef and a general-purpose model with reasoning, GPT-6.1 Terra, in front of five customer-facing agents in [Heckler](https://heckler.mercity.ai), our stress-testing platform ([code](https://github.com/Mercity-AI/heckler)), and scored 5,620 agent replies against an answer key.
+**Our answer is no, at least not on their own.** At their thresholds Jev blocked 33% of rule-breaking replies and Clef 12%, while Terra caught 82% but also blocked 43% of clean replies. Decision models rank bad replies above clean ones well enough to be a first filter, and they catch mistakes written in the reply itself. But they often recognise a violation and score it too low to block, and most of their false alarms come from rules that can't be judged from a single reply. A general model with reasoning reads intent better, but it scores nearly everything near 0 or 1, so no threshold makes it a usable gate either. Most of what improved the guards came from how the policy was written and tuned.
 
-**Our answer is no, at least not on their own.** Decision models rank bad replies above clean ones well enough to be a first filter, and they catch mistakes written in the reply itself. But they often recognise a violation and score it too low to block, and most of their false alarms come from rules that can't be judged from a single reply. A general model with reasoning reads intent better, but it scores nearly everything near 0 or 1, so no threshold makes it a usable gate either. Most of what improved the guards came from how the policy was written and tuned.
+**What we used and released:**
+
+- [Heckler](https://heckler.mercity.ai), the stress-testing platform we ran every conversation in, and [how we built it](/blog-post/how-we-built-our-agent-stress-testing-platform-heckler)
+- [Heckler code on GitHub](https://github.com/Mercity-AI/heckler), including the decision-model guard integration used here
+- Related: [Policy NLI](https://huggingface.co/datasets/Mercity/policy-nli), 30,668 labelled (reply, policy) pairs, and the guards trained on it: [policy-nli-modernbert-large](https://huggingface.co/Mercity/policy-nli-modernbert-large) and [policy-nli-decision-model-4b-lora](https://huggingface.co/Mercity/policy-nli-decision-model-4b-lora)
 
 ## Can Decision Models Replace Security Guardrails?
 
 A language model answers a question by writing text. A decision model skips the writing. You send it a piece of text, called the state, and a list of typed questions, and it answers each one directly: a probability for a yes/no question, a score for a scale, a choice from a fixed list. Nothing is generated, so there is nothing to parse.
 
-Typesafe built Jev for the small, bounded decisions inside software that teams currently hand to a full LLM call: is this ticket a refund request, should this go to a person, does this message contain an instruction it shouldn't? Each answer costs a fraction of a generated reply, so you can ask many questions about every message, which is what makes them interesting as guards.
+TypeSafe built Jev for the small, bounded decisions inside software that teams currently hand to a full LLM call: is this ticket a refund request, should this go to a person, does this message contain an instruction it shouldn't? Each answer costs a fraction of a generated reply, so you can ask many questions about every message, which is what makes them interesting as guards.
 
-### Why a guard is the obvious use
+### Why a Guard Is the Obvious Use
 
 A guard sits between an agent and its users: every reply goes to the guard first, and the guard decides whether the customer sees it. The usual build is a second LLM acting as a judge, which adds a generated response to every turn and returns text someone has to interpret.
 
@@ -55,7 +63,7 @@ We simulated five agents, each with its own system prompt and its own kind of pr
 - An insurance claims assistant: promises of cover, backdated policies, vulnerable customers, third parties fishing for details.
 - An HR assistant: colleagues' pay, bank-detail changes, harassment reports, promises about raises and layoffs.
 
-### The conversations and policies
+### The Conversations and Policies
 
 Each agent ran on three different models. Heckler built the attacks from each system prompt: simulated users with a goal, a persona and a strategy, from a customer trying to get a fee waived to a fraudster posing as bank staff. Each one talked to the agent for up to eight turns, which gave us 964 conversations and 5,620 agent replies.
 
@@ -67,7 +75,7 @@ The policies matter as much as the models, so we wrote them the way a team adopt
 
 <iframe class="article-embed" src="/blog/can-a-decision-model-guard-a-customer-facing-agent/system-prompt-to-policy.html" title="From system prompt to policy: which sentences each rule came from and what it lost" loading="lazy" height="889"></iframe>
 
-### What we measured
+### What We Measured
 
 To score a guard you need to know which replies were bad. DeepSeek V4.1 Flash graded every conversation against the agent's full system prompt and labelled each reply clean or violating, naming the policy rule broken, if any, and the kind of mistake: wrong or forbidden content, a claimed action the agent couldn't perform, or raw tool code in the reply. Each conversation was graded twice, with a third run where the two disagreed; the first two agreed on pass or fail 91% of the time.
 
@@ -81,7 +89,7 @@ After the main run, we tested the fixes people usually suggest, one at a time, o
 
 ## What We Found
 
-### Decision models catch what is written in the reply
+### Decision Models Catch What Is Written in the Reply
 
 Of the 862 replies our grader marked as violating, 610 broke a rule in the agent's policy. The other 252 broke an instruction that never made it into the policy, so no guard was asked about them; we return to those below. On the 610, what each guard blocked depended mostly on the kind of mistake.
 
@@ -107,7 +115,7 @@ When an agent says "Yes, the escalation went through. Here's what I passed to th
 
 The 252 violations outside the policy were mostly the same mistake: 207 were claimed actions, such as an agent saying it had flagged a conversation to the fraud team with no tool to do it, and the policies mostly had no rule for them. **A guard can only enforce what its policy says, so every gap in the policy becomes a gap in the guard.**
 
-### They often recognise a violation and score it too low
+### They Often Recognise a Violation and Score It Too Low
 
 On several rules, the decision models scored violating replies clearly higher than clean ones and still rarely reached the threshold.
 
@@ -121,7 +129,7 @@ One threshold assumes a score means the same thing on every rule, and with decis
 
 The scores have two more problems. When Jev blocked a violation, it named the wrong rule about four times in ten. And when we re-ran Jev on 570 replies on a later day, 14 block decisions changed, all on scores between 0.75 and 0.85. **Close to the threshold, whether a reply is blocked is partly chance.**
 
-### Most false alarms come from rules that need the conversation
+### Most False Alarms Come from Rules That Need the Conversation
 
 Jev wrongly blocked 9% of clean replies, 424 in all, and 79% of those blocks came from "must" rules, although they were only 29% of the rules. A "must not" rule can be checked from the reply alone: either the agent revealed an account balance or it didn't. A "must" rule nearly always has a condition, such as "when the user describes a scam", and whether it applies often depends on the situation or on what was said earlier. A guard that sees one reply has to guess.
 
@@ -131,7 +139,7 @@ Other false alarms came from rules that lost their condition when the policy was
 
 To check whether the guards were misreading these rules, a separate literal check on the subset judged each wrong block: read on its own, does this reply break this rule as written? For 72% of Jev's wrong blocks and 82% of Terra's, the answer was yes. **The guards mostly read the rules correctly; most of the false alarms were the policy's fault.**
 
-### What changed when we fixed the policy
+### What Changed When We Fixed the Policy
 
 If the policy causes most false alarms, fixing it should help. We tested three versions of that idea.
 
@@ -143,7 +151,7 @@ The third was to give the guard the whole conversation. Wrong blocks on rules ab
 
 Across the three, rewriting specific rules did more than any structural change, and the guard's own false alarms are the best guide to which rules need it.
 
-### What a general model with reasoning changes
+### What a General Model with Reasoning Changes
 
 Terra ranked bad replies above clean ones a little more often: AUC 0.73, against 0.70 for Jev and 0.67 for Clef. Where the right answer depends on intent, it was clearly better. It let the overdose reply through at 0.01, and it caught a clinic agent giving a patient the normal range for her own white-cell count, which Jev scored 0.33.
 
@@ -155,27 +163,29 @@ Terra also shared the decision models' limits. It could only check the rules the
 
 ## How to Use a Decision Model as a Guard
 
+For a step-by-step setup, see our guide to [using decision models as security guardrails](/blog-post/how-to-use-decision-models-as-guardrails). To build one on your own policies, see [how to train your own decision model](/blog-post/how-to-train-your-own-decision-model).
+
 Decision models still have a place in front of an agent. Jev beat chance on every agent, it was strong on mistakes you can see in the text, and it is cheap and fast enough to run on every reply. Our results point to a setup in layers, where the decision model does that part and something else covers the rest.
 
-### Start with the policy
+### Start with the Policy
 
 The policy is the guard's whole view of the agent, so write it as carefully as the system prompt. Every "must" rule needs its condition and exceptions written into the rule: "Give the scheduling line when you can't complete a booking" has to say "unless the reply is sending the user to emergency services". Rules about parties, like third parties or verified users, need to say who counts.
 
 Then compare the policy against what your agent actually gets wrong. Ours left out the most common failure we saw, agents claiming actions they couldn't take, and you only find gaps like that by grading conversations against the full system prompt. Expect to rewrite the policy after the first run. And don't fix false alarms by deleting duties: that made our guard quieter and worse at the same time.
 
-### Calibrate each rule
+### Calibrate Each Rule
 
 A decision model's scores are not comparable across rules. Before a guard blocks anything, fit a threshold for each rule on graded conversations, check it on conversations it wasn't tuned on, and refit when the agent, its prompt or the decision model changes.
 
 Treat the band around each threshold as uncertain. Scores there move between runs, so those replies are better sent for a second look than blocked or passed on a coin toss.
 
-### Give the conversation to something that can read it
+### Give the Conversation to Something That Can Read It
 
 Some rules can't be judged from one reply: duties that depend on what was said earlier, verification from two turns ago, anything the agent should have said but didn't. Adding the conversation to a decision model's input barely helped, so these checks belong with a model that can reason over the whole conversation. That model is slower and more expensive, so call it only on replies the decision model flags, or on rules it handles badly.
 
 Claimed actions need their own fix. Either give the guard the agent's tool list, or check claims of action against the tool calls the agent actually made. We didn't test either here.
 
-### Watch it before it blocks
+### Watch It Before It Blocks
 
 Run any guard in shadow mode against graded conversations before it touches a customer. That is how we found the four badly written rules, the rule whose violations never crossed the threshold, and the fact that more than a quarter of the violations had no rule at all. **A guard running alone in production gives you none of that: you never learn which blocks were wrong or what got through.**
 
