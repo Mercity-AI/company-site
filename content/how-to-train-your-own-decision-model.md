@@ -1,8 +1,8 @@
 ---
 title: How to Train Your Own Decision Model With Minimal Changes to an LLM
 metaDescription: >-
-  We fine-tuned a 4B LLM into a decision model like Jev on one A100. Readout
-  accuracy rose from 62.7% to 72.5%. Open weights, code and every number inside.
+  We trained a 4B LLM into a decision model on one A100 in under three days.
+  Readout accuracy rose from 62.7% to 72.5%, and to 81.8% with thinking.
 slug: how-to-train-your-own-decision-model
 publishedAt: '2026-11-19'
 summary: >-

@@ -1,8 +1,9 @@
 ---
 title: How We Built Our Agent Stress Testing Platform - Heckler
 metaDescription: >-
-  We built Heckler to stress-test LLM agents against their own policies and ran
-  it on bank, SaaS and health agents. Over 80% of chats broke a policy.
+  We ran Heckler on bank, SaaS and health agents: over 80% of conversations
+  broke a policy, while every prompt injection failed. How we built it and what
+  broke.
 slug: how-we-built-our-agent-stress-testing-platform-heckler
 publishedAt: '2026-10-22'
 summary: >-

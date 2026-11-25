@@ -1,8 +1,9 @@
 ---
 title: Can a Decision Model Guard a Customer-Facing Agent?
 metaDescription: >-
-  We tested Jev, Clef and a reasoning model as guards on 5,620 replies from five
-  customer-facing agents. Decision models work as a first filter, not alone.
+  Jev blocked 33% of rule-breaking replies and Clef 12%. A reasoning model
+  caught 82% but blocked 43% of clean ones. What we found testing 5,620 agent
+  replies.
 slug: can-a-decision-model-guard-a-customer-facing-agent
 publishedAt: '2026-11-02'
 summary: >-
