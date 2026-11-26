@@ -1,11 +1,16 @@
 ---
 title: How We Used Reinforcement Learning to Train a Robot Nemesis
 metaDescription: >-
-  We trained a game enemy with RL. It went from refusing to move to finding a hidden, fixed target in 96.5% of rounds. Then we built a game around it.
+  We trained a game enemy with RL. It went from refusing to move to finding a
+  hidden, fixed target in 96.5% of rounds. Then we built a game around it.
 slug: how-we-used-reinforcement-learning-to-train-a-robot-nemesis
 publishedAt: '2026-11-26'
 summary: >-
-  We used reinforcement learning to train a six-legged enemy robot inspired by the Leaper from Arc Raiders, then built a game around it. Along the way it learned that standing still was safest, walked backwards 80% of the time, and farmed points by re-spotting its target. The brain that shipped finds a hidden target that stays in place in 96.5% of rounds.
+  We used reinforcement learning to train a six-legged enemy robot inspired by
+  the Leaper from Arc Raiders, then built a game around it. Along the way it
+  learned that standing still was safest, walked backwards 80% of the time, and
+  farmed points by re-spotting its target. The brain that shipped finds a hidden
+  target that stays in place in 96.5% of rounds.
 authors:
   - name: Sneha Jangra
 tags:
@@ -14,7 +19,8 @@ tags:
   - Game AI
 category: Reinforcement Learning
 isTopPick: false
-image: /blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/leaper-title-screen.jpg
+image: >-
+  https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/leaper-title-screen.jpg
 ---
 
 You turn around and a big red eye is peering right through your soul. It is the six-legged Leaper from Arc Raiders scaring you out of your wits. And naturally we thought: we want one of our own. Embark Studios’ BTS gave us a glimpse into RL trained robots. We had never trained a model or designed a game, so everything here was learned along the way. <br />Looking back, we thought it was crazy that a robot can just be handed a task (goal) and it somehow figures it out like a human brain learns to walk. But we rather had a lot to unfold. Tag along, This is the rise of our Leaper Jr..
@@ -27,7 +33,7 @@ The goal was an enemy built on Reinforcement learning that actually navigates wi
 
 We wanted a real environment, real obstacles to get stuck on and, at the end of it, a real game where a player could fight it. This is the log of how our leaper learned its way into that game.
 
-![Our Leaper, a six-legged robot with a single red eye, standing in the junkyard level among containers, wrecked cars and scrap.](/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/leaper-in-the-junkyard.jpg)
+![Our Leaper, a six-legged robot with a single red eye, standing in the junkyard level among containers, wrecked cars and scrap.](https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/leaper-in-the-junkyard.jpg)
 
 ## The Jargon We'll Use Often
 
@@ -54,7 +60,7 @@ This included:
 - **Controls**: simple game commands for moving left, right, front and back
 - **A bright pink cuboid**: our goal, our target.
 
-![The Three.js proof of concept from above: a procedural six-legged robot, scattered rounded obstacles and the pink target.](/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/threejs-blockout.png)
+![The Three.js proof of concept from above: a procedural six-legged robot, scattered rounded obstacles and the pink target.](https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/threejs-blockout.jpg)
 
 There we had a 3D hexapod walking across the field. The learning itself lived in Python: Gymnasium to build the practice world, Stable-Baselines3 for PPO and TensorBoard for the graphs.
 
@@ -79,7 +85,7 @@ The early runs looked promising. One important distinction to make note of is th
 
 Our second training run reached **60% success** when only the body could collide. It was one of our strongest earlier runs. Moving ahead, we made collision more realistic: the body plus 'three points along each of the six legs', 19 points in total. Alas, Our performance collapsed to 4–7%. Frustrating, but useful. The 60% did not disappear mysteriously. We had changed the problem.
 
-![The robot as the brain sees it: one large circle for the body plus three points along each of the six legs, 19 collision points in all.](/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/nineteen-collision-points.png)
+![The robot as the brain sees it: one large circle for the body plus three points along each of the six legs, 19 collision points in all.](https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/nineteen-collision-points.jpg)
 
 ## Why Did the Robot Think That Standing Still Was the Best Option
 
@@ -95,9 +101,9 @@ Then the tenth run changed one thing. Until then, throttle only went from 0 to 1
 
 We only understood why much later. The brain gives out a raw number, which is then clipped to the allowed range. With throttle allowed only from 0 to 1, every negative thought it had became exactly 0, which meant stop. Allowing reverse moved "stop" away from the edge.
 
-![TensorBoard charts for runs 7 to 10: mean episode length, mean episode reward and success rate over training steps.](/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/tensorboard-runs-7-to-10.png)
+![TensorBoard charts for runs 7 to 10: mean episode length, mean episode reward and success rate over training steps.](https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/tensorboard-runs-7-to-10.jpg)
 
-![PPO training reward per episode with a 20-episode mean, above the deterministic evaluation's mean reward and success rate over 100,000 training steps.](/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/ppo-training-reward.png)
+![PPO training reward per episode with a 20-episode mean, above the deterministic evaluation's mean reward and success rate over 100,000 training steps.](https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/ppo-training-reward.jpg)
 
 ## Giving the Robot Sight Was Our Best Decision
 
@@ -109,7 +115,7 @@ To make sure this wasn't luck, we trained it two more times from different rando
 
 There was one funny side effect. The Leaper walked backwards 80% of the time. Backing towards the target scored exactly as well as facing it, so why bother turning around? Fair enough, honestly.
 
-![Run 11 in an exam round: eight blue distance rays around the Leaper as it backs its way to the pink target.](/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/run-11-eight-rays.gif)
+![Run 11 in an exam round: eight blue distance rays around the Leaper as it backs its way to the pink target.](https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/run-11-eight-rays.gif)
 
 ## A Lot More Changes in the Reward System
 
@@ -129,11 +135,11 @@ The last piece was a clock. If the Leaper stood still for more than 3 steps in a
 
 Curiously, letting it see further made it worse (82%). In a dense map, almost every long ray hits clutter far away, so open doorways stop looking open.
 
-![How often the robot reached the target, run by run, from 60% in the body-only run to 91.5% in run 25.](/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/success-rate-by-run.png)
+![How often the robot reached the target, run by run, from 60% in the body-only run to 91.5% in run 25.](https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/success-rate-by-run.jpg)
 
-![Exam success with 8 rays versus 16 rays: the 8-ray runs average 77%, the 16-ray runs 81.5%, with the best at 87%.](/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/eight-vs-sixteen-rays.png)
+![Exam success with 8 rays versus 16 rays: the 8-ray runs average 77%, the 16-ray runs 81.5%, with the best at 87%.](https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/eight-vs-sixteen-rays.jpg)
 
-![Run 25 in an exam round: 16 rays in a 270° cone, walking forward through a maze of 51 random rocks it has never seen.](/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/run-25-unseen-maze.gif)
+![Run 25 in an exam round: 16 rays in a 270° cone, walking forward through a maze of 51 random rocks it has never seen.](https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/run-25-unseen-maze.gif)
 
 ## Major Turn of Events
 
@@ -151,9 +157,9 @@ God forbid the Leaper abides by any of your instructions. Turns out, it found a 
 
 Searching was the hard part. We gave it points for exploring new ground, and it turned into a professional wanderer, collecting new ground and nothing else. A small note telling it the direction of the biggest unexplored area worked better. Success settled around 70–72%. keep in mind this is a much harder test than before, so it is not a step back.
 
-![Four rounds on a cleared map: green marks ground the Leaper has checked and amber the blind spots, with its path to the target in orange.](/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/explored-ground-map.png)
+![Four rounds on a cleared map: green marks ground the Leaper has checked and amber the blind spots, with its path to the target in orange.](https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/explored-ground-map.jpg)
 
-![The unexplored-area note: an arrow from the Leaper points to the largest unchecked region, before and after 120 steps of following it.](/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/unexplored-area-note.png)
+![The unexplored-area note: an arrow from the Leaper points to the largest unchecked region, before and after 120 steps of following it.](https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/unexplored-area-note.jpg)
 
 ## Then Ten Million Steps of Practice on a Hidden Target as Its Final Test
 
@@ -182,7 +188,7 @@ Those 34 inputs are everything the Leaper knows about the world at each step:
 | Whether it can see the target right now | On or off, every step |
 | Whether it bumped into something last step | So it knows when it's pressed against a wall |
 
-![How rounds end on the same 200 development mazes for each brain design: arrived, stuck, frozen or timed out, before and after finding the target.](/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/how-rounds-end.png)
+![How rounds end on the same 200 development mazes for each brain design: arrived, stuck, frozen or timed out, before and after finding the target.](https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/how-rounds-end.jpg)
 
 ## The Final Scorecard
 
@@ -219,7 +225,7 @@ The thing is, the Leaper doesn't see the yard the way we do. It has never learne
 
 A few things were tuned for the yard. Some scrap is simply too low to matter for something with six long legs, so 36 pieces of low junk were left out of its walking map, and it just steps over them. Its sight range was also stretched to suit a yard this size.
 
-![Inside the junkyard: a crane, a camouflage container and a pile of scrap.](/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/junkyard-yard.jpg)
+![Inside the junkyard: a crane, a camouflage container and a pile of scrap.](https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/junkyard-yard.jpg)
 
 ## Designing the Fight Around a Trained Brain
 
@@ -230,8 +236,8 @@ As much as this was our first time with reinforcement learning, it was also our 
 Now the Leaper needed someone to hunt. Lola is our player character. She can run, crouch, jump and shoot, and sprint.
 
 <div style="display: flex; gap: 12px; align-items: flex-start; margin: 1.9em 0;">
-  <img src="/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/lola-sketch.png" alt="Concept sketch of Lola, the player character, with short blue hair." loading="lazy" style="flex: 1 1 0; min-width: 0; margin: 0;" />
-  <img src="/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/lola-rig.png" alt="Lola's 3D model in Blender with her skeleton rig showing." loading="lazy" style="flex: 1 1 0; min-width: 0; margin: 0;" />
+  <img src="https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/lola-sketch.jpg" alt="Concept sketch of Lola, the player character, with short blue hair." loading="lazy" style="flex: 1 1 0; min-width: 0; margin: 0;" />
+  <img src="https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/lola-rig.jpg" alt="Lola's 3D model in Blender with her skeleton rig showing." loading="lazy" style="flex: 1 1 0; min-width: 0; margin: 0;" />
 </div>
 
 She has her vey own \* *cough cough \* M416*. Her gun has a 20-shot spray pattern in the style of CS2, so holding the trigger, you can expect slight irregularities in the shots as in real life. She can sprint for 10 seconds, and then she is winded for 4, so running away is a decision, not a free escape.
@@ -241,8 +247,8 @@ She has her vey own \* *cough cough \* M416*. Her gun has a 20-shot spray patter
 Then came the question of Ammo. With unlimited bullets, the fight would be boring: stand in one spot, hold the trigger, kill the Leaper, done. So instead of unlimited ammo, we gave Lola limited magazines and scattered collectibles around the yard. Blue pills give back 10% of her health, and yellow bullets give her 2 more magazines. Now the fight is not only about killing the Leaper, but about moving through the yard to stay alive and stocked up, right where the Leaper is hunting you. Both pickups were modelled in Blender.
 
 <div style="display: flex; gap: 12px; align-items: flex-start; margin: 1.9em 0;">
-  <img src="/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/health-pill.jpg" alt="The health pickup: a red and blue pill." loading="lazy" style="flex: 1 1 0; min-width: 0; margin: 0;" />
-  <img src="/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/ammo-pickup.jpg" alt="The ammo pickup: a single red bullet with a gold tip." loading="lazy" style="flex: 1 1 0; min-width: 0; margin: 0;" />
+  <img src="https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/health-pill.jpg" alt="The health pickup: a red and blue pill." loading="lazy" style="flex: 1 1 0; min-width: 0; margin: 0;" />
+  <img src="https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/ammo-pickup.jpg" alt="The ammo pickup: a single red bullet with a gold tip." loading="lazy" style="flex: 1 1 0; min-width: 0; margin: 0;" />
 </div>
 
 ### How the Leaper sees her
@@ -257,7 +263,7 @@ On top of the brain we wrote a set of modes the Leaper switches between: Search,
 
 Shooting itself is a small behaviour tree: see her, line up, warn her with a bright eye, lock on, fire. That warning glow and the noise is Lola's cue to move.
 
-![How the Leaper switches modes: the RL brain drives Search and Chase, and a hand-written game layer drives Investigate, Engage, Stomp, Leap, Stagger and Downed.](/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/leaper-mode-switching.png)
+![How the Leaper switches modes: the RL brain drives Search and Chase, and a hand-written game layer drives Investigate, Engage, Stomp, Leap, Stagger and Downed.](https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/leaper-mode-switching.jpg)
 
 For instance, if Lola hides and shoots the Leaper from cover, the brain has no idea. It never learned what a gunshot is. Player expects an enemy to come for them when they shoot it. So the game layer pauses the brain, walks the Leaper to the nearest spot it can see the shot’s origin from, and hands control back. Teaching the brain to “hear” would mean new inputs, a new brain and millions of new training steps. A few inputs were more viable to give players a better feel of the game.
 
@@ -277,11 +283,11 @@ The shipped brain navigates the yard well, but it's weak at finding a player who
 
 Track mode does that job instead, and it's written by hand. When Lola breaks line of sight, the Leaper walks to her last known position and fires as soon as it sees her again. In 80 fixed hiding tests, re-finding her within 30 seconds went from 85% to 96%.
 
-![How the Leaper switches modes after adding Track: when Lola breaks line of sight, it walks to where it last saw her.](/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/leaper-mode-switching-with-track.png)
+![How the Leaper switches modes after adding Track: when Lola breaks line of sight, it walks to where it last saw her.](https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/leaper-mode-switching-with-track.jpg)
 
 At last, our game was readyyy. The Leaper finally had someone to hunt - YOU
 
-![The Leaper game's title screen, with Play, Settings and Credits, beside the Leaper in the junkyard.](/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/leaper-title-screen.jpg)
+![The Leaper game's title screen, with Play, Settings and Credits, beside the Leaper in the junkyard.](https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/leaper-title-screen.jpg)
 
 TRYYYY it out >>>>>>
 
