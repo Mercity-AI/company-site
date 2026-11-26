@@ -43,6 +43,15 @@ tools as they ship (see *Still placeholder* below). Treat design changes on
 `/design.html` is `noindex` and outside the sitemap: a working
 surface, not a shipping page. No other page is hidden.
 
+The sitemap is one file at `/sitemap.xml` (since 2026-11-20). There is no
+index: `@astrojs/sitemap` writes `sitemap-index.xml` plus `sitemap-0.xml`,
+and the `singleSitemapFile` integration in `astro.config.mjs` renames the
+chunk and deletes the index. nginx 301s both old URLs to `/sitemap.xml`.
+`public/robots.txt` is three lines (allow all, the `Sitemap:` line); keep
+it that way. Put redirects in `redirects` in `astro.config.mjs`, which the
+sitemap leaves out. A page that calls `Astro.redirect` is listed as a
+noindex URL (`/contacts` was, until 2026-11-26).
+
 ## Kept on purpose
 
 Pranav asked for these to stay when the V1 remnants were cleared

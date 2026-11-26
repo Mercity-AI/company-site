@@ -1,3 +1,4 @@
+import { readdir, rename, rm } from 'node:fs/promises';
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import { unified } from '@astrojs/markdown-remark';
@@ -23,6 +24,24 @@ const forceAllowAllHostsPlugin = {
   },
 };
 
+// @astrojs/sitemap always writes sitemap-index.xml pointing at
+// sitemap-0.xml. The site serves one file at /sitemap.xml instead, so this
+// renames the chunk and drops the index. It must come after sitemap() in
+// `integrations`: build:done hooks run in that order.
+const singleSitemapFile = {
+  name: 'single-sitemap-file',
+  hooks: {
+    'astro:build:done': async ({ dir }) => {
+      const chunks = (await readdir(dir)).filter((name) => /^sitemap-\d+\.xml$/.test(name));
+      if (chunks.length !== 1) {
+        throw new Error(`Expected one sitemap chunk, found ${chunks.length}: ${chunks.join(', ')}`);
+      }
+      await rename(new URL(chunks[0], dir), new URL('sitemap.xml', dir));
+      await rm(new URL('sitemap-index.xml', dir));
+    },
+  },
+};
+
 export default defineConfig({
   site: 'https://www.mercity.ai',
   // Astro 7 defaults to JSX whitespace rules, which drop spaces between
@@ -31,6 +50,8 @@ export default defineConfig({
   compressHTML: true,
   redirects: {
     '/v2': '/',
+    // The Webflow-era contact URL; older posts still link to it.
+    '/contacts': '/contact',
     // Earlier drafts of the Simula page; /open-source/simula replaced them.
     '/open-source/simula-v2': '/open-source/simula',
     '/open-source/simula-v3': '/open-source/simula',
@@ -47,7 +68,9 @@ export default defineConfig({
   },
   integrations: [
     mdx(),
-    sitemap(),
+    // Plain URL list: the site has no news, image, video or hreflang entries.
+    sitemap({ namespaces: { news: false, xhtml: false, image: false, video: false } }),
+    singleSitemapFile,
   ],
   vite: {
     plugins: [forceAllowAllHostsPlugin],
