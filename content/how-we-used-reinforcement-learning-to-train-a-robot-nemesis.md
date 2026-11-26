@@ -12,7 +12,7 @@ summary: >-
   farmed points by re-spotting its target. The brain that shipped finds a hidden
   target that stays in place in 96.5% of rounds.
 authors:
-  - name: Sneha Jangra
+  - name: Sneha
 tags:
   - Reinforcement Learning
   - PPO
