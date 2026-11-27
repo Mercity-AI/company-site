@@ -600,10 +600,10 @@ The post FAQs are in the JSON-LD only, not on the page. Pranav asked for
 more in the JSON-LD than the page shows, for AEO/GEO (2026-11-27). Google's
 structured data policy says "Don't mark up content that is not visible to
 readers of the page"; the stated consequence is a manual action that costs
-the page its rich-result eligibility, not its ranking. Google retired FAQ
-rich results on 2026-05-07, so there is no FAQ snippet to lose. Rendering
-the FAQ at the foot of `Article` from the same frontmatter would close the
-gap. `pnpm test` (after `pnpm build`) fails
+the page its rich-result eligibility, not its ranking. Search Central's
+changelog (read 2026-11-27, not the FAQ guide itself) says FAQ rich results
+stopped showing on 2026-05-07. Rendering the FAQ at the foot of `Article`
+from the same frontmatter would close the gap. `pnpm test` (after `pnpm build`) fails
 a post without the block.
 
 ## Contact (`/contact`)

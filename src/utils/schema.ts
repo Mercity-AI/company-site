@@ -16,7 +16,7 @@
  * (Nov 2026). Checked by tests/jsonld.test.mjs against the built site.
  */
 import { authorSlug, canonicalAuthorName } from '@/data/authors';
-import { SITE_NAME, SITE_URL, absoluteImage, canonicalUrl } from '@/utils/seo';
+import { SITE_NAME, absoluteImage, canonicalUrl } from '@/utils/seo';
 
 export type SchemaNode = Record<string, unknown>;
 
@@ -254,10 +254,12 @@ export function topicNodes(topics: Topic[] | undefined): SchemaNode[] | undefine
   );
 }
 
+/* Datasets stay CreativeWork: Google validates a Dataset node for a
+   description, which a citation does not carry. */
 const CITATION_TYPES = {
   paper: 'ScholarlyArticle',
   code: 'SoftwareSourceCode',
-  dataset: 'Dataset',
+  dataset: 'CreativeWork',
   model: 'CreativeWork',
   page: 'CreativeWork',
 } as const;
