@@ -12,6 +12,115 @@ authors:
 category: Prompt Engineering
 image: >-
   https://blog-cdn.mercity.ai/blog/react-prompting-and-react-based-agentic-systems/680365971dd5436718724d9d_react_promptinh.jpg
+jsonld:
+  abstract: >-
+    Mercity shares the zero-shot and few-shot ReAct prompts it uses, in which an
+    LLM repeats Thought, Action and Observation steps until it gives a final
+    answer, and how it adds function calling: detecting actions in the output,
+    running them and appending each result after an arrow, with forced-grammar
+    decoding through Outlines, TGI or vLLM to prevent syntax errors in calls. In
+    Mercity's experience the output format (JSON, XML or YAML) makes no major
+    difference, and it uses XML internally. The April 2025 guide also notes that
+    in the ReAct paper chain-of-thought with self-consistency over 21 chains
+    beat ReAct on HotpotQA, and covers multistep flows and LangGraph's
+    create_react_agent.
+  about:
+    - name: ReAct prompting
+    - name: Chain-of-thought prompting
+    - name: Prompt engineering
+      sameAs: https://en.wikipedia.org/wiki/Prompt_engineering
+    - name: Function calling
+    - name: LLM agents
+  keywords:
+    - ReAct prompting example
+    - ReAct prompt template
+    - thought action observation loop
+    - ReAct vs chain of thought
+    - zero-shot ReAct prompt
+    - few-shot ReAct prompt
+    - function calling with ReAct
+    - LangGraph create_react_agent
+    - structured outputs for tool calls
+    - build a ReAct agent
+  citation:
+    - name: GPT-3 paper on few-shot learning
+      url: https://arxiv.org/abs/2005.14165
+      type: paper
+    - name: HotpotQA
+      url: https://hotpotqa.github.io/
+      type: dataset
+    - name: Outlines
+      url: https://github.com/dottxt-ai/outlines
+      type: code
+    - name: TGI structured outputs guide
+      url: >-
+        https://huggingface.co/docs/text-generation-inference/en/basic_tutorials/using_guidance
+      type: page
+    - name: vLLM structured outputs
+      url: >-
+        https://docs.vllm.ai/en/latest/features/structured_outputs.html
+      type: page
+    - name: OpenAI function calling guide
+      url: >-
+        https://platform.openai.com/docs/guides/function-calling?api-mode=responses
+      type: page
+    - name: Llama prompt format guide (llama-models repo)
+      url: >-
+        https://github.com/meta-llama/llama-models/blob/main/models/llama3_3/prompt_format.md
+      type: page
+  faq:
+    - q: What is ReAct prompting?
+      a: >-
+        ReAct prompting makes an LLM reason before it acts: each step has a
+        Thought about the situation, an Action such as a search or a tool call,
+        and an Observation of the result, repeated until the model gives a final
+        answer. Mercity's 2025 guide reports improvements over earlier
+        techniques such as chain-of-thought and zero-shot prompting, and uses it
+        for function calling, planning and agent behavior.
+    - q: How do you write a zero-shot or few-shot ReAct prompt?
+      a: >-
+        A zero-shot ReAct prompt gives only instructions: reason in a Thought,
+        take an Action, record the Observation, repeat, then give a Final
+        Answer. A few-shot ReAct prompt adds worked examples of full chains,
+        such as looking up two city populations and subtracting them. Mercity
+        often combines detailed instructions with several examples to cover edge
+        cases the instructions miss.
+    - q: "ReAct vs chain-of-thought prompting: which should you use?"
+      a: >-
+        Chain-of-thought suits linear, multi-step reasoning such as math
+        problems, while ReAct suits tasks with tools and changing conditions
+        because it adds a cycle of actions and observations. In the ReAct paper,
+        as Mercity's 2025 guide reports, chain-of-thought with self-consistency
+        (21 chains at temperature 0.7) did much better than ReAct on HotpotQA,
+        so Mercity recommends testing variations on each task.
+    - q: How do you add function calling to a ReAct prompt?
+      a: >-
+        Give the model a set of actions it may call, detect them in its output
+        with a string match or a regex, pause generation, run the function and
+        append its result after an arrow in the Action line, then resume so the
+        model writes its Observation. Functions with arguments need a defined
+        call format and a matching parser, and a forced grammar, through
+        Outlines, TGI structured outputs or vLLM, prevents syntax errors as the
+        number of functions grows.
+    - q: Does the output format matter for ReAct prompting?
+      a: >-
+        In Mercity's experience, no: ReAct outputs can be written in JSON, XML
+        or YAML without a major change in performance, as long as the Thought,
+        Action and Observation pattern is kept. Mercity uses XML internally
+        because it is easier to manage when there are many nested clauses, while
+        JSON is the quickest to start with and easy to parse.
+    - q: >-
+        How can Mercity help with building ReAct-based agents and prompting
+        workflows?
+      a: >-
+        Mercity designs prompting workflows and LLM agents, including
+        ReAct-style flows with custom actions, parsers and multistep triggers,
+        and builds them into the systems a client's teams already use. It has
+        written many ReAct variants and published its prompts and guides in the
+        open, and it has a lot of experience building agents for many clients
+        and taking them to production. Every project starts with an evaluation:
+        Mercity builds a benchmark for the client's domain and measures each
+        change against it.
 ---
 
 <div class="rich-text w-richtext"><h2 id="what-is-react-prompting">What is ReAct prompting?</h2><p>ReAct prompting technique combines the “reasoning” and “acting” capabilities of an LLM to help with tasks like action planning, verbal reasoning, decision-making, and knowledge integration. It does so by forcing the model to <strong>reason</strong> and <strong>observe</strong> before <strong>acting</strong>. This helps the model to analyze the context and situation so far, and then take the actions necessary to move forward. This technique has shown great improvements over past prompting techniques like <a href="https://www.mercity.ai/blog-post/guide-to-chain-of-thought-prompting">CoT (Chain or Thought)</a> and Zero-Shot Prompting.</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1600pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/react-prompting-and-react-based-agentic-systems/68036129ff8442fde23d57db_AD_4nXc4NlGUm5S-w-BXcigzcEJrJlRy6HjsRoTlCDQa63C9egX-47Nl7AhcAaNm58K8UPC6F-KAh3gHKAeqgHtytpG0f4dMVyMbi3PNHAVaPEfYN28iQN4DHs3jwBlIYx9hrf2zv-yLrUDYOYO-WnXs3jpcX2n6.jpg"/></div></figure><p>ReAct prompting has also proved to be very effective in tasks like function calling or tool integration, planning ahead, agentic behavior, etc. And it is highly customizable to the specific task at hand. This makes ReAct one of the most used and prominent prompting techniques out there.</p><h2 id="how-to-implement-react-prompting">How to Implement React Prompting</h2><p>Implementing React prompting is actually a very straightforward and easy process. Most of the time a simple prompt with clean instructions suffice. The same goes with customizing the prompt too, minor changes and some examples can easily make the prompt aligned with your specific task.</p><h3 id="zero-shot">Zero-Shot</h3><p>Zero-shot prompting is when the prompt does not contain examples of how to do the task at hand. Zero shot provides <strong>instructions</strong> on how to do a task instead of examples, this is done when the task at hand is very complicated and there is no specific pattern to follow or it is not possible to provide enough examples to explain the task properly to the LLM model.</p><p>Zero Shot prompting works because language models like ChatGPT are “instruction tuned”, meaning they don’t just follow patterns in prompts, but can follow abstract instructions and provide outputs based on that. This removes the need for examples, as the instructions can provide the model with directions on what to do and how to perform the task at hand.</p><p>To implement React with Zero-Shot prompting, you can simply provide a set of instructions on how to follow a React based output scheme in detail, and the LLM will follow. Look at the image below on how we implement the React based prompting simply with instructions and no examples at all.</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1600pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/react-prompting-and-react-based-agentic-systems/68036129440ff51b064d1166_AD_4nXdfHNl4LkHwSeKJNTTqFn-kb4tXqP0p5u4BXBJo_ityS6ejyP5_mr8M5UgLxkReTuRB0zx22tJLs7w8hCxjhKd7EViCqsolLc2WEr6_5c9wkXORoffSV-yZy0K9LHESm4wweNe6-Q.jpg"/></div></figure><p>Here is the prompt in the above example, you can use this with any model you like:</p><div class="w-embed"><div style="background-color: #2A2A2B;padding: 2.5%;">

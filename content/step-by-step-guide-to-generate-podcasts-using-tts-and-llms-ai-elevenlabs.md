@@ -12,6 +12,99 @@ authors:
 category: AI Generated Podcasts
 image: >-
   https://uploads-ssl.webflow.com/640f56f76d313bbe39631bfd/669e2ab88ee6f2223ffefa52_ai%20podcast%20geb.png
+jsonld:
+  abstract: >-
+    This 2024 guide builds an AI podcast generator in three stages. It downloads
+    a YouTube channel's audio with youtube_dl and the YouTube Data API v3, works
+    from AssemblyAI transcripts, and stores each speaker's transcript chunks as
+    all-MiniLM-L6-v2 embeddings in Chroma DB. Two LLM agents, a speaker and a
+    guest, write the dialogue through the OpenAI API using those vector stores
+    and personality guides, with a judge step checking each reply. ElevenLabs
+    cloned voices read the script with the eleven_multilingual_v2 model, and the
+    segments are joined with random pauses of 0.2 to 0.5 seconds.
+  about:
+    - name: AI-generated podcasts
+    - name: Voice cloning
+    - name: Speech synthesis
+      sameAs: https://en.wikipedia.org/wiki/Speech_synthesis
+    - name: Large language model
+      sameAs: https://en.wikipedia.org/wiki/Large_language_model
+    - name: Vector database
+      sameAs: https://en.wikipedia.org/wiki/Vector_database
+    - name: ElevenLabs
+      sameAs: https://en.wikipedia.org/wiki/ElevenLabs
+  keywords:
+    - generate a podcast with AI
+    - AI podcast generator in python
+    - ElevenLabs voice cloning API
+    - ElevenLabs voice settings
+    - LLM dialogue generation
+    - two-agent LLM conversation
+    - persona prompts for LLMs
+    - Chroma DB vector store
+    - text-to-speech podcast
+    - YouTube transcripts to podcast
+    - clone a voice for a podcast
+  citation:
+    - name: ElevenLabs Python SDK
+      url: https://github.com/elevenlabs/elevenlabs-python
+      type: code
+    - name: youtube-dl
+      url: https://github.com/ytdl-org/youtube-dl
+      type: code
+    - name: YouTube Data API v3 on RapidAPI
+      url: https://rapidapi.com/ytdlfree/api/youtube-v31
+      type: page
+    - name: SentenceTransformer documentation
+      url: >-
+        https://sbert.net/docs/package_reference/sentence_transformer/SentenceTransformer.html
+      type: page
+  faq:
+    - q: >-
+        How do you generate an AI podcast with LLMs and text-to-speech?
+      a: >-
+        Mercity's 2024 podcast guide works in three stages: build a knowledge
+        base by downloading each person's YouTube audio and transcribing it,
+        generate the dialogue with two LLM agents (a speaker and a guest) that
+        draw on vector stores of each person's transcripts, then voice the
+        script with ElevenLabs cloned voices and join the audio segments into
+        one MP3 file.
+    - q: How do LLM agents imitate a podcast speaker and guest?
+      a: >-
+        Each speaker's transcripts are split into chunks, embedded with the
+        all-MiniLM-L6-v2 Sentence Transformer and stored in a separate Chroma DB
+        collection. Master prompts set the discussion topic, personality guides
+        and speaker and guest prompts define each persona, relevant transcript
+        chunks are retrieved for each turn, and a judge prompt checks every
+        reply for coherence and personality consistency before it enters the
+        conversation log.
+    - q: >-
+        Which ElevenLabs voice settings work for a cloned podcast voice?
+      a: >-
+        In Mercity's 2024 example, one cloned voice used stability 0.60,
+        similarity_boost 0.95 and style 0.20, and a second voice used
+        similarity_boost 0.80 to allow more deviation, both with
+        use_speaker_boost on. Higher stability keeps the tone consistent, higher
+        similarity_boost keeps the clone closer to the original, and
+        use_speaker_boost improves clarity but uses up account credits faster.
+    - q: How do you clone a voice with ElevenLabs?
+      a: >-
+        As of Mercity's 2024 guide, ElevenLabs offered voice cloning from the
+        starter plan of its subscription. With the ElevenLabs Python SDK,
+        client.clone takes a name, an optional description and a few clear audio
+        samples, and client.generate then speaks any text in the cloned voice;
+        the same can be done in the Voice Lab section of the ElevenLabs website.
+    - q: >-
+        How can Mercity help with building an AI podcast or voice content
+        pipeline?
+      a: >-
+        Mercity designs and builds custom AI systems for generated content, from
+        LLM agents that write dialogue in a set persona to speech pipelines with
+        cloned voices, and each project starts with an evaluation on the
+        client's own material. Its open-source Simula framework uses the same
+        pattern of one model writing and a second model checking. Mercity has a
+        lot of experience with LLM and speech systems, has worked with many
+        clients and has taken custom AI systems to production.
 ---
 
 <div class="rich-text w-richtext"><h2 id="what-is-ai-generated-podcast">What is AI-Generated Podcast</h2><p>AI-generated podcasts represent a fusion of artificial intelligence technologies with traditional audio content creation, fundamentally transforming how podcasts are produced, distributed, and consumed. These podcasts use machine learning models, especially large language models (LLMs), to synthesize audio content that can range from entirely scripted to dynamically generated conversations. AI can simulate voices, personalities, and discussion styles of specific individuals, whether they are real-life figures, historical personalities, or fictional characters.</p><p>Advanced text-to-speech (TTS) technologies and voice cloning tools are used to generate lifelike audio from text scripts. These tools can mimic specific voice characteristics, making it possible to produce episodes that sound like they are hosted by any chosen personality or the topic of the episode which are chosen by the user. This customisation helps to engage listeners in real-time, encouraging a deeper sense of connection and community around the podcast.</p><h3 id="ais-impact-on-podcast-content-creation">AI's Impact on Podcast Content Creation</h3><p>One of the most labor-intensive aspects of podcast production is the research and scriptwriting phase, which involves gathering information, fact-checking, and crafting a narrative that is both informative and engaging. AI can handle these tasks efficiently by quickly processing vast amounts of data and generating content that adheres to a given outline or set of topics.</p><p>AI can scour multiple data sources, including recent news articles, academic papers, and other relevant materials, to compile detailed background information on chosen topics. This capability is particularly useful for podcasts that cover complex subjects requiring extensive background research, such as scientific developments, historical events, or current affairs. By automating the initial research and draft creation, AI allows podcast creators to focus more on refining the content, adding personal insights, and engaging with their audience.</p><h2 id="why-ai-podcast-generation">Why AI-Podcast Generation</h2><h3 id="user-defined-guests">User-Defined Guests</h3><p>AI allows for the creation of virtual episodes where listeners can choose their preferred personalities to feature, be they renowned historical figures or modern celebrities. This personalization enables fans to hear from figures who are no longer accessible, like past leaders, or from current figures who are otherwise unreachable due to their busy schedules. This flexibility enhances listener engagement by making the experience more tailored and interactive.</p><h3 id="exploring-unanswered-questions">Exploring Unanswered Questions</h3><p>AI facilitates conversations on topics that are either too niche for mainstream podcasts or require expertise that would be difficult to assemble in a traditional setting. For example, an AI could simulate a discussion between Nikola Tesla and Elon Musk on energy futures, a conversation impossible in reality but rich with educational and entertainment value. The generation of voice totally depends on the quality of training audio data available for the particular person so we must take into account it while choosing the speaker and guest.</p><h3 id="simulating-controversial-conversations">Simulating Controversial Conversations</h3><p>Many topics are too sensitive or divisive for real people to tackle in a public format due to potential backlash or political correctness. AI can navigate these issues by simulating dialogues that explore these areas without personal risk to the speakers. For example, an AI-generated podcast could simulate a conversation where U.S. President Joe Biden discusses his regrets and reflections on the consequences of military actions in Rafah, particularly addressing the loss of civilian lives during recent conflicts in Palestine. Such a dialogue, while entirely hypothetical, would allow for a nuanced exploration of the moral and strategic complexities involved, which might be too controversial for a sitting president to address openly. This not only broadens the scope of discussion but also allows for a deeper exploration of complex themes without real-world repercussions, providing listeners with insights into critical global issues that are rarely discussed in such an open and personal manner.</p><h3 id="bringing-fiction-to-life">Bringing Fiction to Life</h3><p>AI can create podcasts where fictional characters from beloved books or films interact in new scenarios, extending the universe of a story beyond its original media. For example, imagine a podcast episode where Naruto Uzumaki from "Naruto" and Izuku Midoriya from "My Hero Academia'' discuss the nature of heroism and the responsibilities that come with power. Such interactions allow fans to enjoy fresh content with familiar characters, enhancing their connection to the narrative and exploring 'what if' scenarios that fuel fan theories and discussions. This unique content generation leverages AI to delve into creative discussions that would not be possible in the original works, offering new insights and entertainment to the audience.</p><h3 id="legacy-voices-preservation">Legacy Voices Preservation</h3><p>Through voice cloning technology, AI can preserve and replicate the voices of deceased or aging personalities, making it possible for them to continue 'participating' in new dialogues. This not only keeps their legacies alive but also makes historical education more engaging by allowing students to 'hear' history from the very individuals who made it. For example, giving life to Martin Luther King Jr a prominent civil rights leader, King is remembered for his powerful speeches.</p><h2 id="how-to-generate-ai-podcasts">How to Generate AI Podcasts</h2><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:811pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/step-by-step-guide-to-generate-podcasts-using-tts-and-llms-ai-elevenlabs/669e0e756fc7a8bf4d1f9739_AD_4nXftAxGAJuFSrXrn_sz1FCOGjqUWKqDCObXuTYofNUz1J58wCpN8L3p3Q2CD7nLAqzThmHX3wHnxJ-7rzj8dAsyeTjr6A8fLsez4EtjyJK22NKIigyhAGJ52kV93pSzRRdmA6AJRAh29vIaALIiF6KEdj7mh.jpeg"/></div></figure><h3 id="knowledge-base-creation">Knowledge Base Creation</h3><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:780pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/step-by-step-guide-to-generate-podcasts-using-tts-and-llms-ai-elevenlabs/669e0e750a23d5657340a9de_AD_4nXfdf5R8LQfXkShIaNiHCfb4X7h1-huUsZ_16hVviYWT6mirrjW_t43pAaPxTt0xjLPa6SNHiNtaxLk0jkYpp6BXysdq_3oX5UXZjRU6cni1TAXdZiwX2C3M6DiuIeOgOwFTvanqMAfM25z3egsb5AS6G4hv.jpeg"/></div></figure><p>The process begins by identifying and downloading the audio of YouTube videos. This is achieved using the <a href="https://github.com/ytdl-org/youtube-dl">youtube_dl</a> library, which is a command-line program to download videos from YouTube and a few more sites, get_channel_id_by_username and get_youtube_videos-these functions use the <a href="https://rapidapi.com/ytdlfree/api/youtube-v31">YouTube Data API v3</a>, accessed via <a href="https://rapidapi.com/hub">RapidAPI's</a> interface. Users input the name of a YouTube channel, and the API returns videos based on specified criteria such as minimum duration and video count.The download_audio function utilizes <a href="https://github.com/ytdl-org/youtube-dl">youtube_dl</a> to download the best audio quality available and saves it as an MP3 file in a specified output directory. This is crucial for obtaining clear audio for transcription.</p><p>Code-</p><div class="w-embed"><pre>

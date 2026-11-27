@@ -16,6 +16,97 @@ category: Research
 isTopPick: false
 image: >-
   https://blog-cdn.mercity.ai/blog/building-simula-our-synthetic-data-generation-library/Screenshot_2026-07-06_at_02.36.36.jpg
+jsonld:
+  abstract: >-
+    Mercity built Simula, an open-source Python library that generates synthetic
+    data as JSON Schema records or free text, after repeating the same data
+    generation step in over 10 client projects, and aligned it with a Google
+    paper that scales the approach. A strategic model turns a dataset
+    description into a taxonomy of factors, weighted strategies sample one node
+    per factor for each record, a bulk model writes a meta-prompt and then the
+    record, and a critic accepts or rejects it, with rejected records sent back
+    for refinement and lineage kept on every row. A 1,000-row job-posting
+    extraction run accepted 96% of attempts, reached 100% leaf coverage on all
+    four factors with no duplicates, and cost about $2.60 in about 84 minutes.
+  about:
+    - name: Synthetic data
+      sameAs: https://en.wikipedia.org/wiki/Synthetic_data
+    - name: Synthetic data generation with LLMs
+    - name: Taxonomy-based dataset coverage
+    - name: LLM-as-a-judge
+    - name: Data lineage
+      sameAs: https://en.wikipedia.org/wiki/Data_lineage
+  keywords:
+    - synthetic data generation library
+    - generate synthetic training data with LLMs
+    - taxonomy-driven synthetic data
+    - synthetic data diversity
+    - critic rejection sampling
+    - JSON Schema synthetic data
+    - synthetic data for extraction models
+    - dataset coverage metrics
+    - Elo complexity scoring
+    - meta-prompting
+    - Simula
+  citation:
+    - name: Simula
+      url: https://github.com/Mercity-AI/Simula
+      type: code
+    - name: Google's Simula paper (arXiv:2603.29791)
+      url: https://arxiv.org/abs/2603.29791
+      type: paper
+  faq:
+    - q: What is Simula?
+      a: >-
+        Simula is Mercity's open-source, MIT-licensed Python library for
+        synthetic data generation, run from the command line with one YAML
+        config per run. It produces JSON records validated against a JSON
+        Schema, or free text, and every stage writes an inspectable artifact:
+        taxonomy.json, strategies.json, the raw, accepted and final datasets,
+        and an evaluation report.
+    - q: How does Simula make a synthetic dataset diverse?
+      a: >-
+        Simula handles two kinds of diversity. Global diversity comes from the
+        taxonomy: 3 to 6 factors of variation are expanded into trees and
+        sampled through 2 to 5 weighted strategies, one node per factor. Local
+        diversity comes from meta-prompts: for each sampled mix the bulk model
+        drafts 3 scenarios by default and one is picked at random, so identical
+        mixes still produce different records.
+    - q: >-
+        How much does it cost to generate a synthetic dataset with an LLM
+        pipeline?
+      a: >-
+        In Mercity's 1,000-row job-posting extraction run with Simula, about
+        4,440 model calls (3.43M tokens in, 5.57M out) took about 84 minutes and
+        cost about $2.60, including the taxonomy build on the expensive model.
+        Each record takes roughly 3 to 6 calls, and a 20-attempt smoke test
+        before the full run cost about thirty cents.
+    - q: What does a critic model catch in synthetic data generation?
+      a: >-
+        In Simula a separate critic call accepts or rejects each record with an
+        explanation, and rejections feed up to max_refine_attempts refinements.
+        In Mercity's runs steady-state accept rates were 90 to 97%, and the
+        critic caught subtle errors such as a generator inferring the state
+        Texas from a job ad that only mentioned Austin. About 2% of accepted
+        rows still had compound fields, which a post-hoc filter removed.
+    - q: How does Simula measure synthetic dataset coverage?
+      a: >-
+        Every Simula row stores its taxonomy mix, so coverage is the covered
+        node paths per factor and level divided by the totals in the tree, the
+        paper's Level Ratio Coverage. An optional reassign mode has the critic
+        place each row into the tree independently, which also works on datasets
+        Simula did not generate. The 1,000-row job-posting run reached 100% leaf
+        coverage on all four factors.
+    - q: >-
+        How can Mercity help with generating synthetic training data?
+      a: >-
+        Mercity generates large-scale synthetic data for model training and
+        evaluation, engineered around the client's domain and verified sample by
+        sample. It built Simula from the data generation work it kept repeating
+        across client projects and publishes it as open source. Mercity has
+        generated synthetic data for many clients, trained models on it and
+        taken them to production, and its datasets ship with their generation
+        code, filters and a coverage report.
 ---
 
 This is a project we ***HAD*** to do simply because we kept running into the same wall, just at different places. Almost every single one of our client projects would contain this long and extended step of generating or sourcing data for them. After doing this step over 10 times now, generating tens of millions of tokens while controlling for diversity, complexity, domain coverage, etc. We decided to abstract out the principles we follow into a separate library.

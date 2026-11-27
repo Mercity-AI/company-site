@@ -13,6 +13,114 @@ authors:
 category: Audio Cloning and TTS
 image: >-
   https://uploads-ssl.webflow.com/640f56f76d313bbe39631bfd/664fac8511b91ff72a4d5b25_voice%20cloning.png
+jsonld:
+  abstract: >-
+    Mercity published a voice cloning pipeline as its open-source
+    Voice-Cloning-Demo repository: Python code that clones a voice with Bark
+    through the TTS library from a directory of the speaker's audio files. The
+    2024 guide explains how voice cloning works (a speaker encoder trained with
+    a GE2E loss turns a reference recording into speaker embeddings, a
+    synthesizer predicts mel spectrograms from text, and a vocoder produces the
+    waveform) and compares Bark with MyShell's OpenVoice, which the guide says
+    clones a voice from under 30 seconds of audio and generates a second of
+    speech in 85 milliseconds.
+  about:
+    - name: Voice cloning
+    - name: Speech synthesis
+      sameAs: https://en.wikipedia.org/wiki/Speech_synthesis
+    - name: Vocoder
+      sameAs: https://en.wikipedia.org/wiki/Vocoder
+    - name: Spectrogram
+      sameAs: https://en.wikipedia.org/wiki/Spectrogram
+    - name: OpenVoice
+    - name: Bark (text-to-audio model)
+  keywords:
+    - real-time voice cloning
+    - voice cloning pipeline in python
+    - clone a voice with Bark
+    - OpenVoice vs Bark
+    - zero-shot cross-lingual voice cloning
+    - OpenVoice tone color converter
+    - speaker encoder GE2E loss
+    - Coqui TTS voice cloning
+    - custom TTS voice
+    - open-source voice cloning
+  citation:
+    - name: Voice-Cloning-Demo (Mercity)
+      url: https://github.com/Mercity-AI/Voice-Cloning-Demo
+      type: code
+    - name: OpenVoice
+      url: https://github.com/myshell-ai/OpenVoice
+      type: code
+    - name: OpenVoice paper (arXiv 2312.01479)
+      url: https://arxiv.org/abs/2312.01479
+      type: paper
+    - name: OpenVoice V2
+      url: https://huggingface.co/myshell-ai/OpenVoiceV2
+      type: model
+    - name: OpenVoice (MyShell research page)
+      url: https://research.myshell.ai/open-voice
+      type: page
+    - name: Bark (Suno)
+      url: https://github.com/suno-ai/bark
+      type: code
+    - name: Tacotron (Google)
+      url: https://arxiv.org/abs/1703.10135
+      type: paper
+    - name: WaveNet (DeepMind)
+      url: >-
+        https://deepmind.google/discover/blog/wavenet-a-generative-model-for-raw-audio/
+      type: page
+    - name: Paper on text-to-speech architecture (JETIR)
+      url: https://www.jetir.org/papers/JETIR2006189.pdf
+      type: paper
+  faq:
+    - q: How does real-time voice cloning work?
+      a: >-
+        A voice cloning system has three main parts. A speaker encoder turns mel
+        spectrograms from a reference recording into speaker embeddings, trained
+        with a GE2E (Generalized End-to-End) loss. A synthesizer combines those
+        embeddings with the encoded text and predicts mel spectrograms, and a
+        vocoder converts the spectrograms into a waveform that mimics the
+        speaker's tone, pitch and inflection.
+    - q: How do you clone a voice with Bark in Python?
+      a: >-
+        Mercity's 2024 voice cloning guide builds a BarkConfig, initializes the
+        Bark model from it with the TTS library, loads the pretrained
+        checkpoint, and calls model.synthesize with the text, a speaker ID, a
+        directory of the speaker's audio files and a temperature of 0.95. The
+        output waveform is saved as a WAV file at a 24,000 Hz sample rate with
+        SciPy's write_wav.
+    - q: "OpenVoice vs Bark: which is better for voice cloning?"
+      a: >-
+        Mercity's 2024 guide prefers OpenVoice for cloning a specific voice.
+        OpenVoice copies the reference speaker's tone color, gives control over
+        accent, rhythm, intonation, pauses and emotion, typically needs under 30
+        seconds of audio and generates a second of speech in 85 milliseconds.
+        Bark is a fully generative text-to-audio model whose probabilistic
+        output can be inconsistent, and it needs large multi-speaker
+        multilingual datasets for cross-lingual cloning.
+    - q: >-
+        What makes OpenVoice different from other text-to-speech systems?
+      a: >-
+        OpenVoice separates tone color from style and language. A base speaker
+        TTS model first generates speech with chosen style settings such as
+        emotion, rhythm and speed, then a flow-based tone color converter
+        applies the reference speaker's tone color. This lets OpenVoice clone
+        voices in languages that were not in its training data, where systems
+        such as Tacotron or WaveNet typically need large multilingual datasets
+        and retraining. OpenVoice V2 was released in April 2024.
+    - q: >-
+        How can Mercity help with building a voice cloning or custom TTS
+        pipeline?
+      a: >-
+        Mercity designs, trains and deploys custom speech models and pipelines
+        for a client's own voices and languages, starting with an evaluation
+        built on the client's audio. It published the code from its voice
+        cloning guide as the open-source Voice-Cloning-Demo repository,
+        alongside its other research, datasets and models. Mercity has a lot of
+        experience building these systems, has worked with many clients and has
+        taken custom AI systems to production for them.
 ---
 
 <div class="rich-text w-richtext"><blockquote>⭐ All the code shown in this blog can be found in our <a href="https://github.com/Mercity-AI/Voice-Cloning-Demo">here</a> with all the necessary documentation and instructions to run.</blockquote><p>In the evolving landscape of artificial intelligence and machine learning, real-time voice cloning has emerged as a groundbreaking technology. By leveraging advanced generative models and neural networks, it is now possible to create digital replicas of human voices with impressive accuracy. This technology not only captures the spoken words but also mimics the unique vocal characteristics, intonations, and emotions of the speaker. This groundbreaking technology is also being explored by top AI companies like <a href="https://openai.com/index/hello-gpt-4o/">Open AI</a>,<a href="https://www.lindy.ai">Lindy AI</a>,<a href="https://www.microsoft.com/en-us/cortana">Microsoft Cortana</a> and much more.</p><h2 id="what-is-real-time-voice-cloning">What is Real Time Voice Cloning?</h2><p>Real time voice cloning is the process of cloning the human voice using Generative model and Neural Network to create a digital copy of the True human voice. It gives a statistical representation of human voice using the process of spectrogram analysis. The neural network is the Machine learning algorithm which is responsible for the training of the generative model to produce the AI mimic Voice.</p><p>A spectrogram is a visual representation of the spectrum of frequencies in a sound signal as they vary with time. It is created by applying a Fast Fourier Transform (FFT) to short, overlapping segments of an audio signal, which provides information about the amplitude (or power) of different frequency components over time.</p><h2 id="why-real-time-audio-generation">Why  Real Time Audio Generation?</h2><p>Real time audio cloning technology instantly captures the human voice with such high fidelity not just the words spoken by them but also the unique vocal characteristics,intonation and emotions of the speaker.</p><p>Where this technology has great potential in sectors which have human- system communication streams, new forms of content creation and also act as accessible solutions to the society of blind and deaf people. Let’s see about the real time applicable sectors and the existing top technologies in them.</p><h3 id="voice-assistants">Voice Assistants</h3><p>A natural and engaging experience can be introduced to the existing voice assistants like siri,alexa and google assistant and also the drawback of multilingual support can also be overcomed with the real time voice cloning architecture. By replicating tonal nuances and emotions in voice, Voice Assistants can respond more empathetic and appropriately to users, enhancing user satisfaction.</p><p>Moreover, the <a href="https://openai.com/index/hello-gpt-4o/">GPT-4o</a> new release by OpenAI introduces advanced features in natural language understanding and generation. By integrating real-time voice cloning with GPT-4o, voice assistants can achieve even higher levels of sophistication in dialogue management, providing seamless and intuitive user experiences. This combination enables the creation of highly interactive and human-like voice assistants that can cater to a diverse range of needs and preferences.</p><h3 id="assistive-technology-for-blind-and-visually-impaired-people">Assistive Technology For Blind and Visually Impaired People</h3><p>Real-time audio cloning can create more natural-sounding screen readers and navigation aids. These tools can read out text, describe surroundings, or provide directions in a voice that users find comforting and familiar. The user experience is ultimately improved due to the personalisation feature where it helps to choose the voice they wish or like.</p><p>Moreover, existing assistive technologies such as <a href="https://aira.io">Aira</a>, <a href="https://www.bemyeyes.com">Be My Eyes</a>, <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.accessibility.reveal&amp;hl=en_US&amp;pli=1">Lookout</a>, and <a href="https://www.seeingai.com">Seeing AI</a> are revolutionizing support for the visually impaired. <a href="https://aira.io">Aira</a> connects users with trained agents who provide real-time assistance through live video calls, helping with navigation, reading, and other tasks. <a href="https://www.bemyeyes.com">Be My Eyes</a> also uses live video calls to link visually impaired individuals with sighted volunteers for assistance with various daily activities. <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.accessibility.reveal&amp;hl=en_US&amp;pli=1">Lookout</a>, an Android app, provides spoken feedback about the user’s surroundings by utilizing the device's camera to recognize text, people, and objects. <a href="https://www.seeingai.com">Seeing AI</a>, available on iOS, narrates the world around the user by reading text, identifying products, recognizing faces, and describing scenes. Though the existing technology is useful, When we integrate real-time audio generation with advanced computer vision technology we don’t have to rely on human agents and the user experience would be smooth and consistent with their personal closed one voice navigating and exploring the world.</p><p>The new GPT-4o release by OpenAI offers advanced features in natural language understanding and generation, which can further enhance these assistive technologies. Integrating real-time audio cloning with GPT-4o allows for more sophisticated and intuitive interactions, providing a higher level of support and independence for visually impaired users. Feel free to watch the <a href="https://www.youtube.com/watch?v=KwNUJ69RbwY">demo</a> by OpenAI X Be My Eyes. This combination ensures that assistive tools not only convey information effectively but also do so in a voice that resonates personally with the user, making the technology more accessible and user-friendly.</p><h3 id="audiobooks-and-stories-on-demand">Audiobooks and Stories On-Demand</h3><p>Real-time audio cloning allows for the swift creation of audiobooks, enabling authors and publishers to meet the growing demand for audio content without the lengthy process of traditional recording.</p><p>Users can also listen to their audio books with the desired characteristics of voice either it can be their loved or inspirational persons.This personalization can make the listening experience more enjoyable and intimate.The ability to replicate the tonality and emotion in a voice helps convey the intended meaning more effectively. This is crucial in applications like virtual therapy, remote education, and customer service, where understanding subtleties in communication is essential.</p><p>A new tool in the market called <a href="https://www.anytopic.io">AnyTopic</a> which enables users to create their own audio book using the technique of <a href="https://github.com/assafelovic/gpt-researcher">GPT researcher concep</a>t where you will provide the keen topic you're interested in and then the agent will prepare a sole audiobook for the user's intended timing. The integration of real audio generation concepts over here will enhance the user personalisation concept drastically.</p><h3 id="scalable-and-reliable-customer-service">Scalable and  Reliable Customer Service</h3><p>Customer Service Agent markets are huge and wide till date which can be replaced by the Real voice cloning architecture to answer the customer queries instead of agents which significantly make huge cost cutting and also not a compromisable solution as the tonality and characteristic of the voice is mimicked real. Cloned voices can be used to provide support in multiple languages, each with native-like pronunciation and tone. This can make non-native speakers feel more comfortable and understood.</p><p>Additionally, existing customer service platforms such as <a href="https://www.bland.ai">Bland.AI</a> and <a href="https://aws.amazon.com/pm/lex/?trk=436e9c39-382a-42a6-a49f-4cdbdfe8cadc&amp;sc_channel=ps&amp;ef_id=Cj0KCQjwxqayBhDFARIsAANWRnQUWV4Bfm6w3TPw-jSYaST1fciJyqaLnUSGoKHYvYZFZV8SvwajaCMaAsn6EALw_wcB:G:s&amp;s_kwcid=AL!4422!3!652868433334!e!!g!!amazon%20lex!19910624536!147207932349&amp;gclid=Cj0KCQjwxqayBhDFARIsAANWRnQUWV4Bfm6w3TPw-jSYaST1fciJyqaLnUSGoKHYvYZFZV8SvwajaCMaAsn6EALw_wcB">Amazon Lex</a> stand to benefit significantly from real-time voice cloning. Bland.AI can leverage this technology to enhance its user interactions, making conversations more fluid and natural across different languages and dialects. Amazon Lex, which powers Alexa's voice capabilities, can utilize real-time voice cloning to offer more personalized and context-aware interactions, improving user engagement and satisfaction.</p><p>Apart from the customer-agent perspective it is also well suitable for any line of  communication between humans. For example A healthcare provider can use voice cloning to offer compassionate support to patients, recognizing when a patient is stressed or anxious and responding with appropriate empathy and care.</p><h2 id="how-does-real-time-audio-cloning-work">How does Real Time Audio Cloning work?</h2><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1347pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/how-to-build-real-time-voice-cloning-pipelines/664fa970ae2d25063be7bb7a_OyZ8ZK_DcIja7G0_U4AX6T3BM1FXQR24S6IkOlz_BeK8O1SPMyltFm1yWvPoI-CRhl2u2j4SC2fhyD_ebSIcKUXtvvJA9EbQzucmnrTE_Do3xEYS3KIuf1uXNCgakhfunBsYHW_reAGJREkMt5sfqQ.jpeg"/></div></figure><p>Real-time audio cloning, also known as voice cloning, is a process that replicates a person's voice using artificial intelligence (AI) and machine learning (ML) techniques. This technology can generate synthetic speech that mimics the tone, pitch, and inflection of a target voice in real time. Here's a detailed explanation of how this process works:</p><h3 id="speaker-encoder">Speaker Encoder</h3><p>The feature extractor processes the input audio (speaker reference waveform) to extract essential features that capture the unique characteristics of the speaker's voice. These features are crucial for maintaining the speaker's identity in the synthesized speech.</p><p>The speaker encoder takes the features extracted by the feature extractor and encodes them into a latent representation. This encoded representation is a compact form that retains all the necessary speaker-specific information required for voice cloning.</p><h3 id="acoustic-model">Acoustic Model</h3><p>The acoustic model receives input from two sources: the encoded speaker representation and the text (grapheme or phoneme sequence) to be spoken. It combines these inputs to generate intermediate acoustic representations that reflect both the content of the speech and the speaker's unique voice characteristics. The model leverages advanced neural network architectures, such as recurrent neural networks (RNNs) or transformer networks, to process the temporal and contextual aspects of the speech. By doing so, it ensures that the generated acoustic features accurately capture the nuances of the speaker's voice, including intonation, rhythm, and emotional tone. This allows for the production of synthetic speech that sounds natural, closely mimicking the reference speaker's vocal attributes while conveying the intended message clearly and effectively.</p><h3 id="vocoder">Vocoder</h3><p>The vocoder is responsible for converting the intermediate acoustic representations generated by the acoustic model into a waveform. This waveform is the final synthesized speech output, designed to closely mimic the reference speaker's voice, including their unique tonal qualities, pitch, and inflections. By effectively translating the detailed acoustic features into a smooth, continuous audio signal, the vocoder ensures that the synthesized voice maintains a high degree of fidelity and naturalness, making it indistinguishable from the original speaker in both clarity and expressiveness.</p><h3 id="synthesizer">Synthesizer</h3><p>The synthesizer is a critical component that includes the encoder, concatenation, attention mechanism, and decoder. The Encoder converts the input text (grapheme or phoneme sequence) into a high-dimensional representation. The concat concatenates the encoded text representation with the speaker's encoded voice features. Attention Mechanism ensures that the synthesizer focuses on the relevant parts of the text and speaker features at each step of the speech synthesis process.The Decoder converts the concatenated representation into a sequence of acoustic features that the vocoder can process.</p><h3 id="workflow">Workflow</h3><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1600pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/how-to-build-real-time-voice-cloning-pipelines/664fa970d44e7c729d84d400_vcrZyGmP01HSgxtlTzzreKVSNcarA7HHUdpI5gQN8JRZru7FKr_j3F5ZbO9Svge7iWsO2U79d5jhQtuJcXIY12i3kluu_JgS6jdZHpEx1gLWSELmWpJO2dW1JicV6NO6GU5XKRNsm6NmS-KWGFAI4Zs.jpg"/></div></figure><p>The process begins with the Speaker Reference Waveform, where an audio sample of the speaker's voice is provided as input. The Speaker Encoder processes mel spectrograms from this audio sample to extract essential features, which are then encoded into speaker embeddings. These embeddings are optimized using a gradient-based approach and a GE2E (Generalized End-to-End) loss function.</p><p>Next, the system utilizes Dataset 2, which includes both text and mel spectrograms. The text input is processed by the Speaker Encoder to generate embeddings, and these are combined with the speaker embeddings in the Synthesizer. The synthesizer generates predicted mel spectrograms, which are refined using a spectral loss function to ensure they closely match the target spectrograms.</p><p>Finally, the Vocoder converts the predicted mel spectrograms into audio waveforms. These predicted audio waveforms are compared with the target audio using a waveform loss function, and the gradients from this comparison are used to further optimize the synthesizer and vocoder. This comprehensive process ensures that the final synthesized speech output closely mimics the reference speaker's voice, capturing their unique tonal qualities, pitch, and inflections. This innovative architecture allows for real-time audio cloning by effectively processing and integrating both textual and speaker-specific data, making it applicable for use in voice assistants, customer support services, interactive user interfaces, and more. To know more about the architecture of TTS refer to this <a href="https://www.jetir.org/papers/JETIR2006189.pdf">paper</a>.</p><h2 id="how-to-build-a-voice-cloning-pipeline">How to build a Voice Cloning Pipeline</h2><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1095pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/how-to-build-real-time-voice-cloning-pipelines/664fa97066672efd86ccad18_DTrKIyYIK-nW1S60DDXD6iy6POaKRJQhQqy2xGpb-U3XLC-UHLtaY0Bv7YDVSXC3Gzh4MMAuQf8vP5VsofB7jYr76Dur-3iKoUMXivqL5WH-9pchii1Q1_VZ5krVVSpVAVp_E0-CwaZdztjN4b2xObU.jpeg"/></div></figure><p>Building a voice cloning pipeline involves setting up a system that can take an audio input of a speaker's voice and generate new speech that mimics the same voice by matching with the text given by the user. </p><p>Below is an iPython script that uses the TTS library to perform voice cloning. It initializes a text-to-speech (TTS) model, loads a pre-trained model checkpoint, and synthesizes speech using an input text and a specific speaker's voice characteristics extracted from audio files. Here's a detailed explanation of each part of the code and the purpose of the libraries used:</p><h3 id="importing-libraries">Importing Libraries</h3><div class="w-embed"><pre>

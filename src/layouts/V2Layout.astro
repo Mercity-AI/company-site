@@ -9,7 +9,8 @@
  */
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { DEFAULT_OG_IMAGE, SITE_DESCRIPTION, SITE_NAME, SITE_URL, absoluteImage, fullTitle } from '@/utils/seo';
+import { DEFAULT_OG_IMAGE, SITE_DESCRIPTION, SITE_NAME, absoluteImage, canonicalUrl as toCanonical, fullTitle } from '@/utils/seo';
+import { type SchemaNode, jsonLdScript, pageGraph } from '@/utils/schema';
 
 // public/ files keep their names, and nginx (and so Cloudflare) caches .js as
 // immutable for a year. The script URL carries a hash of its contents, so an
@@ -30,6 +31,12 @@ interface Props {
   author?: string;
   tags?: string[];
   noindex?: boolean;
+  /**
+   * JSON-LD nodes for this page (an article, a service, an FAQ...). The
+   * layout always adds the Organization and WebSite nodes, and a plain
+   * WebPage when the page passes no node of its own. See src/utils/schema.ts.
+   */
+  schema?: SchemaNode[];
 }
 
 const {
@@ -43,13 +50,14 @@ const {
   author,
   tags = [],
   noindex = false,
+  schema = [],
 }: Props = Astro.props;
 
 const fullPageTitle = fullTitle(title);
-const canonicalRaw = new URL(path, SITE_URL).toString();
-const canonicalUrl = canonicalRaw.endsWith('/') ? canonicalRaw : canonicalRaw + '/';
+const canonicalUrl = toCanonical(path);
 const ogImage = absoluteImage(image);
 const year = new Date().getFullYear();
+const jsonLd = jsonLdScript(pageGraph({ path, title: title ?? SITE_NAME, description, image }, schema));
 
 interface NavChild {
   href: string;
@@ -130,6 +138,8 @@ const current = (href: string) => (root(href) === section ? 'page' : undefined);
     <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
     <meta name="language" content="English" />
     <link rel="canonical" href={canonicalUrl} />
+
+    <script type="application/ld+json" is:inline set:html={jsonLd} />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

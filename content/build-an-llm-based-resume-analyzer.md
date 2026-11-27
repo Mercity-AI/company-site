@@ -13,6 +13,95 @@ authors:
 category: AI in Hiring Automation
 image: >-
   https://blog-cdn.mercity.ai/blog/build-an-llm-based-resume-analyzer/681297bed12d873f1d757841_resume_analysis.jpg
+jsonld:
+  abstract: >-
+    Mercity built an LLM resume screener, released it as open source
+    (Mercity-AI/Resume-Analyzer) and put a prototype live to try. GPT-4.1 turns
+    a job description into JSON lists of must-have requirements, good-to-have
+    requirements and screening criteria; the reasoning model o4-mini then marks
+    each requirement true or false against the resume, rates project gravity,
+    ownership and transferability as high, medium or low, and returns a Yes or
+    No with its reasons. In Mercity's test on one resume for a Machine Learning
+    Intern role, a keyword ATS checker missed that 'deep learning with CNN'
+    meets 'deep learning techniques', while the LLM analyzer explained its
+    verdict.
+  about:
+    - name: Applicant tracking system
+      sameAs: https://en.wikipedia.org/wiki/Applicant_tracking_system
+    - name: Resume parsing
+      sameAs: https://en.wikipedia.org/wiki/R%C3%A9sum%C3%A9_parsing
+    - name: Large language model
+      sameAs: https://en.wikipedia.org/wiki/Large_language_model
+    - name: Reasoning model
+      sameAs: https://en.wikipedia.org/wiki/Reasoning_model
+    - name: Hiring automation
+  keywords:
+    - LLM resume screening
+    - AI resume analyzer
+    - open source resume analyzer
+    - resume screening with GPT-4.1
+    - o4-mini candidate evaluation
+    - job description parsing with an LLM
+    - must-have vs good-to-have requirements
+    - ATS keyword matching problems
+    - keyword stuffing in resumes
+    - ATS vs LinkedIn AI vs LLM screening
+    - automate candidate shortlisting
+  citation:
+    - name: Resume-Analyzer
+      url: https://github.com/Mercity-AI/Resume-Analyzer
+      type: code
+  faq:
+    - q: Why do applicant tracking systems miss strong candidates?
+      a: >-
+        A traditional ATS ranks resumes by exact keyword matches, so 'JS' may
+        not count as 'JavaScript', multi-column templates can break its parser,
+        and freelancers or candidates with career gaps rank lower because their
+        history is not linear. Candidates also game it by stuffing keywords or
+        hiding job-post text in white font, which raises scores without
+        reflecting skill.
+    - q: How does an LLM resume analyzer evaluate a candidate?
+      a: >-
+        In Mercity's resume analyzer, o4-mini reads the structured job
+        description and the resume in one prompt split into three steps: a true
+        or false check of every must-have, good-to-have and screening
+        requirement; a qualitative review of inferred skills, project gravity,
+        ownership and transferability, with the last three rated high, medium or
+        low; and a final Yes or No with the reasoning.
+    - q: Why use two LLMs to screen resumes instead of one?
+      a: >-
+        Mercity splits the work to use each model's strengths: GPT-4.1 breaks
+        the job description into must-have requirements, good-to-have
+        requirements and additional screening criteria as JSON, and o4-mini, a
+        reasoning model, judges the candidate against that structure step by
+        step. The o4-mini prompt is itself split into three parts, so each can
+        be updated on its own when evaluation criteria change.
+    - q: >-
+        How does an LLM resume analyzer compare with an ATS and LinkedIn's AI?
+      a: >-
+        Mercity ran one resume and one Machine Learning Intern job description
+        through all three. The traditional ATS checker marked 'deep learning
+        techniques' as missing although the candidate listed 'deep learning with
+        CNN'; LinkedIn's AI for recruiters matched skills worded differently but
+        worked as a filter; the LLM analyzer gave a result per requirement,
+        ratings, a summary and a reasoned recommendation.
+    - q: Can an LLM resume analyzer run on open-source models?
+      a: >-
+        Yes. Mercity's prototype uses GPT-4.1 and o4-mini, but the same approach
+        works with open-source LLMs such as LLaMA and Mistral. It can sit
+        alongside an existing ATS and take resumes from it in batches or through
+        APIs, adding a summary and recommendation for each candidate.
+    - q: >-
+        How can Mercity help with automating resume screening and hiring
+        workflows?
+      a: >-
+        Mercity designs and builds custom AI systems for hiring that plug into
+        the ATS a team already uses, starting with an evaluation built from the
+        client's own roles and resumes so every change is measured against a
+        baseline. It published this approach as the open-source Resume-Analyzer,
+        has a lot of experience with LLM systems of this kind, and has helped
+        many organizations automate their hiring workflows and taken these
+        systems to production.
 ---
 
 <div class="rich-text w-richtext"><p>Today, most hiring processes don't begin with a human. They start with an Applicant Tracking System (ATS). Every resume gets scanned, compared against the job description, and ranked automatically. Only a small number ever make it to a recruiter’s desk.</p><p>While this system may seem efficient, it is fundamentally flawed. Traditional ATS systems work more like rigid keyword-matching machines. They often miss strong candidates with nuanced profiles, while pushing forward weaker ones who simply optimize for the right keywords. As a result, companies lose out on top talent before a human ever gets involved.</p><p>Modern hiring needs more than speed and scale. It needs a human-like understanding of context, intent, and real candidate capabilities, not just matching words on a page.</p><blockquote>💡💡 We built the LLM Based Resume Processing tool for you! Fully Open Source, Check it out <a href="https://github.com/Mercity-AI/Resume-Analyzer"><strong>here</strong></a></blockquote><blockquote>📻📻 And the video here:</blockquote><div class="w-embed w-iframe"><div style="position: relative; padding-bottom: 56.25%; height: 0;"><iframe allowfullscreen="" frameborder="0" mozallowfullscreen="" src="https://www.loom.com/embed/3985f56862074443b058e705fc47590a?sid=a02fbd46-b4ee-43a2-bd85-a696ae6379c9" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" webkitallowfullscreen=""></iframe></div></div><h2 id="what-are-ats-systems">What are ATS Systems?</h2><p>An <strong>Applicant Tracking System (ATS)</strong> stores, organizes, and manages job applications, acting as the first layer of candidate filtering. It streamlines the shortlisting process by performing the following key steps:</p><ul role="list"><li><strong>ATS Resume Parsing</strong></li></ul><p>The ATS breaks the resume into structured fields like name, contact info, work history, job titles, education, and skills. The goal is to convert the resume's content into a standardized, analyzable data format.</p><ul role="list"><li><strong>Keyword Matching</strong></li></ul><p>This is the most crucial step: matching the information against the job description.<br/>The system scans for specific keywords like job titles (e.g., “Backend Developer”), technical skills (e.g., “React,” “AWS”), certifications, and educational qualifications. It looks for exact word-to-word matches between what's on the resume and what's in the provided job post or criteria.</p><ul role="list"><li><strong>ATS Scoring and Ranking</strong></li></ul><p>Once keyword matching is done, the ATS ranks resumes based on how well they align with the job description. Resumes with more keyword matches, relevant experience, and qualifications rank higher. Some systems even display a match score (e.g., "85% match"), with higher scores pushing resumes up the rankings.</p><h2 id="challenges-of-using-ats-systems">Challenges of using ATS systems </h2><p>ATS systems do help recruitment by handling scale and automating processes, but their flaws often outweigh the benefits, sometimes even hindering the hiring process. Here are the biggest issues with relying on them.</p><h3 id="parsing-failures-and-rigid-profiling">Parsing failures and rigid profiling</h3><p>Conventional ATS systems rely heavily on structured parsing, which can break when resumes use non-standard formats like complex templates or multi-column layouts. This often leads to important details like job titles, skills, or education being misclassified or lost.</p><p>These systems also expect traditional, linear career paths. Freelancers, startup founders, or candidates with career gaps or short-term roles are often ranked lower, simply because their experience doesn’t fit neatly into the rigid structure.</p><p>A major flaw is the over-reliance on exact keyword matching. If a job description mentions "JavaScript" but a resume lists "JS," the system often fails to make the connection. It struggles with synonyms, abbreviations, and variations.</p><h3 id="candidates-gaming-the-system">Candidates gaming the system</h3><p>The overreliance on keyword prioritization has led candidates to optimize their resumes to trick the system. Many overload their "Skills" section with job description keywords, or hide entire blocks of text from the job post in white text to fool the parser.</p><p>Some candidates use variations of job titles, even if they don’t hold those exact roles. For example, a "Software Engineer" might list "Developer" or "Programmer" to cover more job posts.</p><p>This keyword stuffing inflates ATS scores but doesn’t reflect actual skills. As a result, time is wasted on resumes that look perfect to the system but fail to deliver upon closer inspection. The core issue is that ATS can’t tell the difference between genuine expertise and keyword repetition.</p><h3 id="lack-of-contextual-understanding">Lack of contextual understanding</h3><p>ATS operate at a surface level, missing context, depth, and transferability. A candidate who managed a complex project but did not use exact buzzwords, may get overlooked. Career shifts, cross-functional skills, and project-based achievements often remain invisible. They also fail to assess qualities like initiative, ownership, or real-world impact.</p><p>Without reasoning abilities, ATS misses the nuances that predict job performance. For instance, they can’t infer that managing a "cloud migration project" implies experience with AWS/Azure, or that building a "Restful API in Node" suggests proficiency with JavaScript.</p><p>Language Models (LLMs) analyze resumes in a way that mirrors human understanding. They grasp the relationships between a candidate's achievements, skills, and experience, going beyond surface-level keyword matches. </p><p>By understanding context and intent, LLMs can recognize a candidate’s true potential. This leads to fairer, accurate, and more reliable candidate assessments.</p><h2 id="how-to-build-an-llm-based-resume-analyser">How to build an LLM based Resume analyser</h2><p>Instead of relying on keyword matching like traditional ATS systems, a smarter system can be built using a combination of LLMs. These models don’t just scan for terms, they understand context, connect achievements, and assess the depth of a candidate’s experience, much like a human would. Any general-purpose LLM can be paired with a reasoning-focused model to make this possible. In this case, GPT-4.1 works alongside o4-mini. Together, they deliver a far more accurate and meaningful evaluation of candidate potential.</p><p>Lets break it down</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1107pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/build-an-llm-based-resume-analyzer/681298661e0374406a836f21_AD_4nXdv_DuxwoChNQFvY1ikDayWbmLcKdpwzsON4Pgga9V7kJypGKDDreO0RSC9pBxf6NZvvyg4lYk8X3cqw5ETUrb0yf8taOviBTJ9uWAHFarWn1LHauVrY_mX8necExfVAjsv5K6JWg.jpg"/></div></figure><h3 id="job-description-analysis">Job Description Analysis </h3><p>The process starts with the recruiter providing the job description for the position. This job </p><p>description is then given to an LLM, in this case ‘gpt-4.1’, to analyse and break it down into three structured parts:</p><ul role="list"><li><strong>Must-Have Requirements</strong> </li></ul><p>These are<strong> ‘non-negotiable’ </strong>skills, qualifications, or experiences that a candidate must meet to be considered for the role.<br/>Example: 3+ years of backend development experience in Java.</p><ul role="list"><li><strong>Good-to-Have Requirements</strong></li></ul><p>These are additional skills or experiences that are<strong> ‘nice to have’</strong> and can strengthen a candidate's profile but are not mandatory.<br/>Example: Familiarity with AWS or Kubernetes.<br/><br/></p><ul role="list"><li><strong>Additional Screening Criteria</strong></li></ul><p>These are specific conditions or constraints that can filter candidates based on eligibility, availability, or work policies.<br/>Example: Only candidates available for immediate joining; no remote work option.<br/><br/></p><p>The following prompt was used with gpt-41 for achieving the desired output.</p><div class="w-embed"><div style="background-color: #2A2A2B;padding: 2.5%;">

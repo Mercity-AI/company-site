@@ -45,6 +45,7 @@
  * Copy is short on purpose; he called a longer pass "sloppy".
  */
 import V2Layout from '@/layouts/V2Layout.astro';
+import { serviceNodes } from '@/utils/schema';
 
 const LCM_URL = '/research/lcm-lora-distillation-training-fast-diffusion-models';
 const LACO_URL = '/research/laco-layer-pruning-for-qwen3-8b-our-research-log';
@@ -306,12 +307,38 @@ const faqs = [
   { q: 'Will it run on our stack?', a: 'Yes. We deliver in the format your serving stack loads.' },
   { q: 'What if the target cannot be reached?', a: 'You hear it early. The baseline shows how close the model can get.' },
 ];
+
+const description =
+  'Distillation, pruning and quantization for models that are too slow, too large or too expensive to run. Delivered with before-and-after benchmarks on your own tasks.';
+
+const schema = serviceNodes({
+  path: '/services/model-optimization',
+  name: 'Model optimization',
+  description,
+  serviceType: 'Model optimization: distillation, pruning and quantization',
+  faqs,
+  // The six techniques as the page frames them: when we use each.
+  offers: methods.map((m) => ({ name: m.title, description: m.line })),
+  outputs: ['Before-and-after benchmarks on your tasks', 'The optimized model, in the format your serving stack loads'],
+  relatedLink: [LCM_URL, LACO_URL, HF_URL],
+  keywords: [
+    'model optimization service',
+    'LLM inference cost reduction',
+    'model distillation',
+    'layer pruning',
+    'LLM quantization',
+    'diffusion model distillation',
+    'reduce LLM latency',
+    'self-hosted LLM optimization',
+  ],
+});
 ---
 
 <V2Layout
   title="Model optimization"
-  description="Distillation, pruning and quantization for models that are too slow, too large or too expensive to run. Delivered with before-and-after benchmarks on your own tasks."
+  description={description}
   path="/services/model-optimization"
+  schema={schema}
 >
   <!-- ═══ HERO: the pinned scroll, on green strata ═══════════════ -->
   <section class="sh" data-sh>

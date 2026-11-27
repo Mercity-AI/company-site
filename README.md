@@ -45,6 +45,40 @@ Social cards do crop, so keep key content off the top and bottom edges.
 The listing thumbnail is only 220px wide, so the image needs to read at
 that size.
 
+### Structured data (`jsonld`)
+
+Every post and log carries a `jsonld` block at the end of its frontmatter:
+the hand-written part of the page's JSON-LD. Ids, dates, authors, the cover
+and breadcrumbs are generated from the other fields; this block adds what an
+answer engine needs that they do not say.
+
+```yaml
+jsonld:
+  abstract: >-
+    2-4 sentences: what the piece covers and what it found, with its numbers.
+  about:
+    - name: Red teaming
+      sameAs: https://en.wikipedia.org/wiki/Red_team   # only a checked Wikipedia URL
+    - name: AI agent stress testing
+  keywords: [agent stress testing, multi-turn agent testing]  # merged with tags
+  citation:                     # every URL must appear in the body
+    - name: Heckler
+      url: https://github.com/Mercity-AI/heckler
+      type: code                # paper | code | dataset | model | page
+  faq:                          # 4-6 questions, answers self-contained
+    - q: What is Heckler?
+      a: >-
+        ...
+    - q: How can Mercity help with stress-testing an LLM agent?   # always last
+      a: >-
+        2-4 sentences on what Mercity does here and the work behind it.
+```
+
+The schema is strict (a misspelt key fails the build) and `pnpm test`
+fails any built post or log without an abstract, topics and an FAQ ending in
+one "How can Mercity help" question. A new post needs one before it merges;
+`pnpm import:notion` does not write it. See `src/utils/schema.ts`.
+
 ## Content scripts
 
 Cloudflare R2 helper scripts are unchanged:

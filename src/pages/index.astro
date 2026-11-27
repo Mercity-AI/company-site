@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import V2Layout from '@/layouts/V2Layout.astro';
+import { ORGANIZATION_ID, webPageNode } from '@/utils/schema';
 
 // Counted at build, as on the About page, so the Research card's figure
 // stays true as posts are added.
@@ -145,12 +146,60 @@ const tooling = [
       'Fused kernels and training utilities for architectures that do not fit the standard stack, benchmarked against the reference implementation on every commit.',
   },
 ];
+
+const description =
+  'Research-led capabilities for product and enterprise teams. Synthetic data, custom training, and evaluation that tells the truth.';
+/* Every answer restates copy that is visible on this page. */
+const faqs = [
+  {
+    q: 'What does Mercity do?',
+    a: 'Mercity is a research-first AI firm that works with companies on problems off-the-shelf APIs cannot solve: custom training, new model architectures, optimization and private research. It handles every stage, from the training data to the evaluation, and the client owns the weights and the code.',
+  },
+  {
+    q: "What is Mercity's expertise?",
+    a: 'Synthetic data generation, custom architecture and training, and evaluation and benchmarking. Mercity has generated hundreds of billions of tokens of synthetic data and trained models on it, designs and optimizes models around the task (for example Qwen3-8B pruned from 36 layers to 30), and starts every project by building a benchmark for the domain.',
+  },
+  {
+    q: 'How do engagements with Mercity work?',
+    a: 'Product teams work with Mercity in 6 to 14 week engagements and walk away with the models and data, so they can take the technology in-house. Enterprises work with Mercity in months-long engagements, with embedded teams that build AI into the business systems their teams already use. Either way, the client owns the models, data and code.',
+  },
+  {
+    q: 'What does Mercity publish as open source?',
+    a: 'Mercity publishes datasets and models on Hugging Face (pretraining corpora, embedding sets, labelled data, pruned and distilled models, adapters and classifiers), long-form research logs with the implementation detail needed to reproduce the work, and its tools: Simula for synthetic data generation and PromptKeep for versioned prompts.',
+  },
+  {
+    q: 'When should a company work with Mercity instead of using an off-the-shelf model?',
+    a: 'If an off-the-shelf model already solves the problem, a company does not need Mercity. If the model gets most of the way and the rest is what the business depends on, that remaining part (custom data, a model trained for the task, an evaluation that reflects the domain) is the work Mercity does.',
+  },
+];
+
+const schema = [
+  webPageNode({
+    path: '/',
+    name: 'Mercity Research',
+    description,
+    image: '/banner.png',
+    about: { '@id': ORGANIZATION_ID },
+    faqs,
+    keywords: [
+      'AI research firm',
+      'custom model training',
+      'synthetic data generation',
+      'model optimization',
+      'LLM evaluation',
+      'LLM guardrails',
+      'open-source AI',
+    ],
+    relatedLink: ['/services/synthetic-data', '/services/llm-guardrails', '/services/model-optimization', '/open-source/simula', '/research'],
+  }),
+];
 ---
 
 <V2Layout
   title="Mercity Research"
   path="/"
-  description="Research-led capabilities for product and enterprise teams. Synthetic data, custom training, and evaluation that tells the truth."
+  description={description}
+  schema={schema}
 >
   <!-- ═══ HERO ═══════════════════════════════════════════════════ -->
   <section class="hero">

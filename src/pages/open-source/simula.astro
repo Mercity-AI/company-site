@@ -49,11 +49,115 @@
  * after edits.
  */
 import V2Layout from '@/layouts/V2Layout.astro';
+import { ORGANIZATION_ID, breadcrumbNode, webPageNode } from '@/utils/schema';
+import { absoluteImage, canonicalUrl } from '@/utils/seo';
 
 const GITHUB_URL = 'https://github.com/Mercity-AI/Simula';
 const SERVICE_URL = '/services/synthetic-data';
 const DOCS_URL = 'https://simula.readthedocs.io/en/latest/index.html';
 const INSTALL = 'pip install simula-gen';
+
+const PATH = '/open-source/simula';
+const TITLE = 'Simula: open-source synthetic data generation';
+const DESCRIPTION =
+  'Simula is an open-source framework that generates large, diverse synthetic datasets for training models. It plans what every record covers, has a model write it, has a second model check it, and keeps the lineage of every row. MIT licensed.';
+/* "Mercity Simula", not "Simula": an unrelated product and Google's paper
+   share the name (AEO/GEO audit, Nov 2026). Facts from PyPI (simula-gen:
+   MIT, Python 3.11+) and the repo. No version here: it would go stale. */
+const APP_ID = `${canonicalUrl(PATH)}#software`;
+const LOG_PATH = '/research/building-simula-our-synthetic-data-generation-library';
+/* Every answer restates figures and copy shown on this page. */
+const faqs = [
+  {
+    q: 'What is Mercity Simula?',
+    a: 'Simula is an open-source synthetic data generation framework from Mercity, installed with pip install simula-gen. You describe the data you need in one paragraph; Simula maps every case the dataset should cover, has a model write each record, has a second model check it, and saves where every row came from.',
+  },
+  {
+    q: 'How does Simula stop synthetic data from repeating itself?',
+    a: 'Prompted a thousand times, a model keeps giving its most likely answer. Simula plans what every record covers before any is written: code picks one branch from each factor of a taxonomy, by weight, so the model never chooses the topic. In a 240-ticket comparison, direct prompting covered 4 of 8 ticket categories, with 152 tickets the same billing complaint reworded; sampling from Simula covered all 8, with 30 tickets in each.',
+  },
+  {
+    q: 'How much does it cost to generate a dataset with Simula?',
+    a: "Mercity's own 10,000-row run in June 2026 (e-commerce search queries with structured extractions) cost $22 and took about five hours: $4.79 to build the taxonomy and strategies, and $16.90 for 48,447 calls to write and judge the records. Support tickets cost $0.85 per 1,000, five per call with the critic on, with 95 to 97% accepted.",
+  },
+  {
+    q: 'Which models does Simula use?',
+    a: 'Three roles. A strategic model builds the taxonomy and strategies once per dataset, so a strong model costs little there. A bulk model writes the situations and the records and uses most of the tokens, so a fast, lighter model works. A critic model accepts or rejects each record with a reason. The three can be different models or the same one.',
+  },
+  {
+    q: 'How does Simula track where each record came from?',
+    a: 'Each row stores the taxonomy branches it was built from, the strategy, the writing plan and the verdict of the critic, so a wrong label can be traced back. Every stage is saved as a file (taxonomy, strategies, writing plans, the final dataset, every LLM call, an evaluation report and a cost summary), and a run can stop after any stage, be edited and continue.',
+  },
+  {
+    q: 'Can Mercity generate a synthetic dataset for you?',
+    a: 'Yes. Mercity built Simula for its own client work, where it has generated more than 300 billion tokens across engagements, and runs Simula at scale for clients through its synthetic data generation service, including runs across a cluster and datasets built end to end.',
+  },
+];
+
+const schema = [
+  webPageNode({
+    path: PATH,
+    name: TITLE,
+    description: DESCRIPTION,
+    image: '/simula-og.jpg',
+    about: { '@id': APP_ID },
+    faqs,
+    keywords: [
+      'open-source synthetic data generation',
+      'synthetic data framework',
+      'python synthetic data library',
+      'taxonomy-based data generation',
+      'LLM dataset generation',
+      'simula-gen',
+    ],
+    relatedLink: [LOG_PATH, SERVICE_URL, GITHUB_URL, DOCS_URL],
+    breadcrumb: true,
+  }),
+  {
+    '@type': 'SoftwareApplication',
+    '@id': APP_ID,
+    name: 'Mercity Simula',
+    alternateName: ['Simula', 'simula-gen'],
+    description: DESCRIPTION,
+    url: canonicalUrl(PATH),
+    applicationCategory: 'DeveloperApplication',
+    applicationSubCategory: 'Synthetic data generation',
+    operatingSystem: 'Any',
+    downloadUrl: 'https://pypi.org/project/simula-gen/',
+    installUrl: 'https://pypi.org/project/simula-gen/',
+    softwareRequirements: 'Python 3.11+',
+    featureList: [
+      'Taxonomy of every case the dataset should cover, built and reviewed level by level',
+      'Weighted sampling strategies with banned combinations, checked over 5,000 test draws',
+      'A distinct situation for every record to prevent near-duplicates',
+      'Records written against a JSON schema, repaired once or dropped',
+      'Critic model that accepts or rejects each record with a reason',
+      'Deduplication and trimming to the target size by coverage',
+      'Lineage on every row: branches, strategy, writing plan and critic verdict',
+      'Every stage saved as a file; stop, edit and resume',
+    ],
+    softwareHelp: { '@type': 'CreativeWork', url: DOCS_URL },
+    subjectOf: { '@id': `${canonicalUrl(LOG_PATH)}#article` },
+    license: 'https://opensource.org/license/mit',
+    isAccessibleForFree: true,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    author: { '@id': ORGANIZATION_ID },
+    publisher: { '@id': ORGANIZATION_ID },
+    image: absoluteImage('/simula-og.jpg'),
+  },
+  {
+    '@type': 'SoftwareSourceCode',
+    '@id': `${canonicalUrl(PATH)}#code`,
+    name: 'Mercity Simula',
+    codeRepository: GITHUB_URL,
+    programmingLanguage: { '@type': 'ComputerLanguage', name: 'Python' },
+    runtimePlatform: 'Python 3.11+',
+    license: 'https://opensource.org/license/mit',
+    targetProduct: { '@id': APP_ID },
+    author: { '@id': ORGANIZATION_ID },
+  },
+  breadcrumbNode(PATH, [{ name: 'Simula' }]),
+];
 
 const GH_PATH =
   'M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z';
@@ -323,9 +427,10 @@ const term = [
 ---
 
 <V2Layout
-  title="Simula: open-source synthetic data generation"
-  description="Simula is an open-source framework that generates large, diverse synthetic datasets for training models. It plans what every record covers, has a model write it, has a second model check it, and keeps the lineage of every row. MIT licensed."
-  path="/open-source/simula"
+  title={TITLE}
+  description={DESCRIPTION}
+  path={PATH}
+  schema={schema}
   image="/simula-og.jpg"
 >
   <!-- ═══ HERO: the map, and records landing on it ══════════════════ -->

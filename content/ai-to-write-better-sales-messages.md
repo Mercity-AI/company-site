@@ -12,6 +12,88 @@ authors:
 category: AI in Sales
 image: >-
   https://uploads-ssl.webflow.com/640f56f76d313bbe39631bfd/646bb76d631f79bb702dc523_sales-rewrite-hero2.png
+jsonld:
+  abstract: >-
+    Mercity trained its own model to rewrite sales messages in plainer, less
+    inflated language. With no public dataset of sales messages, it generated
+    pairs of weak and improved messages with a ChatGPT system prompt, added a
+    rephrasing dataset built for simplifying sentences, and fine-tuned BART,
+    Facebook AI's denoising sequence-to-sequence model, with Hugging Face
+    Transformers on 3,000 samples for 5 epochs. Judged by reading its outputs
+    rather than on a benchmark, the 2023 model simplified messages while keeping
+    most of their content, and Mercity concludes that salespeople write better
+    messages with AI than the model does alone.
+  about:
+    - name: BART (sequence-to-sequence model)
+    - name: Synthetic data
+      sameAs: https://en.wikipedia.org/wiki/Synthetic_data
+    - name: Fine-tuning
+      sameAs: https://en.wikipedia.org/wiki/Fine-tuning_(deep_learning)
+    - name: Text simplification
+      sameAs: https://en.wikipedia.org/wiki/Text_simplification
+    - name: Sales messaging
+  keywords:
+    - AI sales message rewriter
+    - rewrite sales messages with AI
+    - fine-tune BART for text rewriting
+    - synthetic training data from ChatGPT
+    - train a custom model on sales messages
+    - rewrite vs generate sales messages
+    - Hugging Face Transformers BART fine-tuning
+    - fine-tuning on a small dataset
+    - simplify sales copy with AI
+    - human in the loop sales AI
+  citation:
+    - name: >-
+        BART: Denoising Sequence-to-Sequence Pre-training for Natural Language
+        Generation, Translation, and Comprehension
+      url: >-
+        https://ai.facebook.com/research/publications/bart-denoising-sequence-to-sequence-pre-training-for-natural-language-generation-translation-and-comprehension/
+      type: paper
+  faq:
+    - q: >-
+        Why use AI to rewrite sales messages instead of generating them?
+      a: >-
+        ChatGPT can write sales messages, but it does not know the specific
+        problems a company's customers face, while a salesperson asks targeted
+        questions to find and fix them. Mercity's approach keeps the salesperson
+        writing the message and uses a trained model to rewrite it in clearer
+        language, since people still prefer a human in the loop.
+    - q: Which model works well for rewriting sales messages?
+      a: >-
+        Mercity found that BART, from the Facebook AI team, works well for
+        rewriting. BART is a denoising sequence-to-sequence model trained to
+        reconstruct corrupted sentences, so it learns to rebuild text and can
+        compress information into shorter sentences, which is close to what
+        rewriting a sales message needs.
+    - q: >-
+        How do you build a training dataset of sales messages when none exists?
+      a: >-
+        Companies treat sales messages as sensitive, so no public dataset
+        exists. Mercity wrote a ChatGPT system prompt that produces a weak and
+        an improved message for a given product, such as a DevOps and
+        cybersecurity audit service, ran it many times to build a synthetic
+        dataset, and added a rephrasing dataset made for simplifying sentences.
+    - q: >-
+        How much data does it take to fine-tune BART to rewrite sales messages?
+      a: >-
+        In Mercity's 2023 experiment, BART was fine-tuned with Hugging Face
+        Transformers on 3,000 samples for 5 epochs, which Mercity describes as
+        very little data and training. Judged by reading its outputs rather than
+        on a benchmark, the model generalized well, simplifying inflated
+        messages without changing most of their content.
+    - q: >-
+        How can Mercity help with training a custom model to write better sales
+        messages?
+      a: >-
+        Mercity builds both the training data and the model for writing tasks
+        like this: synthetic data engineered around the client's domain and
+        verified sample by sample, then a fine-tuned model the client keeps. It
+        has a lot of experience with this work, has generated hundreds of
+        billions of tokens of synthetic data for client projects and trained
+        models on it, and publishes Simula, its open-source synthetic data
+        framework. It has worked with many clients and taken these systems to
+        production.
 ---
 
 <div class="rich-text w-richtext"><p>For a business, sales messaging is a critical component of success. Crafting messages that resonate with customers and drive sales requires careful consideration of language, tone, and audience. Understanding sales on a deeper level is essential to help prospects make a decision and even more so, close the deal.</p><p>Crafting the right message can be difficult for sales representatives. They may struggle with language barriers, finding the right words, or tailoring messages to specific audiences. And, It is difficult and time-consuming to train sales representatives in your specific niche.</p><p>In this article, we will build an AI system that can rewrite sales messages better than sales reps. We will also show you how you can write better sales messages with AI. And believe us, training this model is cheaper than training your sales representatives.</p><h2 id="why-rewrite-not-generate">Why “rewrite” not “generate”?</h2><p>ChatGPT, with its chat interface, has made it extremely easy to generate messages in a chat-based format. So, why not just use ChatGPT to handle sales conversations completely? That is a good question. </p><p>Although we can ask ChatGPT to take over sales conversations completely, it simply doesn’t have any knowledge about the specific problems faced by your customers. Imagine you sell a specific type of lighting product, the problems faced by your customers are going to be very niche and ChatGPT will not know what kind of questions to ask to locate and fix the problem. A human, on the other hand, will take a very targeted approach to solving the customer’s problem.</p><p>Although with fancy prompt engineering techniques, it is possible to make ChatGPT more efficient in these problems, but people still prefer to keep humans in the loop.</p><h2 id="bart-for-ai-powered-sales-message-rewriting">BART for AI-Powered Sales Message Rewriting</h2><p>For rewriting messages, we have found that the BART model by the Facebook AI team works really well. BART transformer model is also known as the “denoising autoencoder”. This is because BART was specifically trained to reconstruct “corrupted” sentences.</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1320pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/ai-to-write-better-sales-messages/646baa5fdf20d24c4ba81df0_ace4a460.jpg"/></div></figure><p>Because of this training method, BART learns how to reconstruct sentences. BART has also represented the ability to hugely compress information in shorter sentences when prompted to.</p><p>This is very similar to what we are trying to do with sales messages. </p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1059pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/ai-to-write-better-sales-messages/646baa5fbfa30d3682c74b03_ca49795b.jpg"/></div></figure><p>If you want to learn more about BART, read the paper here: <a href="https://ai.facebook.com/research/publications/bart-denoising-sequence-to-sequence-pre-training-for-natural-language-generation-translation-and-comprehension/">BART: Denoising Sequence-to-Sequence Pre-training for Natural Language Generation, Translation, and Comprehension</a>.</p><p><br/></p><h2 id="building-the-ai-system">Building the AI system</h2><p>Now that we have the model of choice. We can start building the pipelines required for this Sales AI.</p><h3 id="building-a-dataset">Building a Dataset</h3><p>AI models are as good as the data we give them. We need to have a ton of examples for the AI model to learn properly. But for this specific use case, rewriting sales messages, there is no dataset out there :( This is understandable as this data is sensitive and no company would ever release such a dataset.</p><p>To tackle this problem, we will be building a dataset of our own! We will use synthetic data generation techniques to build a dataset of sales messages using ChatGPT, which we will then use to train our own internal AI.</p><h4 id="what-is-synthetic-data">What is Synthetic Data?</h4><p>Synthetic data is computer-generated data that we can tailor to specific needs. It can be created quickly and inexpensively using various techniques. The good thing about synthetic data is that it is “synthetic” meaning it is not real data, hence it can be used to train AI models without any data compliance issues. For the purpose of this tutorial, we are going to build a synthetic dataset using ChatGPT.</p><p>If you are interested in learning more about Synthetic Datasets and how can they be generated, read our extensive guide: <a href="https://www.mercity.ai/blog-post/using-chatgpt-to-build-synthetic-datasets">Using ChatGPT to build Synthetic Datasets</a>.</p><h4 id="using-chatgpt-to-generate-the-data">Using ChatGPT to Generate the Data</h4><p>After some experimentation, we were able to write the perfect ChatGPT system prompt which allowed us to generate good sales messages.</p><p>Here’s an example:</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1600pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/ai-to-write-better-sales-messages/646baa60bfa30d3682c74b2f_5602bf40.jpg"/></div></figure><p>Here’s an example pair of sales messages which I generated for “<em>A DevOps and cybersecurity audit service</em>”:</p><p><strong>Bad:</strong> <em>Our DevOps and cybersecurity audit service offers a comprehensive approach that not only identifies potential vulnerabilities, but also provides actionable recommendations for fixing them. By leveraging cutting-edge technologies and industry expertise, we help you stay ahead of the curve when it comes to protecting your infrastructure.</em></p><p><strong>Good:</strong> <em>Our DevOps and cybersecurity audit service is designed to help you identify potential vulnerabilities in your system and provide recommendations to fix them. We utilize the latest technologies and industry best practices to ensure maximum protection for your infrastructure.</em></p><p>You can see the difference between the messages pretty clearly.</p><p>Now that we have the prompts, we will run it multiple times to generate a large dataset of messages.</p><h3 id="training-the-ai">Training the AI</h3><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:894pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/ai-to-write-better-sales-messages/646baa5f78919abe47c52c96_3da4518f.jpg"/></div></figure><p>Now that we have our dataset ready, we can start training the model. We will use the <a href="https://huggingface.co/">HuggingFace </a>Transformers library for this. It allows us to directly load the pretrained BART model and finetune it for our purposes.</p><p>As you can see, we are also going to use the rephrase dataset, which is specifically made to rewrite sentences for simplicity. You can read more about it <a href="https://www.mercity.ai/blog-post/using-chatgpt-to-build-synthetic-datasets">here</a>.</p><p>We trained the model only on <strong>3000 samples for 5 epochs</strong>. This is a very little amount of data and training for this task.</p><h3 id="testing-it-out">Testing it out!</h3><p>Now that we have the AI model trained, we can experiment with giving it some messages and see how it performs. We do not need a specific benchmark for this task as this is more of a qualitative goal than a quantitative one.</p><p>Even with a very little amount of training, the model was able to generalize pretty well.</p><p>Here are some input-output samples:</p><p><strong>Input:</strong> <em>Our cold calling software comes packed with unmatched features such as dynamic scripting engine and call dispositions among others which streamline success for a higher conversion rate leading ultimately to significant ROI gains for your business.</em></p><p><strong>Output:</strong> <em>Our cold calling software includes advanced features such as dynamic scripting engine, call dispositions, and more to help you achieve a higher conversion rate. This ultimately leads to significant ROI gains for your business.</em></p><p>=====</p><p><strong>Input:</strong> <em>Our state-of-the-art dialer along with the call tracking features we offer makes us stand out from other solutions in the market. You also get access to comprehensive reports that provide valuable insights into what's working and what isn't.</em></p><p><strong>Output:</strong> <em>Our state-of-the-art dialer and call-tracking features make us stand out from other solutions in the market. You'll have access to comprehensive reports that provide valuable insights into what's working and what isn't.</em></p><p>Here we can see, the model was able to simplify the message without changing a lot of it.</p><p>Here are some more tests we ran:</p><div class="w-embed"><div style="background-color: #2A2A2B;padding: 2.5%;">
