@@ -6,15 +6,26 @@ import EntryRow from '@/components/v2/EntryRow.astro';
 import PaperBlock from '@/components/v2/PaperBlock.astro';
 import { papers } from '@/data/papers';
 import { entryToRow, estimateReadingTime, formatShortDate, getResearchUrl, sortPostsByPublishedDate } from '@/utils/blog';
+import { collectionNodes } from '@/utils/schema';
 
 const entries = sortPostsByPublishedDate(await getCollection('research'));
 const [lead, ...rest] = entries;
+
+const description =
+  'Research logs from Mercity: what we tried, what held up, and the specific reason why, with the implementation detail included.';
+const schema = collectionNodes({
+  path: '/research',
+  name: 'Research',
+  description,
+  items: entries.map((e) => ({ url: getResearchUrl(e), name: e.data.title })),
+});
 ---
 
 <V2Layout
   title="Research"
-  description="Research logs from Mercity: what we tried, what held up, and the specific reason why, with the implementation detail included."
+  description={description}
   path="/research"
+  schema={schema}
 >
   <ListHead
     eyebrow="Research"

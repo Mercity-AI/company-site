@@ -4,6 +4,8 @@ import { getCollection, render } from 'astro:content';
 import V2Layout from '@/layouts/V2Layout.astro';
 import Article from '@/components/v2/Article.astro';
 import { entryToRow, getResearchUrl, sortPostsByPublishedDate } from '@/utils/blog';
+import { papers } from '@/data/papers';
+import { articleNodes } from '@/utils/schema';
 
 export async function getStaticPaths() {
   const entries = await getCollection('research');
@@ -28,6 +30,28 @@ const more = sortPostsByPublishedDate(await getCollection('research'))
   .filter((e) => e.id !== entry.id)
   .slice(0, 3)
   .map((e) => entryToRow(e, getResearchUrl(e)));
+
+/* A log that has a paper (src/data/papers.ts) cites it and links its code. */
+const paper = papers.find((p) => p.log === articlePath);
+const schema = articleNodes({
+  entry,
+  path: articlePath,
+  type: 'TechArticle',
+  section: { name: 'Research', path: '/research' },
+  extra: paper
+    ? {
+        citation: {
+          '@type': 'ScholarlyArticle',
+          name: paper.title,
+          url: paper.href,
+          author: paper.authors.split(',').map((name) => ({ '@type': 'Person', name: name.trim() })),
+        },
+        mentions: paper.code
+          ? [{ '@type': 'SoftwareSourceCode', codeRepository: paper.code, url: paper.code }]
+          : undefined,
+      }
+    : undefined,
+});
 ---
 
 <V2Layout
@@ -40,6 +64,7 @@ const more = sortPostsByPublishedDate(await getCollection('research'))
   modifiedTime={modifiedTimeISO}
   author={entry.data.authors[0]?.name}
   tags={entry.data.tags}
+  schema={schema}
 >
   <Article entry={entry} backHref="/research" section="Research" more={more}>
     <Content />

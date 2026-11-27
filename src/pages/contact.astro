@@ -9,6 +9,7 @@
  */
 import V2Layout from '@/layouts/V2Layout.astro';
 import ListHead from '@/components/v2/ListHead.astro';
+import { ORGANIZATION_ID, breadcrumbNode, webPageNode } from '@/utils/schema';
 
 const CALENDLY_URL = 'https://calendly.com/pranav-mercity/30min';
 // The embed takes the site's indigo for its accents (Calendly honours
@@ -16,12 +17,26 @@ const CALENDLY_URL = 'https://calendly.com/pranav-mercity/30min';
 const CALENDLY_EMBED = `${CALENDLY_URL}?hide_gdpr_banner=1&primary_color=3028d7`;
 const EMAIL = 'pranav@mercity.io';
 const contactApiBaseUrl = import.meta.env.PUBLIC_CONTACT_API_BASE_URL ?? 'http://127.0.0.1:8000';
+
+const description = 'Send Mercity the task, the model you use now and where it falls short, or book a 30-minute call.';
+const schema = [
+  webPageNode({
+    path: '/contact',
+    name: 'Contact',
+    description,
+    type: 'ContactPage',
+    mainEntity: { '@id': ORGANIZATION_ID },
+    breadcrumb: true,
+  }),
+  breadcrumbNode('/contact', [{ name: 'Contact' }]),
+];
 ---
 
 <V2Layout
   title="Contact"
-  description="Send Mercity the task, the model you use now and where it falls short, or book a 30-minute call."
+  description={description}
   path="/contact"
+  schema={schema}
 >
   <ListHead
     title="Tell us what you are building."

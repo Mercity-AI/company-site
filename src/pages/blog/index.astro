@@ -4,6 +4,7 @@ import V2Layout from '@/layouts/V2Layout.astro';
 import ListHead from '@/components/v2/ListHead.astro';
 import EntryRow from '@/components/v2/EntryRow.astro';
 import { entryToRow, getPostUrl, sortPostsByPublishedDate } from '@/utils/blog';
+import { collectionNodes } from '@/utils/schema';
 
 const posts = sortPostsByPublishedDate(await getCollection('posts'));
 
@@ -17,12 +18,22 @@ const groups = [...byYear.entries()].sort((a, b) => b[0] - a[0]);
 
 const years = groups.length ? [...new Set([groups.at(-1)![0], groups[0][0]])].join('–') : '';
 const count = posts.length ? `${posts.length} posts · ${years}` : undefined;
+
+const description =
+  "Guides and explainers from Mercity's client work: how a thing works, how to build it, and what broke when we did.";
+const schema = collectionNodes({
+  path: '/blog',
+  name: 'Blog',
+  description,
+  items: posts.map((p) => ({ url: getPostUrl(p), name: p.data.title })),
+});
 ---
 
 <V2Layout
   title="Blog"
-  description="Guides and explainers from Mercity's client work: how a thing works, how to build it, and what broke when we did."
+  description={description}
   path="/blog"
+  schema={schema}
 >
   <ListHead
     eyebrow="Blog"

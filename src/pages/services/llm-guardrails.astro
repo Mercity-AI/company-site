@@ -24,6 +24,7 @@
  * are illustrations.
  */
 import V2Layout from '@/layouts/V2Layout.astro';
+import { serviceNodes } from '@/utils/schema';
 import PaperCard from '@/components/v2/PaperCard.astro';
 
 const SOFT_PROMPT_URL = 'https://mercity.notion.site/Weight-Free-Policy-Compliance-via-Soft-Prompt-DPO-391bc705ab7380588fa5e708d907bc9b';
@@ -239,12 +240,24 @@ const faqs = [
   { q: 'Can you guarantee nothing gets through?', a: 'No one honestly can. We give you the measured rate, per category, and monitor it.' },
   { q: 'What happens after launch?', a: 'You own it and we train your team, or we keep it current.' },
 ];
+
+const description =
+  'Guardrails, red-teaming and evaluation for LLM products and agents. Built to your policy, tested against adaptive attackers, and delivered with the evidence your security review asks for.';
+
+const schema = serviceNodes({
+  path: '/services/llm-guardrails',
+  name: 'LLM guardrails and security',
+  description,
+  serviceType: 'LLM guardrails, red-teaming and AI security',
+  faqs,
+});
 ---
 
 <V2Layout
   title="LLM guardrails and security"
-  description="Guardrails, red-teaming and evaluation for LLM products and agents. Built to your policy, tested against adaptive attackers, and delivered with the evidence your security review asks for."
+  description={description}
   path="/services/llm-guardrails"
+  schema={schema}
 >
   <!-- ═══ HERO: the pinned scroll, on warm strata ════════════════ -->
   <section class="sh" data-sh>

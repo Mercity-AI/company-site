@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import V2Layout from '@/layouts/V2Layout.astro';
+import { ORGANIZATION_ID, webPageNode } from '@/utils/schema';
 
 // Counted at build, as on the About page, so the Research card's figure
 // stays true as posts are added.
@@ -145,12 +146,25 @@ const tooling = [
       'Fused kernels and training utilities for architectures that do not fit the standard stack, benchmarked against the reference implementation on every commit.',
   },
 ];
+
+const description =
+  'Research-led capabilities for product and enterprise teams. Synthetic data, custom training, and evaluation that tells the truth.';
+const schema = [
+  webPageNode({
+    path: '/',
+    name: 'Mercity Research',
+    description,
+    image: '/banner.png',
+    about: { '@id': ORGANIZATION_ID },
+  }),
+];
 ---
 
 <V2Layout
   title="Mercity Research"
   path="/"
-  description="Research-led capabilities for product and enterprise teams. Synthetic data, custom training, and evaluation that tells the truth."
+  description={description}
+  schema={schema}
 >
   <!-- ═══ HERO ═══════════════════════════════════════════════════ -->
   <section class="hero">
