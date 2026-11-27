@@ -20,6 +20,111 @@ tags:
 category: LLM Guardrails
 isTopPick: false
 image: /blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/violations-caught.png
+jsonld:
+  abstract: >-
+    Mercity trained Policy NLI, a 4B model that reads a customer-service agent's
+    conversation, its reply and one business rule, and answers followed,
+    violated or doesn't apply with a one-sentence reason. On 20,435 checks from
+    two business types it never saw in training, it caught 67 of 80 natural
+    violations at 1% false alarms, against 33 for Claude Sonnet 5.5, 12 for
+    Llama-Guard-3-8B and 8 for DynaGuard-8B. Each of four training steps on a
+    LoRA over Mercity's 4B decision model changed one thing; reading the
+    conversation gave the largest gain, from 51 to 65 catches. Behind a 395M
+    screening encoder it costs $4.84 per million checks.
+  about:
+    - name: Natural language inference
+      sameAs: https://en.wikipedia.org/wiki/Textual_entailment
+    - name: LLM guardrails
+    - name: Policy compliance for AI agents
+    - name: Decision models
+    - name: Low-rank adaptation
+      sameAs: https://en.wikipedia.org/wiki/LoRA_(machine_learning)
+    - name: Customer service AI agents
+  keywords:
+    - policy violation detection
+    - business policy compliance for AI agents
+    - natural language inference for guardrails
+    - Policy NLI
+    - DynaGuard vs Llama Guard
+    - guardrail model benchmark
+    - train a guardrail model on your own rules
+    - customer service agent policy checks
+    - ModernBERT screening encoder
+    - DynaBench
+    - vLLM prefix caching for guardrails
+  citation:
+    - name: Mercity/policy-nli-decision-model-4b-lora
+      url: >-
+        https://huggingface.co/Mercity/policy-nli-decision-model-4b-lora
+      type: model
+    - name: Mercity/policy-nli-modernbert-large
+      url: https://huggingface.co/Mercity/policy-nli-modernbert-large
+      type: model
+    - name: Mercity/policy-nli
+      url: https://huggingface.co/datasets/Mercity/policy-nli
+      type: dataset
+    - name: Policy NLI training logs, code and reports
+      url: https://huggingface.co/buckets/Mercity/Policy-NLI
+      type: page
+    - name: Mercity/decision-model-qwen3.5-4b
+      url: https://huggingface.co/Mercity/decision-model-qwen3.5-4b
+      type: model
+  faq:
+    - q: What is Policy NLI?
+      a: >-
+        Policy NLI is a 4B model from Mercity that checks a customer-service AI
+        agent's reply against one business rule. Given the conversation so far,
+        the reply and the rule, it answers that the rule was followed, violated
+        or doesn't apply, and writes one sentence on why. It is a LoRA for
+        Mercity's 4B decision model, released with a screening encoder, the
+        dataset and the training logs.
+    - q: >-
+        How do guardrail models like Llama Guard and DynaGuard do on business
+        policy violations?
+      a: >-
+        Poorly, in Mercity's test of 20,435 checks with 80 natural violations.
+        At 1% false alarms the best guard, Llama-Guard-3-8B, caught 12,
+        DynaGuard-8B caught 8 and ShieldGemma-27B caught 3, and every guard
+        scored an average precision of 0.023 or lower. Each judges one message
+        against one rule, answers only pass or fail, and does not read the
+        earlier conversation that 73 of the 80 violations depend on.
+    - q: Why does a policy checker need a "doesn't apply" answer?
+      a: >-
+        A business rule usually applies only in one situation. In Mercity's
+        earlier study, Jev wrongly blocked 9% of clean replies, and "must"
+        rules, 29% of the rules, caused 79% of those wrong blocks, such as
+        blocking a reply that sent a user who had taken too many pills to 911
+        because it did not offer to reschedule. Policy NLI can answer that a
+        rule doesn't apply, so a rule outside its situation is not counted as
+        broken.
+    - q: >-
+        How much does reading the conversation help a policy violation detector?
+      a: >-
+        It gave the largest gain in Mercity's training. With the same recipe,
+        data and seed, placing the earlier turns before the reply raised the 4B
+        model's catches from 51 to 65 of 80 and doubled its precision from 10%
+        to 22%. The same change hurt a 395M ModernBERT encoder, which fell from
+        38 to 22 catches because it treated a related word anywhere in the chat
+        as the trigger.
+    - q: How much does it cost to run Policy NLI?
+      a: >-
+        On one A100 at $2 an hour, running Policy NLI on every check costs about
+        $20 per million. Behind a 395M screening encoder that sends only its
+        most suspicious 20% onward, it catches the same 67 of 80 for $4.84 per
+        million checks, against about $2,415 per million for Claude Sonnet 5.5
+        at API prices. All of a reply's rules are checked in 132 ms at the
+        median.
+    - q: >-
+        How can Mercity help with catching policy violations in a
+        customer-facing AI agent?
+      a: >-
+        Mercity trains policy checkers on a client's own rules and conversations
+        and builds them into the agent's guardrail layer, measured on violations
+        the client's agent made on its own at a fixed false-alarm rate. It
+        released Policy NLI with its weights, dataset, training code and logs in
+        the open, alongside Heckler and its decision-model guard study, and has
+        taken guardrail systems to production for many clients. Every checker
+        runs in shadow mode on the client's traffic before it blocks anything.
 ---
 
 We trained Policy NLI, a 4B model that catches subtle policy violations in the replies of customer-service AI agents. Given the conversation so far, the agent's reply and one rule, it answers that the rule was followed, violated or doesn't apply, and it writes one sentence on why. On 20,435 checks from two business types it never saw in training, Policy NLI caught 67 of the 80 violations (84%) while raising false alarms on 1% of clean checks. Claude Sonnet 5.5 caught 33 at the same setting, and DynaGuard-8B, the guard model built for custom policies, caught 8. Behind a small screening encoder, Policy NLI costs \$4.84 per million checks.
