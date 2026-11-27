@@ -20,17 +20,16 @@ image: >-
   https://blog-cdn.mercity.ai/blog/taxonomical-classification-using-large-language-models/intro.jpg
 jsonld:
   abstract: >-
-    This guide compares three LLM approaches to taxonomy classification
-    (zero-shot and few-shot prompting, embedding-based matching, fine-tuned
-    transformer classifiers) and four system designs (flat, level-wise, joint
-    hierarchical training, inference-time decoding). Mercity then trained one
-    BERT encoder with a classification head per level, plus a none class for
-    shorter label paths, on the Shopify Product Catalogue (up to eight levels),
-    summing level-wise cross-entropy losses over about 40K training samples.
-    Accuracy was 0.71 at level 1 and 0.50 at level 2, fell sharply at levels 3
-    and 4, then rose from 0.53 at level 5 to 1.00 at level 8; Mercity concludes
-    that the spread of supervision across levels matters more than encoder
-    improvements.
+    Mercity trained one BERT encoder with a classification head per taxonomy
+    level, plus a none class for shorter label paths, on the Shopify Product
+    Catalogue (up to eight levels), summing the level-wise cross-entropy losses
+    over about 40K training samples. Accuracy was 0.71 at level 1 and 0.50 at
+    level 2, fell sharply at levels 3 and 4, then rose from 0.53 at level 5 to
+    1.00 at level 8, and Mercity concludes that the spread of supervision across
+    levels matters more than encoder improvements. The guide around the
+    experiment compares zero-shot and few-shot prompting, embedding matching and
+    fine-tuned classifiers, and flat, level-wise, joint and decoding-time
+    hierarchical designs.
   about:
     - name: Hierarchical classification
       sameAs: https://en.wikipedia.org/wiki/Hierarchical_classification

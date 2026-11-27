@@ -14,14 +14,15 @@ image: >-
   https://uploads-ssl.webflow.com/640f56f76d313bbe39631bfd/650f6755ec1eba8db2438a6b_tool%20use.png
 jsonld:
   abstract: >-
-    This October 2023 guide from Mercity explains how to connect language models
-    such as GPT-4, LLaMA and Falcon to tools and APIs. It describes Mercity's
-    pipeline (an instruction-following LLM, a plain-text tool library giving
-    each tool's name, description and usage, and a tool-use prompt that fixes a
-    parseable call format), compares plain tool prompting, ReAct prompting with
-    Thought, Act and Observation steps, and OpenAI function calling, and covers
-    models trained for tool use (Toolformer and Gorilla), uses in email, CRM and
-    CMS systems, and four problems: context overflow, accuracy loss as tools
+    Mercity describes the pipeline it built to connect language models such as
+    GPT-4, LLaMA and Falcon to tools and APIs: an instruction-following LLM, a
+    plain-text tool library giving each tool's name, description and usage, and
+    a tool-use prompt that fixes a parseable call format. In its October 2023
+    experiments, ReAct prompting with Thought, Act and Observation steps was
+    more accurate than plain tool prompting, the plain format broke down inside
+    very long prompts with GPT-3.5, and OpenAI function calling lost quality as
+    functions grew in number or became more custom. It also covers Toolformer
+    and Gorilla and four problems: context overflow, accuracy loss as tools
     multiply, latency and trust.
   about:
     - name: LLM tool use

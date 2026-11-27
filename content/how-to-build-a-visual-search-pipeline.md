@@ -14,14 +14,14 @@ image: >-
   https://uploads-ssl.webflow.com/640f56f76d313bbe39631bfd/64bd8caec9190e8c5783cc4c_visual_search.png
 jsonld:
   abstract: >-
-    This August 2023 tutorial builds a small visual product search engine in a
-    Colab notebook with Fashion CLIP, a CLIP-like model fine-tuned on product
-    images and their descriptions. Product images are encoded with
+    Mercity built a small visual product search engine in a Colab notebook with
+    Fashion CLIP, a CLIP-like model fine-tuned on product images and their
+    descriptions, and shares the notebook. Product images are encoded with
     get_image_features, a text query with get_text_features, and cosine
     similarity ranks the images; the demo keeps four images (two blue t-shirts,
     an orange t-shirt and red boots) in a Python list instead of a vector
-    database. The model returns the boots for 'red boots' and separates 'blue
-    t-shirt with collar' from 'blue t-shirt without collar'. The guide also
+    database. It returns the boots for 'red boots' and separates 'blue t-shirt
+    with collar' from 'blue t-shirt without collar'. The August 2023 guide also
     covers attribute extraction and vector databases for larger catalogues.
   about:
     - name: Visual product search

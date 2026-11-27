@@ -14,13 +14,14 @@ image: >-
   https://uploads-ssl.webflow.com/640f56f76d313bbe39631bfd/648af64564f542cb9faea366_nlp-in-sales.png
 jsonld:
   abstract: >-
-    This 2023 guide works through uses of GPT-3, GPT-4 and NLP pipelines in
-    sales, with a prompt and output for each. It covers a shopping chatbot that
-    asks follow-up questions and then searches the catalogue through a modified
-    ReAct prompt, embeddings and cosine similarity; visual product search with
-    OpenAI's CLIP and the clothing-tuned FashionCLIP; summaries of hour-long
-    sales calls built from overlapping transcript chunks; and call analytics,
-    sentiment analysis per speaker, upsell suggestions, data extraction from
+    Mercity's 2023 guide shows GPT-3, GPT-4 and NLP pipelines in sales from its
+    own builds, each with a prompt and output: a shopping chatbot Mercity built
+    that asks follow-up questions and then searches the catalogue through a
+    modified ReAct prompt, embeddings and cosine similarity, and GPT-3
+    summarizing an hour-long sales call while keeping its exact figures, with
+    overlapping chunks for longer transcripts. It also covers visual product
+    search with OpenAI's CLIP and the clothing-tuned FashionCLIP, call
+    analytics, sentiment per speaker, upsell suggestions, data extraction from
     chats and cold emails written from customer reviews.
   about:
     - name: Natural language processing

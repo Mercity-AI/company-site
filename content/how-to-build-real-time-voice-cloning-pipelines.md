@@ -15,12 +15,13 @@ image: >-
   https://uploads-ssl.webflow.com/640f56f76d313bbe39631bfd/664fac8511b91ff72a4d5b25_voice%20cloning.png
 jsonld:
   abstract: >-
-    This 2024 guide explains how voice cloning works: a speaker encoder trained
-    with a GE2E loss turns a reference recording into speaker embeddings, a
+    Mercity published a voice cloning pipeline as its open-source
+    Voice-Cloning-Demo repository: Python code that clones a voice with Bark
+    through the TTS library from a directory of the speaker's audio files. The
+    2024 guide explains how voice cloning works (a speaker encoder trained with
+    a GE2E loss turns a reference recording into speaker embeddings, a
     synthesizer predicts mel spectrograms from text, and a vocoder produces the
-    waveform. It walks through Python code, published in Mercity's
-    Voice-Cloning-Demo repository, that clones a voice with Bark through the TTS
-    library, and compares Bark with MyShell's OpenVoice, which the guide says
+    waveform) and compares Bark with MyShell's OpenVoice, which the guide says
     clones a voice from under 30 seconds of audio and generates a second of
     speech in 85 milliseconds.
   about:

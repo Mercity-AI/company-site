@@ -14,15 +14,16 @@ image: >-
   https://blog-cdn.mercity.ai/blog/react-prompting-and-react-based-agentic-systems/680365971dd5436718724d9d_react_promptinh.jpg
 jsonld:
   abstract: >-
-    This April 2025 guide from Mercity explains ReAct prompting, in which an LLM
-    repeats Thought, Action and Observation steps until it gives a final answer,
-    and shares Mercity's zero-shot and few-shot ReAct prompts. It covers
-    settings reported in the ReAct paper (chain-of-thought with self-consistency
-    over 21 chains at temperature 0.7, and Act-only prompting), function calling
-    by detecting actions and appending each result after an arrow,
-    forced-grammar decoding with Outlines, TGI or vLLM to prevent syntax errors
-    in calls, how ReAct compares with chain-of-thought, multistep flows
-    triggered by actions, and LangGraph's create_react_agent.
+    Mercity shares the zero-shot and few-shot ReAct prompts it uses, in which an
+    LLM repeats Thought, Action and Observation steps until it gives a final
+    answer, and how it adds function calling: detecting actions in the output,
+    running them and appending each result after an arrow, with forced-grammar
+    decoding through Outlines, TGI or vLLM to prevent syntax errors in calls. In
+    Mercity's experience the output format (JSON, XML or YAML) makes no major
+    difference, and it uses XML internally. The April 2025 guide also notes that
+    in the ReAct paper chain-of-thought with self-consistency over 21 chains
+    beat ReAct on HotpotQA, and covers multistep flows and LangGraph's
+    create_react_agent.
   about:
     - name: ReAct prompting
     - name: Chain-of-thought prompting

@@ -15,15 +15,16 @@ image: >-
   https://blog-cdn.mercity.ai/blog/build-an-llm-based-resume-analyzer/681297bed12d873f1d757841_resume_analysis.jpg
 jsonld:
   abstract: >-
-    This 2025 guide builds a two-stage LLM resume screener and releases it as
-    open source (Mercity-AI/Resume-Analyzer). GPT-4.1 turns a job description
-    into JSON lists of must-have requirements, good-to-have requirements and
-    additional screening criteria; the reasoning model o4-mini then marks each
-    requirement true or false against the resume, rates project gravity,
+    Mercity built an LLM resume screener, released it as open source
+    (Mercity-AI/Resume-Analyzer) and put a prototype live to try. GPT-4.1 turns
+    a job description into JSON lists of must-have requirements, good-to-have
+    requirements and screening criteria; the reasoning model o4-mini then marks
+    each requirement true or false against the resume, rates project gravity,
     ownership and transferability as high, medium or low, and returns a Yes or
-    No with its reasons. On one resume for a Machine Learning Intern role at
-    Mercity, a keyword ATS checker failed to match 'deep learning with CNN' to
-    'deep learning techniques', while the LLM analyzer explained its verdict.
+    No with its reasons. In Mercity's test on one resume for a Machine Learning
+    Intern role, a keyword ATS checker missed that 'deep learning with CNN'
+    meets 'deep learning techniques', while the LLM analyzer explained its
+    verdict.
   about:
     - name: Applicant tracking system
       sameAs: https://en.wikipedia.org/wiki/Applicant_tracking_system

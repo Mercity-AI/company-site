@@ -14,16 +14,15 @@ image: >-
   https://uploads-ssl.webflow.com/640f56f76d313bbe39631bfd/646bb76d631f79bb702dc523_sales-rewrite-hero2.png
 jsonld:
   abstract: >-
-    This 2023 tutorial fine-tunes BART, Facebook AI's denoising
-    sequence-to-sequence model trained to reconstruct corrupted text, to rewrite
-    sales messages in plainer, less inflated language. With no public dataset of
-    sales messages to train on, Mercity generated pairs of weak and improved
-    messages with a ChatGPT system prompt, added a rephrasing dataset built for
-    simplifying sentences, and trained with Hugging Face Transformers on 3,000
-    samples for 5 epochs. Judged by reading its outputs rather than on a
-    benchmark, the model simplified messages while keeping most of their
-    content, and the tutorial concludes that salespeople write better messages
-    with AI than the model does alone.
+    Mercity trained its own model to rewrite sales messages in plainer, less
+    inflated language. With no public dataset of sales messages, it generated
+    pairs of weak and improved messages with a ChatGPT system prompt, added a
+    rephrasing dataset built for simplifying sentences, and fine-tuned BART,
+    Facebook AI's denoising sequence-to-sequence model, with Hugging Face
+    Transformers on 3,000 samples for 5 epochs. Judged by reading its outputs
+    rather than on a benchmark, the 2023 model simplified messages while keeping
+    most of their content, and Mercity concludes that salespeople write better
+    messages with AI than the model does alone.
   about:
     - name: BART (sequence-to-sequence model)
     - name: Synthetic data

@@ -14,15 +14,15 @@ image: >-
   https://blog-cdn.mercity.ai/blog/building-real-time-crowd-management-systems/6834c86c3ce2d232463627fc_crowd-management.jpg
 jsonld:
   abstract: >-
-    This May 2025 guide describes how to build a crowd management system that
-    runs on live CCTV feeds. It covers clock synchronization with NTP or PTP,
-    ingestion with GStreamer, FFmpeg or OpenCV, and a hybrid of two models:
-    APGCC on GPU servers for head-level counts and locations in dense or
-    high-security zones, and FFNet on NVIDIA Jetson devices for density-map
-    counting at 30 to 80 ms per frame. Detections from overlapping cameras are
-    merged with homography warping, non-maximum suppression and trackers such as
-    DeepSORT and ByteTrack, and city-scale data flows through Kafka or Pulsar,
-    with raw video kept in five-minute chunks for seven to thirty days.
+    Mercity's design for a crowd management system on live CCTV feeds runs a
+    hybrid of two models: APGCC on GPU servers for head-level counts and
+    locations in dense or high-security zones, and FFNet on NVIDIA Jetson
+    devices for density-map counting at 30 to 80 ms per frame. Mercity released
+    the foundation code as its open-source Crowd-Management-Demo repository. The
+    May 2025 guide covers clock synchronization with NTP or PTP, ingestion with
+    GStreamer, FFmpeg or OpenCV, merging overlapping cameras with homography
+    warping, non-maximum suppression and trackers such as DeepSORT and
+    ByteTrack, and city-scale data flow through Kafka or Pulsar.
   about:
     - name: Crowd management
     - name: Crowd counting

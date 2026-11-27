@@ -14,16 +14,16 @@ image: >-
   https://uploads-ssl.webflow.com/640f56f76d313bbe39631bfd/646741133d82451ca502c79b_synthetic-data-hero.png
 jsonld:
   abstract: >-
-    This May 2023 guide walks through the pipeline Mercity used to generate a
-    synthetic dataset of complicated sentences paired with simpler rewrites at a
-    5th-grade reading level. A model first extracts the key properties of a few
-    seed examples, then the GPT API is called repeatedly for each topic (such as
-    legal jargon or business administration) for JSON batches of 5 pairs, with
-    temperature and frequency penalty set to 1 and presence penalty chosen per
-    task, and Python parses the output into a pandas dataframe saved as CSV. The
-    data had a wide vocabulary but contained only single sentences on topics
-    close to the seed example, so the guide advises using synthetic data only to
-    add variation to existing data.
+    Mercity generated a synthetic dataset of complicated sentences paired with
+    simpler rewrites at a 5th-grade reading level, and published the data. A
+    model first extracts the key properties of a few seed examples, then the GPT
+    API is called repeatedly for each topic (such as legal jargon or business
+    administration) for JSON batches of 5 pairs, with temperature and frequency
+    penalty set to 1 and presence penalty chosen per task, and Python parses the
+    output into a pandas dataframe saved as CSV. The data had a wide vocabulary
+    but only single sentences on topics close to the seed example, so the May
+    2023 guide advises using synthetic data to add variation to existing data,
+    not on its own.
   about:
     - name: Synthetic data
       sameAs: https://en.wikipedia.org/wiki/Synthetic_data

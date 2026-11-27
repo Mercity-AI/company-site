@@ -15,15 +15,15 @@ image: >-
   https://blog-cdn.mercity.ai/blog/custom-gpt-4-chatbot/6477c3c819cc27766b39c8ad_nlp-in-sales.jpg
 jsonld:
   abstract: >-
-    This guide, first written in 2023, shows how to build a GPT-4 chatbot that
-    answers from a company's own knowledge base through prompts and retrieved
-    context, without retraining the model. Documents are chunked, embedded with
-    OpenAI embeddings or SBERT and stored in a vector database such as Pinecone,
-    Weaviate or Milvus; each query is matched against those vectors and the
-    closest chunks above a similarity threshold go into the prompt. Tone and
-    topic are set with few-shot examples and sampling parameters (temperature,
-    top-p, maximum length, frequency and presence penalties), and LangChain can
-    automate the pipeline.
+    Mercity sets out the pipeline it uses to build custom chatbots, first
+    written in 2023: a GPT-4 chatbot that answers from a company's own knowledge
+    base through prompts and retrieved context, without retraining the model.
+    Documents are chunked (Mercity chunks even small documents, so the model
+    sees only relevant passages), embedded with OpenAI embeddings or SBERT and
+    stored in a vector database such as Pinecone, Weaviate or Milvus; each query
+    is matched against those vectors and the closest chunks above a similarity
+    threshold go into the prompt. Tone and topic are set with few-shot examples
+    and sampling parameters, and LangChain can automate the pipeline.
   about:
     - name: GPT-4
       sameAs: https://en.wikipedia.org/wiki/GPT-4

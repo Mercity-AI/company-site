@@ -15,15 +15,16 @@ image: >-
   https://uploads-ssl.webflow.com/640f56f76d313bbe39631bfd/6660da856d7a7bddccdbb499_image%20upscaling.png
 jsonld:
   abstract: >-
-    This June 2024 study compares classical, deep learning, GAN and diffusion
-    approaches to image upscaling. It explains nearest-neighbour and bicubic
-    interpolation, the CNN super-resolution models EDSR, ESPCN, FSRCNN and
-    LapSRN, the ESRGAN generator and discriminator, and Stable Diffusion's x4
-    upscaler, with Python code for Real-ESRGAN and the diffusers upscale
-    pipeline. It then benchmarks DiffBIR, ResShift, SUPIR and Real-ESRGAN and
-    tests upscalers on restoring downscaled images, measuring mean squared
-    error, SSIM and processing time with Mercity's open-source
-    Image-Upscaling-Benchmark tool, which readers can run on their own images.
+    Mercity benchmarked four image upscalers (DiffBIR, ResShift, SUPIR and
+    Real-ESRGAN) and tested how well upscalers restore downscaled images, 2x
+    down and back up, and 8x down restored with a 4x then a 2x upscale,
+    measuring mean squared error, SSIM and processing time with
+    Image-Upscaling-Benchmark, a tool it built for the study and released as
+    open source so readers can run it on their own images. The June 2024 study
+    also explains nearest-neighbour and bicubic interpolation, the CNN models
+    EDSR, ESPCN, FSRCNN and LapSRN, the ESRGAN generator and discriminator, and
+    Stable Diffusion's x4 upscaler, with Python code for Real-ESRGAN and the
+    diffusers upscale pipeline.
   about:
     - name: Super-resolution imaging
       sameAs: https://en.wikipedia.org/wiki/Super-resolution_imaging

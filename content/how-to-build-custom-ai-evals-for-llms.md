@@ -15,16 +15,17 @@ image: >-
   https://blog-cdn.mercity.ai/blog/how-to-build-custom-ai-evals-for-llms/686d98251703724ec9db3479_Screenshot-2025-07-09-at-03.43.52.jpg
 jsonld:
   abstract: >-
-    Mercity's 2025 guide explains why public benchmarks such as MMLU and GPQA,
-    which it describes as close to saturation, say little about a business use
-    case, and how to build custom LLM evals instead. It splits testing into
+    Mercity sets out how it builds custom LLM evals in place of public
+    benchmarks such as MMLU and GPQA, which its 2025 guide describes as close to
+    saturation and of little use for a business case. It splits testing into
     quantitative checks (math scored by steps or by final answer, chains of tool
     calls in the company's own domain, factuality over its own documents,
     needle-in-a-haystack long-context tests) and qualitative ones (human review
-    of at least 100 responses, creativity measured as output diversity with
-    embeddings, communication quality, emotional intelligence, prompt adherence
-    at temperatures up to 1.1 and jailbreak tests), and lists the user signals
-    to log in production.
+    of at least 100 responses, gathered with its open-source LLM Feedback
+    Collector, creativity measured as output diversity with embeddings,
+    communication quality, emotional intelligence, prompt adherence at
+    temperatures up to 1.1 and jailbreak tests), and lists the user signals to
+    log in production.
   about:
     - name: LLM evaluation
     - name: Language model benchmarks

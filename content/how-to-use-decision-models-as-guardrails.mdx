@@ -24,15 +24,15 @@ image: >-
   https://blog-cdn.mercity.ai/blog/how-to-use-decision-models-as-guardrails/cover.jpg
 jsonld:
   abstract: >-
-    This guide from Mercity, based on its test of TypeSafe's Jev and
-    Cloudflare's Clef on 5,620 agent replies, shows how to use decision models
-    as guardrails at an agent's input, tool-call and output checkpoints. Each
-    check is a yes/no question with a block threshold and a lower review
-    threshold that sends unclear cases to an LLM judge or a person, tuned per
-    question on a few hundred labelled messages and run in shadow mode before it
-    blocks. Decision models suit checks judged from the text, such as prompt
-    injection, jailbreaks and unrequested tool calls, while rules that depend on
-    earlier turns or the agent's tools still need a model that can reason.
+    Drawing on its test of TypeSafe's Jev and Cloudflare's Clef on 5,620 agent
+    replies, Mercity shows how to use decision models as guardrails at an
+    agent's input, tool-call and output checkpoints. Each check is a yes/no
+    question with a block threshold and a lower review threshold that sends
+    unclear cases to an LLM judge or a person, tuned per question on a few
+    hundred labelled messages and run in shadow mode before it blocks. Decision
+    models suit checks judged from the text, such as prompt injection,
+    jailbreaks and unrequested tool calls, while rules that depend on earlier
+    turns or the agent's tools still need a model that can reason.
   about:
     - name: LLM guardrails
     - name: Decision models

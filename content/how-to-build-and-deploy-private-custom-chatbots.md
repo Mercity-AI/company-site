@@ -14,13 +14,14 @@ image: >-
   https://uploads-ssl.webflow.com/640f56f76d313bbe39631bfd/654677323044e51137634350_private%20custom%20LLM.png
 jsonld:
   abstract: >-
-    This November 2023 guide covers running an open-source LLM chatbot inside a
-    company's own infrastructure, for data security, compliance, control over
-    fine-tuning and cost (it cites Anyscale's finding that LLaMA can be 30x
-    cheaper than GPT-4). The stack it recommends is Mistral-7B or LLaMA-2-13B
-    served with vLLM, SBERT embeddings (some models are as small as 90MB) and a
-    self-hosted Milvus vector database, which Mercity chose after trying Chroma
-    and Weaviate. It also covers serverless versus dedicated GPUs, streaming
+    Mercity's stack for private LLM chatbots, as of November 2023, serves
+    Mistral-7B or LLaMA-2-13B with vLLM, which Mercity reports gives more than a
+    2x gain over Text Generation Inference, uses SBERT embeddings (some models
+    as small as 90MB) and keeps vectors in a self-hosted Milvus database, chosen
+    after trying Chroma and Weaviate. The guide gives the reasons to deploy
+    inside a company's own infrastructure (data security, compliance, control
+    over fine-tuning and cost, citing Anyscale's finding that LLaMA can be 30x
+    cheaper than GPT-4) and covers serverless versus dedicated GPUs, streaming
     over WebSockets, server-side session state, the OpenAI API schema and
     encryption.
   about:
