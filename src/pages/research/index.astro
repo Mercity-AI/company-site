@@ -6,7 +6,7 @@ import EntryRow from '@/components/v2/EntryRow.astro';
 import PaperBlock from '@/components/v2/PaperBlock.astro';
 import { papers } from '@/data/papers';
 import { entryToRow, estimateReadingTime, formatShortDate, getResearchUrl, sortPostsByPublishedDate } from '@/utils/blog';
-import { collectionNodes } from '@/utils/schema';
+import { collectionNodes, paperNode } from '@/utils/schema';
 
 const entries = sortPostsByPublishedDate(await getCollection('research'));
 const [lead, ...rest] = entries;
@@ -18,6 +18,16 @@ const schema = collectionNodes({
   name: 'Research',
   description,
   items: entries.map((e) => ({ url: getResearchUrl(e), name: e.data.title })),
+  parts: papers.map(paperNode),
+  keywords: [
+    'AI research logs',
+    'sparse autoencoders',
+    'LLM guardrails',
+    'layer pruning',
+    'diffusion model distillation',
+    'model pretraining',
+    'synthetic data generation',
+  ],
 });
 ---
 

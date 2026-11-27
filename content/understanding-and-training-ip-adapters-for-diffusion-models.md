@@ -13,6 +13,95 @@ authors:
 category: Stable Diffusion
 image: >-
   https://blog-cdn.mercity.ai/blog/understanding-and-training-ip-adapters-for-diffusion-models/68c59d0d8051364d2bc42326_Screenshot-2025-09-13-at-19.57.31.jpg
+jsonld:
+  abstract: >-
+    This September 2025 guide explains IP-Adapter, a small trainable add-on that
+    lets a text-to-image diffusion model take a reference image as part of its
+    prompt. IP-Adapter adds a second, decoupled cross-attention branch in the
+    U-Net whose keys and values come from CLIP image features, so the text sets
+    what to generate and the image sets how it looks. Training freezes the U-Net
+    and both CLIP encoders and updates only about 22 million adapter parameters,
+    3 to 5% of the model, with the standard L2 noise-prediction loss. The guide
+    gives a training command for Stable Diffusion v1.5, SDXL inference code, and
+    a comparison with ControlNet, LoRA and full fine-tuning.
+  about:
+    - name: IP-Adapter
+    - name: Diffusion model
+      sameAs: https://en.wikipedia.org/wiki/Diffusion_model
+    - name: Text-to-image model
+      sameAs: https://en.wikipedia.org/wiki/Text-to-image_model
+    - name: Stable Diffusion
+      sameAs: https://en.wikipedia.org/wiki/Stable_Diffusion
+    - name: Attention mechanism
+      sameAs: https://en.wikipedia.org/wiki/Attention_(machine_learning)
+    - name: Neural style transfer
+      sameAs: https://en.wikipedia.org/wiki/Neural_style_transfer
+  keywords:
+    - what is IP-Adapter
+    - train an IP-Adapter
+    - image prompts for Stable Diffusion
+    - IP-Adapter vs ControlNet
+    - IP-Adapter vs LoRA
+    - decoupled cross-attention
+    - style transfer with diffusion models
+    - SDXL IP-Adapter inference
+    - reference image conditioning
+    - IP-Adapter-FaceID
+  faq:
+    - q: What is IP-Adapter?
+      a: >-
+        IP-Adapter is a small, trainable add-on that lets a text-to-image
+        diffusion model use a reference image as part of its prompt. An image
+        encoder extracts the key details of the reference picture and feeds them
+        into the diffusion process, so the output follows both the text and the
+        image, and the adapter plugs into an existing model without breaking its
+        text-to-image ability.
+    - q: How does IP-Adapter's decoupled cross-attention work?
+      a: >-
+        Inside the U-Net, the original cross-attention takes its keys and values
+        from the text embeddings, and IP-Adapter adds a parallel image
+        cross-attention whose keys and values come from image-encoder features,
+        with the latent features as queries in both. Keeping the branches
+        separate avoids forcing text and image features into one shared space:
+        the text branch handles what to generate, such as objects and layout,
+        and the image branch handles style, texture and color.
+    - q: How do you train your own IP-Adapter?
+      a: >-
+        Put a folder of images and captions into a data.json file, then run
+        tutorial_train.py from the tencent-ailab IP-Adapter repository with
+        accelerate. Mercity's example connects a CLIP image encoder to Stable
+        Diffusion v1.5 on 8 processes in fp16 at resolution 512, batch size 8,
+        learning rate 1e-04 and weight decay 0.01, minimising L2 loss on the
+        predicted noise while the base model stays frozen and only the adapter
+        trains.
+    - q: "IP-Adapter vs ControlNet vs LoRA: which should you use?"
+      a: >-
+        IP-Adapter transfers style and content from a reference image and is
+        usually orders of magnitude cheaper to get working than full fine-tuning
+        and somewhat cheaper than training a ControlNet. ControlNet controls
+        structure such as pose, edges and depth but does not convey style, LoRA
+        still needs detailed text descriptions and can stumble on complex
+        styles, and full fine-tuning risks catastrophic forgetting. Many
+        practitioners pair ControlNet for structure with IP-Adapter for style.
+    - q: What are the limitations of IP-Adapter?
+      a: >-
+        IP-Adapter can pick up unintended elements from the reference image,
+        such as a person's clothing when only the lighting was wanted, and can
+        struggle to tell which parts of a busy reference image to transfer. It
+        also tends to mix artistic style with subject matter, and unlike a text
+        prompt it offers no precise way to say which aspects of the image to
+        emphasize or ignore.
+    - q: >-
+        How can Mercity help with training IP-Adapters and custom diffusion
+        models?
+      a: >-
+        Mercity trains and optimizes diffusion models on a client's own images,
+        including adapters such as IP-Adapter and LoRA, and measures the outputs
+        against a benchmark built for the client's use case. It has done a lot
+        of research in diffusion-based image generation and in optimizing
+        diffusion models, including an LCM-LoRA distillation research log that
+        cut Stable Diffusion 1.5 from 25 to 50 denoising steps down to 4 to 6,
+        and it has taken these systems to production for many clients.
 ---
 
 <div class="rich-text w-richtext"><p>Text prompts alone are not very good at explaining visual concepts and styles. You can imagine trying to explain Michelangelo's art through words; it's simply not possible. We humans don’t think in terms of words when we imagine images. The same goes for the diffusion models.</p><p>Diffusion models can generate amazing images from text prompts alone, but sometimes that's not enough. Image inputs are needed to properly follow a very specific style, which cannot be properly conveyed in text. IP-Adapter allows diffusion models to accept images as a part of their prompts, which is not directly possible, as diffusion models are trained as text-to-image only.  </p><h2 id="what-is-ip-adapter">What is IP-Adapter </h2><p>IP-Adapter is a small, trainable add-on that lets a text-to-image diffusion model accept pictures as well as words. Normally, you type something like “a fluffy cat on a chair” and hope the model generates the exact stripes, fur texture, and velvet glow you had in mind. But the model will not do that because text alone often isn’t precise enough. The model might give you a different fur pattern, the wrong chair, or completely miss the mood you imagined. You can try improving the prompt, but it’ll be very difficult to get the output to match your imagination, if not impossible.</p><p>That's where the IP adapter helps. The adapter takes your reference image, extracts the key details using an image encoder, and feeds them directly into the diffusion process. It translates the visual language of images into a form the model already understands, so the generated result matches both your text and your picture.</p><p>So, unlike heavy fine-tuning or ControlNets, IP-Adapter is lightweight. You can plug it into existing diffusion models without breaking their text-to-image ability.</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1600pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/understanding-and-training-ip-adapters-for-diffusion-models/68c5a129c9308bc876315a3d_d234e195.jpg"/></div></figure><h3 id="other-ways-to-use-images-in-diffusion-models">Other Ways to Use Images in Diffusion Models</h3><p>There are obviously other ways to sneak image information into the pipeline. Others specialize in style transfer or identity preservation, which lets the model mimic a painting style or reproduce a specific person across scenes.</p><p>Various methods specialize in style transfer, structural control, or identity preservation, which allows the models to mimic painting styles, maintain specific compositions, or reproduce particular subjects across scenes.</p><ul role="list"><li><strong>ControlNet</strong>: It focuses on structural control (poses, edges, and depth) rather than style and content. Even though it's great for maintaining specific compositions, it doesn't capture artistic styles or textures as effectively.</li></ul><ul role="list"><li><strong>Full Fine-tuning</strong>: It requires retraining the entire model on specific styles or concepts, which is computationally expensive and can overwrite existing knowledge.</li></ul><ul role="list"><li><strong>LoRA: </strong>LoRA<strong> </strong>adapts models to learn specific subjects or styles, but you still need to craft detailed text descriptions, and it often stumbles when handling complex artistic styles or generalizing to new scenarios.</li></ul><h2 id="primer-on-diffusion">Primer on diffusion</h2><p>To understand how the IP Adapter works, you first need to revisit how diffusion models generate images and where text and image information get plugged in. You can think of a diffusion model as having several key components where information flows through different processing stages to create the final image.</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1600pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/understanding-and-training-ip-adapters-for-diffusion-models/68c5a129c9308bc876315a3a_4562473d.jpg"/></div></figure><p>Diffusion models create images out of random chaos; they begin with freshly sampled Gaussian noise, then iteratively remove it under the guidance of a text prompt. With each step the network predicts a slightly cleaner image, nudging pixels toward the described scene. Here's how the core components interact:</p><ul role="list"><li><strong>CLIP Text Encoder</strong>: This converts your text prompt into mathematical representations called embeddings. Since CLIP was trained on millions of image-text pairs, these embeddings don’t just capture word meanings; they also carry an understanding of what those words should look like visually.</li><li><strong>U-Net: </strong>It is the main component that generates the image. It starts with random noise in latent space (a compressed version of the image, for example, 64×64×4 instead of 512×512×3) and, at each step, predicts the noise in this latent while using the text embeddings as guidance.</li><li><strong>Sampler: </strong>Takes the U-Net’s noise prediction and, using a numerical rule (for example, DDIM), subtracts part of the noise and updates the latent from 𝑧 𝑡 → z t−1 to gradually remove noise, step by step.</li><li><strong>VAE Decoder: </strong>Once denoising is complete, you have a clean latent 𝑧₀. The VAE decoder converts this latent back into a full-resolution pixel image. It basically acts as an image translator.</li></ul><h2 id="how-ip-adapter-works">How IP adapter works </h2><p>The key to IP-Adapter's functionality lies in understanding how cross-attention layers operate within the U-Net architecture. </p><h3 id="cross-attention-in-ip-adapter">Cross-Attention in IP adapter</h3><p>Cross attention allows one sequence or modality to focus on and extract information from another. It connects your text embeddings and the developing image. Unlike self-attention, where the queries, keys, and values all come from the same source, in cross-attention the queries (Q) are taken from one sequence (for example, a developing image’s latent features), while the keys (K) and values (V) come from another sequence, such as text embedding.</p><p>At each denoising step, this mechanism determines which words from your prompt should influence which regions of the image. However, this text-to-image attention works perfectly for text prompts but is designed only for text embeddings.</p><p>IP-Adapter extends this by introducing dual cross-attention branches: the original text cross-attention, where K and V come from text embeddings, and a new image cross-attention, where K and V come from image encoder features instead. This allows the model to simultaneously pay attention to both your text prompt and visual references, creating a more comprehensive understanding of what you want to generate.</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1586pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/understanding-and-training-ip-adapters-for-diffusion-models/68c5a129c9308bc876315a40_154371dd.jpg"/></div></figure><h3 id="ip-adapters-decoupled-attention">IP-Adapter's Decoupled Attention</h3><p>This decoupled approach creates two distinct but complementary pathways that work together to produce more precise and controllable image generation. The unreasonable effectiveness of decoupling comes from the fact that when you pass image features into text attention, you force the model to find a common representation space (solving the alignment fallacy) since text and image features carry very different types of information. Keeping these separate, the IP adapter lets each modality contribute its strengths without interference.</p><p><strong>Pathway 1: Semantic Control (Original Text Cross-Attention)</strong></p><p>The first cross-attention mechanism maintains Stable Diffusion's original strength in semantic control. This pathway tells the U-Net what to generate by handling object identity, recognition, scene composition, layout, and a kind of high-level conceptual understanding.</p><p><strong>Pathway 2: Visual Style Control (Image Cross-Attention)</strong></p><p>The second cross-attention mechanism introduces an entirely new visual control path that tells the U-Net how the output should look. This pathway focuses on visual style and aesthetic qualities, texture details and surface properties, and color schemes and artistic techniques. It also captures compositional elements like visual hierarchy and more complex artistic concepts such as the metamorphosis and transformation of familiar objects.</p><h3 id="training-process">Training Process</h3><p>The training process of IP adapters is straightforward. Rather than updating the entire model architecture, the training process employs a selective parameter strategy that maximizes efficiency while preserving the foundational capabilities of the pre-trained diffusion model.</p><h4 id="selective-parameter-training-architecture">Selective Parameter Training Architecture</h4><p>The training process strategically freezes the majority of model parameters, specifically the pre-trained U-Net diffusion, CLIP text encoder, and CLIP image encoder, while exclusively training the newly introduced components. This includes approximately 22 million parameters,  which includes the image cross-attention layers, linear projection modules that map image embeddings to the appropriate dimensional space, and associated LayerNorm layers for training stability. This approach makes sure only 3-5% of the total model parameters undergo training, which dramatically reduces computational requirements.</p><h4 id="training-pipeline">Training Pipeline</h4><p>The training pipeline begins with data preparation, where reference images are processed through the frozen CLIP image encoder to generate image embeddings, while corresponding captions are encoded via the CLIP text encoder. During each training iteration, Gaussian noise is added to target images at randomly sampled timesteps, creating the noisy latents that serve as input to the U-Net. </p><p>The forward pass incorporates both conditioning modalities through parallel cross-attention mechanisms: text cross-attention operates as Attention(Q=latent_features, K=text_embeddings, V=text_embeddings), while the new image cross-attention functions as Attention(Q=latent_features, K=image_embeddings, V=image_embeddings). </p><p>The optimization process minimizes L2 loss between the model's noise predictions and ground truth noise, with gradients updating only the trainable adapter parameters while leaving the frozen base model untouched.</p><h2 id="training-your-own-ip-adapter">Training your own IP adapter</h2><p>We prepare a dataset of images (and captions) that represent the kinds of visual content and styles you want the adapter to handle. Then we fine-tune using the standard diffusion noise-prediction objective (L2 on predicted noise).</p><p>This lightweight approach lets you specialize in domains like architectural photography or specific artistic styles without computational overhead or risk of degrading the base model's capabilities.</p><p>You can get started by trying out these code snippets below for training an ip adapter</p><pre class="w-code-block" contenteditable="false" style="display:block;overflow-x:auto;background:#2b2b2b;color:#f8f8f2;padding:0.5em"><code class="language-javascript" style="white-space:pre"><span>git clone https:</span><span style="color:#d4d0ab">//github.com/tencent-ailab/IP-Adapter</span></code></pre><p>Then download accelerate using</p><pre class="w-code-block" contenteditable="false" style="display:block;overflow-x:auto;background:#2b2b2b;color:#f8f8f2;padding:0.5em"><code class="language-javascript" style="white-space:pre"><span>pip install accelerate</span></code></pre><p>You also need to make your own dataset into a json file.</p><p>Here’s a helper script to produce a data.json with default captions as filenames.</p><pre class="w-code-block" contenteditable="false" style="display:block;overflow-x:auto;background:#2b2b2b;color:#f8f8f2;padding:0.5em"><code class="language-javascript" style="white-space:pre"><span style="color:#dcc6e0">import</span><span> os

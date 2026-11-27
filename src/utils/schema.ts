@@ -44,12 +44,31 @@ const ORG_KNOWS_ABOUT = [
   'Synthetic data generation',
   'LLM guardrails',
   'AI security',
+  'Red teaming',
+  'LLM evaluation',
+  'AI agent stress testing',
+  'Decision models',
   'Model optimization',
   'Model distillation',
+  'Layer pruning',
   'Quantization',
   'Fine-tuning',
+  'Sparse autoencoders',
+  'Model pretraining',
   'Large language models',
+  'Diffusion models',
+  'Computer vision',
 ];
+
+/* The three services, as the nav's Services dropdown lists them. Their
+   Service nodes live on the service pages; the Organization lists them by
+   @id with name and URL, so the catalogue reads on its own anywhere. */
+const ORG_SERVICES = [
+  { name: 'Synthetic data generation', path: '/services/synthetic-data' },
+  { name: 'LLM guardrails and security', path: '/services/llm-guardrails' },
+  { name: 'Model optimization', path: '/services/model-optimization' },
+];
+export const serviceId = (path: string) => `${canonicalUrl(path)}#service`;
 
 /* ── Ids ─────────────────────────────────────────────────────────── */
 
@@ -106,6 +125,14 @@ export function organizationNode(): SchemaNode {
     address: { '@type': 'PostalAddress', addressCountry: 'IN' },
     sameAs: ORG_SAME_AS,
     knowsAbout: ORG_KNOWS_ABOUT,
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: 'Mercity services',
+      itemListElement: ORG_SERVICES.map((s) => ({
+        '@type': 'Offer',
+        itemOffered: { '@type': 'Service', '@id': serviceId(s.path), name: s.name, url: canonicalUrl(s.path) },
+      })),
+    },
   };
 }
 
@@ -145,14 +172,23 @@ interface WebPageOptions {
   /** Nodes or refs for `about` and `mainEntity`. */
   about?: SchemaNode;
   mainEntity?: SchemaNode | SchemaNode[];
+  /** Questions answered on the page: makes it an FAQPage too, the questions its mainEntity. */
+  faqs?: FaqItem[];
+  keywords?: string[];
+  /** Pages and sites this one points readers to (research behind a service...). Paths or URLs. */
+  relatedLink?: string[];
   breadcrumb?: boolean;
   datePublished?: string;
   dateModified?: string;
 }
 
+const absolute = (u: string) => (/^https?:\/\//.test(u) ? u : canonicalUrl(u));
+
 export function webPageNode(o: WebPageOptions): SchemaNode {
+  const faqs = o.faqs ?? [];
+  const base = [o.type ?? 'WebPage'].flat();
   return compact({
-    '@type': o.type ?? 'WebPage',
+    '@type': faqs.length && !base.includes('FAQPage') ? [...base, 'FAQPage'] : o.type ?? 'WebPage',
     '@id': pageId(o.path),
     url: canonicalUrl(o.path),
     name: o.name,
@@ -160,7 +196,9 @@ export function webPageNode(o: WebPageOptions): SchemaNode {
     isPartOf: ref(WEBSITE_ID),
     publisher: ref(ORGANIZATION_ID),
     about: o.about,
-    mainEntity: o.mainEntity,
+    mainEntity: faqs.length ? faqEntities(faqs) : o.mainEntity,
+    keywords: o.keywords?.length ? o.keywords : undefined,
+    relatedLink: o.relatedLink?.length ? o.relatedLink.map(absolute) : undefined,
     primaryImageOfPage: imageObject(o.image),
     breadcrumb: o.breadcrumb ? ref(breadcrumbId(o.path)) : undefined,
     datePublished: o.datePublished,
@@ -186,6 +224,76 @@ export function breadcrumbNode(path: string, trail: { name: string; path?: strin
   };
 }
 
+/* ── Hand-written extras: topics, citations, FAQs ────────────────── */
+
+export type Topic = string | { name: string; sameAs?: string };
+export interface FaqItem {
+  q: string;
+  a: string;
+}
+export interface Citation {
+  name: string;
+  url: string;
+  type?: 'paper' | 'code' | 'dataset' | 'model' | 'page';
+  author?: string;
+}
+
+/** The `jsonld` frontmatter block (schema in src/content.config.ts). */
+export interface JsonLdExtras {
+  abstract?: string;
+  about?: Topic[];
+  keywords?: string[];
+  citation?: Citation[];
+  faq?: FaqItem[];
+}
+
+export function topicNodes(topics: Topic[] | undefined): SchemaNode[] | undefined {
+  if (!topics?.length) return undefined;
+  return topics.map((t) =>
+    typeof t === 'string' ? { '@type': 'Thing', name: t } : compact({ '@type': 'Thing', name: t.name, sameAs: t.sameAs }),
+  );
+}
+
+const CITATION_TYPES = {
+  paper: 'ScholarlyArticle',
+  code: 'SoftwareSourceCode',
+  dataset: 'Dataset',
+  model: 'CreativeWork',
+  page: 'CreativeWork',
+} as const;
+
+export function citationNodes(citations: Citation[] | undefined): SchemaNode[] | undefined {
+  if (!citations?.length) return undefined;
+  return citations.map((c) => {
+    const type = CITATION_TYPES[c.type ?? 'page'];
+    return compact({
+      '@type': type,
+      name: c.name,
+      url: c.url,
+      codeRepository: type === 'SoftwareSourceCode' ? c.url : undefined,
+      author: c.author ? c.author.split(',').map((name) => ({ '@type': 'Person', name: name.trim() })) : undefined,
+    });
+  });
+}
+
+/** Questions for an FAQPage's mainEntity. */
+export function faqEntities(faqs: FaqItem[]): SchemaNode[] {
+  return faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  }));
+}
+
+/** Case-insensitive union, first spelling wins. */
+function mergeKeywords(...lists: (string[] | undefined)[]): string[] | undefined {
+  const seen = new Map<string, string>();
+  for (const k of lists.flat()) {
+    if (k && !seen.has(k.trim().toLowerCase())) seen.set(k.trim().toLowerCase(), k.trim());
+  }
+  return seen.size ? [...seen.values()] : undefined;
+}
+
 /* ── Articles: blog posts and research logs ──────────────────────── */
 
 /** The parts of a content-collection entry the article schema needs. */
@@ -199,6 +307,7 @@ export interface ArticleEntry {
     tags: string[];
     category: string;
     image?: string;
+    jsonld?: JsonLdExtras;
   };
   body?: string;
 }
@@ -225,23 +334,34 @@ interface ArticleOptions {
   /** BlogPosting for /blog-post/, TechArticle for /research/. */
   type: 'BlogPosting' | 'TechArticle';
   section: { name: string; path: string };
-  /** Extra fields for the article node (citation, mentions...). */
+  /** Citations the page adds on top of the frontmatter's (a log's paper). */
+  citations?: Citation[];
+  /** Extra fields for the article node (mentions...). */
   extra?: SchemaNode;
 }
 
-export function articleNodes({ entry, path, type, section, extra = {} }: ArticleOptions): SchemaNode[] {
+export function articleNodes({ entry, path, type, section, citations = [], extra = {} }: ArticleOptions): SchemaNode[] {
   const d = entry.data;
+  const x = d.jsonld ?? {};
   const url = canonicalUrl(path);
   const published = d.publishedAt.toISOString();
   const modified = (d.updatedAt ?? d.publishedAt).toISOString();
   const authors = d.authors.map((a) => personNode(a.name, a.role));
+  const cover = d.image ?? '/banner.png';
+  const faqs = x.faq ?? [];
+  // One entry per URL: the page's own citations first, then the frontmatter's.
+  const cited = [...citations, ...(x.citation ?? [])].filter(
+    (c, i, all) => all.findIndex((o) => o.url === c.url) === i,
+  );
 
   const article = compact({
     '@type': type,
     '@id': `${url}#article`,
     headline: d.title,
     description: d.summary,
-    image: imageObject(d.image ?? '/banner.png'),
+    abstract: x.abstract,
+    image: imageObject(cover),
+    thumbnailUrl: absoluteImage(cover),
     datePublished: published,
     dateModified: modified,
     author: authors,
@@ -249,8 +369,10 @@ export function articleNodes({ entry, path, type, section, extra = {} }: Article
     mainEntityOfPage: ref(pageId(path)),
     isPartOf: ref(WEBSITE_ID),
     url,
-    keywords: d.tags.length ? d.tags : undefined,
+    about: topicNodes(x.about),
+    keywords: mergeKeywords(d.tags, x.keywords),
     articleSection: d.category,
+    citation: citationNodes(cited),
     wordCount: countWords(entry.body),
     inLanguage: 'en',
     isAccessibleForFree: true,
@@ -263,6 +385,9 @@ export function articleNodes({ entry, path, type, section, extra = {} }: Article
       name: d.title,
       description: d.summary,
       image: d.image,
+      // With questions the page is also an FAQPage, the questions its
+      // mainEntity; the article stays the page's mainEntityOfPage.
+      faqs,
       breadcrumb: true,
       datePublished: published,
       dateModified: modified,
@@ -279,17 +404,26 @@ export function collectionNodes(o: {
   name: string;
   description: string;
   items: { url: string; name: string }[];
+  keywords?: string[];
+  /** Further nodes the page shows (papers on /research). */
+  parts?: SchemaNode[];
 }): SchemaNode[] {
   const listId = `${canonicalUrl(o.path)}#itemlist`;
+  const parts = o.parts ?? [];
   return [
-    webPageNode({
-      path: o.path,
-      name: o.name,
-      description: o.description,
-      type: 'CollectionPage',
-      mainEntity: ref(listId),
-      breadcrumb: true,
+    compact({
+      ...webPageNode({
+        path: o.path,
+        name: o.name,
+        description: o.description,
+        type: 'CollectionPage',
+        mainEntity: ref(listId),
+        keywords: o.keywords,
+        breadcrumb: true,
+      }),
+      hasPart: parts.length ? parts.map((p) => ref(String(p['@id']))) : undefined,
     }),
+    ...parts,
     {
       '@type': 'ItemList',
       '@id': listId,
@@ -305,6 +439,39 @@ export function collectionNodes(o: {
   ];
 }
 
+/* ── Papers (src/data/papers.ts) ─────────────────────────────────── */
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** A published paper. Its research log, when there is one, is `subjectOf` it. */
+export function paperNode(p: {
+  title: string;
+  summary: string;
+  authors: string;
+  date: string;
+  venue: string;
+  href: string;
+  code?: string;
+  log?: string;
+}): SchemaNode {
+  const [mon, year] = p.date.split(' ');
+  const m = MONTHS.indexOf(mon);
+  return compact({
+    '@type': 'ScholarlyArticle',
+    '@id': `${p.href}#paper`,
+    headline: p.title,
+    name: p.title,
+    abstract: p.summary,
+    author: p.authors.split(',').map((n) => personNode(n.trim())),
+    datePublished: m >= 0 && year ? `${year}-${String(m + 1).padStart(2, '0')}` : undefined,
+    url: p.href,
+    publisher: p.venue.startsWith('arXiv') ? { '@type': 'Organization', name: 'arXiv', url: 'https://arxiv.org/' } : undefined,
+    sourceOrganization: ref(ORGANIZATION_ID),
+    subjectOf: p.log ? ref(`${canonicalUrl(p.log)}#article`) : undefined,
+    isBasedOn: p.code ? { '@type': 'SoftwareSourceCode', codeRepository: p.code, url: p.code } : undefined,
+  });
+}
+
 /* ── Service pages ───────────────────────────────────────────────── */
 
 export function serviceNodes(o: {
@@ -312,37 +479,49 @@ export function serviceNodes(o: {
   name: string;
   description: string;
   serviceType: string;
-  faqs?: { q: string; a: string }[];
+  /** The page's buyer FAQ, shown in full on the page. */
+  faqs?: FaqItem[];
+  /** What the service covers, as the page lists it: becomes hasOfferCatalog. */
+  offers?: { name: string; description?: string }[];
+  /** What the client receives. */
+  outputs?: string[];
+  /** The research, tools and datasets the page cites as evidence. */
+  relatedLink?: string[];
+  keywords?: string[];
 }): SchemaNode[] {
   const url = canonicalUrl(o.path);
-  const serviceId = `${url}#service`;
-  const faqs = o.faqs ?? [];
+  const id = serviceId(o.path);
   return [
     webPageNode({
       path: o.path,
       name: o.name,
       description: o.description,
-      // The page shows its buyer FAQ in full, so it is also an FAQPage.
-      type: faqs.length ? ['WebPage', 'FAQPage'] : 'WebPage',
-      about: ref(serviceId),
-      mainEntity: faqs.length
-        ? faqs.map((f) => ({
-            '@type': 'Question',
-            name: f.q,
-            acceptedAnswer: { '@type': 'Answer', text: f.a },
-          }))
-        : undefined,
+      about: ref(id),
+      faqs: o.faqs,
+      keywords: o.keywords,
+      relatedLink: o.relatedLink,
       breadcrumb: true,
     }),
-    {
+    compact({
       '@type': 'Service',
-      '@id': serviceId,
+      '@id': id,
       name: o.name,
       serviceType: o.serviceType,
       description: o.description,
       url,
       provider: ref(ORGANIZATION_ID),
-    },
+      hasOfferCatalog: o.offers?.length
+        ? {
+            '@type': 'OfferCatalog',
+            name: o.name,
+            itemListElement: o.offers.map((s) => ({
+              '@type': 'Offer',
+              itemOffered: compact({ '@type': 'Service', name: s.name, description: s.description }),
+            })),
+          }
+        : undefined,
+      serviceOutput: o.outputs?.length ? o.outputs.map((name) => ({ '@type': 'Thing', name })) : undefined,
+    }),
     breadcrumbNode(o.path, [{ name: o.name }]),
   ];
 }

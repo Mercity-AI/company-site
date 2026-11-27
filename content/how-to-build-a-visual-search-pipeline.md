@@ -12,6 +12,92 @@ authors:
 category: Computer Vision
 image: >-
   https://uploads-ssl.webflow.com/640f56f76d313bbe39631bfd/64bd8caec9190e8c5783cc4c_visual_search.png
+jsonld:
+  abstract: >-
+    This August 2023 tutorial builds a small visual product search engine in a
+    Colab notebook with Fashion CLIP, a CLIP-like model fine-tuned on product
+    images and their descriptions. Product images are encoded with
+    get_image_features, a text query with get_text_features, and cosine
+    similarity ranks the images; the demo keeps four images (two blue t-shirts,
+    an orange t-shirt and red boots) in a Python list instead of a vector
+    database. The model returns the boots for 'red boots' and separates 'blue
+    t-shirt with collar' from 'blue t-shirt without collar'. The guide also
+    covers attribute extraction and vector databases for larger catalogues.
+  about:
+    - name: Visual product search
+    - name: Content-based image retrieval
+      sameAs: https://en.wikipedia.org/wiki/Content-based_image_retrieval
+    - name: Contrastive Language-Image Pre-training
+      sameAs: >-
+        https://en.wikipedia.org/wiki/Contrastive_language%E2%80%93image_pre-training
+    - name: Vector database
+      sameAs: https://en.wikipedia.org/wiki/Vector_database
+    - name: Nearest neighbor search
+      sameAs: https://en.wikipedia.org/wiki/Nearest_neighbor_search
+    - name: Multimodal embeddings
+  keywords:
+    - build a visual search engine
+    - image-based product search
+    - visual product search with CLIP
+    - Fashion CLIP
+    - search products by image
+    - text-to-image retrieval
+    - cosine similarity search
+    - attribute extraction from product images
+    - vector database for image search
+    - visual search like Google Lens
+  citation:
+    - name: Visual product search Colab notebook
+      url: >-
+        https://colab.research.google.com/drive/1dEC6QexaZ_tWH5nhGY0fcRIOuWd1W9_w?usp=sharing
+      type: page
+    - name: CLIP (OpenAI)
+      url: https://openai.com/research/clip
+      type: page
+    - name: Fashion CLIP
+      url: https://github.com/patrickjohncyh/fashion-clip
+      type: code
+  faq:
+    - q: What is visual product search?
+      a: >-
+        Visual product search, or image-based search, lets a shopper find
+        products from a photo instead of keywords. The system analyses the
+        uploaded image, identifies attributes such as color, size, pattern,
+        brand and style, and searches a product database for matching or similar
+        items, as Google Lens does when a user photographs a dress.
+    - q: How does a visual product search pipeline work?
+      a: >-
+        A visual search pipeline turns product images and their text
+        descriptions into multimodal embeddings with a model such as CLIP, so
+        items with similar meaning are close together in vector space. A query,
+        image or text, is embedded the same way, and a nearest-neighbour search,
+        usually run in a vector database such as Pinecone, Milvus or Weaviate,
+        returns the products whose embeddings are closest.
+    - q: How do you build visual product search with CLIP in Python?
+      a: >-
+        Load the Fashion CLIP model and processor from Hugging Face, encode each
+        product image with get_image_features, encode the text query with
+        get_text_features, and rank the images by cosine similarity. Mercity's
+        August 2023 Colab demo keeps the embeddings in a Python list rather than
+        a vector database, and with four test images it returned the red boots
+        for the query 'red boots'.
+    - q: Can CLIP tell apart small product details in visual search?
+      a: >-
+        In Mercity's August 2023 demo, Fashion CLIP, a CLIP-like model
+        fine-tuned on product images and descriptions, told apart the queries
+        'blue t-shirt with collar' and 'blue t-shirt without collar' across the
+        two blue t-shirts in its test set. That shows the model can separate
+        subtle product features such as a collar.
+    - q: >-
+        How can Mercity help with building a visual product search engine?
+      a: >-
+        Mercity designs and builds custom computer vision and retrieval systems,
+        starting with a benchmark of the client's own catalogue and queries so
+        every model change is measured before it ships. It has a lot of
+        experience with this work: its computer vision engineers have worked on
+        multiple projects with CLIP and other multimodal models, it publishes
+        embedding sets and fine-tuned retrieval models on Hugging Face, and it
+        has taken these systems to production for many clients.
 ---
 
 <div class="rich-text w-richtext"><p>Visual Product Search is changing how we shop online. This shift has been possible due to the widespread use of smartphones and significant improvements in computer vision technology. This technology allows consumers to search for and discover products using images, instead of relying on traditional keyword searches.</p><p>A prime example of this technology in action is Google Lens. It allows users to capture an image of a product, such as a dress, and then quickly find that exact item online from a vast selection of products. This entire process takes only a few seconds.</p><p>In the past, if you were interested in a dress or a piece of furniture, you would have to inquire about it or spend a lot of time online trying to find the same product. However, Google Lens has simplified this process, taking care of the entire search operation.</p><p>In this blog, we will explore how you can develop your own visual search AI for products. We will walk you step by step through the <strong>code</strong> to build your own visual search.</p><p>You can find the code here: <a href="https://colab.research.google.com/drive/1dEC6QexaZ_tWH5nhGY0fcRIOuWd1W9_w?usp=sharing"><strong>Colab Notebook</strong></a>.</p><h2 id="what-is-visual-product-search">What is Visual Product Search?</h2><p>Visual Product Search, also known as Image-based Search, is a cutting-edge technology that leverages the power of artificial intelligence (AI) and machine learning (ML) to revolutionize the way we search for products online. It uses computer vision, a branch of AI that enables computers to understand and interpret visual information from the real world, to identify, analyze, and interpret images.</p><p>In a typical Visual Product Search scenario, a user uploads or captures an image of a product they are interested in. The system then analyzes the image, identifies the product's key features, and searches a database for matching or similar items. The results are then presented to the user, who can select the most suitable product.</p><p>Visual Product Search can reduce the time and effort customers spend on finding products, making the shopping process quicker and more enjoyable. It enhances the user experience by making product searches more intuitive and efficient. This can lead to increased customer satisfaction and loyalty, key factors for business growth and success in the competitive e-commerce market.</p><h3 id="attribute-extraction">Attribute Extraction</h3><p>Attribute extraction is another part of Visual Product Search. It is the process of identifying specific features or attributes of a product in an image. This process is facilitated by machine learning algorithms and computer vision techniques.</p><p>When a user uploads or captures an image of a product, the system first identifies the key attributes of the product. These could include color, shape, size, pattern, brand, style, and other unique features. The system then compares these attributes with the ones in the database to find matching or similar products.</p><p>For instance, if a user uploads an image of a blue, floral-patterned dress, the system would identify these attributes and then search the database for dresses that are blue and have a floral pattern. The system might also consider other attributes such as the dress's style, length, and brand.</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1570pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/how-to-build-a-visual-search-pipeline/64bd8ccafbdbe6e05f985f45_p-G6Br-CkYfrldHJf9OZ539Q86ZxFgShLCE_XuYAKrIP2eZEUkmpNNLknYqLZuhCUZDuRMxZFC8feLQ_emNSZeV9zIO5_e4EdDtlwGzTQ9HIodKi2agKOLVamkKLK9YdYhhQtxqNQhnhLLByQO7FEls.jpg"/></div></figure><h2 id="advantages-of-using-visual-search">Advantages of using Visual Search</h2><p>Visual search technology offers several distinct advantages that make it a valuable tool for businesses, particularly in the e-commerce and retail sectors. By leveraging the power of AI and machine learning, visual search can enhance the online shopping experience, drive customer engagement, and provide valuable insights into customer behavior.</p><ul role="list"><li><strong>Improved User Experience:</strong> Visual search makes product discovery more intuitive and efficient, reducing the time and effort required to find a specific product. This leads to a more enjoyable shopping experience and increased customer satisfaction.</li><li><strong>Increased Conversion Rates:</strong> By providing more accurate and relevant search results, visual search can drive higher conversion rates. Customers are more likely to make a purchase when they can easily find what they are looking for.</li><li><strong>Insights into Customer Behavior:</strong> The images customers upload can provide valuable insights into their preferences and buying behavior. This data can be used to personalize product recommendations and marketing strategies.</li><li><strong>Competitive Advantage:</strong> Implementing visual search can give businesses a competitive edge in the market. It's an innovative feature that can differentiate a business from its competitors, attracting more customers and retaining existing ones.</li></ul><h2 id="how-visual-product-search-works">How Visual Product Search works?</h2><p>A visual search pipeline has a lot of components that tie together to make everything work. Let's dive into these components deeper.</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1211pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/how-to-build-a-visual-search-pipeline/64bd8cca1b90be3b5fa696a8_6-diC_oiDihc9ouQQVqRWDV9AevqFPJ-cyRXSwqWaqEEJjhdrQHzr8HKstAKjx2F4ebCgqk4VOuG5rskDOX2lqu0Hqf8ZQvxolqLB4uOjc7yYPBe-VF5dWVaS6prnHI3YkTeg1hdUXNYjiULBa1eVp0.jpg"/></div></figure><h3 id="embeddings">Embeddings</h3><p>Embeddings are perhaps the most important component in the search pipeline. They are essentially numerical representations of the passed textual or image data. The key property of these embeddings is that they learn the semantic meaning of the passed data. These embedding vectors can <em>carry</em> the meaning of a text. This means data points with similar meanings or contexts will have their vectors at a closer distance than data points with different meanings or contexts. This property allows us to use these embeddings for <strong>semantic search</strong>.</p><p>In the context of visual search, we will be using multi-modal embeddings. Meaning we will convert both our product images and their textual descriptions into embedding vectors and then use them to find similar products. We will use the CLIP model.</p><h4 id="clip-model">CLIP Model</h4><p><a href="https://openai.com/research/clip">CLIP</a> stands for Contrastive Language–Image Pre-training. It is a model released by OpenAI. We can use the CLIP model to get our embeddings. </p><p>CLIP works by pairing images and descriptions and then reducing the distance between their vector representations. This trains the network to learn the properties of the passed data across text and images. This basically means that the distance between vectors of a passed image and its description will be very less. This is because the model has learned to put them together.</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1511pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/how-to-build-a-visual-search-pipeline/64bd8ccab703f9575b4c2107_W36jFIaor5aQb9YJe_Lw3WrsJdh6-EYRDCH0_x5auxN1F3vXkdgwkBMxsr4WfIYSHSHFmyb6uHJnnfd08eYegjqRFm1Ew-wz3dpvsqrXM2dNt6rs0nbZPKrCDVRwlnTxZdQFxg5L76OFBWdP184VAGE.jpg"/></div></figure><h4 id="fashion-clip">Fashion CLIP</h4><p>Fashion CLIP is a CLIP-like model fine-tuned specifically on the product images and their descriptions. You can find the model <a href="https://github.com/patrickjohncyh/fashion-clip">here</a>. We will use this model to build our product search pipeline.</p><h3 id="embedding-search">Embedding Search</h3><p>Once we have our embedding we can start using them to search similar products. The Embedding Search is essentially a nearest neighbor search in the high-dimensional space of the embeddings. The goal is to find the product embeddings that are closest to the input embedding, as these represent the products that are most similar to the user's input.</p><p>The result of the Embedding Search is a list of product embeddings, ranked by their similarity to the user's input. These can then be used to retrieve the corresponding product details from the database and present them to the user.</p><p>Here is a good visual of embedding space by OpenAI. You can see how texts with similar meanings are closer, the text with different meanings is far away. We use this property to search for similar products.</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:903pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/how-to-build-a-visual-search-pipeline/64bd8ccab6b02693f0ee639a_ustVM_XA9o-wOBahgGAGdY0h47_MwzcOkB6eAaCLjHscTPkVm4Jd15t_VZhwJO7kY940AtFU0gcJgbXNii2I8nbrfVv4S3F7XHL-Siu5evKGxjUcUejMcLFgwl47lA8-qh4wJPagSlgoKGH1_d9UL3E.jpg"/></div></figure><h3 id="vector-db">Vector DB</h3><p>Vector databases, play a crucial role in the Embedding Search phase. They are specialized databases designed to handle high-dimensional vector data, like the embeddings generated by the CLIP or the Fashion-CLIP model.</p><p>Traditional databases are not well-suited for storing and querying high-dimensional vector data. They are not designed to perform nearest-neighbor searches efficiently, which can result in slow response times and high computational costs.</p><p>Vector DBs are optimized for these types of operations. They use advanced indexing techniques to organize the vector data in a way that makes nearest-neighbor searches faster and more efficient. Some Vector DBs also support distributed storage and parallel query execution, which can further enhance performance and scalability. Some good examples of vector databases are <a href="https://www.pinecone.io/">Pinecone</a>, <a href="https://milvus.io/">Milvus</a>, and <a href="https://weaviate.io/">Weaviate</a>.</p><h2 id="how-to-build-and-deploy-a-visual-product-search-pipeline">How to Build and Deploy a Visual Product Search Pipeline?</h2><p>Now let’s discuss how you can build your own product search pipeline. We will use HuggingFace to build our model. Here is the step-by-step guide to coding your own visual search engine. You can follow along in this <a href="https://colab.research.google.com/drive/1dEC6QexaZ_tWH5nhGY0fcRIOuWd1W9_w?usp=sharing">Colab Notebook</a>.</p><h3 id="load-the-models">Load the Models</h3><p>We start by loading the Fashion CLIP model and the processor. The model will give us the embeddings and the processor will help us load the different inputs.</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1600pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/how-to-build-a-visual-search-pipeline/64bd8cca4f4a45e8328aa5c4_AvszUHuUPv7gkAuecyO5EMx1yCAmzeJOJXy5TVp9mRt8aHfxTgio_KQi3DTz0lxRCQ23iyzO_HHIIt4NwFNq2kRidJW5MqZpncFeJxGmAcPLP70nGz_M-kKmd33iB3X1Exl3cNVUu0yaMc2LNIGPUlA.jpg"/></div></figure><h3 id="download-data">Download Data</h3><p>Once we have the models and the processor ready, we will create a small dataset using online images.</p><div class="w-embed"><pre>

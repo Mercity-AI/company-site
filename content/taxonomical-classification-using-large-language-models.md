@@ -18,6 +18,143 @@ category: Classification
 isTopPick: false
 image: >-
   https://blog-cdn.mercity.ai/blog/taxonomical-classification-using-large-language-models/intro.jpg
+jsonld:
+  abstract: >-
+    This guide compares three LLM approaches to taxonomy classification
+    (zero-shot and few-shot prompting, embedding-based matching, fine-tuned
+    transformer classifiers) and four system designs (flat, level-wise, joint
+    hierarchical training, inference-time decoding). Mercity then trained one
+    BERT encoder with a classification head per level, plus a none class for
+    shorter label paths, on the Shopify Product Catalogue (up to eight levels),
+    summing level-wise cross-entropy losses over about 40K training samples.
+    Accuracy was 0.71 at level 1 and 0.50 at level 2, fell sharply at levels 3
+    and 4, then rose from 0.53 at level 5 to 1.00 at level 8; Mercity concludes
+    that the spread of supervision across levels matters more than encoder
+    improvements.
+  about:
+    - name: Hierarchical classification
+      sameAs: https://en.wikipedia.org/wiki/Hierarchical_classification
+    - name: Taxonomy
+      sameAs: https://en.wikipedia.org/wiki/Taxonomy
+    - name: BERT
+      sameAs: https://en.wikipedia.org/wiki/BERT_(language_model)
+    - name: Product categorization
+    - name: Zero-shot classification with LLMs
+  keywords:
+    - taxonomy classification with LLMs
+    - product categorization with BERT
+    - hierarchical text classification with BERT
+    - LLM zero-shot text classification
+    - embedding-based taxonomy matching
+    - flat vs hierarchical classifier
+    - level-wise vs joint hierarchical training
+    - multi-head BERT classifier per level
+    - Shopify product taxonomy
+    - long-tail category classification
+    - parent-aware decoding
+  citation:
+    - name: Shopify Product Catalogue dataset
+      url: https://huggingface.co/datasets/Shopify/product-catalogue
+      type: dataset
+    - name: Large Language Models Are Zero-Shot Text Classifiers
+      url: https://arxiv.org/pdf/2312.01044
+      type: paper
+    - name: Embedding Semantic Taxonomies
+      url: https://aclanthology.org/2020.coling-main.110.pdf
+      type: paper
+    - name: >-
+        Self-supervised Topic Taxonomy Discovery in the Box Embedding Space
+      url: https://arxiv.org/pdf/2408.15050v1
+      type: paper
+    - name: >-
+        Hierarchical Deep Learning for Diatom Image Classification: A
+        Multi-Level Taxonomic Approach
+      url: https://arxiv.org/pdf/2512.06613v1
+      type: paper
+    - name: >-
+        Leveraging Taxonomy and LLMs for Improved Multimodal Hierarchical
+        Classification
+      url: https://aclanthology.org/2025.coling-main.417.pdf
+      type: paper
+    - name: >-
+        Semi-Supervised Hierarchical Multi-Label Classifier Based on Local
+        Information
+      url: https://arxiv.org/pdf/2405.00184
+      type: paper
+    - name: >-
+        Hierarchy-Consistent Learning and Adaptive Loss Balancing for
+        Hierarchical Multi-Label Classification
+      url: https://www.arxiv.org/abs/2508.13452
+      type: paper
+    - name: >-
+        To Each Metric Its Decoding: Post-Hoc Optimal Decision Rules of
+        Probabilistic Hierarchical Classifiers
+      url: https://arxiv.org/pdf/2506.01552
+      type: paper
+    - name: Hierarchical Conformal Classification
+      url: https://arxiv.org/pdf/2508.13288
+      type: paper
+  faq:
+    - q: What is taxonomical classification?
+      a: >-
+        Taxonomical classification assigns an item such as a product, document
+        or query to a path of labels in a hierarchy, from broad to specific, for
+        example Electronics, then Audio, then Headphones. A taxonomy models is-a
+        relationships only, which makes it simpler to build and supervise at
+        scale than an ontology, which also models attributes, constraints and
+        non-hierarchical links between concepts.
+    - q: Which LLM methods can classify items into a taxonomy?
+      a: >-
+        Mercity's guide compares three LLM approaches to taxonomy
+        classification. Zero-shot and few-shot prompting need little or no
+        labeled data and suit rapid prototyping, but scale poorly to large
+        taxonomies because of prompt length and label explosion. Embedding-based
+        matching scales through nearest-neighbor search over fixed taxonomy
+        embeddings. Fine-tuned transformers such as BERT need labeled data per
+        class and retraining when the taxonomy changes, yet remain dominant in
+        practical classification.
+    - q: >-
+        Flat vs hierarchical classification: which suits a large taxonomy?
+      a: >-
+        Flat classifiers predict only the final label and ignore parent-child
+        links; in a study cited by Mercity's guide they reached reasonable leaf
+        accuracy but made more long-distance errors that jumped across distant
+        branches. Hierarchy-aware models cost more to design and decode but cope
+        better with class imbalance and long-tail labels, so the guide favors
+        them for deep, imbalanced taxonomies where error locality matters more
+        than raw leaf accuracy.
+    - q: >-
+        Level-wise vs joint hierarchical training: what is the difference?
+      a: >-
+        Level-wise classification and joint hierarchical training both put one
+        classification head per taxonomy level on a shared encoder. Level-wise
+        classification optimizes each level with its own objective, which is
+        simple and scales to deep taxonomies, but mistakes at higher levels can
+        misguide deeper ones. Joint hierarchical training sums or weights the
+        level losses into one objective, so coarse and fine labels jointly train
+        one shared representation, which stabilizes training without adding
+        inference cost.
+    - q: >-
+        What did Mercity find when training BERT on the Shopify product taxonomy?
+      a: >-
+        Mercity trained one BERT encoder with a head per level on the Shopify
+        Product Catalogue (85:15 split, about 40K training and 8K validation
+        samples, up to eight levels). Level 1 reached 0.71 accuracy and level 2
+        reached 0.50, accuracy dropped sharply at levels 3 and 4, then rose from
+        0.53 at level 5 to 1.00 at level 8, partly because fewer classes stay
+        active at deeper levels once higher-level context is set.
+    - q: >-
+        How can Mercity help with building a taxonomy classifier for products or
+        documents?
+      a: >-
+        Mercity designs and trains custom classifiers for a client's own
+        taxonomy, starting with a level-wise evaluation on the client's data so
+        every change is measured against a baseline. It has a lot of experience
+        with classification models and LLMs and publishes related work in the
+        open, including a research log on sparse autoencoder probes used as a
+        topic classifier and Simula, which plans synthetic records against a
+        taxonomy. It has worked with many clients and taken such systems to
+        production.
 ---
 
 Modern digital systems generate large volumes of unstructured and semi-structured text, including product data, support tickets, documents, queries, and logs. Although this data contains useful signals, machines struggle to organize, retrieve, and reason over it without a semantic structure. As scale increases, this limitation degrades search, analytics, personalization, and automation efficiency. To impose structure, organizations use taxonomies, hierarchical category systems that organize information at increasing levels of specificity. Taxonomies enable conceptual understanding beyond raw text, supporting consistent organization, aggregation, and scalable decision-making across large and evolving datasets.

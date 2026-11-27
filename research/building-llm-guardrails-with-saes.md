@@ -18,6 +18,115 @@ category: Research
 isTopPick: false
 image: >-
   https://blog-cdn.mercity.ai/blog/building-llm-guardrails-with-saes/fig_architecture_v2.jpg
+jsonld:
+  abstract: >-
+    Mercity tested whether sparse autoencoder (SAE) features can replace a
+    separate topic classifier in an LLM guardrail. Gemma 3 1B and 4B answered
+    1,008 synthetic prompts across seven business domains; each generated
+    token's residual-stream state was encoded by a frozen Gemma Scope JumpReLU
+    SAE with 16,384 features, the fired features were OR-pooled over the answer,
+    and the 100 with the highest cross-topic variance fed a small classifier.
+    Accuracy reached 94.1% on 1B with an MLP, 99.0% with logistic regression and
+    98.0% on 4B, while a probe on the last prompt token scored 75.4% and pooling
+    every prompt token reached 96.55%.
+  about:
+    - name: Sparse autoencoders
+    - name: LLM guardrails
+    - name: Topic classification
+    - name: Mechanistic interpretability
+      sameAs: https://en.wikipedia.org/wiki/Mechanistic_interpretability
+    - name: Gemma 3
+      sameAs: https://en.wikipedia.org/wiki/Gemma_(language_model)
+  keywords:
+    - SAE topic classifier
+    - topic guardrails for LLMs
+    - Gemma Scope SAE features
+    - classify LLM output from activations
+    - off-topic detection for chatbots
+    - sparse autoencoder probing
+    - residual stream probe
+    - Gemma 3 topic classification
+    - prefill vs decode activations
+    - logistic regression on SAE features
+  citation:
+    - name: >-
+        Towards Monosemanticity: Decomposing Language Models With Dictionary
+        Learning
+      url: https://transformer-circuits.pub/2023/monosemantic-features
+      type: paper
+    - name: >-
+        Sparse Autoencoders Find Highly Interpretable Features in Language Models
+      url: https://arxiv.org/abs/2309.08600
+      type: paper
+      author: H. Cunningham, A. Ewart, L. Riggs, R. Huben, L. Sharkey
+    - name: >-
+        Gemma Scope: Open Sparse Autoencoders Everywhere All At Once on Gemma 2
+      url: https://arxiv.org/abs/2408.05147
+      type: paper
+    - name: >-
+        Qwen-Scope: Turning Sparse Features into Development Tools for Large
+        Language Models
+      url: https://arxiv.org/abs/2605.11887
+      type: paper
+    - name: Gemma Scope 2 SAEs for Gemma 3 1B IT
+      url: https://huggingface.co/google/gemma-scope-2-1b-it
+      type: model
+    - name: Gemma Scope 2 SAEs for Gemma 3 4B IT
+      url: https://huggingface.co/google/gemma-scope-2-4b-it
+      type: model
+  faq:
+    - q: >-
+        Can sparse autoencoder features replace a topic classifier for LLM
+        guardrails?
+      a: >-
+        In Mercity's test on Gemma 3, yes: a logistic regression over 100 SAE
+        features read from the model's own answer classified seven business
+        topics with 99.0% accuracy on 203 held-out samples. Gemma 3 and the
+        Gemma Scope SAE stayed frozen, no output text was read, and training
+        used 115 labeled prompts per topic.
+    - q: How does an SAE-based topic classifier for an LLM work?
+      a: >-
+        Forward hooks capture Gemma 3's residual-stream state at every generated
+        token, up to 512. Each state passes through a frozen Gemma Scope
+        JumpReLU SAE that fires about 20 of its 16,384 features, the per-token
+        masks are combined with a logical OR, and the 100 features with the
+        highest cross-topic variance feed a small classifier. At serving time
+        the added cost is one SAE forward pass and a small matrix multiply.
+    - q: >-
+        Is an LLM's topic easier to read from the prompt or from its answer?
+      a: >-
+        On Gemma 3 1B, a probe on the last prompt token scored 75.4% against
+        94.1% for the generated answer, and at 4B that single-position prompt
+        probe fell to 62.1%. Pooling every prompt token with the same OR
+        aggregation reached 96.55%, so Mercity concluded the gap came from
+        reading a single position, and that the topic signal is present in both
+        the prompt and the generation.
+    - q: Which topics are hardest for an SAE topic classifier?
+      a: >-
+        On Gemma 3 1B, Financial was the weakest class (F1 0.862) because
+        financial content borrows the vocabulary of the documents it appears in,
+        and most of the 12 errors fell between Financial, Enterprise documents,
+        HR and Legal. Healthcare scored a perfect 1.000. On Gemma 3 4B,
+        Financial F1 rose to 0.982 and only four errors remained, each a
+        boundary case of the taxonomy.
+    - q: How many SAE features does a topic classifier need?
+      a: >-
+        In Mercity's decode experiments with Gemma 3, the top 5 SAE features
+        alone reached about 56% accuracy against a 14% chance line for seven
+        classes, the top 30 reached 94.1%, and accuracy flattened after roughly
+        50 features (95.5%). Features read from the prompt kept improving up to
+        100, which fits a more diffuse signal.
+    - q: >-
+        How can Mercity help with building topic guardrails for an LLM assistant?
+      a: >-
+        Mercity builds guardrails, red-teaming and evaluation for LLM products
+        and agents, written to the client's own scope and policy, and can work
+        inside the client's cloud. It publishes its guardrail research in the
+        open, including a research log on SAE topic classifiers, a follow-up log
+        on per-token topic detectors that run during generation, and an arXiv
+        paper on SAE topic monitoring. Mercity has done this work for many
+        clients and taken guardrail systems to production, with a measured
+        violation rate for each category.
 ---
 
 We wanted to test whether sparse autoencoders can replace a dedicated topic classifier in an LLM guardrail stack, reading the topic directly from the model's internal activations instead of running a second model over its output text. 

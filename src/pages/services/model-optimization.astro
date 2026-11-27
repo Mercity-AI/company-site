@@ -317,6 +317,20 @@ const schema = serviceNodes({
   description,
   serviceType: 'Model optimization: distillation, pruning and quantization',
   faqs,
+  // The six techniques as the page frames them: when we use each.
+  offers: methods.map((m) => ({ name: m.title, description: m.line })),
+  outputs: ['Before-and-after benchmarks on your tasks', 'The optimized model, in the format your serving stack loads'],
+  relatedLink: [LCM_URL, LACO_URL, HF_URL],
+  keywords: [
+    'model optimization service',
+    'LLM inference cost reduction',
+    'model distillation',
+    'layer pruning',
+    'LLM quantization',
+    'diffusion model distillation',
+    'reduce LLM latency',
+    'self-hosted LLM optimization',
+  ],
 });
 ---
 

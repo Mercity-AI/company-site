@@ -768,6 +768,20 @@ const schema = serviceNodes({
   description,
   serviceType: 'Synthetic data generation for model training and evaluation',
   faqs,
+  // The page's own lists: what we generate, and what you receive.
+  offers: kinds.map((k) => ({ name: k.title, description: k.line })),
+  outputs: deliverables,
+  relatedLink: [OSS_URL, LOG_URL, GITHUB_URL, HF_DATASETS_URL],
+  keywords: [
+    'synthetic data generation service',
+    'synthetic training data',
+    'LLM fine-tuning data',
+    'instruction tuning datasets',
+    'synthetic evaluation sets',
+    'red-team data generation',
+    'agent tool-use traces',
+    'Simula',
+  ],
 });
 ---
 

@@ -13,6 +13,132 @@ authors:
 category: AI in Sport Analysis
 image: >-
   https://blog-cdn.mercity.ai/blog/ball-tracking-for-sport-analysis/6626c57883a69ca6051b9010_Screenshot-2024-04-23-014538.jpg
+jsonld:
+  abstract: >-
+    This guide, updated in May 2025, covers how AI tracks balls and players for
+    refereeing, coaching, player analysis and broadcast. It explains Segment
+    Anything, Track Anything (SAM with XMem memory), SAM 2 and the mobile
+    EdgeTAM, then compares TrackNetV3, a YOLOv11 + SAHI + ByteTrack pipeline and
+    SAMURAI. TrackNetV3 reports 97.51% tracking accuracy against 94.98% for
+    TrackNetV2, but the guide's speed comparison puts it at about 25 FPS at
+    1080p, while SAMURAI reaches 60 FPS at 1080p with 16 ms latency, so the
+    guide places TrackNetV3 in post-event analysis and SAMURAI in live use. It
+    ends with team, individual and pose analysis built on the tracking data.
+  about:
+    - name: Ball tracking
+    - name: Sports analytics
+      sameAs: https://en.wikipedia.org/wiki/Sports_analytics
+    - name: Video tracking
+      sameAs: https://en.wikipedia.org/wiki/Video_tracking
+    - name: Image segmentation
+      sameAs: https://en.wikipedia.org/wiki/Image_segmentation
+    - name: Object detection
+      sameAs: https://en.wikipedia.org/wiki/Object_detection
+    - name: Kalman filter
+      sameAs: https://en.wikipedia.org/wiki/Kalman_filter
+  keywords:
+    - AI ball tracking
+    - ball tracking in cricket
+    - TrackNetV3
+    - SAMURAI object tracking
+    - SAM 2 video segmentation
+    - small object detection with SAHI
+    - YOLO and ByteTrack
+    - Track Anything model
+    - sports video analysis with AI
+    - EdgeTAM on mobile
+    - player tracking and pose analysis
+  citation:
+    - name: TrackNet
+      url: https://arxiv.org/abs/1907.03698
+      type: paper
+    - name: YOLO paper
+      url: https://arxiv.org/abs/1506.02640
+      type: paper
+    - name: Segment Anything Model (Meta)
+      url: https://segment-anything.com/
+      type: page
+    - name: Track Anything
+      url: https://arxiv.org/abs/2304.11968
+      type: paper
+    - name: XMem
+      url: https://arxiv.org/abs/2207.07115
+      type: paper
+    - name: XMem++
+      url: https://arxiv.org/abs/2307.15958
+      type: paper
+    - name: "SAM 2: Segment Anything in Images and Videos"
+      url: >-
+        https://ai.meta.com/research/publications/sam-2-segment-anything-in-images-and-videos/
+      type: paper
+    - name: SAHI tiled inference (Ultralytics docs)
+      url: https://docs.ultralytics.com/guides/sahi-tiled-inference/
+      type: page
+    - name: SAMURAI
+      url: https://yangchris11.github.io/samurai/
+      type: page
+    - name: >-
+        Stretch index and team synchrony metrics (Frontiers in Psychology)
+      url: >-
+        https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2018.02416/full
+      type: paper
+  faq:
+    - q: How does AI ball tracking work?
+      a: >-
+        AI ball tracking finds the ball in each video frame and follows it over
+        time, along with events such as contact with a bat or racket, ball speed
+        and player interaction. Older systems pair TrackNet with YOLO detectors;
+        newer pipelines segment the ball and players with models such as Segment
+        Anything and follow them with memory-based trackers such as XMem, and in
+        production a Kalman filter often fills in the frames that are not
+        processed.
+    - q: >-
+        TrackNetV3 vs SAMURAI vs YOLO with SAHI: which suits live ball tracking?
+      a: >-
+        In the comparison in Mercity's May 2025 guide, SAMURAI is the fastest,
+        at 60 FPS on single-camera 1080p and 22 FPS across 4K multi-camera feeds
+        with 16 ms latency, which suits live use. YOLOv11 with SAHI and
+        ByteTrack runs at 45 FPS without slicing but 15 FPS with SAHI tiling and
+        66 ms latency, and TrackNetV3 uses 2.5 GB of GPU memory but manages
+        about 25 FPS at 1080p and 12 FPS multi-camera, so it fits post-event
+        analysis.
+    - q: How accurate is TrackNetV3 for ball tracking?
+      a: >-
+        TrackNetV3 reports 97.51% tracking accuracy, against 94.98% for
+        TrackNetV2 and 53.47% for the general-purpose YOLOv7, and raises IoU
+        from 0.82 to 0.91. It adds a trajectory prediction module that uses a
+        background image to ignore static distractions, a rectification module
+        that fills in the ball's position by inpainting when the shuttle is
+        occluded or missed, and mixup augmentation.
+    - q: How do you track small, fast balls in 4K sports video?
+      a: >-
+        In 4K footage a shuttlecock or cricket ball is often only 5 to 15 pixels
+        wide. One pipeline runs YOLOv11, whose dynamic attention and C3k2 blocks
+        target small objects, with SAHI, which slices each frame into smaller
+        overlapping tiles so the ball fills more of each tile, and then
+        ByteTrack, which keeps low-confidence detections and uses Kalman
+        filtering to keep following the ball through occlusions.
+    - q: What is SAM 2, and how does EdgeTAM run it on a phone?
+      a: >-
+        SAM 2 extends Meta's Segment Anything to video with a streaming
+        architecture and memory attention, giving better segmentation with 3x
+        fewer interactions and running 6x faster than SAM on image tasks.
+        EdgeTAM replaces the heavy memory attention with a 2D Spatial Perceiver
+        that reads stored frames through a fixed set of global and patch-level
+        queries, and is reported at 16 FPS on an iPhone 15 Pro Max with 87.7 J&F
+        on DAVIS 2017.
+    - q: >-
+        How can Mercity help with building ball tracking and sports analytics
+        systems?
+      a: >-
+        Mercity designs and builds custom computer vision models and pipelines
+        for tasks like ball and player tracking, starting with a benchmark from
+        the client's own footage that measures accuracy, speed and latency for
+        each camera setup. It has a lot of experience building computer vision
+        pipelines and integrating them into existing systems, has published
+        sports work in the open, such as a study comparing five architectures
+        for classifying figure skating elements from pose data, and has taken
+        these systems to production for many clients.
 ---
 
 <div class="rich-text w-richtext"><p>Accurate ball tracking has long been a holy grail in sports technology, promising to unlock new insights and improvements in athlete performance. It can be used for various tasks, from gathering valuable data to helping referees make decisions, even for predictive analysis. However, developing reliable ball tracking systems has proven to be a complex and challenging task. However, the recent breakthroughs in AI and computer vision space have introduced new models and methods to enhance ball tracking greatly.</p><p>In this article, we'll explore the latest advancements in AI-powered ball tracking, and how they're overcoming these challenges to revolutionize the sports industry.</p><h2 id="what-is-ball-tracking">What is Ball Tracking</h2><p>Ball tracking in sports is simply tracking the ball as it moves around in the field. Along with this, things like collision detection with the bat or racket, speed analysis, and player interaction with the ball are also measured and tracked. These are valuable data points in the sports analysis industry as for most of the games the “ball” itself is at the core. It might be kicking the ball, putting the ball in a basket, or hitting the ball with a bat or a racquet. Balls are involved in one way or another in most of the popular games.</p><p>Ball tracking has become almost a necessary part of most of the games. It just allows the players, regulators, and viewers to extract so much more information from the games. It really enriches the experience and improves the game overall.</p><p>Let’s talk about some of the advantages of using Ball tracking in sports.</p><h3 id="ball-tracking-for-making-better-decisions">Ball tracking for Making Better Decisions</h3><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:767pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/ball-tracking-for-sport-analysis/6626c4ccd640d668b585a37f_9XmEseyqhwi1khs3mv8ygmcjmp3bjYdETbNTDErADE2HlObV9PbHTmz3_ZEXdFo1Z3SUc1Qs1z5TDR5fGyQb93ekmi0UPdeFyjFj8iMSnnAGgG40irCZARY5pfksCc21vHTL1A8vvciLgVdqNbNKxT0.jpg"/></div></figure><p>Making judgment decisions is one of the most important parts of any sport, with or without balls. Most of them are straightforward like fours and sixes in Cricket, but in some cases, these can become very difficult, like LBW (Leg before Wicket) and No Ball judgment in Cricket. These edge case scenarios are now handled by “3rd Umpires”, These are the umpires sitting in a room with a lot of video feed coming from all over the field.</p><p>For the 3rd umpires, ball tracking data is essential. When the field umpires cannot make a decision they refer to the 3rd umpires, which then using ball tracking and other sport analysis techniques, make a decision for them. This requires a lot of work and a lot of data processing in real-time.</p><h3 id="ball-tracking-for-improving-player-performance">Ball Tracking for Improving Player Performance</h3><p>Ball tracking has been used by players for a long time now to improve their own performance and to understand the flaws in other people’s playing styles too. Bowlers use it all the time to understand how they are handling the ball and where can they improve further to score the most wickets. Golf players use ball tracking with pose estimation to understand how they should hit the ball and at what angle. Doing all this provides players with extremely granular data and very good feedback by the system, with all this, it’s very to improve and catch mistakes. At this point, this is something every player in the industry uses.</p><h3 id="ball-tracking-for-assisting-coaches">Ball tracking for Assisting Coaches</h3><p>Along with improving individual performances, coaches have started making better teams based upon different metrics gathered through sports analytics systems such as ball speed, spin rate, distance covered while running after hitting the shot, and number of steps taken during the batting stance preparation phase. This allows managers/coaches access detailed insights regarding strengths &amp; weaknesses amongst squad members allowing informed tactical adjustments throughout the season leading ultimately toward success.</p><p>Coaches also analyze opponents’ games thoroughly beforehand so they can devise strategies accordingly against certain styles played previously seen footage recorded via cameras capturing entire match proceedings including replays slow motion clips highlighting key moments helps understand tactics employed by both sides resulting in improved overall quality play. This really helps coaches prepare a better team strategy against any other team.</p><h3 id="ball-tracking-for-fan-engagement">Ball Tracking for Fan Engagement</h3><p>Ball tracking for fan engagement is rather a new phenomenon where providers has been introducing things like “Ball cam”, a special drone or camera that follows the ball specifically. This is new but something viewers love engaging with. Providers also often show the “ball path” and other important visualizations that keep viewers engaged and informed.</p><h2 id="how-does-ball-tracking-work">How does Ball tracking work?</h2><p>There have been many ways Ball tracking is implemented in the actual games. One of them notably being using <a href="https://arxiv.org/abs/1907.03698">TrackNet</a> and <a href="https://arxiv.org/abs/1506.02640">YOLO Networks</a>. These techniques are often paired to provide a good experience and also work well to this date. But we want to introduce newer better models which can track the ball and other objects even better.</p><p>Let’s learn how to build ball tracking pipelines.</p><h3 id="segment-anything-model">Segment Anything Model</h3><p><a href="https://segment-anything.com/">Segment Anything Model</a> by Meta is a rather new and recent model. Segment Anything Model or SAM by Meta is a rather straightforward model. It takes in an image and can take in various types of prompts like masks, boxes, points, and even free-form text. Then the both image and the passed prompt is encoded into a much smaller subspace, these embeddings are then passed into a decoder which outputs a final mask that represents the segmented parts of the image. As you can see in the diagram below:</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1600pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/ball-tracking-for-sport-analysis/6626c4ccf3328891acde2836_ivmfLcX8NSuTKxhFx_4PX7cDDN9tk7iJTqcgv3WKbOCNY83Kix8dnwywwKuIU4O_1ki3SzGln2IVXPYV4kVXMIQCo96xw9rffKTIO4oz4iG0jqb0C5banUYs62FMXqB_t5a7TfaMob-k2JEO4_P7IQ4.jpg"/></div></figure><p>This means that you can pass a normal image like this:</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1526pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/ball-tracking-for-sport-analysis/6626c4ccf3328891acde27f3_D-lrdosjr2eWoRl9mVQVnlwaVfQKLwErj7s2OfSz5Y2iya9fGew_Ep_jG3zsySFgc69Gi9uF1w6cgOEZLvMQL0RrUgsq1HQkJumuUYaJRTK8ugGw0mthsG34OGI6bt56QMVLo-5oONZkN-A4ZNGsqa8.jpg"/></div></figure><p>And segment all the players and extract information from it like this:</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1529pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/ball-tracking-for-sport-analysis/6626c4cceabf7815186d0337_kbNcoJ-CJeUMGjd7_qTBLl5TcT90qpUKwfqVwEk-TrK_3tGF9h2IRAnWSLvkIXX7rOxFlxPYF5v9dooP0XjvhIPTIrFvGMFQq5xzEPXaAWn0IaMaqSgemsoQMCvv4r_F4ItfiR_NtlAkyS2HDU4XBNc.jpg"/></div></figure><p>As you can see the model was able to extract all the details from the image, the players, the pitch, the umpire the hats, helmets, etc. This is very granular data. This data can further be used to analyze a lot of things in the games, and also, track specific players, balls, and whatnot.</p><h3 id="track-anything-model">Track Anything Model</h3><p>The <a href="https://arxiv.org/abs/2304.11968">Track Anything model</a> is an extension of the Segment Anything Model, integrating the <a href="https://arxiv.org/abs/2207.07115">X-Mem architecture</a> with it to allow it to operate over images. Track anything is first used to create a segmentation mask for the object that is desired to be tracked, the mask is then provided to the X-Mem model which is very good in tracking objects over a long-term video.</p><p>X-Mem uses the Atkinson-Shiffrin Memory Model which is similar to how human beings process and store information and memory, the same architecture is then used over consistent frames to track an object through the video. Over the years X-mem has evolved into a much better architecture, <a href="https://arxiv.org/abs/2307.15958">X-Mem++</a> being the latest one. All these techniques can be used to track players, balls, and other elements in a game.</p><p>Here you can see Stephen Curry being tracked across shot changes over a 2 minute video.</p><div class="w-embed"><video controls="">

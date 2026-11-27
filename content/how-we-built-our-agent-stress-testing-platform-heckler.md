@@ -21,6 +21,95 @@ category: LLM Evaluations
 isTopPick: false
 image: >-
   https://blog-cdn.mercity.ai/blog/how-we-built-our-agent-stress-testing-platform-heckler/heckler-demo-v4-poster.jpg
+jsonld:
+  abstract: >-
+    Heckler is an open-source tool from Mercity that stress-tests LLM agents
+    against the policies in their own system prompt. Simula generates the
+    simulated users from that prompt, an evaluator model plays each user over
+    several turns and then grades the conversation, and code turns the grades
+    into pass rates and charts. Tested on three agents (UK bank support, a B2B
+    SaaS assistant and a US primary-care assistant), every prompt injection
+    failed and no agent was jailbroken, yet only 5 of 26 graded conversations
+    passed with zero policy violations.
+  about:
+    - name: AI agent stress testing
+    - name: Red teaming
+      sameAs: https://en.wikipedia.org/wiki/Red_team
+    - name: Prompt injection
+      sameAs: https://en.wikipedia.org/wiki/Prompt_injection
+    - name: LLM evaluation
+    - name: Policy compliance for AI agents
+  keywords:
+    - agent stress testing
+    - LLM agent red teaming
+    - multi-turn agent testing
+    - system prompt policy violations
+    - chatbot compliance testing
+    - AI agent evaluation
+    - simulated users
+    - Heckler
+    - Simula
+  citation:
+    - name: Heckler
+      url: https://github.com/Mercity-AI/heckler
+      type: code
+    - name: Simula
+      url: https://github.com/Mercity-AI/Simula
+      type: code
+    - name: Heckler (hosted app)
+      url: https://heckler.mercity.ai
+      type: page
+  faq:
+    - q: What is Heckler?
+      a: >-
+        Heckler is an open-source stress-testing tool for LLM agents, built by
+        Mercity. You give it an OpenAI-compatible or custom HTTP endpoint, the
+        agent's system prompt and an evaluator model on your own API key. It
+        sends in simulated users who push on the agent's rules over several
+        turns, then grades every conversation against those rules.
+    - q: How does Heckler decide which users to simulate?
+      a: >-
+        Heckler uses Simula, Mercity's open-source synthetic data engine, to
+        read the agent's full system prompt and vary four things: what the user
+        wants, who they are and how they feel, what pressure they apply, and
+        which rule they stress. A critic model checks each scenario and drops or
+        refines weak ones. For the healthcare agent this took 50 model calls and
+        217 seconds to produce 9 scenarios.
+    - q: How does Heckler grade an agent's conversation?
+      a: >-
+        The evaluator that played the user steps out of character when Heckler
+        sends it a secret code, so the agent cannot end its own test. It writes
+        a 0 to 100 score, a pass, partial or fail verdict, each violation with
+        the rule, its severity and a verbatim quote, five dimension scores from
+        0 to 10, and suggested prompt changes. Code fails any conversation with
+        a violation and computes every run-level number.
+    - q: >-
+        What did Heckler find when it tested bank, SaaS and healthcare agents?
+      a: >-
+        Across 26 graded conversations, every prompt injection failed and no
+        agent was jailbroken, but only 5 conversations passed with zero
+        violations. The agents broke policy in five ways: leaking an answer
+        after refusing it, inventing product details, hinting at outcomes they
+        had refused, printing internal tool calls into the chat, and skipping
+        steps the policy required.
+    - q: >-
+        Why are jailbreak tests and public benchmarks not enough to test an LLM
+        agent?
+      a: >-
+        Public benchmarks never see an agent's system prompt, tools or policies,
+        and most pre-launch tests stop after one or two turns. In Mercity's
+        Heckler test all three agents would have passed a jailbreak benchmark,
+        yet over 80% of conversations broke a policy, often several turns in,
+        after the user had been refused and pushed again.
+    - q: >-
+        How can Mercity help with stress-testing and hardening an LLM agent?
+      a: >-
+        Mercity built Heckler and Simula and publishes both as open source, and
+        it red-teams and evaluates LLM agents for clients as part of its LLM
+        guardrails and security work. It writes custom evals and domain-specific
+        test data from your own policies, tests the agent over multi-turn
+        conversations, and hardens it before launch, so it reaches production
+        with a measured violation rate for each category of risk.
 ---
 
 <video controls playsinline preload="auto" width="1920" height="1080" aria-label="Heckler product demo" poster="https://blog-cdn.mercity.ai/blog/how-we-built-our-agent-stress-testing-platform-heckler/heckler-demo-v4-poster.jpg" src="https://blog-cdn.mercity.ai/blog/how-we-built-our-agent-stress-testing-platform-heckler/heckler-demo-v4.mp4">

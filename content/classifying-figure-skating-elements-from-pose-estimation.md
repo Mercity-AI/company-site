@@ -20,6 +20,147 @@ category: Computer Vision
 isTopPick: false
 image: >-
   https://blog-cdn.mercity.ai/blog/classifying-figure-skating-elements-from-pose-estimation/fig03_data_diagram.jpeg
+jsonld:
+  abstract: >-
+    Mercity trained five architectures (CNN + BiLSTM, Transformer, Transformer +
+    BiLSTM, a graph convolutional network and a Continuous Thought Machine) to
+    name figure skating elements in SkatingVerse clips, each turned into 94 pose
+    features per frame over 128 frames from cleaned COCO-17 skeletons. CNN +
+    BiLSTM, at 3.77M parameters, led with 0.851 macro-F1 on 11 coarse classes.
+    Spins and step sequences scored 0.87 to 0.99 F1 on every model, while Flip,
+    Lutz and Toeloop stayed between 0.57 and 0.79 because the skeleton has no
+    keypoint below the ankle. In a first localization test, per-frame
+    supervision found 80.5% of elements at 82% precision, and CTC found 0.7%.
+  about:
+    - name: Human pose estimation
+      sameAs: >-
+        https://en.wikipedia.org/wiki/Articulated_body_pose_estimation
+    - name: Action recognition
+      sameAs: https://en.wikipedia.org/wiki/Activity_recognition
+    - name: Figure skating jumps
+      sameAs: https://en.wikipedia.org/wiki/Figure_skating_jumps
+    - name: Temporal action localization
+    - name: Connectionist temporal classification
+      sameAs: >-
+        https://en.wikipedia.org/wiki/Connectionist_temporal_classification
+    - name: Graph neural network
+      sameAs: https://en.wikipedia.org/wiki/Graph_neural_network
+  keywords:
+    - figure skating jump classification
+    - skeleton-based action recognition
+    - COCO-17 keypoints
+    - Flip vs Lutz classification
+    - SkatingVerse dataset
+    - Continuous Thought Machine
+    - CTC vs per-frame supervision
+    - temporal action segmentation
+    - pose keypoint preprocessing
+    - AI for sports video analysis
+    - BiLSTM vs Transformer for pose sequences
+  citation:
+    - name: Mercity figure skating classification models
+      url: >-
+        https://huggingface.co/collections/Mercity/figure-skating-classification
+      type: model
+    - name: figure-skating-analysis
+      url: https://github.com/Mercity-AI/figure-skating-analysis
+      type: code
+    - name: >-
+        SkatingVerse: A Large-Scale Benchmark for Comprehensive Evaluation on
+        Human Action Understanding
+      url: https://doi.org/10.1049/cvi2.12287
+      type: paper
+    - name: >-
+        3D Pose-Based Temporal Action Segmentation for Figure Skating: A
+        Fine-Grained and Jump Procedure-Aware Annotation Approach (FS-Jump3D)
+      url: https://arxiv.org/abs/2408.16638
+      type: paper
+    - name: YOLO11 Pose Estimation
+      url: https://docs.ultralytics.com/tasks/pose/
+      type: page
+    - name: "Microsoft COCO: Common Objects in Context"
+      url: https://arxiv.org/abs/1405.0312
+      type: paper
+    - name: Continuous Thought Machines
+      url: https://arxiv.org/abs/2505.05522
+      type: paper
+      author: L. Darlow, C. Regan, S. Risi, J. Seely, L. Jones
+    - name: >-
+        Connectionist Temporal Classification: Labelling Unsegmented Sequence
+        Data with Recurrent Neural Networks
+      url: https://doi.org/10.1145/1143844.1143891
+      type: paper
+      author: A. Graves, S. Fernández, F. Gomez, J. Schmidhuber
+    - name: >-
+        MS-TCN: Multi-Stage Temporal Convolutional Network for Action
+        Segmentation
+      url: https://arxiv.org/abs/1903.01945
+      type: paper
+      author: Y. Abu Farha, J. Gall
+    - name: >-
+        Semi-Supervised Classification with Graph Convolutional Networks
+      url: https://arxiv.org/abs/1609.02907
+      type: paper
+      author: T. N. Kipf, M. Welling
+  faq:
+    - q: Can pose estimation classify figure skating jumps?
+      a: >-
+        Partly. In Mercity's tests, pose features classified spins and step
+        sequences at 0.87 to 0.99 F1 on every architecture and separated jump
+        families well, but Flip, Lutz and Toeloop stayed between 0.57 and 0.79.
+        A Flip and a Lutz differ only by which blade edge is on the ice at
+        takeoff, and the lowest keypoint in the COCO-17 skeleton is the ankle.
+    - q: >-
+        Which architecture works best for skeleton-based figure skating
+        classification?
+      a: >-
+        In Mercity's study CNN + BiLSTM, at 3.77M parameters, had the highest
+        macro-F1 in both label spaces: 0.851 on 11 coarse classes and 0.505 on
+        28 fine classes, ahead of a Transformer with nearly twice the parameters
+        on the same backbone and head. The Continuous Thought Machine had the
+        best fine-grained accuracy, 87.99%, with 42% fewer parameters, and
+        Transformer + BiLSTM, the largest model and the only one without a
+        convolutional backbone, finished last.
+    - q: >-
+        What limits accuracy when classifying skating jumps from pose data?
+      a: >-
+        The input representation. Across five architectures Flip's F1 varied by
+        only 0.11, while within any one model the gap between Flip and Sequence
+        was about 0.33, so the class mattered roughly three times more than the
+        model. Raising pose extraction from 256 to 384 pixels lifted the jump
+        classes by 8 to 17 points of F1, more than any architecture change in
+        Mercity's study.
+    - q: >-
+        Why does CTC fail at temporal action localization in figure skating?
+      a: >-
+        CTC sums over every alignment of a transcript to the timeline with no
+        term that prefers one, so emitting every element at frame zero scores
+        the same as the correct timing. In Mercity's proof of concept, validated
+        on one broadcast of 30 clips, CTC's loss fell from 2.07 to 0.34 while it
+        found 0.7% of elements, often placing its predictions in the first 5% of
+        the clip; per-frame supervision on the same encoder found 80.5% at 82%
+        precision.
+    - q: >-
+        How do you clean pose estimation keypoints before training an action
+        classifier?
+      a: >-
+        Mercity's pipeline runs six steps in order: aspect-ratio correction,
+        dropping joints with confidence under 0.3, linear interpolation across
+        time, Savitzky-Golay smoothing, hip centering and division by torso
+        length. Each frame then becomes 94 features (joint coordinates, joint
+        angles, bone vectors, velocities and angular velocities), and every clip
+        is resampled to 128 timesteps.
+    - q: >-
+        How can Mercity help with building pose estimation and action
+        recognition models?
+      a: >-
+        Mercity designs and builds custom computer vision models, such as pose
+        estimation and action recognition on a client's own footage, starting
+        with an evaluation built for the task. It has a lot of experience
+        building vision models for many clients and taking them to production,
+        and it published its figure skating classification study with the models
+        and code in the open. Clients get per-class results on their own data
+        that show whether the inputs or the model limit accuracy.
 ---
 
 When a model stalls, the reflex is to reach for a bigger or newer one. This is a case study in a problem where that would have been the wrong move: the performance ceiling sat in how the data was represented, not in the model, and no architecture we tried could push past it. The example is figure skating, but the underlying question, whether to spend the next dollar on the model or on the inputs, is one most teams face.

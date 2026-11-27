@@ -26,6 +26,10 @@ const schema = collectionNodes({
   name: 'Blog',
   description,
   items: posts.map((p) => ({ url: getPostUrl(p), name: p.data.title })),
+  // The posts' own categories, most-used first.
+  keywords: [...posts.reduce((m, p) => m.set(p.data.category, (m.get(p.data.category) ?? 0) + 1), new Map<string, number>())]
+    .sort((a, b) => b[1] - a[1])
+    .map(([c]) => c),
 });
 ---
 

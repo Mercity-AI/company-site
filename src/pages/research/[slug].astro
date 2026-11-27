@@ -38,19 +38,12 @@ const schema = articleNodes({
   path: articlePath,
   type: 'TechArticle',
   section: { name: 'Research', path: '/research' },
-  extra: paper
-    ? {
-        citation: {
-          '@type': 'ScholarlyArticle',
-          name: paper.title,
-          url: paper.href,
-          author: paper.authors.split(',').map((name) => ({ '@type': 'Person', name: name.trim() })),
-        },
-        mentions: paper.code
-          ? [{ '@type': 'SoftwareSourceCode', codeRepository: paper.code, url: paper.code }]
-          : undefined,
-      }
-    : undefined,
+  citations: paper
+    ? [
+        { name: paper.title, url: paper.href, type: 'paper', author: paper.authors },
+        ...(paper.code ? [{ name: `${paper.title} (code)`, url: paper.code, type: 'code' as const }] : []),
+      ]
+    : [],
 });
 ---
 

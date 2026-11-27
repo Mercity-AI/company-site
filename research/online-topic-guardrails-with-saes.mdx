@@ -16,6 +16,145 @@ tags:
 category: Research
 isTopPick: false
 image: /research/online-topic-guardrails-with-saes/fig01_headline.png
+jsonld:
+  abstract: >-
+    Mercity trained small causal detectors that read the last 10 residual-stream
+    layers of Gemma 3 1B and 4B and label every token with one of 7 business
+    topics, so a guardrail can flag drift while the model writes. GRU,
+    Transformer and ConvNeXt detectors were trained in prefill on 10,000 Simula
+    records written by GPT-5.6 Luna, on static or per-token Gemma Scope 2 SAE
+    features or on raw hidden states. The best reached 96 to 97 held-out
+    macro-F1; raw states scored 97.5 at 4B against 97.1 for SAE features, and
+    static SAE features chosen with labels gave about the same accuracy from
+    detectors up to 10 times smaller. On Gemma's own answers, per-token SAE
+    detectors gave 94 to 95% of tokens a requested topic.
+  about:
+    - name: Sparse autoencoders
+    - name: LLM guardrails
+    - name: Activation probing
+    - name: Token-level topic classification
+    - name: Mechanistic interpretability
+      sameAs: https://en.wikipedia.org/wiki/Mechanistic_interpretability
+    - name: Gemma 3
+      sameAs: https://en.wikipedia.org/wiki/Gemma_(language_model)
+  keywords:
+    - real-time topic guardrails
+    - per-token topic detection
+    - detect LLM topic drift
+    - streaming LLM guardrail
+    - SAE probes vs raw activations
+    - Gemma Scope 2 features
+    - causal probe on the residual stream
+    - feature selection for SAE probes
+    - group lasso feature selection
+    - off-topic detection during generation
+  citation:
+    - name: SAE-Guardrails (Mercity's code)
+      url: https://github.com/Mercity-AI/SAE-Guardrails
+      type: code
+    - name: >-
+        Online guardrails using sparse autoencoders (trained detectors)
+      url: >-
+        https://huggingface.co/collections/Mercity/online-guardrails-using-sparse-autoencoders-6ac602940468c62fefb2b9e8
+      type: model
+    - name: >-
+        Gemma Scope 2: helping the AI safety community deepen understanding of
+        complex language model behavior
+      url: >-
+        https://deepmind.google/blog/gemma-scope-2-helping-the-ai-safety-community-deepen-understanding-of-complex-language-model-behavior
+      type: page
+    - name: Gemma 3 Technical Report
+      url: https://arxiv.org/abs/2503.19786
+      type: paper
+    - name: Reasoning-Driven Synthetic Data Generation and Evaluation
+      url: https://arxiv.org/abs/2603.29791
+      type: paper
+      author: T. R. Davidson, B. Seguin, E. Bacis, C. Ilharco, H. Harkous
+    - name: >-
+        Are Sparse Autoencoders Useful? A Case Study in Sparse Probing
+      url: https://arxiv.org/abs/2502.16681
+      type: paper
+      author: >-
+        S. Kantamneni, J. Engels, S. Rajamanoharan, M. Tegmark, N. Nanda
+    - name: >-
+        Negative Results for SAEs On Downstream Tasks and Deprioritising SAE
+        Research
+      url: https://www.alignmentforum.org/posts/4uXCAJNuPKtKBsi28/
+      type: page
+    - name: >-
+        Deploying Interpretability to Production with Rakuten: SAE Probes for
+        PII Detection
+      url: >-
+        https://www.goodfire.com/research/rakuten-sae-probes-for-pii-detection
+      type: page
+    - name: Qwen3Guard Technical Report
+      url: https://arxiv.org/abs/2510.14276
+      type: paper
+    - name: >-
+        Constitutional Classifiers++: Efficient Production-Grade Defenses
+        against Universal Jailbreaks
+      url: https://arxiv.org/abs/2601.04603
+      type: paper
+  faq:
+    - q: >-
+        Can a probe detect an LLM drifting off topic while it is still
+        generating?
+      a: >-
+        Yes, in Mercity's experiments on Gemma 3 1B and 4B. Small causal
+        detectors read the residual stream at the last 10 layers and label every
+        token with one of 7 business topics using only that token and earlier
+        ones, so the label can switch partway through a response. The best
+        detectors reached 96 to 97 macro-F1 on 1,500 held-out records.
+    - q: >-
+        Do sparse autoencoder features beat raw hidden states for topic
+        detection?
+      a: >-
+        Not in Mercity's tests on Gemma 3. Raw hidden states came within 0.6
+        macro-F1 points of the best SAE input at 1B (96.7 against 97.3) and led
+        at 4B (97.5 against 97.1). The SAE gives a smaller detector with named
+        inputs: a static SAE detector has 1.4M to 3.6M parameters at either
+        model size, and its SAE stage needs 1.73M to 3.84M parameters against
+        378M to 839M for the 10 SAEs loaded whole.
+    - q: How should you choose SAE features for a topic probe?
+      a: >-
+        Choose SAE features with the topic labels. Keeping the 150 most active
+        features per layer without labels dropped Mercity's 4B GRU detector to
+        87.4 macro-F1; the F-statistic and group lasso at the same budget raised
+        it to 96.4 and 96.3, and lifted its purity on Gemma's own text from 69
+        to 95. The F-statistic is the cheaper rule, with one deterministic pass
+        and no hyperparameters.
+    - q: >-
+        Do topic detectors trained on synthetic text work on a model's own
+        generations?
+      a: >-
+        Mostly. Mercity's detectors, trained only on text written by GPT-5.6
+        Luna, were run unchanged on Gemma 3's own answers to 1,000 test prompts,
+        and with per-token SAE features they gave 94 to 95% of tokens a topic
+        the prompt asked for, at both model sizes. Full coverage fell to 34 to
+        62 on 4-topic prompts in most configurations, mostly because Gemma
+        answered fewer of the topics in a crowded prompt.
+    - q: >-
+        How do activation-based topic detectors handle edited responses?
+      a: >-
+        Mercity edited test records four ways: off-topic asides inserted, a
+        requested topic removed, topics reordered, and a same-topic passage
+        substituted as a control. With per-token SAE features no edit cost the
+        detectors more than 5 macro-F1 points. Reordering hurt the Transformer
+        most (5.0 points at 1B); ConvNeXt lost at most 1.1 points, but its
+        confidence barely separated inserted text from the original (AUROC 54
+        and 51).
+    - q: >-
+        How can Mercity help with adding real-time topic guardrails to an LLM
+        product?
+      a: >-
+        Mercity builds guardrails, red-teaming and evaluation for LLM products
+        and agents to the client's own policy, tests them against adaptive
+        attackers and reports a measured violation rate for each category, and
+        can work inside the client's cloud. Its SAE guardrail research is
+        public: the code and trained detectors from its per-token topic
+        guardrail log, an earlier SAE topic-classifier log and an arXiv paper on
+        SAE topic monitoring. Mercity has done this work for many clients and
+        taken guardrail systems to production.
 ---
 
 import FigureViews from "../src/components/FigureViews.astro";

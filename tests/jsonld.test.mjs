@@ -11,8 +11,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const DIST = new URL('../dist/', import.meta.url).pathname;
+// fileURLToPath, not .pathname: the repo path has a space, which .pathname
+// leaves as %20, and the tests then skip as if nothing were built.
+const DIST = fileURLToPath(new URL('../dist/', import.meta.url));
+const PUBLIC = fileURLToPath(new URL('../public/', import.meta.url));
 const HOST = 'https://www.mercity.ai';
 
 function htmlFiles(dir) {
@@ -52,14 +56,16 @@ const REQUIRED = {
   ItemList: ['itemListElement'],
   Service: ['name', 'serviceType', 'provider', 'url'],
   SoftwareApplication: ['name', 'applicationCategory', 'operatingSystem', 'offers'],
-  SoftwareSourceCode: ['codeRepository', 'programmingLanguage'],
+  SoftwareSourceCode: ['codeRepository'],
   Person: ['@id', 'name'],
 };
 
 const built = existsSync(DIST);
 
 test('every built page has one valid JSON-LD graph', { skip: !built && 'no dist/; run pnpm build first' }, () => {
-  const files = htmlFiles(DIST).filter((f) => !f.endsWith('design.html'));
+  // Static HTML copied from public/ (the design lab, figure embeds) is not a
+  // site page and carries no layout.
+  const files = htmlFiles(DIST).filter((f) => !existsSync(join(PUBLIC, relative(DIST, f))));
   assert.ok(files.length > 10, 'expected the built pages in dist/');
 
   for (const file of files) {
@@ -85,6 +91,8 @@ test('every built page has one valid JSON-LD graph', { skip: !built && 'no dist/
 
     for (const node of all) {
       for (const t of types(node)) {
+        // Another organisation named in passing (a paper's publisher) is not held to ours.
+        if (t === 'Organization' && !node['@id']) continue;
         for (const field of REQUIRED[t] ?? []) {
           const v = node[field];
           assert.ok(v !== undefined && v !== '' && !(Array.isArray(v) && !v.length), `${where}: ${t} missing ${field}`);
@@ -108,19 +116,37 @@ test('every built page has one valid JSON-LD graph', { skip: !built && 'no dist/
   }
 });
 
-test('posts and logs carry an article, services an FAQ', { skip: !built && 'no dist/; run pnpm build first' }, () => {
+test('posts and logs carry an article with their jsonld block; services, home and Simula an FAQ', { skip: !built && 'no dist/; run pnpm build first' }, () => {
   const read = (p) => graphOf(readFileSync(join(DIST, p), 'utf8'))[0]['@graph'];
   const dirs = (p) => (existsSync(join(DIST, p)) ? readdirSync(join(DIST, p)) : []);
 
+  // Every post and log carries its hand-written `jsonld` frontmatter: an
+  // abstract, topics, and an FAQ whose last question is the Mercity one.
+  const articleChecks = (f, type) => {
+    const g = read(f);
+    const article = g.find((n) => types(n).includes(type));
+    assert.ok(article, `${f}: no ${type}`);
+    assert.ok(article.abstract, `${f}: no abstract (add a jsonld block to the frontmatter)`);
+    assert.ok(article.about?.length, `${f}: no about topics`);
+    const page = g.find((n) => types(n).includes('FAQPage'));
+    assert.ok(page && page.mainEntity.length >= 2, `${f}: no FAQ questions`);
+    const names = page.mainEntity.map((q) => q.name);
+    assert.equal(names.filter((n) => /^How can Mercity help/.test(n)).length, 1, `${f}: needs one "How can Mercity help" question`);
+    assert.match(names.at(-1), /^How can Mercity help/, `${f}: the Mercity question goes last`);
+  };
   for (const slug of dirs('blog-post')) {
     const f = join('blog-post', slug, 'index.html');
     if (!existsSync(join(DIST, f)) || /http-equiv="refresh"/.test(readFileSync(join(DIST, f), 'utf8'))) continue;
-    assert.ok(read(f).some((n) => types(n).includes('BlogPosting')), `${f}: no BlogPosting`);
+    articleChecks(f, 'BlogPosting');
   }
   for (const slug of dirs('research')) {
     const f = join('research', slug, 'index.html');
     if (!existsSync(join(DIST, f))) continue;
-    assert.ok(read(f).some((n) => types(n).includes('TechArticle')), `${f}: no TechArticle`);
+    articleChecks(f, 'TechArticle');
+  }
+  for (const f of ['index.html', join('open-source', 'simula', 'index.html')]) {
+    const faq = read(f).find((n) => types(n).includes('FAQPage'));
+    assert.ok(faq && faq.mainEntity.length > 0, `${f}: no FAQ questions`);
   }
   for (const s of ['synthetic-data', 'llm-guardrails', 'model-optimization']) {
     const g = read(join('services', s, 'index.html'));

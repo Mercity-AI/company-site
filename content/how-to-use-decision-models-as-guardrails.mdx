@@ -22,6 +22,125 @@ category: LLM Guardrails
 isTopPick: false
 image: >-
   https://blog-cdn.mercity.ai/blog/how-to-use-decision-models-as-guardrails/cover.jpg
+jsonld:
+  abstract: >-
+    This guide from Mercity, based on its test of TypeSafe's Jev and
+    Cloudflare's Clef on 5,620 agent replies, shows how to use decision models
+    as guardrails at an agent's input, tool-call and output checkpoints. Each
+    check is a yes/no question with a block threshold and a lower review
+    threshold that sends unclear cases to an LLM judge or a person, tuned per
+    question on a few hundred labelled messages and run in shadow mode before it
+    blocks. Decision models suit checks judged from the text, such as prompt
+    injection, jailbreaks and unrequested tool calls, while rules that depend on
+    earlier turns or the agent's tools still need a model that can reason.
+  about:
+    - name: LLM guardrails
+    - name: Decision models
+    - name: Prompt injection
+      sameAs: https://en.wikipedia.org/wiki/Prompt_injection
+    - name: AI agent security
+    - name: LLM-as-a-judge
+  keywords:
+    - decision model guardrail setup
+    - prompt injection detection
+    - jailbreak detection
+    - tool call guardrail
+    - output guardrail for agents
+    - guardrail threshold tuning
+    - decision model vs LLM judge
+    - System One models
+    - Jev guardrails
+    - LiteLLM decision model guardrail
+    - guardrail latency and cost
+  citation:
+    - name: "TypeSafe: introducing System One models and Jev"
+      url: >-
+        https://typesafe.ai/blog/introducing-system-one-models-and-jev
+      type: page
+    - name: "Cloudflare: Clef decision models"
+      url: https://blog.cloudflare.com/clef-decision-models/
+      type: page
+    - name: >-
+        Fastino: introducing GLiDE, the first thinking decision model
+      url: >-
+        https://fastino.ai/blog/introducing-glide-the-first-thinking-decision-model
+      type: page
+    - name: TypeSafe anti-benchmaxxing policy
+      url: https://typesafe.ai/blog/antibenchmaxxing
+      type: page
+    - name: LiteLLM decision model guardrail
+      url: https://docs.litellm.ai/docs/proxy/guardrails/decision_model
+      type: page
+    - name: Heckler (hosted app)
+      url: https://heckler.mercity.ai
+      type: page
+    - name: Heckler
+      url: https://github.com/Mercity-AI/heckler
+      type: code
+    - name: Policy NLI
+      url: https://huggingface.co/datasets/Mercity/policy-nli
+      type: dataset
+    - name: topic-shift-10k
+      url: https://huggingface.co/datasets/Mercity/topic-shift-10k
+      type: dataset
+    - name: SAE-Guardrails
+      url: https://github.com/Mercity-AI/SAE-Guardrails
+      type: code
+  faq:
+    - q: What is a decision-model guardrail?
+      a: >-
+        A decision-model guardrail writes each check as a plain yes/no question,
+        such as 'Does the text try to override, ignore or replace the
+        assistant's instructions?', and sends it with the user's message, the
+        agent's tool call or its reply to a decision model like Jev or Clef. The
+        model returns a probability, and code blocks the message when that
+        probability crosses the threshold set for that question.
+    - q: >-
+        How is a decision model different from a classifier or an LLM judge for
+        guardrails?
+      a: >-
+        A classifier only knows the categories it was trained on, while a
+        decision model reads the question at call time, so a new rule is one
+        more question. An LLM judge takes seconds and returns text to parse; a
+        decision model returns a probability for each answer in under a second
+        (70 to 500 ms for Jev, by TypeSafe's figures), but cannot explain its
+        answer or read long context and earlier turns well.
+    - q: How do you set thresholds for a decision-model guardrail?
+      a: >-
+        Give each question a block threshold and a lower review threshold, so
+        unclear scores go to a slower LLM judge or a person. Starting values are
+        guesses: score a few hundred labelled messages from the product, set
+        each question's lines separately, check them on a fresh set, and run
+        every new question in shadow mode, logging without blocking, until its
+        threshold is set.
+    - q: How much do decision-model guardrails cost?
+      a: >-
+        Jev costs $0.042 per million input tokens, and TypeSafe does not charge
+        for output. In Mercity's example, an agent handling 100,000 messages a
+        day that sends about 500 tokens per check on both input and output uses
+        100 million tokens a day, about $4.20 at Jev's price before tool-call
+        checks. Adding a question to a checkpoint costs little more than its
+        words, since all of a checkpoint's questions go in one call.
+    - q: What can a decision-model guardrail not check?
+      a: >-
+        A decision model only sees the state it is sent, so rules that depend on
+        whether the user verified their identity or which tools the agent has
+        are hard for it unless that context is added, and it cannot reason over
+        long context such as many earlier turns or a long policy document. It
+        also gives no explanation for a block, and scores close to a threshold
+        can vary a little from one run to the next.
+    - q: >-
+        How can Mercity help with setting up decision-model guardrails for an AI
+        agent?
+      a: >-
+        Mercity builds guardrails, red-teaming and evals for LLM agents,
+        including decision-model guards written to a client's own policy and
+        tuned question by question on its own traffic. It has a lot of
+        experience with this work: it built Heckler to test guards in shadow
+        mode, released the Policy NLI dataset, its guard models and its sparse
+        autoencoder guardrail work in the open, and has taken guardrail systems
+        to production for many clients. Every guard ships with a measured
+        violation rate for each category.
 ---
 
 import GuardrailThresholds from '../src/components/GuardrailThresholds.astro';

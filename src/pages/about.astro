@@ -10,7 +10,7 @@ import { getCollection } from 'astro:content';
 import V2Layout from '@/layouts/V2Layout.astro';
 import ListHead from '@/components/v2/ListHead.astro';
 import { canonicalAuthorName } from '@/data/authors';
-import { ORGANIZATION_ID, breadcrumbNode, webPageNode } from '@/utils/schema';
+import { ORGANIZATION_ID, breadcrumbNode, personNode, webPageNode } from '@/utils/schema';
 
 const FOUNDED = 2023;
 const JOBS_URL = 'https://www.linkedin.com/company/mercity-ai/jobs/';
@@ -76,15 +76,20 @@ const fmtYear = (d: Date) => d.getFullYear();
 
 const description = `Mercity is a research-first firm founded in ${FOUNDED}. We work with companies on problems off-the-shelf APIs cannot solve, and we do our work in the open.`;
 const schema = [
-  webPageNode({
-    path: '/about',
-    name: 'About',
-    description,
-    type: 'AboutPage',
-    about: { '@id': ORGANIZATION_ID },
-    mainEntity: { '@id': ORGANIZATION_ID },
-    breadcrumb: true,
-  }),
+  {
+    ...webPageNode({
+      path: '/about',
+      name: 'About',
+      description,
+      type: 'AboutPage',
+      about: { '@id': ORGANIZATION_ID },
+      mainEntity: { '@id': ORGANIZATION_ID },
+      relatedLink: ['/research', '/blog', '/open-source/simula', GITHUB_URL],
+      breadcrumb: true,
+    }),
+    // "Who writes here", as the same Person nodes the posts' bylines use.
+    mentions: authors.map((a) => personNode(a.name)),
+  },
   breadcrumbNode('/about', [{ name: 'About' }]),
 ];
 ---

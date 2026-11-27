@@ -65,6 +65,35 @@ const DESCRIPTION =
    share the name (AEO/GEO audit, Nov 2026). Facts from PyPI (simula-gen:
    MIT, Python 3.11+) and the repo. No version here: it would go stale. */
 const APP_ID = `${canonicalUrl(PATH)}#software`;
+const LOG_PATH = '/research/building-simula-our-synthetic-data-generation-library';
+/* Every answer restates figures and copy shown on this page. */
+const faqs = [
+  {
+    q: 'What is Mercity Simula?',
+    a: 'Simula is an open-source synthetic data generation framework from Mercity, installed with pip install simula-gen. You describe the data you need in one paragraph; Simula maps every case the dataset should cover, has a model write each record, has a second model check it, and saves where every row came from.',
+  },
+  {
+    q: 'How does Simula stop synthetic data from repeating itself?',
+    a: 'Prompted a thousand times, a model keeps giving its most likely answer. Simula plans what every record covers before any is written: code picks one branch from each factor of a taxonomy, by weight, so the model never chooses the topic. In a 240-ticket comparison, direct prompting covered 4 of 8 ticket categories, with 152 tickets the same billing complaint reworded; sampling from Simula covered all 8, with 30 tickets in each.',
+  },
+  {
+    q: 'How much does it cost to generate a dataset with Simula?',
+    a: "Mercity's own 10,000-row run in June 2026 (e-commerce search queries with structured extractions) cost $22 and took about five hours: $4.79 to build the taxonomy and strategies, and $16.90 for 48,447 calls to write and judge the records. Support tickets cost $0.85 per 1,000, five per call with the critic on, with 95 to 97% accepted.",
+  },
+  {
+    q: 'Which models does Simula use?',
+    a: 'Three roles. A strategic model builds the taxonomy and strategies once per dataset, so a strong model costs little there. A bulk model writes the situations and the records and uses most of the tokens, so a fast, lighter model works. A critic model accepts or rejects each record with a reason. The three can be different models or the same one.',
+  },
+  {
+    q: 'How does Simula track where each record came from?',
+    a: 'Each row stores the taxonomy branches it was built from, the strategy, the writing plan and the verdict of the critic, so a wrong label can be traced back. Every stage is saved as a file (taxonomy, strategies, writing plans, the final dataset, every LLM call, an evaluation report and a cost summary), and a run can stop after any stage, be edited and continue.',
+  },
+  {
+    q: 'Can Mercity generate a synthetic dataset for you?',
+    a: 'Yes. Mercity built Simula for its own client work, where it has generated more than 300 billion tokens across engagements, and runs Simula at scale for clients through its synthetic data generation service, including runs across a cluster and datasets built end to end.',
+  },
+];
+
 const schema = [
   webPageNode({
     path: PATH,
@@ -72,6 +101,16 @@ const schema = [
     description: DESCRIPTION,
     image: '/simula-og.jpg',
     about: { '@id': APP_ID },
+    faqs,
+    keywords: [
+      'open-source synthetic data generation',
+      'synthetic data framework',
+      'python synthetic data library',
+      'taxonomy-based data generation',
+      'LLM dataset generation',
+      'simula-gen',
+    ],
+    relatedLink: [LOG_PATH, SERVICE_URL, GITHUB_URL, DOCS_URL],
     breadcrumb: true,
   }),
   {
@@ -86,7 +125,19 @@ const schema = [
     operatingSystem: 'Any',
     downloadUrl: 'https://pypi.org/project/simula-gen/',
     installUrl: 'https://pypi.org/project/simula-gen/',
+    softwareRequirements: 'Python 3.11+',
+    featureList: [
+      'Taxonomy of every case the dataset should cover, built and reviewed level by level',
+      'Weighted sampling strategies with banned combinations, checked over 5,000 test draws',
+      'A distinct situation for every record to prevent near-duplicates',
+      'Records written against a JSON schema, repaired once or dropped',
+      'Critic model that accepts or rejects each record with a reason',
+      'Deduplication and trimming to the target size by coverage',
+      'Lineage on every row: branches, strategy, writing plan and critic verdict',
+      'Every stage saved as a file; stop, edit and resume',
+    ],
     softwareHelp: { '@type': 'CreativeWork', url: DOCS_URL },
+    subjectOf: { '@id': `${canonicalUrl(LOG_PATH)}#article` },
     license: 'https://opensource.org/license/mit',
     isAccessibleForFree: true,
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },

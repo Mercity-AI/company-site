@@ -17,6 +17,108 @@ category: Research
 isTopPick: false
 image: >-
   https://blog-cdn.mercity.ai/blog/laco-layer-pruning-for-qwen3-8b-our-research-log/image.jpg
+jsonld:
+  abstract: >-
+    Mercity applied LaCo (Layer Collapse) pruning to Qwen3-8B-Base and found
+    that the official code replaces the paper's weight averaging with
+    telescoping, where the base layer ends up with the last merged layer's
+    weights; averaging produced gibberish, as did merging LayerNorms. With a
+    0.85 similarity threshold, 3-layer merges, layers 4 to 28 eligible and a 20%
+    cap, three merges cut 36 layers to 30 (16.7%) at a 1.68x perplexity ratio,
+    with no post-training. Reasoning benchmarks kept 78 to 94% of their scores
+    and MMLU fell from 76.89% to 31.30%; at 28 layers MMLU dropped to 25.89%,
+    near random chance.
+  about:
+    - name: Neural network pruning
+      sameAs: >-
+        https://en.wikipedia.org/wiki/Pruning_(artificial_neural_network)
+    - name: Layer pruning for large language models
+    - name: Model compression
+    - name: Qwen
+      sameAs: https://en.wikipedia.org/wiki/Qwen
+    - name: Perplexity
+      sameAs: https://en.wikipedia.org/wiki/Perplexity
+  keywords:
+    - LaCo layer collapse
+    - layer pruning Qwen3-8B
+    - prune LLM layers without retraining
+    - transformer layer merging
+    - structured pruning for LLMs
+    - knowledge cliff MMLU
+    - RDSC layer merging
+    - Qwen3-8B-LaCo-30L
+    - perplexity vs benchmark accuracy
+    - compress an 8B model
+  citation:
+    - name: "LaCo: Large Language Model Pruning via Layer Collapse"
+      url: https://arxiv.org/abs/2402.11187
+      type: paper
+    - name: LACO-Compression (Mercity's implementation)
+      url: https://github.com/Mercity-AI/LACO-Compression
+      type: code
+    - name: Mercity/Qwen3-8B-LaCo-30L
+      url: https://huggingface.co/Mercity/Qwen3-8B-LaCo-30L
+      type: model
+    - name: Qwen3-8B-Base
+      url: https://huggingface.co/Qwen/Qwen3-8B-Base
+      type: model
+    - name: Qwen3 Technical Report
+      url: https://arxiv.org/abs/2505.09388
+      type: paper
+  faq:
+    - q: What is LaCo layer pruning?
+      a: >-
+        LaCo (Layer Collapse) is a structured pruning method that removes whole
+        transformer layers by merging consecutive layers whose representations
+        are similar. Starting near the output, it tries to merge C consecutive
+        layers and keeps a merge only if the cosine similarity between the
+        original and the pruned model's final hidden states stays above a
+        threshold T. The paper reports roughly 25% layer reduction on Llama2-7B
+        and Llama2-13B.
+    - q: >-
+        Why does LaCo's official code use telescoping instead of weight
+        averaging?
+      a: >-
+        In Mercity's tests on Qwen3-8B, the averaging of weight differences
+        described in the LaCo paper produced gibberish, sometimes mixing
+        languages. The official code's telescoping, where the base layer ends up
+        with the weights of the last layer in the merge, kept outputs coherent
+        because it reuses weights the network was trained with. Merging
+        LayerNorm parameters also broke the model, so they are left unchanged.
+    - q: >-
+        How much of Qwen3-8B's performance survives LaCo pruning without
+        fine-tuning?
+      a: >-
+        Pruned from 36 to 30 layers (16.7% compression) with no post-training,
+        Qwen3-8B-Base kept 78 to 94% of its reasoning benchmark scores, from
+        BoolQ at 78.2% to WinoGrande at 93.8%. Factual knowledge fared worse:
+        MMLU fell from 76.89% to 31.30%, or 40.7% of the original. The
+        perplexity ratio was 1.68x.
+    - q: What is the knowledge cliff in LLM layer pruning?
+      a: >-
+        The knowledge cliff is the sharp drop in factual knowledge Mercity found
+        between 16.7% and 22.2% compression of Qwen3-8B. At 30 layers MMLU was
+        31.30%; at 28 layers it was 25.89%, close to the 25% random-chance
+        level, while reasoning tasks such as PIQA declined gradually. The
+        28-layer model's 2.01x perplexity ratio did not reveal the collapse, so
+        pruned models need task benchmarks.
+    - q: Which LaCo hyperparameters worked for Qwen3-8B?
+      a: >-
+        Mercity's final LaCo setting for Qwen3-8B was a 0.85 cosine similarity
+        threshold, 3 layers per merge, merging allowed from layer 4 to layer 28,
+        an interval of 2 and a 20% compression cap. The paper's 0.65 threshold
+        sent MMLU to random chance, and pruning from layer 35 degraded quality,
+        so layers 29 to 35 stay untouched. Similarity was measured on 10
+        calibration sentences.
+    - q: How can Mercity help with pruning or compressing an LLM?
+      a: >-
+        Mercity optimizes models that are too slow, too large or too expensive
+        to run, using distillation, pruning and quantization, and delivers
+        before-and-after benchmarks on the client's own tasks. It publishes this
+        work in the open, including a LaCo layer-pruning log with its code and
+        the released Qwen3-8B-LaCo-30L weights, and an LCM-LoRA log that cut
+        Stable Diffusion 1.5 to 4 to 6 denoising steps. Mercity has optimized
+        models for many clients and taken them to production.
 ---
 
 

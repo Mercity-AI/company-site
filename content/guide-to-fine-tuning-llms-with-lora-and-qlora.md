@@ -13,6 +13,139 @@ authors:
 category: PEFT Finetuning
 image: >-
   https://blog-cdn.mercity.ai/blog/guide-to-fine-tuning-llms-with-lora-and-qlora/65358e7d97cd72e210afa0bd_lora-qlora.jpg
+jsonld:
+  abstract: >-
+    This guide explains how LoRA and QLoRA fine-tune large language models and
+    how to run both with the Hugging Face PEFT and bitsandbytes libraries, with
+    code. QLoRA stores the base model in 4-bit NormalFloat, quantizes the
+    quantization constants a second time and uses paged optimizers, while LoRA
+    matrices trained in bfloat16 or float16 make up for the quantization error.
+    In the guide's LoRA example at rank 32, 9,437,184 of 6,931,162,432
+    parameters are trainable. It also covers small per-user adapters for
+    multi-tenant serving, the LoRA variants AdaLoRA (rank allocated by layer
+    importance) and LongLoRA (long-context training), QA-LoRA and DoRA, and, in
+    a May 2025 update, AWQ, AffineQuant and Unsloth's dynamic 4-bit
+    quantization.
+  about:
+    - name: QLoRA
+    - name: Low-rank adaptation
+      sameAs: https://en.wikipedia.org/wiki/LoRA_(machine_learning)
+    - name: Model quantization
+    - name: Fine-tuning
+      sameAs: https://en.wikipedia.org/wiki/Fine-tuning_(deep_learning)
+    - name: Parameter-efficient fine-tuning
+  keywords:
+    - QLoRA fine-tuning with Hugging Face
+    - QLoRA vs LoRA
+    - 4-bit NormalFloat NF4
+    - double quantization in QLoRA
+    - PEFT LoraConfig example
+    - bitsandbytes 4-bit training
+    - AdaLoRA vs LoRA
+    - LongLoRA long context fine-tuning
+    - multi-tenant LoRA adapters
+    - AWQ 4-bit quantization
+    - Unsloth dynamic 4-bit quantization
+  citation:
+    - name: PEFT library (PyPI)
+      url: https://pypi.org/project/peft/
+      type: page
+    - name: bitsandbytes library (PyPI)
+      url: https://pypi.org/project/bitsandbytes/
+      type: page
+    - name: QLoRA training notebook (Google Colab)
+      url: >-
+        https://colab.research.google.com/drive/1VoYNfYDKcKRQRor98Zbf2-9VQTtGJ24k?usp=sharing#scrollTo=FCc64bfnmd3j
+      type: page
+    - name: Guanaco-65B
+      url: https://huggingface.co/timdettmers/guanaco-65b
+      type: model
+    - name: >-
+        EfficientDM: Efficient Quantization-Aware Fine-Tuning of Low-Bit
+        Diffusion Models
+      url: https://arxiv.org/abs/2310.03270
+      type: paper
+    - name: >-
+        LongLoRA: Efficient Fine-tuning of Long-Context Large Language Models
+      url: https://arxiv.org/abs/2309.12307
+      type: paper
+    - name: >-
+        AdaLoRA: Adaptive Budget Allocation for Parameter-Efficient Fine-Tuning
+      url: https://arxiv.org/abs/2303.10512
+      type: paper
+    - name: >-
+        AWQ: Activation-aware Weight Quantization for LLM Compression and
+        Acceleration
+      url: https://arxiv.org/pdf/2306.00978
+      type: paper
+    - name: >-
+        AffineQuant: Affine Transformation Quantization for Large Language Models
+      url: https://arxiv.org/html/2403.12544v1
+      type: paper
+    - name: Unsloth dynamic 4-bit quantization
+      url: https://unsloth.ai/blog/dynamic-4bit
+      type: page
+  faq:
+    - q: How does QLoRA fine-tuning work?
+      a: >-
+        QLoRA stores the base model's weights in 4-bit NormalFloat (NF4),
+        quantizes the quantization constants a second time (double quantization)
+        and uses paged optimizers to reduce memory. During the forward and
+        backward passes the weights are dequantized and LoRA matrices kept in
+        bfloat16 or float16 are trained, so computation runs in higher
+        precision, storage stays in 4 bits, and training compensates for the
+        quantization error.
+    - q: "QLoRA vs LoRA: what is the difference?"
+      a: >-
+        LoRA is a standalone fine-tuning method that trains two small low-rank
+        matrices in place of the full weight update. QLoRA quantizes the base
+        model to 4 bits and uses LoRA to correct the errors that quantization
+        introduces. In the QLoRA paper's comparison the T5 family lost no
+        performance, but QLoRA needed more LoRA adapters, and the authors
+        suggest applying them to all linear transformer blocks along with the
+        query, key and value layers.
+    - q: >-
+        How do you set up LoRA and QLoRA fine-tuning in Hugging Face?
+      a: >-
+        With the Hugging Face PEFT library, a LoraConfig sets the rank r,
+        lora_alpha, lora_dropout and optional target_modules, and get_peft_model
+        wraps the model for training. In Mercity's example with r=32 on the
+        query_key_value layers, 9,437,184 of 6,931,162,432 parameters were
+        trainable. For QLoRA, the model is first loaded through bitsandbytes
+        with a BitsAndBytesConfig set to 4-bit nf4 and double quantization.
+    - q: >-
+        Why use PEFT adapters such as LoRA to serve many users from one model?
+      a: >-
+        Fine-tuning a separate full model for every user gives better accuracy
+        but means storing, loading and serving many large models, while training
+        one shared model for all users lowers accuracy. PEFT adapters such as
+        LoRA avoid both problems: each user or dataset gets its own adapter of
+        about 6MB to 8MB, applied to one shared base model, which is much faster
+        to do in production.
+    - q: >-
+        Which 4-bit quantization methods does Mercity's May 2025 update cover?
+      a: >-
+        Mercity's May 2025 update covers three quantization methods. AWQ uses
+        activation distributions to find and protect salient weight channels,
+        and its 4-bit inference on LLaMA-2 70B ran more than 3x faster than
+        FP16. AffineQuant applies affine transformations to weights and
+        activations and reports a C4 perplexity of 15.76 on LLaMA2-7B at W4A4.
+        Unsloth's dynamic 4-bit quantization uses under 10% more VRAM than
+        standard bitsandbytes 4-bit and shrank Llama 3.2 Vision (11B) from 20GB
+        to 6.5GB.
+    - q: >-
+        How can Mercity help with fine-tuning a large model on limited GPU
+        memory with QLoRA?
+      a: >-
+        Mercity fine-tunes models for companies under memory and cost limits,
+        choosing QLoRA, LoRA or full fine-tuning against a benchmark built for
+        the client's task, and its model optimization work ships with
+        before-and-after benchmarks on the client's own tasks. Its team has
+        fine-tuned models from small T5 models to Falcon-180B, and its open
+        research includes a log on pretraining four dense 1B models, with
+        pruning and 4-bit quantization experiments. Mercity has a lot of
+        experience with this work, has worked with many clients and has taken
+        these models to production for them.
 ---
 
 <div class="rich-text w-richtext"><p>Language Models like GPT-4 have become the de facto standard in the NLP industry for building products and applications. These models are capable of performing a plethora of tasks and can easily adapt to new tasks using <a href="https://www.mercity.ai/blog-post/advanced-prompt-engineering-techniques">Prompt Engineering Techniques</a>. But these models also present a massive challenge around training. Massive models like GPT-4 cost millions of dollars to train, hence we use smaller models in production settings. </p><p>But smaller models on the other hand cannot generalize to multiple tasks, and we end up having multiple models for multiple tasks of multiple users. This is where PEFT techniques like LoRA come in, these techniques allow you to train large models much more efficiently compared to fully finetuning them. In this blog, we will walk through LoRA, QLoRA, and other popular techniques that emerged specifically from LoRA.</p><h2 id="what-is-peft-finetuning">What is PEFT Finetuning?</h2><p><a href="https://www.mercity.ai/blog-post/fine-tuning-llms-using-peft-and-lora">PEFT Finetuning</a> is Parameter Efficient Fine Tuning, a set of fine-tuning techniques that allows you to fine-tune and train models much more efficiently than normal training. PEFT techniques usually work by reducing the number of trainable parameters in a neural network. The most famous and in-use PEFT techniques are Prefix Tuning, P-tuning, LoRA, etc. LoRA is perhaps the most used one. LoRA also has many variants like QLoRA and LongLoRA, which have their own applications.</p><h3 id="why-use-peft-finetuning">Why use PEFT Finetuning?</h3><p>There are many reasons to use PEFT techniques, they have become the go-to way to finetune LLMs and other models. But here are some reasons why even enterprises and large businesses like to use these approaches.</p><h4 id="saves-time">Saves Time</h4><p>As the number of trainable parameters decreases, you have to spend less time on training. But that’s only one part of it. With less trainable parameters, you can train models much faster, and as a result test models much faster too. With more time on your hands, you can spend it on testing different models, different datasets different techniques, and whatnot.</p><p>Also, with more time you can train your models for much longer periods of time leading to a much lower loss, along with an increased batch size as PEFT techniques are heavily optimized for memory usage.</p><h4 id="saves-money">Saves Money</h4><p>This goes without saying but PEFT can save you a ton of money on computing costs. As mentioned, because of heavy memory optimizations, you don’t need to rent instances with high amounts of VRAM, as you can fit bigger batches in smaller VRAM. This saves money on the compute and allows you to train on much bigger datasets leveraging the advantage of fitting in larger batch sizes.</p><h4 id="easily-build-multi-tenancy-architecture-services">Easily build Multi-Tenancy architecture services</h4><p>As said, because LLMs have become so large and complicated to serve and handle, it’s almost impossible to train specialized models for users. If you have multiple users, you can either take on the complicated task of finetuning a new model every time a new user comes in, or you can just finetune the same model on the new data for the new user. Both approaches have their own set of issues, if you finetune a new model for every user, it will lead to better accuracy but then you have to handle massive models, load them into memory, store them, process them, etc, it’s an architecture hell and can cause big issues if you make a small mistake. Training the same model for all users is much easier, but then the model accuracy drops significantly.</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1600pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/guide-to-fine-tuning-llms-with-lora-and-qlora/65358e23a1841692bce3fdde_pZkMHXa1_5JDK-50qaL33QmXp3A_QHlenbmoeLOLZjeAwjV_4JMC258-7ft_nQP0SWwDiGjpdWAwzXoHdH9e24xopk6UPhjVfKqcpGpgmDDJ5KVju6bhb7i1z7qa8SO3MW2RPjQalY3yC66Yx3arBco.jpg"/></div></figure><p>PEFT finetuning on the other hand takes the best of both worlds and lets you build small <strong>adapters</strong> that you can pair with models and get customized results. These adapters can be finetuned for specific datasets or specific users. These adapters are very small, 6MB-8MB, and you only need to apply these adapters to the large model, which is much faster to do in a production environment.</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1600pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/guide-to-fine-tuning-llms-with-lora-and-qlora/65358e237ecc65ca6bff3e86_pIAt6GubybV8S1uucMNhmD6r3YgBFMH10yfupxAN-0sMvjakr6kerdmhrxFpzh4NySfz83mDUHEXQXSVRCZ9cYGUJkraPYJVxNdq63WzpO30yHRr7jNQBfh9fJ0oxD7jzVPUTHZpQY536m2xoLn_D4.jpg"/></div></figure><h2 id="lora-finetuning">LoRA Finetuning</h2><p>LoRA is the most popular and perhaps the most used PEFT technique, but was released back in 2021 in <a href="https://arxiv.org/abs/2012.13255">this</a> paper. LoRA is more of an adapter approach, where it introduces new parameters into the model to train the model through these new parameters. The trick is in how the new params are introduced and merged back into the model, <strong>without</strong> increasing the total number of params in the model.</p><h3 id="how-lora-works">How LoRA works?</h3><p>As mentioned before, LoRA is an adapter-based approach, but new parameters are added only for the training step, they are not introduced as a part of the model. This keeps the model size completely the same and still offers the flexibility of parameter-efficient finetuning. Here’s a more detailed explanation of how it works.</p><p>LoRA works by breaking down the weight update matrix into smaller matrices and using them to train the model. Take a look at the diagram below, the ΔW<sub>AxB </sub>is the weight update matrix, the matrix of <em>learned</em> changes from backpropagation, this is the same size as the number of parameters we need to update to finetune our model. This matrix, or any matrix, can be represented as a set of smaller matrices, presented here as A and B with <em>r</em> as their rank. The <em>r</em> parameter controls the size of the smaller matrices.</p><p>These smaller matrices can then be used to train the model using normal backpropagation but updating the parameters in the smaller matrices rather than updating directly in the model. We basically learn the ΔW through the smaller matrices. These smaller matrices can then be multiplied together to get back the original matrix. As these matrices are much smaller, this process uses fewer parameters and as a result much fewer computation resources. This also results in smaller checkpoints as you don’t have to store the whole model, but just the smaller matrices.</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1219pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/guide-to-fine-tuning-llms-with-lora-and-qlora/65358e2365a382945ff60dd2_oqMjFlY7MeAQFHy2IvqYbKYLaAHWFt2mxQXorwdv0ohg-OhpmF5X5MltxKvE6CgXW9OAyUFplEMKFxGR01DBUQEivGUX44l4tzKQoQWBniwVz5bGR8awfBBJhlOwJ-tqQXPdoAd86E2Ys-GBSCPvdmk.jpg"/></div></figure><h3 id="lora-finetuning-with-huggingface">LoRA finetuning with HuggingFace</h3><p>To implement LoRA finetuning with HuggingFace, you need to use the <a href="https://pypi.org/project/peft/">PEFT library</a> to inject the LoRA adapters into the model and use them as the update matrices.</p><div class="w-embed"><pre>

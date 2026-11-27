@@ -23,6 +23,127 @@ category: LLM Guardrails
 isTopPick: false
 image: >-
   https://blog-cdn.mercity.ai/blog/can-a-decision-model-guard-a-customer-facing-agent/cover.jpg
+jsonld:
+  abstract: >-
+    Mercity put TypeSafe's Jev, Cloudflare's Clef and GPT-6.1 Terra, a general
+    model run with low reasoning, in front of five simulated customer-facing
+    agents (a bank, a SaaS desk, a clinic, an insurer and an HR assistant) in
+    Heckler, and scored 5,620 replies from 964 conversations against a graded
+    answer key. At their thresholds Jev blocked 33% of rule-breaking replies and
+    Clef 12%, while Terra caught 82% but also blocked 43% of clean replies. Most
+    false alarms came from how the policy was written, and rewriting the four
+    rules behind the most false alarms cut Jev's wrong blocks on them from 13 to
+    0 on a 100-conversation subset.
+  about:
+    - name: Decision models
+    - name: LLM guardrails
+    - name: Customer-facing AI agents
+    - name: Classifier calibration
+      sameAs: https://en.wikipedia.org/wiki/Calibration_(statistics)
+    - name: Receiver operating characteristic
+      sameAs: >-
+        https://en.wikipedia.org/wiki/Receiver_operating_characteristic
+  keywords:
+    - Jev vs Clef
+    - TypeSafe Jev
+    - Cloudflare Clef
+    - decision model guardrail benchmark
+    - output guardrails for support agents
+    - guardrail false positives
+    - per-rule threshold calibration
+    - shadow mode guardrail testing
+    - writing guardrail policies
+    - agent claimed actions
+    - Heckler
+  citation:
+    - name: "TypeSafe: introducing System One models and Jev"
+      url: >-
+        https://typesafe.ai/blog/introducing-system-one-models-and-jev
+      type: page
+    - name: "Cloudflare changelog: Clef on Workers AI"
+      url: >-
+        https://developers.cloudflare.com/changelog/post/2026-10-01-clef-workers-ai/
+      type: page
+    - name: Heckler (hosted app)
+      url: https://heckler.mercity.ai
+      type: page
+    - name: Heckler
+      url: https://github.com/Mercity-AI/heckler
+      type: code
+    - name: Policy NLI
+      url: https://huggingface.co/datasets/Mercity/policy-nli
+      type: dataset
+    - name: policy-nli-modernbert-large
+      url: https://huggingface.co/Mercity/policy-nli-modernbert-large
+      type: model
+    - name: policy-nli-decision-model-4b-lora
+      url: >-
+        https://huggingface.co/Mercity/policy-nli-decision-model-4b-lora
+      type: model
+    - name: LiteLLM decision model guardrail
+      url: https://docs.litellm.ai/docs/proxy/guardrails/decision_model
+      type: page
+    - name: "Openlayer: introducing Jevals for agent evals and guardrails"
+      url: >-
+        https://www.openlayer.com/blog/introducing-jevals-agent-evals-guardrails
+      type: page
+  faq:
+    - q: >-
+        Can a decision model guard a customer-facing AI agent on its own?
+      a: >-
+        Not on its own, in Mercity's test of 5,620 replies from five
+        customer-facing agents. At their thresholds TypeSafe's Jev blocked 33%
+        of rule-breaking replies and Cloudflare's Clef 12%, so most violations
+        still reached the customer. Both ranked bad replies higher than clean
+        ones often enough to serve as a cheap first filter in a layered guard.
+    - q: >-
+        Which agent mistakes do decision models catch, and which do they miss?
+      a: >-
+        Decision models catch mistakes written in the reply itself. In Mercity's
+        test Jev blocked 65% of replies that leaked raw tool-call code, 33% of
+        replies with wrong or forbidden content and 20% of replies claiming an
+        action the agent could not take. A claimed escalation reads as true on
+        its face, and the guard never sees that the agent has no tool to
+        escalate, so Jev scored one such reply 0.23.
+    - q: Why do decision-model guardrails block clean replies?
+      a: >-
+        In Mercity's test Jev wrongly blocked 9% of clean replies, and 79% of
+        those blocks came from 'must' rules, which were only 29% of the rules. A
+        'must' rule usually has a condition, such as an exception for
+        emergencies, that a guard reading one reply cannot check. A separate
+        literal check on a 100-conversation subset found that 72% of Jev's wrong
+        blocks did break the rule as written, so the policy caused most of the
+        false alarms.
+    - q: >-
+        Does a reasoning model make a better guardrail than a decision model?
+      a: >-
+        GPT-6.1 Terra ranked replies slightly better (AUC 0.73, against 0.70 for
+        Jev and 0.67 for Clef) and read intent better, but 77% of its top scores
+        were 0.05 or lower, or 0.95 or higher. At a threshold of 0.5 it blocked
+        43% of clean replies, and it cost several times more per reply and ran
+        far slower, so in Mercity's test reasoning did not make a single score
+        per rule usable as a gate.
+    - q: How should you set thresholds for a decision-model guard?
+      a: >-
+        Fit a separate threshold for each rule on graded conversations and check
+        it on conversations it was not tuned on. On one SaaS rule Jev ranked a
+        violation over a clean reply 93% of the time, yet its highest score was
+        0.79, so a 0.8 threshold never blocked anything. A 0.2 cut-off would
+        have flagged 76 of 166 violations and 7 of 735 clean replies, though
+        Mercity picked it on the same data.
+    - q: >-
+        How can Mercity help with building and testing decision-model guards for
+        customer-facing agents?
+      a: >-
+        Mercity designs, tests and deploys guardrails for LLM agents, including
+        decision-model guards written to a client's own policy and calibrated
+        rule by rule, as part of its LLM guardrails and security work. It has a
+        lot of experience with this work: it built Heckler, the stress-testing
+        platform behind its decision-model guard study, published the Policy NLI
+        dataset and the guards trained on it in the open, and has taken
+        guardrail systems to production for many clients. Each guard is measured
+        in shadow mode on the client's conversations, with a violation rate for
+        each category.
 ---
 
 We tested whether a decision model can guard a customer-facing agent. We put TypeSafe's [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev), Cloudflare's [Clef](https://developers.cloudflare.com/changelog/post/2026-10-01-clef-workers-ai/) and GPT-6.1 Terra, a general model with reasoning, in front of five agents (a bank, a SaaS desk, a clinic, an insurer and an HR assistant) in [Heckler](https://heckler.mercity.ai), our stress-testing platform, and scored 5,620 replies from 964 conversations against an answer key. The public comparisons we found test decision models on tool calling and routing, so we tested the job a guard does: enforcing a policy across multi-turn customer conversations.

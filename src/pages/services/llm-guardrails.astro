@@ -250,6 +250,35 @@ const schema = serviceNodes({
   description,
   serviceType: 'LLM guardrails, red-teaming and AI security',
   faqs,
+  // The control layer as the page draws it, one offer per layer, then the
+  // red-team; outputs are the page's compliance artifacts.
+  offers: [
+    ...layers.map((l) => ({
+      name: `${l.key} guardrails`,
+      description: l.items.map((s, i) => (i ? s[0].toLowerCase() + s.slice(1) : s)).join(', '),
+    })),
+    { name: 'Red-teaming', description: 'Adaptive attacks against your agent, with a red-team report' },
+    { name: 'Evaluation and monitoring', description: 'An evaluation suite for your policy and a live monitoring dashboard' },
+  ],
+  outputs: artifacts,
+  relatedLink: [
+    SAE_URL,
+    '/research/online-topic-guardrails-with-saes',
+    EVALS_URL,
+    '/blog-post/how-we-built-our-agent-stress-testing-platform-heckler',
+    '/blog-post/how-to-use-decision-models-as-guardrails',
+    SOFT_PROMPT_URL,
+  ],
+  keywords: [
+    'LLM guardrails',
+    'AI agent security',
+    'LLM red teaming',
+    'prompt injection defense',
+    'policy compliance for LLM agents',
+    'EU AI Act compliance',
+    'HIPAA compliant AI assistant',
+    'OWASP LLM Top 10',
+  ],
 });
 ---
 
