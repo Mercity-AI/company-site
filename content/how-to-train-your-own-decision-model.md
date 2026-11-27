@@ -20,6 +20,133 @@ category: Decision Models
 isTopPick: false
 image: >-
   https://blog-cdn.mercity.ai/blog/how-to-train-your-own-decision-model/headline.jpg
+jsonld:
+  abstract: >-
+    Mercity turned Qwen3.5-4B into a typed decision model on one A100 80GB by
+    freezing the base weights and LM head, training rank-32 LoRA adapters
+    (including on the Gated DeltaNet layers) and reading each answer from the
+    option-letter logits, with no new head. Training on 41,994 readout questions
+    lifted the one-pass readout from 62.7% to 72.5% on 5,442 eval questions,
+    per-type temperatures brought calibration error to 0.030, and 60 GRPO steps
+    cut looping chains from 5.1% to 0.2%. Sending the least certain 30% of
+    questions to thinking mode reaches 81.8% at 729 thinking tokens per
+    question.
+  about:
+    - name: Decision models
+    - name: Statistical classification
+      sameAs: https://en.wikipedia.org/wiki/Statistical_classification
+    - name: Low-rank adaptation
+      sameAs: https://en.wikipedia.org/wiki/LoRA_(machine_learning)
+    - name: Classifier calibration
+      sameAs: https://en.wikipedia.org/wiki/Calibration_(statistics)
+    - name: Reinforcement learning
+      sameAs: https://en.wikipedia.org/wiki/Reinforcement_learning
+    - name: Qwen
+      sameAs: https://en.wikipedia.org/wiki/Qwen
+  keywords:
+    - train a decision model
+    - fine-tune an LLM as a classifier
+    - option letter logit readout
+    - temperature scaling per question type
+    - GRPO to fix looping reasoning chains
+    - route uncertain questions to thinking
+    - System One models
+    - open-weight Jev alternative
+    - Qwen3.5-4B LoRA
+    - self-hosted decision model
+    - decision model on one GPU
+  citation:
+    - name: decision-model-qwen3.5-4b
+      url: https://huggingface.co/Mercity/decision-model-qwen3.5-4b
+      type: model
+    - name: decision-model-minicpm5-2b-lora
+      url: >-
+        https://huggingface.co/Mercity/decision-model-minicpm5-2b-lora
+      type: model
+    - name: decision-model-data
+      url: https://huggingface.co/datasets/Mercity/decision-model-data
+      type: dataset
+    - name: >-
+        Mercity decision model bucket (code, logs, checkpoints and technical
+        report)
+      url: https://huggingface.co/buckets/Mercity/Desicion-Model-Custom
+      type: page
+    - name: tasksource procedural-typed-decisions
+      url: >-
+        https://huggingface.co/datasets/tasksource/procedural-typed-decisions
+      type: dataset
+    - name: GRPO paper
+      url: https://arxiv.org/abs/2402.03300
+      type: paper
+    - name: DAPO paper
+      url: https://arxiv.org/abs/2503.14476
+      type: paper
+    - name: TRL
+      url: https://github.com/huggingface/trl
+      type: code
+    - name: "TypeSafe: introducing System One models and Jev"
+      url: >-
+        https://typesafe.ai/blog/introducing-system-one-models-and-jev
+      type: page
+    - name: "Cloudflare: Clef decision models"
+      url: https://blog.cloudflare.com/clef-decision-models/
+      type: page
+  faq:
+    - q: What is a decision model?
+      a: >-
+        A decision model takes a state, such as a ticket, an email, a tool call
+        or a JSON record, plus typed questions about it, and returns a
+        probability for every possible answer with no generated text. Most use
+        Jev's three question types: choice picks one option from a list, score
+        places the state on an ordered scale, and noul is a yes/no question that
+        returns a single probability.
+    - q: >-
+        When should a team train its own decision model instead of using a
+        hosted one?
+      a: >-
+        Most teams should start with a hosted decision model, since Jev charges
+        $0.042 per million input tokens and nothing for output. Training pays
+        off when three things are true at once: the same kind of decision is
+        made at high volume, it depends on the team's own policies or data, and
+        that data cannot leave its network, for example under HIPAA, GDPR or
+        banking rules.
+    - q: >-
+        How do you turn an LLM into a decision model with minimal changes?
+      a: >-
+        Mercity froze Qwen3.5-4B's base weights and LM head, put rank-32 LoRA
+        adapters on every linear layer including the Gated DeltaNet projections,
+        and read each answer from the logits of the option letters in one
+        forward pass. Readout examples used soft cross-entropy and
+        reasoning-chain examples used next-token loss in the same batches, and a
+        temperature per question type was fitted on 515 held-out questions.
+    - q: >-
+        How did reinforcement learning and routing change the decision model's
+        thinking mode?
+      a: >-
+        When Mercity trained its 4B decision model on the model's own reasoning
+        chains, 5.1% of chains looped to 32K tokens without answering. Sixty
+        GRPO steps in TRL, with 8 chains per question, an 8,192-token cap and a
+        length penalty past 4K tokens, cut looping to 0.2%, brought thinking
+        accuracy back to 83.1% and more than halved thinking tokens. Routing the
+        30% of questions with the smallest margin to thinking gave 81.8%, and
+        routing 50% gave only 82.2%.
+    - q: >-
+        How much compute does it take to train your own decision model?
+      a: >-
+        Mercity's whole project, with a 4B and a 2B model, all ablations, RL and
+        every benchmark, took about 33 hours on one A100 80GB plus $6.60 in API
+        calls, spent on reasoning chains from Qwen3.5-35B-A3B for 662 hard
+        questions. The final 4B training run took 1,309 steps on 47.8M tokens in
+        2 hours 46 minutes.
+    - q: How can Mercity help with training custom decision models?
+      a: >-
+        Mercity trains custom decision models on a client's own policies and
+        data, from the training set and LoRA training to calibration, routing
+        and evals. It has a lot of experience training custom models, released a
+        4B decision model, a 2B version, the training data and every checkpoint
+        in the open, and has taken custom models to production for many clients.
+        Clients keep the model weights and the data, with accuracy and
+        calibration measured on their own decisions.
 ---
 
 We trained a 4B LLM to be a decision model on one A100 in under three days. Training took its one-pass readout from 62.7% to 72.5%, and with thinking reserved for its least certain questions, it gets **81.8% of our 5,442 eval questions right at 729 thinking tokens per question**.

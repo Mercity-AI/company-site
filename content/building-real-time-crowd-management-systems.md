@@ -12,6 +12,99 @@ authors:
 category: Computer Vision
 image: >-
   https://blog-cdn.mercity.ai/blog/building-real-time-crowd-management-systems/6834c86c3ce2d232463627fc_crowd-management.jpg
+jsonld:
+  abstract: >-
+    Mercity's design for a crowd management system on live CCTV feeds runs a
+    hybrid of two models: APGCC on GPU servers for head-level counts and
+    locations in dense or high-security zones, and FFNet on NVIDIA Jetson
+    devices for density-map counting at 30 to 80 ms per frame. Mercity released
+    the foundation code as its open-source Crowd-Management-Demo repository. The
+    May 2025 guide covers clock synchronization with NTP or PTP, ingestion with
+    GStreamer, FFmpeg or OpenCV, merging overlapping cameras with homography
+    warping, non-maximum suppression and trackers such as DeepSORT and
+    ByteTrack, and city-scale data flow through Kafka or Pulsar.
+  about:
+    - name: Crowd management
+    - name: Crowd counting
+      sameAs: https://en.wikipedia.org/wiki/Crowd_counting
+    - name: Crowd density estimation
+    - name: Edge computing
+      sameAs: https://en.wikipedia.org/wiki/Edge_computing
+    - name: Video content analysis
+      sameAs: https://en.wikipedia.org/wiki/Video_content_analysis
+    - name: Multi-camera tracking
+  keywords:
+    - real-time crowd monitoring
+    - crowd counting with deep learning
+    - crowd density estimation
+    - APGCC crowd counting
+    - FFNet on NVIDIA Jetson
+    - multi-camera people tracking
+    - edge AI for CCTV
+    - homography for multi-camera fusion
+    - crowd analytics for stadiums and airports
+    - people counting system architecture
+  citation:
+    - name: Crowd-Management-Demo (Mercity)
+      url: https://github.com/Mercity-AI/Crowd-Management-Demo
+      type: code
+  faq:
+    - q: How do you build a crowd management system?
+      a: >-
+        A crowd management system starts with IP CCTV cameras streaming over
+        RTSP or ONVIF, synchronized to one clock, and ingests the video with
+        GStreamer, FFmpeg or OpenCV, often preprocessing it on edge devices.
+        Frames are resized, normalized and masked to the regions that matter,
+        run through crowd-counting models in ONNX Runtime, TensorRT or PyTorch,
+        and the per-camera outputs are merged into one top-down view and tracked
+        across cameras.
+    - q: "APGCC vs FFNet: which crowd counting model should you use?"
+      a: >-
+        Mercity's May 2025 guide uses both. APGCC, run on GPU servers such as
+        the A100, T4 or V100 at 2048x2048 input, locates individual heads in
+        dense, occluded crowds using auxiliary point guidance and implicit
+        feature interpolation, which suits security checkpoints and gates.
+        FFNet, run on NVIDIA Jetson Xavier or Orin at 512x512, outputs a density
+        map in 30 to 80 milliseconds per frame without exact locations, which
+        suits general monitoring and alerts.
+    - q: >-
+        How do you combine multiple CCTV cameras for crowd counting without
+        double-counting?
+      a: >-
+        Each camera's head positions or density maps are first warped with
+        precomputed homography matrices onto a shared top-down ground plane.
+        Non-maximum suppression then keeps only the highest-confidence detection
+        where overlapping cameras see the same person, visibility masks give
+        more weight to regions several cameras agree on, and trackers such as
+        DeepSORT and ByteTrack link people frame to frame as they move between
+        cameras.
+    - q: >-
+        Why do crowd management cameras need to be time-synchronized?
+      a: >-
+        If cameras are even slightly out of sync, a person moving between zones
+        appears at different times in each feed, which breaks cross-camera
+        tracking and causes double counts or missed detections. NTP gives
+        millisecond-level synchronization, enough for general surveillance,
+        while PTP is hardware-assisted, gives sub-microsecond accuracy and is
+        needed when overlapping cameras are fused as the video arrives.
+    - q: How do you handle crowd video data at city scale?
+      a: >-
+        Send insights rather than raw video: edge devices pass counts, density
+        maps and coordinates through Kafka or Pulsar into a time-series database
+        for live metrics and a NoSQL store for geospatial queries and alerts.
+        Raw video is cut into five-minute chunks in MinIO or S3, with event
+        footage kept long-term and the rest kept for seven to thirty days, and
+        Airflow automates cleanup, rollups and archiving.
+    - q: >-
+        How can Mercity help with building a real-time crowd monitoring system?
+      a: >-
+        Mercity designs and builds custom computer vision systems for tasks like
+        crowd counting and multi-camera tracking, starting with an evaluation on
+        the client's own camera footage and measuring every change against it.
+        It has a lot of experience with this work: it publishes open-source
+        crowd management code, Crowd-Management-Demo on GitHub, with the
+        foundation of such a system, and it has taken computer vision systems to
+        production for many clients, from edge processing to data pipelines.
 ---
 
 <div class="rich-text w-richtext"><div class="w-embed"><video controls="" preload="auto" style="width: 100%; height: auto; max-width: 100%;">

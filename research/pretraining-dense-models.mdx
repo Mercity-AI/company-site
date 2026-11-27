@@ -15,6 +15,127 @@ tags:
 category: Research
 isTopPick: false
 image: /research/pretraining-dense-models/fig01_headline_results.png
+jsonld:
+  abstract: >-
+    Mercity pretrained four dense models of about 1.03B parameters on 6B FineWeb
+    tokens, each on one B200 with a Llama 3-style backbone, QK normalization and
+    Muon plus AdamW: a baseline, a variant with Kimi Delta Attention in 8 of 32
+    layers, and two that spend 25% and 48% of parameters on LongCat n-gram
+    tables. KDA matched the baseline on a nine-task zero-shot average (41.37
+    against 41.23); the n-gram models trailed by 0.67 and 1.70 points, and by
+    about 3 and 6 points of Few-NERD micro-F1 after LoRA fine-tuning. QK
+    normalization erased KDA's earlier lead, 4-bit quantization cost under a
+    point, and zero-shot attention grafts kept about 66%.
+  about:
+    - name: Language model pretraining
+    - name: Linear attention
+    - name: N-gram embeddings
+    - name: QK normalization
+    - name: Neural network pruning
+      sameAs: >-
+        https://en.wikipedia.org/wiki/Pruning_(artificial_neural_network)
+    - name: Named-entity recognition
+      sameAs: https://en.wikipedia.org/wiki/Named-entity_recognition
+  keywords:
+    - pretrain a 1B language model
+    - Kimi Delta Attention
+    - LongCat n-gram embeddings
+    - QK normalization training stability
+    - pretraining on FineWeb
+    - Muon optimizer
+    - single GPU pretraining
+    - 4-bit quantization of small LLMs
+    - grafting layers between checkpoints
+    - Few-NERD fine-tuning
+    - dense model ablation
+  citation:
+    - name: MoE-Runs (Mercity's training code)
+      url: https://github.com/Mercity-AI/MoE-Runs
+      type: code
+    - name: Mercity pretrained checkpoints
+      url: >-
+        https://huggingface.co/collections/Mercity/pretrain-checkpoints
+      type: model
+    - name: FineWeb
+      url: https://huggingface.co/datasets/HuggingFaceFW/fineweb
+      type: dataset
+    - name: Kimi Linear (introduces Kimi Delta Attention)
+      url: https://arxiv.org/abs/2510.26692
+      type: paper
+    - name: Kimi K3 paper
+      url: https://arxiv.org/abs/2607.24653
+      type: paper
+    - name: LongCat n-gram embedding paper
+      url: https://arxiv.org/abs/2601.21204
+      type: paper
+    - name: Original QK-norm paper
+      url: https://arxiv.org/abs/2010.04245
+      type: paper
+    - name: Few-NERD
+      url: https://github.com/thunlp/Few-NERD
+      type: dataset
+    - name: EleutherAI LM Evaluation Harness
+      url: https://github.com/EleutherAI/lm-evaluation-harness
+      type: code
+    - name: flash-linear-attention
+      url: https://github.com/fla-org/flash-linear-attention
+      type: code
+  faq:
+    - q: Does Kimi Delta Attention help a small dense language model?
+      a: >-
+        In Mercity's 1B dense pretraining on 6B FineWeb tokens, putting Kimi
+        Delta Attention in 8 of 32 layers matched the baseline within
+        single-seed noise: 41.37 against 41.23 on the average of nine zero-shot
+        benchmarks, and a final loss of 2.563 against 2.570. KDA used about 7%
+        fewer FLOPs per token but was the slowest run, about 18 hours against
+        14.5 on one B200.
+    - q: Do LongCat n-gram embeddings work in a 1B dense model?
+      a: >-
+        Not in Mercity's runs. Spending 25% or 48% of a 1B parameter budget on
+        LongCat n-gram tables cut transformer depth from 32 layers to 23 or 16,
+        and the models finished 0.67 and 1.70 points behind the baseline on the
+        nine-task average, with their largest deficit on LAMBADA, the task the
+        tables target. After LoRA fine-tuning on Few-NERD they trailed by about
+        3 and 6 points of micro-F1.
+    - q: Why use QK normalization when pretraining a language model?
+      a: >-
+        Mercity's first Llama 3-style baseline trained without QK normalization,
+        and its gradient norm stayed high and wavy for the whole run. Adding
+        RMSNorm on queries and keys cut the mean gradient norm from 0.58 to 0.20
+        and the final loss from 2.621 to 2.570, and erased Kimi Delta
+        Attention's apparent lead of 0.76 points on the nine-task average. An
+        unstable baseline can flip an architecture comparison.
+    - q: >-
+        How much accuracy does 4-bit quantization cost a 1B language model?
+      a: >-
+        4-bit quantization cost under one point on the nine-task average for all
+        four of Mercity's 1B checkpoints: 0.41 for the baseline, 0.73 for the
+        KDA model, and 0.56 and 1.10 for the n-gram models, with almost all of
+        the loss on LAMBADA. Dense checkpoints shrank 3.5 times and n-gram ones
+        1.5 to 2.1 times, since their tables stay in higher precision. Mercity
+        links the small cost to the models being heavily undertrained.
+    - q: >-
+        Can you transplant attention layers between independently trained
+        language models?
+      a: >-
+        Not without retraining, in Mercity's 1B experiments. Moving KDA layers
+        into the baseline, or baseline attention into the KDA model, kept about
+        66% of the native nine-task average and sent LAMBADA to 0.00, while the
+        25% n-gram module, which sits at the input, kept 94.2% when grafted onto
+        the baseline. Removing single blocks from the KDA model cost 14.18
+        points for layer 0 and 3.31 for layer 4, and blocks from layer 8 on were
+        close to free.
+    - q: >-
+        How can Mercity help with designing and pretraining a custom language
+        model?
+      a: >-
+        Mercity designs and trains models around the client's task, with
+        modified attention and custom kernels where needed, and optimizes them
+        to run small and fast. It publishes its pretraining research in the
+        open, including the code and checkpoints from its 1B dense pretraining
+        study, and has built custom models for many clients and taken them to
+        production. Each project starts with a benchmark for the client's
+        domain, and the client keeps the models and the data.
 ---
 
 import FigureViews from "../src/components/FigureViews.astro";

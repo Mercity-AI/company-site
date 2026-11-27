@@ -577,6 +577,35 @@ invents none. Authors sign inconsistently across three years, so an
 `Yash` (one 2024 post) is ambiguous and is left as written. Fix the
 frontmatter in `content/` and the map can shrink.
 
+## Structured data (JSON-LD)
+
+Every page carries one `@graph`, rendered by `V2Layout` from
+`src/utils/schema.ts` (PR from `seo/json-ld`, Nov 2026). Organization
+(with the three services as an offer catalogue) and WebSite on every page;
+posts and logs add BlogPosting / TechArticle, services a Service with its
+offers and outputs, Simula a SoftwareApplication, `/research` the arXiv
+papers as ScholarlyArticle.
+
+The generated shell (ids, dates, authors, cover, breadcrumbs) comes from the
+frontmatter. The hand-written part of every post and log is the `jsonld`
+frontmatter block (README, *Structured data*): an abstract, topics, keywords,
+citations and an FAQ. Pranav's rule (2026-11-27): the FAQ's last question is
+always "How can Mercity help with <the post's task>?", answered in 2 to 4
+sentences that say Mercity has done this work in the open and for clients
+in production, without client names or invented numbers. Home, Simula and the
+service pages carry FAQs too, written in their page files and restating only
+what the page shows.
+
+The post FAQs are in the JSON-LD only, not on the page. Pranav asked for
+more in the JSON-LD than the page shows, for AEO/GEO (2026-11-27). Google's
+structured data policy says "Don't mark up content that is not visible to
+readers of the page"; the stated consequence is a manual action that costs
+the page its rich-result eligibility, not its ranking. Search Central's
+changelog (read 2026-11-27, not the FAQ guide itself) says FAQ rich results
+stopped showing on 2026-05-07. Rendering the FAQ at the foot of `Article`
+from the same frontmatter would close the gap. `pnpm test` (after `pnpm build`) fails
+a post without the block.
+
 ## Contact (`/contact`)
 
 Quiet, like About: `ListHead` with no eyebrow ("Tell us what you are

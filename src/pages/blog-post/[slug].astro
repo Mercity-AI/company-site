@@ -4,6 +4,7 @@ import { getCollection, render } from 'astro:content';
 import V2Layout from '@/layouts/V2Layout.astro';
 import Article from '@/components/v2/Article.astro';
 import { entryToRow, getPostUrl, sortPostsByPublishedDate } from '@/utils/blog';
+import { articleNodes } from '@/utils/schema';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
@@ -32,6 +33,13 @@ const more = [
 ]
   .slice(0, 3)
   .map((p) => entryToRow(p, getPostUrl(p)));
+
+const schema = articleNodes({
+  entry: post,
+  path: articlePath,
+  type: 'BlogPosting',
+  section: { name: 'Blog', path: '/blog' },
+});
 ---
 
 <V2Layout
@@ -44,6 +52,7 @@ const more = [
   modifiedTime={modifiedTimeISO}
   author={post.data.authors[0]?.name}
   tags={post.data.tags}
+  schema={schema}
 >
   <Article entry={post} backHref="/blog" section="Blog" more={more}>
     <Content />

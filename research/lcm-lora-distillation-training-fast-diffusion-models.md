@@ -14,6 +14,113 @@ category: Diffusion Models
 image: >-
   https://blog-cdn.mercity.ai/blog/lcm-lora-distillation-training-fast-diffusion-modelsls/Screenshot_2025-12-03_at_2.00.16_PM.jpg
 
+jsonld:
+  abstract: >-
+    Mercity trained Latent Consistency Model LoRA adapters for Stable Diffusion
+    1.5, distilling from SD1.5 as the teacher on 25,000 LAION-Aesthetics V2 6.5+
+    image-caption pairs streamed with WebDataset. Rank-96 LoRA on the UNet's
+    attention, projection, convolution and time-embedding layers, batch size 128
+    and a Huber loss ran 1,600 steps on one A100 80GB in about 4 hours, for
+    about $8 to $10. The adapters, about 100MB each, generate in 4 to 6 steps;
+    the step-800 checkpoint had the best FID (249.1) and step 1600 the best
+    SigLIP CLIP score (-13.25), while out-of-distribution prompts scored worse
+    at 5 to 6 steps.
+  about:
+    - name: Latent consistency models
+    - name: Knowledge distillation
+      sameAs: https://en.wikipedia.org/wiki/Knowledge_distillation
+    - name: Low-rank adaptation
+    - name: Stable Diffusion
+      sameAs: https://en.wikipedia.org/wiki/Stable_Diffusion
+    - name: Diffusion models
+      sameAs: https://en.wikipedia.org/wiki/Diffusion_model
+  keywords:
+    - LCM-LoRA training
+    - train LCM-LoRA for Stable Diffusion 1.5
+    - few-step image generation
+    - fast Stable Diffusion inference
+    - 4-step diffusion
+    - consistency distillation
+    - LoRA rank for distillation
+    - LAION-Aesthetics subset
+    - WebDataset streaming
+    - FID and CLIP score evaluation
+  citation:
+    - name: Latent Consistency Models (official code)
+      url: https://github.com/luosiallen/latent-consistency-model
+      type: code
+    - name: LCM-LoRA in Diffusers (Hugging Face documentation)
+      url: >-
+        https://huggingface.co/docs/diffusers/using-diffusers/lcm_lora
+      type: page
+    - name: Stable Diffusion v1.5
+      url: https://huggingface.co/runwayml/stable-diffusion-v1-5
+      type: model
+    - name: LAION-Aesthetics V2 6.5+
+      url: https://dagshub.com/datasets/laion-aesthetics-v2-6-5/
+      type: dataset
+    - name: Mercity/laion-subset
+      url: https://huggingface.co/datasets/Mercity/laion-subset
+      type: dataset
+    - name: Mercity/lcm-lora-sd1.5-800
+      url: https://huggingface.co/Mercity/lcm-lora-sd1.5-800
+      type: model
+    - name: Mercity/lcm-lora-sd1.5-1600
+      url: https://huggingface.co/Mercity/lcm-lora-sd1.5-1600
+      type: model
+    - name: SigLIP base (patch16-224)
+      url: https://huggingface.co/google/siglip-base-patch16-224
+      type: model
+  faq:
+    - q: What is LCM-LoRA?
+      a: >-
+        LCM-LoRA is a Latent Consistency Model trained as a LoRA adapter: it
+        teaches a diffusion model to predict where the denoising trajectory ends
+        from any point on it, so Stable Diffusion 1.5 can generate in 4 to 6
+        steps instead of 25 to 50. Mercity's adapters are about 100MB and load
+        on top of the unchanged SD1.5 base model.
+    - q: >-
+        How do you train an LCM-LoRA adapter for Stable Diffusion 1.5?
+      a: >-
+        Each training step adds noise to an image latent at a random timestep,
+        the student predicts the denoised result, and the SD1.5 teacher produces
+        a target with classifier-free guidance (scale sampled from 5 to 15) and
+        a DDIM solver step; the student is trained to minimize a Huber loss
+        (c=0.001) against that target. Mercity used rank-96 LoRA, batch size 128
+        and a learning rate of 2.16e-4 with cosine decay and 100 warmup steps,
+        for 1,600 steps.
+    - q: >-
+        What GPU do you need to train LCM-LoRA, and how much does it cost?
+      a: >-
+        Mercity trained LCM-LoRA on one NVIDIA A100 80GB, using about 70GB at
+        batch size 128 with gradient checkpointing; 1,600 steps took about 4
+        hours and cost about $8 to $10 at typical cloud rates. An RTX 4090 fit
+        only batch size 8 to 16 and took roughly 3 times longer to reach
+        comparable quality, and an A100 40GB fit batch size 48 to 64.
+    - q: Which LoRA rank works best for LCM distillation?
+      a: >-
+        In Mercity's LCM distillation tests, rank 32 underfit, with blurry
+        outputs and artifacts in hair and textures, and rank 64 left fine
+        details soft. Rank 96 matched teacher quality at 4 to 6 steps across
+        validation prompts. Rank 128 could not be reliably told apart from 96 in
+        blind comparisons and made adapters about 30% larger.
+    - q: How many inference steps should you use with LCM-LoRA?
+      a: >-
+        Mercity recommends 4 to 6 steps for its LCM-LoRA adapters, with a low
+        guidance scale of 1.0 to 2.0. Steps 1 to 3 give low-quality images, 4
+        steps suits speed-critical uses at 12.5 times faster than the baseline,
+        6 steps gives near-baseline quality at 8 times faster, and going past 6
+        steps adds little.
+    - q: >-
+        How can Mercity help with making a diffusion model generate faster?
+      a: >-
+        Mercity speeds up models that are too slow or too expensive to run
+        through distillation, pruning and quantization, and delivers
+        before-and-after benchmarks on the client's own tasks. It publishes this
+        work in the open, including an LCM-LoRA research log with four released
+        adapters and the training subset, and a LaCo layer-pruning log for
+        Qwen3-8B. Mercity has optimized models for many clients and taken them
+        to production.
 ---
 
 If you've worked with Stable Diffusion, you've experienced the waiting game. Generating a high-quality image with SD1.5 requires 25–50 denoising steps—15–25 seconds on consumer hardware. That's too slow for iterating on prompts or building applications that need real-time responsiveness.

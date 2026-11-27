@@ -20,6 +20,7 @@
  */
 import { getCollection } from 'astro:content';
 import V2Layout from '@/layouts/V2Layout.astro';
+import { serviceNodes } from '@/utils/schema';
 
 const OSS_URL = '/open-source/simula';
 const GITHUB_URL = 'https://github.com/Mercity-AI/Simula';
@@ -757,12 +758,38 @@ const faqs = [
     a: 'Some can, at the cost of taking senior people off the product for months. Generation pipelines are their own specialisation, and it is the one we have spent years on.',
   },
 ];
+
+const description =
+  'Large-scale synthetic data for model training and evaluation, engineered around your domain, verified sample by sample, and yours to keep.';
+
+const schema = serviceNodes({
+  path: '/services/synthetic-data',
+  name: 'Synthetic data generation',
+  description,
+  serviceType: 'Synthetic data generation for model training and evaluation',
+  faqs,
+  // The page's own lists: what we generate, and what you receive.
+  offers: kinds.map((k) => ({ name: k.title, description: k.line })),
+  outputs: deliverables,
+  relatedLink: [OSS_URL, LOG_URL, GITHUB_URL, HF_DATASETS_URL],
+  keywords: [
+    'synthetic data generation service',
+    'synthetic training data',
+    'LLM fine-tuning data',
+    'instruction tuning datasets',
+    'synthetic evaluation sets',
+    'red-team data generation',
+    'agent tool-use traces',
+    'Simula',
+  ],
+});
 ---
 
 <V2Layout
   title="Synthetic data generation"
-  description="Large-scale synthetic data for model training and evaluation, engineered around your domain, verified sample by sample, and yours to keep."
+  description={description}
   path="/services/synthetic-data"
+  schema={schema}
   image="/simula-og.jpg"
 >
   <!-- ═══ HERO: a pinned scroll on the indigo strata ═════════════ -->

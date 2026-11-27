@@ -12,6 +12,109 @@ authors:
 category: LLMs
 image: >-
   https://uploads-ssl.webflow.com/640f56f76d313bbe39631bfd/650f6755ec1eba8db2438a6b_tool%20use.png
+jsonld:
+  abstract: >-
+    Mercity describes the pipeline it built to connect language models such as
+    GPT-4, LLaMA and Falcon to tools and APIs: an instruction-following LLM, a
+    plain-text tool library giving each tool's name, description and usage, and
+    a tool-use prompt that fixes a parseable call format. In its October 2023
+    experiments, ReAct prompting with Thought, Act and Observation steps was
+    more accurate than plain tool prompting, the plain format broke down inside
+    very long prompts with GPT-3.5, and OpenAI function calling lost quality as
+    functions grew in number or became more custom. It also covers Toolformer
+    and Gorilla and four problems: context overflow, accuracy loss as tools
+    multiply, latency and trust.
+  about:
+    - name: LLM tool use
+    - name: Function calling
+    - name: ReAct prompting
+    - name: Prompt engineering
+      sameAs: https://en.wikipedia.org/wiki/Prompt_engineering
+    - name: API integration
+      sameAs: https://en.wikipedia.org/wiki/API
+  keywords:
+    - integrate APIs with GPT-4
+    - LLM tool use prompt
+    - tool library prompt
+    - OpenAI function calling
+    - ReAct prompting for tool use
+    - Toolformer
+    - Gorilla LLM
+    - connect an LLM to a CRM
+    - self-hosted LLM with private tools
+    - LLM email assistant
+    - function calling reliability
+  citation:
+    - name: ReAct
+      url: https://arxiv.org/abs/2210.03629
+      type: paper
+    - name: "OpenAI: function calling and other API updates"
+      url: >-
+        https://openai.com/blog/function-calling-and-other-api-updates
+      type: page
+    - name: Function Calling Very Unreliable (OpenAI community forum)
+      url: >-
+        https://community.openai.com/t/function-calling-very-unreliable/268439
+      type: page
+    - name: Toolformer
+      url: https://arxiv.org/abs/2302.04761
+      type: paper
+    - name: Gorilla LLM
+      url: https://gorilla.cs.berkeley.edu/
+      type: page
+  faq:
+    - q: How do you integrate tools and APIs with an LLM?
+      a: >-
+        Mercity's 2023 pipeline gives an instruction-following LLM a tool
+        library, a text list of each tool's name, description and when and how
+        to use it, with each API abstracted as a function call. A tool-use
+        prompt tells the model to write calls in a fixed format, such as
+        web_search(query), so code can parse each call, run the tool and pass
+        the result back.
+    - q: >-
+        ReAct prompting vs a plain tool-use prompt: which works better for tool
+        calling?
+      a: >-
+        In Mercity's 2023 guide, ReAct prompting, which splits each output into
+        Thought, Act and Observation, was more accurate than a plain tool-use
+        prompt because the model analyzes the input before it acts, at the cost
+        of somewhat more tokens. Mercity also saw the plain format break down
+        inside very long prompts, largely with GPT-3.5 and not with GPT-4.
+    - q: How reliable is OpenAI function calling for tool use?
+      a: >-
+        In Mercity's experience as of October 2023, OpenAI models handled
+        function calling well until the number of functions grew or the
+        functions became more custom, when quality dropped quickly. The JSON
+        schemas, added to the system prompt, also used far more tokens than
+        ReAct or plain tool prompting, and users reported models sometimes
+        making up function names.
+    - q: What are the main challenges of connecting LLMs to tools?
+      a: >-
+        Mercity's 2023 guide lists four: context overflow from tool names,
+        descriptions and usage examples in the prompt; falling accuracy as the
+        number of tools grows, especially when tools are similar; latency from
+        tool calls in time-sensitive applications; and trust when a model acts
+        on a user's behalf, which a human reviewing its steps addresses.
+    - q: What are Toolformer and Gorilla LLM?
+      a: >-
+        Both are models trained to call APIs. Toolformer, from Meta, decides
+        which API to call, stops generating while the tool runs and then
+        continues, which works while tool responses stay short. Gorilla LLM,
+        described in Mercity's 2023 guide as coming from UC Berkeley and
+        Microsoft, generates calls for over 1,600 APIs from Torch Hub,
+        TensorFlow Hub and HuggingFace and uses a document retriever to follow
+        API changes.
+    - q: >-
+        How can Mercity help with integrating tools and APIs with LLMs?
+      a: >-
+        Mercity builds LLM applications and agents that work with a company's
+        own tools and APIs, such as email systems, CRMs and internal services,
+        on public models or on self-hosted ones where data cannot leave the
+        company. It has written about this work in the open since 2023, has a
+        lot of experience building these integrations for many clients, and has
+        taken them to production. Every project starts with an evaluation:
+        Mercity builds a benchmark for the client's domain and measures each
+        change against it.
 ---
 
 <div class="rich-text w-richtext"><p>With a sudden rise of LLMs like GPT-4, we are seeing a massive rise in productivity. Language models have more utility than ever. Everyone is using them and they are everywhere. This raises the need to integrate LLMs with external tools and APIs. ChatGPT with extensions solves this to some extent, but not fully.</p><p>Issues like integrating ChatGPT with private tools are still not fully solved. This requires building your own framework for integration and then using ChatGPT. In this article we will cover how you can integrate tools and third-party APIs with GPT-4 using function calling, prompting techniques, and other methods.</p><h2 id="why-do-we-need-to-integrate-tools-and-apis-with-llms">Why do we need to integrate tools and APIs with LLMs</h2><p>Language Models are obviously going to be anywhere. I like to call them “a unified UI” for a thousand tools. We have to use hundreds if not thousands of applications on a monthly basis to do everyday things. Using tools like Excel, Email Systems, CRMs, Project management tools, etc., can add so much friction to doing something as simple as replying to an email. If we can have an LLM tightly integrated with these tools, we can just write single-line prompts and LLM does all the tasks. Here are some reasons why we need to integrate tools into LLMs and how it would help</p><h3 id="using-private-llms-with-private-data">Using Private LLMs with Private Data</h3><p>As mentioned before, it is almost necessary to use LLMs, and more so with private data. Industries like Healthcare, Oil and Gas, and Government agencies cannot provide their data to OpenAI at all, they need to use self-hosted solutions using models like LLaMA and Falcon. These self-hosted solutions don’t have access to plugins like ChatGPT does. They need to build their own pipelines and plugins. This is difficult and time-consuming.</p><p>However if done properly, using self-hosted LLMs with private data can solve many issues and can boost productivity. For example, in the healthcare industry, integrating LLMs with electronic health records (EHRs) can assist doctors and medical professionals in analyzing patient data and providing more accurate diagnoses. This can save time and improve patient outcomes.</p><h3 id="higher-utility">Higher Utility</h3><p>Integrating tools with LLMs can also increase the utility of these tools AND the LLMs. With LLMs, users can perform tasks more efficiently and accurately, reducing the need for manual labor and multiple tools. Just a single command to an LLM and everything gets taken care of. This can lead to cost savings for businesses and increased productivity for individuals. </p><h3 id="better-more-accurate-responses">Better, More Accurate Responses</h3><p>A simple yet VERY effective reason to integrate tools with LLMs is to increase the quality of the response. LLMs on their own are simply <em>text-generation machines</em>, very powerful, but they lack proper context. This means you can ask questions like “How to write a good proposal?” but you cannot ask “How to write a good proposal to sell my services to Mercity?”, this is because the LLM has no context of what your services are and who Mercity is. This is where the need for custom context arises.</p><p>Answering questions based on private data is actually much simpler. We have written an excellent guide on how to <a href="https://www.mercity.ai/blog-post/custom-gpt-4-chatbot">integrate custom private data with GPT-4</a>. You can check it out. We use an embeddings-based retrieval system to extract the relevant chunks of text to answer questions based on private data.</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1327pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/guide-to-integrating-tools-and-apis-with-language-models/650f66ff38e964525a33753d_It9AmDibaYSRHYjW2gvzPFSjMdgtYflkC3jljDbGfGB-EGCrnxYsGtgRWCP6d0rulXolHBBDKJ2moUaHOfIAtn5IM3A8xItozOZBdAUuO4oU3MewKH_mW9AV4x0vDDlWfiUdRVekEDVi4DRoZpeViJI.jpg"/></div></figure><h3 id="single-interface-for-multiple-tools">Single Interface for Multiple Tools</h3><p>As mentioned before, LLMs can act as a unified UI for multiple tools. This is becoming necessary because the number of tools we use is increasing rapidly. Also, the information and knowledge are completely spread out on different platforms. LLMs can reduce the friction of these multi-platform tasks. Language models like GPT-4 are smart enough to string function calls together and use multiple tools in a chain, collecting data, and planning and executing the given task.</p><h3 id=""></h3><p>For example, if you need to <a href="https://www.mercity.ai/blog-post/gpt-nlp-in-sales#sales-call-analytics">extract meeting notes from sales calls</a>, write a proposal and send over it to the client. An LLM can find the meeting transcripts, extract notes from them, write a proposal, and have it ready for your review. This will save around 1~2 hours of time. Once the LLM has drafted a proposal, all you need to do is make any changes necessary and once done, you are ready to send it. So all you need to do is review the generation of the model, while the model takes care of the research and compiling the proposal, which takes more time.</p><h3 id=""></h3><h2 id="how-to-integrate-tools-and-apis-with-llms">How to Integrate Tools and APIs with LLMs</h2><p>At Mercity, we have built our own pipelines for tool integration. At the core is an LLM, and the Tool-use Prompt. Note that LLM here can be any capable instruction following the Language Model. GPT-4 is the smartest and the best model out there, but bigger models like LLaMa 70B and Falcon 180B can also be used here. Models just have to be smart enough to follow the prompts and should be able to generate sophisticated outputs.</p><h3 id=""></h3><p>Let’s break this pipeline down step by step.</p><figure class="w-richtext-align-center w-richtext-figure-type-image" style="max-width:1600pxpx"><div><img alt="" loading="lazy" src="https://blog-cdn.mercity.ai/blog/guide-to-integrating-tools-and-apis-with-language-models/650f6700a38686bf04abf9ae_oYM1xj0eyB4-37H6LC2k60wZN98clF_vgT6B7Rv4NTkmMqppzhWmw6fOeFw-Vp5m_daHM0Mas4j3DSf5dkVXQQTq_77WGU0GlopNEGhB5Cg-J26wDv6syQqfOdzoUUVfAr2z9a5m_iunOX2nM4oAsJk.jpg"/></div></figure><h3 id="large-language-model">Large Language Model</h3><p>A Language model like GPT-4 is at the core of it all, it acts as the user interface for the tools and the APIs we want to integrate. The model doesn’t necessarily need to be finetuned for chatting, but it would be better if it is. In our findings, we have noticed that larger models work better for these applications, simply because they are better instruction followers and are much better at maintaining multi-step conversations without losing the nature of the conversation. Smaller models like LLaMa-13B can be finetuned to a great degree to follow specific tool use prompts using <a href="https://www.mercity.ai/blog-post/fine-tuning-llms-using-peft-and-lora">PEFT Techniques</a>. Specifically, techniques like Prefix Tuning and IA3 are very popular for tuning LLMs with smaller datasets.</p><h3 id=""></h3><p>Once the LLM is selected and is validated to follow instructions properly, we can tightly integrate it with a Tool Database and Tool-Use Prompt.</p><h4 id="api-tool-database">API Tool Database</h4><p>A tool database is simply a collection of all the tools you might have or want to use with the language model. This can simply be a list of tools and APIs in text or can be a much more sophisticated dynamically fetched pipeline. Most of the time, we use simple text, with the name and description of the API along with how to use it and when, and provide it to the LLM in the form of a tool library.</p><h3 id=""></h3><p>When providing API, we abstract it as a function call and use the arguments to construct a schema for the API call.</p><h3 id=""></h3><p>Here’s what a demo tool library would look like:</p><div class="w-embed"><div style="background-color: #2A2A2B;padding: 2.5%;">

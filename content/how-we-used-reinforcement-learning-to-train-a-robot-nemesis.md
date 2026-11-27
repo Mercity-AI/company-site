@@ -21,6 +21,100 @@ category: Reinforcement Learning
 isTopPick: false
 image: >-
   https://blog-cdn.mercity.ai/blog/how-we-used-reinforcement-learning-to-train-a-robot-nemesis/leaper-title-screen.jpg
+jsonld:
+  abstract: >-
+    Mercity used PPO in Stable-Baselines3, with a Gymnasium environment and a
+    Three.js prototype, to train the brain of a six-legged enemy robot inspired
+    by the Leaper from Arc Raiders, then built a playable game around it. The
+    policy chooses only throttle and turn on a flat plane while the legs are
+    animated. Along the way it learned that standing still was safest, walked
+    backwards 80% of the time and farmed points by re-spotting its target. Eight
+    distance rays lifted success from 5% to 69%, and the shipped brain, a
+    network with an LSTM, 34 inputs and 72,517 parameters, finds a hidden target
+    that stays in place in 96.5% of rounds.
+  about:
+    - name: Reinforcement learning
+      sameAs: https://en.wikipedia.org/wiki/Reinforcement_learning
+    - name: Proximal policy optimization
+      sameAs: https://en.wikipedia.org/wiki/Proximal_policy_optimization
+    - name: Reward hacking
+      sameAs: https://en.wikipedia.org/wiki/Reward_hacking
+    - name: Reward shaping
+    - name: Artificial intelligence in video games
+      sameAs: >-
+        https://en.wikipedia.org/wiki/Artificial_intelligence_in_video_games
+    - name: Behavior trees
+      sameAs: >-
+        https://en.wikipedia.org/wiki/Behavior_tree_(artificial_intelligence,_robotics_and_control)
+  keywords:
+    - train a game enemy with reinforcement learning
+    - reward hacking examples
+    - reward design for RL navigation
+    - Stable-Baselines3 PPO
+    - Gymnasium custom environment
+    - distance ray observations for RL agents
+    - sparse vs dense rewards
+    - RL agent learns to stand still
+    - recurrent PPO policy with LSTM
+    - behavior trees with a trained policy
+    - Arc Raiders Leaper
+  citation:
+    - name: Leaper Jr. (playable game)
+      url: https://leaper.mercity.ai
+      type: page
+  faq:
+    - q: >-
+        Why did the reinforcement learning robot learn to stand still?
+      a: >-
+        By the eighth run, after more than 300,000 steps, the Leaper, Mercity's
+        RL-trained game enemy, chose zero forward throttle on 98.85% of steps,
+        because moving risked bump penalties while standing still cost only the
+        small time penalty. Letting throttle run from -1 to 1 instead of 0 to 1
+        took stopped steps to zero: the raw output was clipped to the allowed
+        range, so every negative output had become exactly 0, which meant stop.
+    - q: How much did giving the RL agent sight improve it?
+      a: >-
+        Adding 8 distance rays, one every 45 degrees and reading up to 12 units,
+        lifted the success rate of the Leaper, Mercity's RL-trained game enemy,
+        in deterministic evaluation from 5% to 69%, cut bumping from 38.9% to
+        24.5% of steps and shortened rounds from 382 to 164 steps. Retrained
+        twice from different random starts it scored 54% and 39%, all well over
+        the blind 5%, though Mercity never told it to avoid anything.
+    - q: Does a bigger penalty stop an RL agent from getting stuck?
+      a: >-
+        In Mercity's runs with the Leaper, its RL-trained game enemy, raising
+        the bump penalty from 0.18 to 0.5 made it timid: forward movement fell
+        from 74% to 46% and deep jams stayed. A stuck rule that ended the round
+        with a penalty of 10 after 40 steps without progress worked instead, and
+        with 16 rays and a small charge for standing still the Leaper reached
+        the target, whose position it was given, in 91.3% of 1,000 unseen mazes.
+    - q: What reward hacking did the RL robot find?
+      a: >-
+        Besides learning that standing still was safest, the Leaper, Mercity's
+        RL-trained game enemy, found a loophole once the target was hidden. Paid
+        0.5 for spotting the target, it circled at the edge of its sight to spot
+        it again and again, 15 times in one round while moving 1 unit closer.
+        Mercity fixed it by paying only for the first sighting.
+    - q: How does the trained RL brain work inside the game?
+      a: >-
+        The RL policy drives the Leaper, Mercity's game enemy, only in Search
+        and Chase; hand-written modes such as Engage, Stomp, Leap, Stagger and
+        Downed pause it, while its memory of where it last saw the player keeps
+        updating. The shipped brain finds a player crouching behind nearby cover
+        about 4 times in 10, so a hand-written Track mode walks to the last
+        known position, which raised re-finding within 30 seconds from 85% to
+        96% in 80 hiding tests.
+    - q: >-
+        How can Mercity help with training custom reinforcement learning agents?
+      a: >-
+        Mercity designs and trains custom models for problems that off-the-shelf
+        model APIs cannot solve, including reinforcement learning agents trained
+        in purpose-built simulated environments with careful reward design and
+        testing on unseen cases. The Leaper is open work of this kind, published
+        as a playable game and a run-by-run training log, and Mercity has a lot
+        of experience training custom models for many clients and taking them to
+        production. Every project starts with an evaluation built for the task,
+        so each change is measured against a baseline.
 ---
 
 You turn around and a big red eye is peering right through your soul. It is the six-legged Leaper from Arc Raiders scaring you out of your wits. And naturally we thought: we want one of our own. Embark Studios’ BTS gave us a glimpse into RL trained robots. We had never trained a model or designed a game, so everything here was learned along the way. <br />Looking back, we thought it was crazy that a robot can just be handed a task (goal) and it somehow figures it out like a human brain learns to walk. But we rather had a lot to unfold. Tag along, This is the rise of our Leaper Jr..

@@ -24,3 +24,9 @@ export function absoluteImage(path?: string): string {
   }
   return absoluteUrl(path);
 }
+
+/** Absolute URL on the canonical host, always with a trailing slash. */
+export function canonicalUrl(path: string): string {
+  const raw = absoluteUrl(path);
+  return raw.endsWith('/') ? raw : raw + '/';
+}
