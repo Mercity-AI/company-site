@@ -70,15 +70,14 @@ jsonld:
     - name: Heckler
       url: https://github.com/Mercity-AI/heckler
       type: code
-    - name: Policy NLI
-      url: https://huggingface.co/datasets/Mercity/policy-nli
+    - name: tripwire-nli dataset
+      url: https://huggingface.co/datasets/Mercity/tripwire-nli
       type: dataset
-    - name: policy-nli-modernbert-large
-      url: https://huggingface.co/Mercity/policy-nli-modernbert-large
+    - name: Tripwire encoder (Mercity/tripwire-nli-modernbert-large)
+      url: https://huggingface.co/Mercity/tripwire-nli-modernbert-large
       type: model
-    - name: policy-nli-decision-model-4b-lora
-      url: >-
-        https://huggingface.co/Mercity/policy-nli-decision-model-4b-lora
+    - name: Tripwire 4B (Mercity/tripwire-nli-4b-lora)
+      url: https://huggingface.co/Mercity/tripwire-nli-4b-lora
       type: model
     - name: LiteLLM decision model guardrail
       url: https://docs.litellm.ai/docs/proxy/guardrails/decision_model
@@ -139,11 +138,11 @@ jsonld:
         decision-model guards written to a client's own policy and calibrated
         rule by rule, as part of its LLM guardrails and security work. It has a
         lot of experience with this work: it built Heckler, the stress-testing
-        platform behind its decision-model guard study, published the Policy NLI
-        dataset and the guards trained on it in the open, and has taken
-        guardrail systems to production for many clients. Each guard is measured
-        in shadow mode on the client's conversations, with a violation rate for
-        each category.
+        platform behind its decision-model guard study, published its Tripwire
+        guard models and their dataset in the open, and has taken guardrail
+        systems to production for many clients. Each guard is measured in shadow
+        mode on the client's conversations, with a violation rate for each
+        category.
 ---
 
 We tested whether a decision model can guard a customer-facing agent. We put TypeSafe's [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev), Cloudflare's [Clef](https://developers.cloudflare.com/changelog/post/2026-10-01-clef-workers-ai/) and GPT-6.1 Terra, a general model with reasoning, in front of five agents (a bank, a SaaS desk, a clinic, an insurer and an HR assistant) in [Heckler](https://heckler.mercity.ai), our stress-testing platform, and scored 5,620 replies from 964 conversations against an answer key. The public comparisons we found test decision models on tool calling and routing, so we tested the job a guard does: enforcing a policy across multi-turn customer conversations.
@@ -154,7 +153,7 @@ We tested whether a decision model can guard a customer-facing agent. We put Typ
 
 - [Heckler](https://heckler.mercity.ai), the stress-testing platform we ran every conversation in, and [how we built it](/blog-post/how-we-built-our-agent-stress-testing-platform-heckler)
 - [Heckler code on GitHub](https://github.com/Mercity-AI/heckler), including the decision-model guard integration used here
-- Related: [Policy NLI](https://huggingface.co/datasets/Mercity/policy-nli), 30,668 labelled (reply, policy) pairs, and the guards trained on it: [policy-nli-modernbert-large](https://huggingface.co/Mercity/policy-nli-modernbert-large) and [policy-nli-decision-model-4b-lora](https://huggingface.co/Mercity/policy-nli-decision-model-4b-lora)
+- Related: [Tripwire](/blog-post/how-we-trained-a-4b-nli-model-to-catch-policy-violations), the open models we trained for this task, and their dataset: [tripwire-nli](https://huggingface.co/datasets/Mercity/tripwire-nli), 30,668 labelled (reply, policy) pairs, and the models trained on it, [tripwire-nli-modernbert-large](https://huggingface.co/Mercity/tripwire-nli-modernbert-large) and [tripwire-nli-4b-lora](https://huggingface.co/Mercity/tripwire-nli-4b-lora)
 
 ## Can Decision Models Replace Security Guardrails?
 

@@ -163,7 +163,7 @@ That idea became a category, which TypeSafe calls System One models, only two mo
 - [decision-model-minicpm5-2b-lora](https://huggingface.co/Mercity/decision-model-minicpm5-2b-lora): the 2B LoRA version, also Apache 2.0
 - [decision-model-data](https://huggingface.co/datasets/Mercity/decision-model-data): the typed decision examples we trained on, with each row's source and license
 - [Hugging Face bucket](https://huggingface.co/buckets/Mercity/Desicion-Model-Custom): code, logs, every checkpoint and the full technical report
-- [policy-nli-decision-model-4b-lora](https://huggingface.co/Mercity/policy-nli-decision-model-4b-lora): the 4B fine-tuned further to check an assistant's reply against a policy, trained on our [Policy NLI](https://huggingface.co/datasets/Mercity/policy-nli) dataset
+- [tripwire-nli-4b-lora](https://huggingface.co/Mercity/tripwire-nli-4b-lora): [Tripwire 4B](/blog-post/how-we-trained-a-4b-nli-model-to-catch-policy-violations), the 4B fine-tuned further to check an assistant's reply against a policy, trained on our [tripwire-nli](https://huggingface.co/datasets/Mercity/tripwire-nli) dataset
 
 ## What Is a Decision Model?
 

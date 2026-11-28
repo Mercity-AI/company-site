@@ -77,8 +77,8 @@ jsonld:
     - name: Heckler
       url: https://github.com/Mercity-AI/heckler
       type: code
-    - name: Policy NLI
-      url: https://huggingface.co/datasets/Mercity/policy-nli
+    - name: tripwire-nli dataset
+      url: https://huggingface.co/datasets/Mercity/tripwire-nli
       type: dataset
     - name: topic-shift-10k
       url: https://huggingface.co/datasets/Mercity/topic-shift-10k
@@ -137,10 +137,10 @@ jsonld:
         including decision-model guards written to a client's own policy and
         tuned question by question on its own traffic. It has a lot of
         experience with this work: it built Heckler to test guards in shadow
-        mode, released the Policy NLI dataset, its guard models and its sparse
-        autoencoder guardrail work in the open, and has taken guardrail systems
-        to production for many clients. Every guard ships with a measured
-        violation rate for each category.
+        mode, released its Tripwire guard models and their dataset and its
+        sparse autoencoder guardrail work in the open, and has taken guardrail
+        systems to production for many clients. Every guard ships with a
+        measured violation rate for each category.
 ---
 
 import GuardrailThresholds from '../src/components/GuardrailThresholds.astro';
@@ -175,7 +175,7 @@ This is where a decision model comes in. You write your rules as plain questions
 
 - [Can a Decision Model Guard a Customer-Facing Agent?](/blog-post/can-a-decision-model-guard-a-customer-facing-agent), the study behind this guide: Jev, Clef and a reasoning model scored on 5,620 replies
 - [Heckler](https://heckler.mercity.ai) and its [code on GitHub](https://github.com/Mercity-AI/heckler), the stress-testing platform we used to generate and score those conversations
-- [Policy NLI](https://huggingface.co/datasets/Mercity/policy-nli) and the output guards we trained on it, [policy-nli-modernbert-large](https://huggingface.co/Mercity/policy-nli-modernbert-large) and [policy-nli-decision-model-4b-lora](https://huggingface.co/Mercity/policy-nli-decision-model-4b-lora)
+- [Tripwire](/blog-post/how-we-trained-a-4b-nli-model-to-catch-policy-violations), our open output guards: the [tripwire-nli](https://huggingface.co/datasets/Mercity/tripwire-nli) dataset and the models we trained on it, [tripwire-nli-modernbert-large](https://huggingface.co/Mercity/tripwire-nli-modernbert-large) and [tripwire-nli-4b-lora](https://huggingface.co/Mercity/tripwire-nli-4b-lora)
 - Our earlier guardrail work: [Online Guardrails using Sparse Autoencoders](https://huggingface.co/collections/Mercity/online-guardrails-using-sparse-autoencoders-6ac602940468c62fefb2b9e8), with the [topic-shift-10k](https://huggingface.co/datasets/Mercity/topic-shift-10k) dataset and [code on GitHub](https://github.com/Mercity-AI/SAE-Guardrails)
 
 ## What Is a Decision Model?
