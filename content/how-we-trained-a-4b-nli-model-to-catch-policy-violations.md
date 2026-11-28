@@ -1,5 +1,5 @@
 ---
-title: How We Trained Tripwire, a 4B NLI Model to Catch Business Policy Violations
+title: 'How We Trained Tripwire, a 4B NLI Model to Catch Business Policy Violations'
 metaDescription: >-
   Tripwire 4B, our open model, caught 67 of 80 business policy violations at 1%
   false alarms, against 33 for Claude Sonnet 5.5 and 8 for DynaGuard-8B.
@@ -19,7 +19,8 @@ tags:
   - LLM Fine-tuning
 category: LLM Guardrails
 isTopPick: false
-image: /blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/violations-caught.png
+image: >-
+  https://blog-cdn.mercity.ai/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/violations-caught.jpg
 jsonld:
   abstract: >-
     Mercity released Tripwire, a family of open models that catch business
@@ -33,12 +34,12 @@ jsonld:
     encoder screening first it costs $4.84 per million checks.
   about:
     - name: Natural language inference
-      sameAs: https://en.wikipedia.org/wiki/Textual_entailment
+      sameAs: 'https://en.wikipedia.org/wiki/Textual_entailment'
     - name: LLM guardrails
     - name: Policy compliance for AI agents
     - name: Decision models
     - name: Low-rank adaptation
-      sameAs: https://en.wikipedia.org/wiki/LoRA_(machine_learning)
+      sameAs: 'https://en.wikipedia.org/wiki/LoRA_(machine_learning)'
     - name: Customer service AI agents
   keywords:
     - Tripwire
@@ -54,19 +55,19 @@ jsonld:
     - vLLM prefix caching for guardrails
   citation:
     - name: Tripwire 4B (Mercity/tripwire-nli-4b-lora)
-      url: https://huggingface.co/Mercity/tripwire-nli-4b-lora
+      url: 'https://huggingface.co/Mercity/tripwire-nli-4b-lora'
       type: model
     - name: Tripwire encoder (Mercity/tripwire-nli-modernbert-large)
-      url: https://huggingface.co/Mercity/tripwire-nli-modernbert-large
+      url: 'https://huggingface.co/Mercity/tripwire-nli-modernbert-large'
       type: model
     - name: tripwire-nli dataset
-      url: https://huggingface.co/datasets/Mercity/tripwire-nli
+      url: 'https://huggingface.co/datasets/Mercity/tripwire-nli'
       type: dataset
-    - name: Tripwire training logs, code and reports
-      url: https://huggingface.co/buckets/Mercity/Policy-NLI
+    - name: 'Tripwire training logs, code and reports'
+      url: 'https://huggingface.co/buckets/Mercity/Policy-NLI'
       type: page
     - name: Mercity/decision-model-qwen3.5-4b
-      url: https://huggingface.co/Mercity/decision-model-qwen3.5-4b
+      url: 'https://huggingface.co/Mercity/decision-model-qwen3.5-4b'
       type: model
   faq:
     - q: What is Tripwire?
@@ -96,8 +97,7 @@ jsonld:
         blocking a reply that sent a user who had taken too many pills to 911
         because it did not offer to reschedule. Tripwire can answer that a rule
         doesn't apply, so a rule outside its situation is not counted as broken.
-    - q: >-
-        How much does reading the conversation help a policy violation detector?
+    - q: How much does reading the conversation help a policy violation detector?
       a: >-
         It gave the largest gain in Mercity's training. With the same recipe,
         data and seed, placing the earlier turns before the reply raised the 4B
@@ -142,7 +142,7 @@ Huge thanks to [Runcrate](https://www.runcrate.ai/) for sponsoring the compute f
 
 <figure class="article-figure">
 
-![Violations caught out of 80 at 1% false alarms](/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/violations-caught.png)
+![Violations caught out of 80 at 1% false alarms](https://blog-cdn.mercity.ai/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/violations-caught.jpg)
 
 <figcaption>Figure 1: Violations caught out of 80 at 1% false alarms on the tripwire-nli test set.</figcaption>
 
@@ -160,7 +160,7 @@ The fix pointed at the task we needed. Adding exceptions to four rules cut their
 
 <figure class="article-figure">
 
-![Must rules were 29% of the rules and caused 79% of the wrong blocks](/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/must-rules-wrong-blocks.png)
+![Must rules were 29% of the rules and caused 79% of the wrong blocks](https://blog-cdn.mercity.ai/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/must-rules-wrong-blocks.jpg)
 
 <figcaption>Figure 2: "Must" rules were 29% of the rules and caused 79% of the wrong blocks.</figcaption>
 
@@ -174,7 +174,7 @@ The guards come from three recipes, and none was built for a company's own rules
 
 <figure class="article-figure">
 
-![What each guard reads and can answer, and how many violations it caught](/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/guard-recipes.png)
+![What each guard reads and can answer, and how many violations it caught](https://blog-cdn.mercity.ai/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/guard-recipes.jpg)
 
 <figcaption>Figure 3: What each guard reads, what it can answer, and how many of our 80 violations its best version caught.</figcaption>
 
@@ -195,7 +195,7 @@ The cost of a check follows the same pattern once accuracy is counted. On one A1
 
 <figure class="article-figure">
 
-![Cost per million checks against violations caught](/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/cost-vs-catches.png)
+![Cost per million checks against violations caught](https://blog-cdn.mercity.ai/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/cost-vs-catches.jpg)
 
 <figcaption>Figure 4: Cost per million checks against violations caught, on a log scale.</figcaption>
 
@@ -215,7 +215,7 @@ Combining them doesn't fix either problem. A team that puts a guard in front of 
 
 <figure class="article-figure">
 
-![A guard plus an LLM judge compared with one model that reads the conversation](/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/guard-plus-judge-vs-one-model.png)
+![A guard plus an LLM judge compared with one model that reads the conversation](https://blog-cdn.mercity.ai/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/guard-plus-judge-vs-one-model.jpg)
 
 <figcaption>Figure 5: The common guard-plus-judge setup against one model that reads the conversation.</figcaption>
 
@@ -231,7 +231,7 @@ We trained in four steps, and each changed one thing: first a model that reads o
 
 <figure class="article-figure">
 
-![Tripwire 4B reads the conversation, the reply and one rule, then answers A, B or C](/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/three-answers.png)
+![Tripwire 4B reads the conversation, the reply and one rule, then answers A, B or C](https://blog-cdn.mercity.ai/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/three-answers.jpg)
 
 <figcaption>Figure 6: Tripwire 4B reads the conversation, the reply and one rule, then answers A, B or C with a reason.</figcaption>
 
@@ -239,7 +239,7 @@ We trained in four steps, and each changed one thing: first a model that reads o
 
 <figure class="article-figure">
 
-![Catches and DynaBench F1 after each of the four training steps](/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/training-lineage.png)
+![Catches and DynaBench F1 after each of the four training steps](https://blog-cdn.mercity.ai/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/training-lineage.jpg)
 
 <figcaption>Figure 7: Violations caught out of 80 and DynaBench F1 after each training step.</figcaption>
 
@@ -253,7 +253,7 @@ The second is [our 4B decision model](/blog-post/how-to-train-your-own-decision-
 
 <figure class="article-figure">
 
-![Step 1: the rule and the agent's reply go into the 4B decision model, with no earlier conversation](/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/step1-reply-only.png)
+![Step 1: the rule and the agent's reply go into the 4B decision model, with no earlier conversation](https://blog-cdn.mercity.ai/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/step1-reply-only.jpg)
 
 <figcaption>Figure 8: Step 1. The model saw the rule and the reply, but not the conversation that led to it.</figcaption>
 
@@ -263,7 +263,7 @@ The misses showed why both models stopped there. An LLM editor had written 92% o
 
 <figure class="article-figure">
 
-![An edited violation drops what the rule requires, while a natural one keeps it and breaks one detail](/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/edited-vs-natural-violations.png)
+![An edited violation drops what the rule requires, while a natural one keeps it and breaks one detail](https://blog-cdn.mercity.ai/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/edited-vs-natural-violations.jpg)
 
 <figcaption>Figure 9: An edited violation is missing what the rule requires; a natural one keeps it and breaks one detail. The replies are illustrative.</figcaption>
 
@@ -277,7 +277,7 @@ We then released the full conversation behind every check in the dataset, 5,393 
 
 <figure class="article-figure">
 
-![Step 2: the earlier conversation is added as a new input to the same model](/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/step2-with-conversation.png)
+![Step 2: the earlier conversation is added as a new input to the same model](https://blog-cdn.mercity.ai/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/step2-with-conversation.jpg)
 
 <figcaption>Figure 10: Step 2. The same model and recipe, with the earlier conversation added in front of the reply.</figcaption>
 
@@ -289,7 +289,7 @@ The encoder went the other way, as Figure 11 shows. With the conversation the 39
 
 <figure class="article-figure">
 
-![Catches with and without the conversation for the 4B model and the encoder](/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/context-catches.png)
+![Catches with and without the conversation for the 4B model and the encoder](https://blog-cdn.mercity.ai/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/context-catches.jpg)
 
 <figcaption>Figure 11: The conversation added 14 catches to the 4B model and cost the encoder 16.</figcaption>
 
@@ -303,7 +303,7 @@ The Step 2 model then fell to 0.53, because it had learned to judge one marked r
 
 <figure class="article-figure">
 
-![Each epoch mixed tripwire-nli checks with DynaBench dialogues](/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/dynabench-mix.png)
+![Each epoch mixed tripwire-nli checks with DynaBench dialogues](https://blog-cdn.mercity.ai/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/dynabench-mix.jpg)
 
 <figcaption>Figure 12: Each training epoch mixed our 8,581 checks with 6,000 DynaBench dialogues.</figcaption>
 
@@ -313,7 +313,7 @@ The release model scores F1 0.81 on DynaBench and DynaGuard-8B scores 0.82, a ti
 
 <figure class="article-figure">
 
-![DynaBench F1 against model size: Tripwire 4B ties DynaGuard-8B at half the size](/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/dynabench-vs-policy-nli.png)
+![DynaBench F1 against model size: Tripwire 4B ties DynaGuard-8B at half the size](https://blog-cdn.mercity.ai/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/dynabench-vs-policy-nli.jpg)
 
 <figcaption>Figure 13: DynaBench F1 against model size: Tripwire 4B ties DynaGuard-8B at half the size.</figcaption>
 
@@ -327,7 +327,7 @@ The last step put everything together. Tripwire 4B reads the conversation, train
 
 <figure class="article-figure">
 
-![One labeled check becomes a readout example and a rationale example](/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/reasons-training.png)
+![One labeled check becomes a readout example and a rationale example](https://blog-cdn.mercity.ai/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/reasons-training.jpg)
 
 <figcaption>Figure 14: Every check trained both the direct answer and the written reason.</figcaption>
 
@@ -355,7 +355,7 @@ The path we recommend has four parts: measure what you have, try Tripwire as is,
 
 <figure class="article-figure">
 
-![The two-stage setup: the encoder screens every check and sends its top 20% to Tripwire 4B](/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/two-stage-pipeline.png)
+![The two-stage setup: the encoder screens every check and sends its top 20% to Tripwire 4B](https://blog-cdn.mercity.ai/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/two-stage-pipeline.jpg)
 
 <figcaption>Figure 15: The encoder screens every check, and Tripwire 4B judges the 20% it finds most suspicious.</figcaption>
 
@@ -397,7 +397,7 @@ The setup is fast as well. The encoder takes 21 ms on a GPU and 220 ms on 16 CPU
 
 <figure class="article-figure">
 
-![Median time per check on one A100, with the share of violations each model catches](/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/speed-per-check.png)
+![Median time per check on one A100, with the share of violations each model catches](https://blog-cdn.mercity.ai/blog/how-we-trained-a-4b-nli-model-to-catch-policy-violations/speed-per-check.jpg)
 
 <figcaption>Figure 16: Median time per check on one A100, with the share of violations each model catches.</figcaption>
 
